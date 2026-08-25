@@ -536,6 +536,14 @@ class OnboardingViewModel: ObservableObject {
             return
         }
 
+        if ProcessAffiliateLifetimePass.matches(normalized) {
+            creatorCodeDraft = normalized
+            referralCode = nil
+            ProcessAffiliateLifetimePass.unlock()
+            saveProgress()
+            return
+        }
+
         referralCode = normalized
         creatorCodeDraft = normalized
         ProcessAcquisitionAttribution.captureReferralCode(normalized)

@@ -3,68 +3,82 @@ import SwiftUI
 struct OnboardingCreatorCodeStepView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
 
     @Binding var draftCode: String
     @Binding var isVerified: Bool
+    var continueAttempt: Int = 0
     var onAutoContinue: () -> Void = {}
+    var onSkip: () -> Void = {}
 
     @State private var resolvedDisplayName: String?
     @State private var resolvedKind: ProcessAffiliateCodeKind?
+    @State private var showsLifetimePass = false
     @State private var showsInvalidCodeFeedback = false
     @State private var showsIncompleteCodeFeedback = false
     @State private var codeShakePhase: CGFloat = 0
     @State private var isResolving = false
     @State private var resolveGeneration = 0
-    @State private var showsHero = false
-    @State private var showsInput = false
-    @State private var showsResolvedHint = false
     @FocusState private var isFocused: Bool
 
     private let accentBlue = Color(red: 0.0, green: 0.478, blue: 1.0)
-    private let accentBlueSoft = Color(red: 0.22, green: 0.58, blue: 1.0)
     private let maxCodeLength = ProcessReferralCode.length
 
     var body: some View {
-        GeometryReader { geometry in
+        ZStack {
             VStack(spacing: 0) {
                 Spacer()
-                    .frame(height: contentTopInset)
-
-                VStack(spacing: 12) {
-                    Text(AppCopy.t("As-tu un code ?", en: "Got a code?"))
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(OnboardingTheme.primaryText)
-                        .multilineTextAlignment(.center)
-
-                    Text(
-                        AppCopy.t(
-                            "Facultatif — 3 jours d’essai offerts sur l’annuel.",
-                            en: "Optional — 3 free days on the yearly plan."
-                        )
-                    )
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(OnboardingTheme.mutedText)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 28)
-                }
-                .opacity(showsHero ? 1 : 0)
+                    .frame(height: OnboardingConstants.titleAreaHeight)
 
                 Spacer()
-                    .frame(height: 40)
+                    .frame(height: OnboardingConstants.titleToContentSpacing + 72)
 
-                OnboardingCreatorCodeCircleInput(
-                    code: $draftCode,
-                    maxLength: maxCodeLength,
-                    accentBlue: accentBlue,
-                    isInvalid: showsInvalidCodeFeedback || showsIncompleteCodeFeedback,
-                    isFocused: $isFocused,
-                    onSubmit: handleKeyboardSubmit
+                TextField(
+                    "",
+                    text: $draftCode,
+                    prompt: Text(
+                        AppCopy.t(
+                            "As-tu un code de parrainage ?",
+                            en: "Do you have a referral code?"
+                        )
+                    )
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundStyle(OnboardingTheme.mutedText)
                 )
+                .font(.system(size: 36, weight: .medium))
+                .foregroundStyle(OnboardingTheme.primaryText)
+                .tint(OnboardingTheme.primaryText)
+                .multilineTextAlignment(.center)
+                .textFieldStyle(.plain)
+                .focused($isFocused)
+                .textInputAutocapitalization(.characters)
+                .autocorrectionDisabled(true)
+                .keyboardType(.asciiCapable)
+                .submitLabel(.continue)
+                .onSubmit(handleKeyboardSubmit)
                 .modifier(OnboardingHorizontalShakeEffect(shakes: codeShakePhase))
-                .opacity(showsInput ? 1 : 0)
-                .frame(height: 52)
+                .padding(.horizontal, 40)
+                .accessibilityLabel(
+                    AppCopy.t("Code de parrainage", en: "Referral code")
+                )
 
-                if let resolvedDisplayName, let resolvedKind, showsResolvedHint {
+                Text(
+                    AppCopy.t(
+                        "Tu peux passer cette étape",
+                        en: "You can skip this step"
+                    )
+                )
+                .font(.system(size: 16, weight: .regular))
+                .foregroundStyle(OnboardingTheme.mutedText)
+                .multilineTextAlignment(.center)
+                .padding(.top, 14)
+                .padding(.horizontal, 40)
+
+                if showsLifetimePass {
+                    lifetimePassBadge
+                        .padding(.top, 20)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                } else if let resolvedDisplayName, let resolvedKind {
                     resolvedBadge(kind: resolvedKind, name: resolvedDisplayName)
                         .padding(.top, 20)
                         .transition(.opacity.combined(with: .move(edge: .top)))
@@ -78,31 +92,11 @@ struct OnboardingCreatorCodeStepView: View {
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
 
-                Spacer(minLength: 0)
+                Spacer()
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, bottomChromeReserve)
-            .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background {
-            ZStack(alignment: .top) {
-                OnboardingTheme.screenBackground
-                    .ignoresSafeArea()
-
-                creatorCodeHeroGradient
-                    .frame(height: 220)
-                    .frame(maxWidth: .infinity)
-                    .ignoresSafeArea(edges: .top)
-            }
-            .allowsHitTesting(false)
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            isFocused = true
-        }
         .onAppear {
-            runEntrance()
             DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingTransitionTiming.earlyKeyboardFocusDelay) {
                 isFocused = true
             }
@@ -110,7 +104,22 @@ struct OnboardingCreatorCodeStepView: View {
             let generation = resolveGeneration
             Task { await resolveDraftIfNeeded(generation: generation) }
         }
-        .onChange(of: draftCode) { _, _ in
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .inactive || phase == .background {
+                isFocused = false
+            }
+        }
+        .onChange(of: continueAttempt) { _, newValue in
+            guard newValue > 0 else { return }
+            handleContinueRejected()
+        }
+        .onChange(of: draftCode) { _, newValue in
+            let filtered = newValue.uppercased().filter { $0.isLetter || $0.isNumber }
+            let clipped = String(filtered.prefix(maxCodeLength))
+            if clipped != newValue {
+                draftCode = clipped
+                return
+            }
             if showsInvalidCodeFeedback || showsIncompleteCodeFeedback {
                 withAnimation(.smooth(duration: 0.18)) {
                     clearCodeFeedback()
@@ -119,38 +128,16 @@ struct OnboardingCreatorCodeStepView: View {
             if isVerified {
                 isVerified = false
             }
+            if showsLifetimePass {
+                showsLifetimePass = false
+            }
             resolveGeneration += 1
             let generation = resolveGeneration
             Task { await resolveDraftIfNeeded(generation: generation) }
         }
-    }
-
-    private var contentTopInset: CGFloat {
-        OnboardingConstants.headerBackButtonTopPadding
-            + OnboardingConstants.backButtonSize
-            + 28
-    }
-
-    private var bottomChromeReserve: CGFloat {
-        OnboardingConstants.standardContinueBottomOffset + 58 + 16
-    }
-
-    private var creatorCodeHeroGradient: some View {
-        LinearGradient(
-            colors: colorScheme == .dark
-                ? [
-                    accentBlue.opacity(0.16),
-                    accentBlueSoft.opacity(0.07),
-                    Color.clear
-                ]
-                : [
-                    accentBlue.opacity(0.10),
-                    accentBlueSoft.opacity(0.04),
-                    Color.clear
-                ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
+        .onDisappear {
+            isFocused = false
+        }
     }
 
     private var incompleteCodeMessage: some View {
@@ -230,6 +217,33 @@ struct OnboardingCreatorCodeStepView: View {
         }
     }
 
+    private var lifetimePassBadge: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "star.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.orange)
+
+            Text(
+                AppCopy.t(
+                    "Accès offert à vie",
+                    en: "Lifetime access unlocked"
+                )
+            )
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(OnboardingTheme.primaryText)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background {
+            Capsule(style: .continuous)
+                .fill(Color.orange.opacity(colorScheme == .dark ? 0.16 : 0.10))
+                .overlay {
+                    Capsule(style: .continuous)
+                        .strokeBorder(Color.orange.opacity(0.28), lineWidth: 1)
+                }
+        }
+    }
+
     private func handleKeyboardSubmit() {
         if isVerified {
             HapticManager.shared.impact(.medium)
@@ -237,22 +251,13 @@ struct OnboardingCreatorCodeStepView: View {
             onAutoContinue()
             return
         }
-        handleContinueRejected()
-    }
-
-    private func runEntrance() {
-        if reduceMotion {
-            showsHero = true
-            showsInput = true
-            showsResolvedHint = true
+        if normalizedDraft.isEmpty {
+            HapticManager.shared.impact(.medium)
+            isFocused = false
+            onSkip()
             return
         }
-
-        withAnimation(.smooth(duration: 0.22)) {
-            showsHero = true
-            showsInput = true
-            showsResolvedHint = true
-        }
+        handleContinueRejected()
     }
 
     private var normalizedDraft: String {
@@ -278,9 +283,25 @@ struct OnboardingCreatorCodeStepView: View {
                 withAnimation(.smooth(duration: 0.22)) {
                     resolvedDisplayName = nil
                     resolvedKind = nil
+                    showsLifetimePass = false
                     clearCodeFeedback()
                 }
                 isVerified = false
+            }
+            return
+        }
+
+        if ProcessAffiliateLifetimePass.matches(normalized) {
+            await MainActor.run {
+                guard generation == resolveGeneration else { return }
+                isResolving = false
+                withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+                    showsLifetimePass = true
+                    resolvedDisplayName = nil
+                    resolvedKind = nil
+                    clearCodeFeedback()
+                }
+                isVerified = true
             }
             return
         }
@@ -300,10 +321,10 @@ struct OnboardingCreatorCodeStepView: View {
                 withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
                     resolvedDisplayName = resolved.displayName ?? normalized
                     resolvedKind = resolved.type
+                    showsLifetimePass = false
                     clearCodeFeedback()
                 }
                 isVerified = true
-                scheduleAutoContinue(generation: generation)
             } else if canValidateCodeOnline {
                 isVerified = false
                 presentInvalidCodeFeedback()
@@ -311,19 +332,11 @@ struct OnboardingCreatorCodeStepView: View {
                 withAnimation(.smooth(duration: 0.22)) {
                     resolvedDisplayName = nil
                     resolvedKind = nil
+                    showsLifetimePass = false
                     clearCodeFeedback()
                 }
                 isVerified = false
             }
-        }
-    }
-
-    private func scheduleAutoContinue(generation: Int) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
-            guard generation == resolveGeneration, isVerified else { return }
-            HapticManager.shared.impact(.medium)
-            isFocused = false
-            onAutoContinue()
         }
     }
 
@@ -342,6 +355,7 @@ struct OnboardingCreatorCodeStepView: View {
     private func presentIncompleteCodeFeedback() {
         resolvedDisplayName = nil
         resolvedKind = nil
+        showsLifetimePass = false
 
         let wasAlreadyIncomplete = showsIncompleteCodeFeedback
         withAnimation(.smooth(duration: 0.22)) {
@@ -366,6 +380,7 @@ struct OnboardingCreatorCodeStepView: View {
     private func presentInvalidCodeFeedback() {
         resolvedDisplayName = nil
         resolvedKind = nil
+        showsLifetimePass = false
 
         let wasAlreadyInvalid = showsInvalidCodeFeedback
         withAnimation(.smooth(duration: 0.22)) {
@@ -384,109 +399,5 @@ struct OnboardingCreatorCodeStepView: View {
         withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.34)) {
             codeShakePhase += 1
         }
-    }
-}
-
-// MARK: - Saisie en ronds
-
-private struct OnboardingCreatorCodeCircleInput: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    @Binding var code: String
-    var maxLength: Int
-    var accentBlue: Color
-    var isInvalid: Bool
-    @FocusState.Binding var isFocused: Bool
-    var onSubmit: () -> Void = {}
-
-    private var slotCount: Int {
-        ProcessReferralCode.length
-    }
-
-    var body: some View {
-        ZStack {
-            TextField("", text: $code)
-                .focused($isFocused)
-                .textInputAutocapitalization(.characters)
-                .autocorrectionDisabled()
-                .keyboardType(.asciiCapable)
-                .submitLabel(.continue)
-                .onSubmit(onSubmit)
-                .opacity(0.015)
-                .frame(width: 1, height: 1)
-                .accessibilityLabel(AppCopy.t("Code créateur", en: "Creator code"))
-
-            HStack(spacing: circleSpacing) {
-                ForEach(0..<slotCount, id: \.self) { index in
-                    codeCircle(at: index)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .center)
-        }
-        .contentShape(Rectangle())
-        .onTapGesture { isFocused = true }
-        .onChange(of: code) { _, newValue in
-            let filtered = newValue.uppercased().filter { $0.isLetter || $0.isNumber }
-            code = String(filtered.prefix(maxLength))
-        }
-    }
-
-    private var circleSpacing: CGFloat {
-        14
-    }
-
-    private var circleSize: CGFloat {
-        52
-    }
-
-    private func codeCircle(at index: Int) -> some View {
-        let character = character(at: index)
-        let isActive = isFocused && index == code.count && !isInvalid
-        let strokeColor = resolvedStrokeColor(isActive: isActive)
-
-        return ZStack {
-            Color.clear
-                .frame(width: circleSize, height: circleSize)
-                .processGlassEffect(in: Circle(), interactive: false)
-                .overlay {
-                    Circle()
-                        .strokeBorder(strokeColor, lineWidth: isActive || isInvalid ? 2 : 1)
-                }
-                .shadow(
-                    color: isActive ? accentBlue.opacity(colorScheme == .dark ? 0.28 : 0.18) : .clear,
-                    radius: isActive ? 8 : 0,
-                    y: isActive ? 2 : 0
-                )
-
-            if let character {
-                Text(String(character))
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .foregroundStyle(isInvalid ? Color.red.opacity(0.88) : OnboardingTheme.primaryText)
-                    .transition(.scale(scale: 0.6).combined(with: .opacity))
-            }
-        }
-        .animation(.spring(response: 0.34, dampingFraction: 0.78), value: code)
-        .animation(.spring(response: 0.34, dampingFraction: 0.78), value: isFocused)
-        .animation(.smooth(duration: 0.22), value: isInvalid)
-    }
-
-    private func resolvedStrokeColor(isActive: Bool) -> Color {
-        if isInvalid {
-            return Color.red.opacity(colorScheme == .dark ? 0.82 : 0.72)
-        }
-        if isActive {
-            return accentBlue.opacity(0.85)
-        }
-        return idleCircleStrokeColor
-    }
-
-    private var idleCircleStrokeColor: Color {
-        colorScheme == .dark ? Color.white.opacity(0.16) : accentBlue.opacity(0.20)
-    }
-
-    private func character(at index: Int) -> Character? {
-        guard index < code.count else { return nil }
-        let stringIndex = code.index(code.startIndex, offsetBy: index)
-        return code[stringIndex]
     }
 }

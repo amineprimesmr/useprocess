@@ -31,6 +31,9 @@ export function db() {
 
 export const REFERRAL_CODE_LENGTH = 5;
 
+/** Code affiliés : accès lifetime offert. Jamais un parrainage ami ni une commission. */
+export const AFFILIATE_LIFETIME_PASS_CODE = "CREW7";
+
 export function normalizeReferralCode(raw: string): string {
   const alnum = String(raw || "")
     .trim()
@@ -42,6 +45,14 @@ export function normalizeReferralCode(raw: string): string {
 
 export function isValidReferralCode(raw: string): boolean {
   return normalizeReferralCode(raw).length === REFERRAL_CODE_LENGTH;
+}
+
+export function isReservedLifetimePassCode(raw: string): boolean {
+  const compact = String(raw || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+  return compact === AFFILIATE_LIFETIME_PASS_CODE;
 }
 
 export function setCors(res: any) {
@@ -98,6 +109,7 @@ export function httpStatusForError(message: string): number {
 export async function resolveReferrerUserId(code: string): Promise<string | null> {
   const normalized = normalizeReferralCode(code);
   if (!isValidReferralCode(normalized)) return null;
+  if (isReservedLifetimePassCode(normalized)) return null;
 
   const snapshot = await db().collection("referralCodes").doc(normalized).get();
   if (!snapshot.exists) return null;
@@ -112,6 +124,7 @@ export async function upsertReferralCode(params: {
 }): Promise<void> {
   const normalized = normalizeReferralCode(params.referralCode);
   if (!isValidReferralCode(normalized)) throw new Error("INVALID_CODE");
+  if (isReservedLifetimePassCode(normalized)) throw new Error("INVALID_CODE");
 
   const ref = db().collection("referralCodes").doc(normalized);
   await db().runTransaction(async (transaction) => {
@@ -164,6 +177,9 @@ export async function registerReferralRecord(params: {
 }): Promise<void> {
   if (params.referrerUserId === params.referredUserId) {
     throw new Error("SELF_REFERRAL");
+  }
+  if (isReservedLifetimePassCode(params.referralCode)) {
+    throw new Error("INVALID_CODE");
   }
 
   const referredMetaRef = db()

@@ -1,5 +1,6 @@
 import Foundation
 import PostHog
+import StoreKit
 
 /// Product analytics facade (PostHog). No-ops safely when the API key is missing.
 @MainActor
@@ -16,6 +17,7 @@ enum ProcessAnalytics {
     // MARK: - Lifecycle
 
     static func configure() {
+        ProcessAppsFlyer.shared.configure()
         guard !didConfigure else { return }
         guard PostHogConfiguration.isConfigured,
               let token = PostHogConfiguration.projectToken else {
@@ -66,6 +68,7 @@ enum ProcessAnalytics {
             if props[key] == nil { props[key] = value }
         }
         PostHogSDK.shared.identify(userId, userProperties: props.isEmpty ? nil : props)
+        ProcessAppsFlyer.shared.setCustomerUserID(userId)
         ProcessAcquisitionAttribution.syncToAnalytics(emitResolvedEvent: false)
     }
 
@@ -123,7 +126,7 @@ enum ProcessAnalytics {
         var supers: [String: Any] = [:]
         for (key, value) in properties {
             // Évite d’enregistrer des payloads trop larges en super-props.
-            if key.hasPrefix("acquisition_") || key.hasPrefix("asa_") || key == "referral_code" || key == "has_referral_code" {
+            if key.hasPrefix("acquisition_") || key.hasPrefix("asa_") || key.hasPrefix("appsflyer_") || key == "referral_code" || key == "has_referral_code" {
                 supers[key] = value
             }
         }
@@ -255,6 +258,9 @@ enum ProcessAnalytics {
         var props: [String: Any] = [:]
         if let lastOnboardingStepName { props["last_step"] = lastOnboardingStepName }
         capture("onboarding_completed", properties: props)
+        ProcessAppsFlyer.shared.logEvent("af_tutorial_completion", values: [
+            "af_content_id": "onboarding"
+        ])
     }
 
     /// Expose last step name for richer completion payloads.
@@ -291,6 +297,7 @@ enum ProcessAnalytics {
         capture("paywall_viewed", properties: withPricingVariant(["source": source]))
         screen("paywall")
         trackFunnelScreen(.paywall, extra: ["source": source])
+        Task { await AffiliateService.shared.trackPaywallReached() }
     }
 
     static func trackPaywallPlanSelected(plan: String, source: String = "paywall") {
@@ -518,6 +525,10 @@ enum ProcessAnalytics {
             "result": "success"
         ])
         setPersonProperties(["apple_sign_in": true])
+        ProcessAppsFlyer.shared.logEvent("af_complete_registration", values: [
+            "af_registration_method": "apple",
+            "source": source
+        ])
     }
 
     static func trackAppleSignInFailed(source: String = "onboarding_post_payment", error: String) {
@@ -583,6 +594,13 @@ enum ProcessAnalytics {
         if let source { props["source"] = source }
         capture("purchase_completed", properties: withPricingVariant(withAcquisition(props)))
         trackFunnelScreen(.purchaseCompleted, extra: props)
+        ProcessAppsFlyer.shared.logPurchase(
+            plan: plan,
+            offer: offer,
+            revenue: purchaseRevenue(for: plan),
+            currency: purchaseCurrency(for: plan),
+            productID: purchaseProductID(for: plan)
+        )
     }
 
     static func trackPurchaseCancelled(
@@ -735,6 +753,31 @@ enum ProcessAnalytics {
             "first_name_length": name.count,
             "source": source
         ])
+    }
+
+    private static func purchaseStoreProduct(for plan: String) -> Product? {
+        switch plan.lowercased() {
+        case "weekly": return SubscriptionService.shared.weeklyStoreProduct
+        case "monthly": return SubscriptionService.shared.monthlyStoreProduct
+        case "annual", "yearly": return SubscriptionService.shared.annualStoreProduct
+        default: return nil
+        }
+    }
+
+    private static func purchaseRevenue(for plan: String) -> Double? {
+        guard let product = purchaseStoreProduct(for: plan) else { return nil }
+        return NSDecimalNumber(decimal: product.price).doubleValue
+    }
+
+    private static func purchaseCurrency(for plan: String) -> String? {
+        purchaseStoreProduct(for: plan)?.priceFormatStyle.currencyCode
+    }
+
+    private static func purchaseProductID(for plan: String) -> String? {
+        if plan.lowercased().contains("lifetime") {
+            return SubscriptionConfiguration.lifetimeProductID
+        }
+        return purchaseStoreProduct(for: plan)?.id
     }
 
     private static func registerFirstNameSuperProperties(_ name: String) {

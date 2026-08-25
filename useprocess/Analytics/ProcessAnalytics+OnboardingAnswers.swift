@@ -81,6 +81,9 @@ extension ProcessAnalytics {
             properties: props,
             userProperties: personProperties(from: viewModel)
         )
+        ProcessAppsFlyer.shared.logEvent("af_tutorial_completion", values: [
+            "af_content_id": "onboarding"
+        ])
     }
 
     // MARK: - Private

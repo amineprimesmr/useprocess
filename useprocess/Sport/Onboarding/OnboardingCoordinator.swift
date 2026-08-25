@@ -181,8 +181,10 @@ class OnboardingCoordinator {
 
     private static func resolvedAcquisitionCode(from viewModel: OnboardingViewModel) -> String? {
         if let code = viewModel.referralCode?.trimmingCharacters(in: .whitespacesAndNewlines), !code.isEmpty {
-            return code
+            return ProcessAffiliateLifetimePass.matches(code) ? nil : code
         }
-        return ProcessReferralAttribution.pendingCode ?? ProcessAffiliateAttribution.pendingCode
+        let pending = ProcessReferralAttribution.pendingCode ?? ProcessAffiliateAttribution.pendingCode
+        guard let pending, !ProcessAffiliateLifetimePass.matches(pending) else { return nil }
+        return pending
     }
 }

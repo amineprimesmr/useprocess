@@ -1,10 +1,3 @@
-import {
-  AFFILIATE_X_DM_URL,
-  COMMISSION_PERCENT,
-  HOLD_DAYS,
-  VIEW_BONUS_MAX_PER_VIDEO_USD,
-} from "./affiliate-utils.js";
-
 export const MANNY_TIKTOK_URL = "https://www.tiktok.com/@mannyprcs";
 export const MANNY_TIKTOK_HANDLE = "@mannyprcs";
 
@@ -182,194 +175,137 @@ function step(fr, en) {
   return { fr, en };
 }
 
+const METHOD_QUERY_ALIASES = {
+  hub: "devenir",
+  accueil: "devenir",
+  home: "devenir",
+  "1": "devenir",
+  primes: "devenir",
+  "9": "devenir",
+  shadowban: "original",
+  techniques: "convertir",
+  convertir: "convertir",
+};
+
 export const METHOD_MODULES = [
   {
-    id: "hub",
-    index: 0,
-    title: { fr: "Playbook TikTok", en: "TikTok playbook" },
-    nav: { fr: "Accueil", en: "Home" },
-    kicker: { fr: "Lis tout avant de poster", en: "Read everything before you post" },
-    blocks: [
-      {
-        type: "lead",
-        fr: "Même densité qu’une formation clipper — adaptée à Process. Slideshow d’abord, conversion vers l’app, pas du contenu vide.",
-        en: "Same density as a clipper academy — built for Process. Slideshows first, convert to the app, not empty content.",
-      },
-      {
-        type: "callout",
-        fr: "Avant de poster : lis le playbook, ouvre Formats, copie une structure — pas une vidéo 1:1. Ton lien va dans la bio et le commentaire épinglé.",
-        en: "Before you post: read the playbook, open Formats, copy a structure — not a 1:1 video. Your link goes in the bio and the pinned comment.",
-      },
-      {
-        type: "pace",
-      },
-      { type: "cta-formats" },
-      {
-        type: "links",
-        items: [
-          {
-            id: "manny",
-            href: MANNY_TIKTOK_URL,
-            fr: `${MANNY_TIKTOK_HANDLE} — compte à copier`,
-            en: `${MANNY_TIKTOK_HANDLE} — account to copy`,
-          },
-          {
-            id: "join",
-            hrefKey: "linkUrl",
-            fr: "Ton lien créateur — {code}",
-            en: "Your creator link — {code}",
-          },
-          {
-            id: "leks",
-            href: AFFILIATE_X_DM_URL,
-            fr: "DM leks sur X — primes et questions",
-            en: "DM leks on X — bonuses and questions",
-          },
-        ],
-      },
-    ],
-  },
-  {
     id: "devenir",
-    index: 1,
-    title: { fr: "Devenir affilié Process", en: "Become a Process affiliate" },
-    nav: { fr: "1. Programme", en: "1. Program" },
-    kicker: { fr: "Comment tu es payé", en: "How you get paid" },
+    index: 0,
+    nav: { fr: "Intro", en: "Intro" },
     blocks: [
       {
-        type: "lead",
-        fr: "Process scanne la rétention d’eau du visage et donne un protocole. Toi tu amènes des abonnés avec des slideshow TikTok. Chaque abo via ton lien ou ton code = commission.",
-        en: "Process scans facial water retention and builds a protocol. You bring subscribers with TikTok slideshows. Every sub through your link or code = commission.",
+        type: "section",
+        title: { fr: "Process c’est quoi ?", en: "What is Process?" },
+        fr: "Process est une app iOS (Android arrive bientôt) qui scanne le visage, mesure la rétention d’eau, et construit un protocole pour dégonfler. C’est du looksmaxxing : n’importe qui intéressé par le looksmax est un client potentiel.",
+        en: "Process is an iOS app (Android coming soon) that scans the face, measures water retention, and builds a protocol to depuff. This is looksmaxxing: anyone into looksmax is a potential customer.",
       },
       {
-        type: "steps",
-        title: { fr: "L’argent", en: "The money" },
+        type: "section",
+        title: { fr: "Bénéfice pour l’utilisateur", en: "Benefit for the user" },
+        fr: "Process permet aux users de tracker…",
+        en: "Process lets users track…",
+      },
+      {
+        type: "bullets",
         items: [
-          step(
-            `${COMMISSION_PERCENT} % à vie sur chaque abonnement généré (hors lifetime).`,
-            `${COMMISSION_PERCENT}% for life on every subscription you generate (lifetime SKU excluded).`
-          ),
-          step(
-            `Retenue ${HOLD_DAYS} jours (fenêtre de remboursement), puis payout Stripe.`,
-            `${HOLD_DAYS}-day hold (refund window), then Stripe payout.`
-          ),
-          step(
-            `Primes vues en plus, jusqu’à $${VIEW_BONUS_MAX_PER_VIDEO_USD} / vidéo — review manuelle, pas auto.`,
-            `View bonuses on top, up to $${VIEW_BONUS_MAX_PER_VIDEO_USD} / video — manual review, not automatic.`
-          ),
+          step("Le visage via scan", "The face via scan"),
+          step("L’alimentation", "Food"),
+          step("L’hydratation", "Hydration"),
+          step("L’effort du jour (via Apple Santé)", "Daily effort (via Apple Health)"),
+          step("L’évolution du bloating", "Bloating progress"),
         ],
       },
       {
-        type: "steps",
-        title: { fr: "Obligatoire sur chaque post", en: "Required on every post" },
-        items: [
-          step("Lien {link} dans la bio.", "Link {link} in the bio."),
-          step("Commentaire épinglé avec le même lien + ton code {code}.", "Pinned comment with the same link + your code {code}."),
-          step("Le viewer entre le code au checkout s’il n’a pas cliqué le lien.", "The viewer enters the code at checkout if they didn't click the link."),
-        ],
+        type: "section",
+        fr: "Ça permet d’éliminer la rétention d’eau et la lymphe bloquée, et de passer d’un visage puffy / bouffi à un visage plus défini : joues creuses, jawline, pommettes.",
+        en: "That lets them clear water retention and blocked lymph, and go from a puffy / swollen face to a more defined one: hollow cheeks, jawline, cheekbones.",
       },
       {
-        type: "dont",
-        title: { fr: "Interdit", en: "Not allowed" },
-        items: [
-          step("Pub payante (TikTok Ads, Spark, Meta). Commissions non versées.", "Paid ads (TikTok Ads, Spark, Meta). Commissions will not be paid."),
-          step("Claims médicaux (“guérit”, “diagnostic”). Process = protocole, pas un médecin.", "Medical claims (“cures”, “diagnosis”). Process is a protocol, not a doctor."),
-          step("Spam de 10 posts le dimanche. Ça brûle le compte.", "Spamming 10 posts on Sunday. That burns the account."),
-        ],
+        type: "ladder",
+        title: { fr: "Rémunération", en: "Pay" },
       },
       {
-        type: "links",
-        items: [
-          {
-            id: "join",
-            hrefKey: "linkUrl",
-            fr: "Ton lien créateur — {code}",
-            en: "Your creator link — {code}",
-          },
-          {
-            id: "manny",
-            href: MANNY_TIKTOK_URL,
-            fr: `${MANNY_TIKTOK_HANDLE} — formats à copier`,
-            en: `${MANNY_TIKTOK_HANDLE} — formats to copy`,
-          },
-          {
-            id: "leks",
-            href: AFFILIATE_X_DM_URL,
-            fr: "DM leks sur X",
-            en: "DM leks on X",
-          },
-        ],
+        type: "access",
+        title: { fr: "Ton lien", en: "Your link" },
+        fr: "{link}",
+        en: "{link}",
       },
     ],
   },
   {
     id: "slideshow",
     index: 2,
-    title: { fr: "Slideshow vs clipping", en: "Slideshow vs clipping" },
-    nav: { fr: "2. Slideshow", en: "2. Slideshow" },
-    kicker: { fr: "Le track principal", en: "The main track" },
+    title: { fr: "Clipper", en: "Clipper" },
+    nav: { fr: "Clipper", en: "Clipper" },
     blocks: [
       {
-        type: "lead",
-        fr: "Chez Process, le clipping classique (couper une vidéo longue) est optionnel. Le track qui convertit, c’est le photo carousel TikTok — une structure lockée, des visuels différents à chaque post.",
-        en: "At Process, classic clipping (cutting a long video) is optional. The track that converts is the TikTok photo carousel — a locked structure, different visuals every post.",
-      },
-      {
-        type: "steps",
-        title: { fr: "Un bon affilié", en: "A good affiliate" },
+        type: "bullets",
+        title: { fr: "Un bon clipper sait :", en: "A good clipper knows:" },
         items: [
-          step("N’est pas shadowban (le compte est chauffé, les visuels changent).", "Isn't shadowbanned (account is warmed up, visuals change)."),
-          step("Poste {posts} — tous les jours, pas un binge le week-end.", "Posts {posts} — every day, not a weekend binge."),
-          step("Copie un format Process, pas une vidéo Manny pixel à pixel.", "Copies a Process format, not a Manny video pixel-for-pixel."),
-          step("Pousse vers l’app (bio + pin), pas seulement vers les vues.", "Pushes to the app (bio + pin), not just views."),
+          step("Ne pas être shadowban.", "How to stay off shadowban."),
+          step("Poster 4× / jour par compte.", "Post 4× / day per account."),
+          step("Être régulier sur le long terme.", "How to stay consistent long-term."),
+          step("Faire des slideshows viraux (pas des carousels de merde).", "How to make viral slideshows (not trash carousels)."),
         ],
       },
       {
-        type: "callout",
-        fr: `Process ne paie pas au CPM. ${COMMISSION_PERCENT} % sur l’abo + primes vues. Une vidéo à 40k qui convertit 2 abos vaut plus qu’un million de vues sans lien.`,
-        en: `Process does not pay CPM. ${COMMISSION_PERCENT}% on the sub + view bonuses. A 40k video that converts 2 subs beats a million views with no link.`,
+        type: "bullets",
+        title: { fr: "Un bon clipper obtient :", en: "A good clipper gets:" },
+        items: [
+          step("Entre 500 et 2 000 € par mois.", "€500–€2,000 a month."),
+          step("Une compétence qui lui servira toute sa vie.", "A skill that lasts a lifetime."),
+          step("La méthode complète pour distribuer ce qu’il veut.", "The full method to distribute whatever they want."),
+          step("Des bonus de fou avec Process.", "Insane bonuses with Process."),
+          step("La liberté de vivre de l’affiliation.", "The freedom to live off affiliation."),
+        ],
       },
       {
-        type: "pace",
+        type: "links",
+        title: { fr: "Exemples de bons clippers :", en: "Examples of good clippers:" },
+        items: [
+          {
+            id: "manny",
+            href: MANNY_TIKTOK_URL,
+            fr: MANNY_TIKTOK_HANDLE,
+            en: MANNY_TIKTOK_HANDLE,
+          },
+        ],
       },
     ],
   },
   {
     id: "compte",
     index: 3,
-    title: { fr: "Créer et chauffer le compte", en: "Create and warm the account" },
-    nav: { fr: "3. Compte", en: "3. Account" },
-    kicker: { fr: "3 minutes + 7 jours", en: "3 minutes + 7 days" },
+    title: { fr: "Créer + warm", en: "Create + warm" },
+    nav: { fr: "Créer + warm", en: "Create + warm" },
     blocks: [
       {
         type: "steps",
-        title: { fr: "Créer le compte (3 minutes)", en: "Create the account (3 minutes)" },
+        title: { fr: "Créer son compte (3 minutes)", en: "Create your account (3 minutes)" },
         items: [
-          step("TikTok Creator (Réglages → Gérer le compte). Pas un compte perso recyclé.", "TikTok Creator (Settings → Manage account). Don't recycle a personal account."),
-          step("Username / display name glow-up ou debloat (pas besoin de coller “app” dans le nom).", "Username / display name glow-up or debloat (you don't need “app” in the name)."),
-          step("Photo de profil nette — visage ou esthétique produit, pas un logo flou.", "Clean profile photo — face or product aesthetic, not a blurry logo."),
+          step("Créer un compte TikTok, Instagram et YouTube.", "Create a TikTok, Instagram, and YouTube account."),
+          step("Mettre un nom avec un mot clé looksmax : glowup_man, debloat_prime, New_looksmax…", "Pick a name with a looksmax keyword: glowup_man, debloat_prime, New_looksmax…"),
+          step("Mettre une photo de profil bord coloré (rouge, bleu, vert).", "Use a profile photo with a colored border (red, blue, green)."),
           step(
-            "Bio : « Visage gonflé ? Scan ta rétention. Protocoles tous les jours. » + lien {link}",
-            "Bio: “Puffy face? Scan your water retention. Daily protocols.” + link {link}"
+            "Changer la bio : J’ai découvert Process Debloat dans l’App Store et j’ai glow up.",
+            "Change the bio: I discovered Process Debloat on the App Store and I glow’d up."
           ),
         ],
       },
       {
         type: "steps",
-        title: { fr: "Chauffer (2 jours)", en: "Warm up (2 days)" },
+        title: { fr: "Chauffer son compte (2 jours)", en: "Warm up the account (2 days)" },
         items: [
-          step("Cherche debloat, rétention d’eau, glow-up, looksmaxxing.", "Search debloat, water retention, glow-up, looksmaxxing."),
-          step("Like + commente 15 min. Scrolle le FYP plusieurs fois par jour.", "Like + comment 15 min. Scroll the FYP several times a day."),
-          step("Prépare tes carousels en brouillons. Ne poste pas 5 fois le jour 1.", "Stage carousels as drafts. Don't post 5 times on day 1."),
-        ],
-      },
-      {
-        type: "steps",
-        title: { fr: "Volume", en: "Volume" },
-        items: [
-          step("Semaine 1 : 1 post / jour MAX.", "Week 1: 1 post / day MAX."),
-          step("Semaine 2 : 2 posts / jour.", "Week 2: 2 posts / day."),
-          step("Ensuite : {posts}. Jamais 10 posts le dimanche.", "Then: {posts}. Never 10 posts on Sunday."),
+          step(
+            "Taper « debloat face », « glow up », « looksmax » dans la barre de recherche.",
+            "Search “debloat face”, “glow up”, “looksmax” in the search bar."
+          ),
+          step("Regarder, liker et commenter pendant 15 min.", "Watch, like, and comment for 15 min."),
+          step("Mettre des vidéos dans les brouillons.", "Put videos in drafts."),
+          step("Scroller dans les Pour toi plusieurs fois par jour pendant 2 jours.", "Scroll For You several times a day for 2 days."),
+          step("Poster 1 fois par jour MAX pendant 7 jours.", "Post 1 time a day MAX for 7 days."),
+          step("Poster 2 fois par jour la deuxième semaine.", "Post 2 times a day the second week."),
+          step("Poster un maximum.", "Post as much as possible."),
         ],
       },
     ],
@@ -377,36 +313,49 @@ export const METHOD_MODULES = [
   {
     id: "original",
     index: 4,
-    title: { fr: "Slideshow originaux", en: "Original slideshows" },
-    nav: { fr: "4. Original", en: "4. Original" },
-    kicker: { fr: "Anti-shadowban photo", en: "Photo anti-shadowban" },
+    title: { fr: "Shadowban", en: "Shadowban" },
+    nav: { fr: "Shadowban", en: "Shadowban" },
     blocks: [
       {
-        type: "lead",
-        fr: "TikTok Photo Mode : jusqu’à 35 photos. Formats 01–03 en 1080×1920. Formats 04–05 en 1080×1440 (3:4). Le texte est déjà sur l’image — tu n’ajoutes pas de caption overlay dans l’éditeur.",
-        en: "TikTok Photo Mode: up to 35 photos. Formats 01–03 at 1080×1920. Formats 04–05 at 1080×1440 (3:4). Text is already on the image — don't add caption overlays in the editor.",
+        type: "section",
+        fr: "Si tu as ce message quand tu cliques sur « Plus de données », ta vidéo est shadowban.",
+        en: "If you see this message when you tap “More data”, your video is shadowbanned.",
       },
       {
-        type: "callout",
-        fr: "Règle : même structure, visuels différents. Republier le pack Manny identique = shadowban.",
-        en: "Rule: same structure, different visuals. Reuploading the identical Manny pack = shadowban.",
+        type: "shot",
+        variant: "banner",
+        hideCaption: true,
+        src: `${ASSET}/shadowban-fyp.png`,
+        fr: "Cette vidéo n’est pas éligible à la recommandation dans le fil Pour toi.",
+        en: "This video isn’t eligible for recommendation in the For You feed.",
+      },
+      {
+        type: "section",
+        fr: "Mais parfois tu n’as pas de message. Si tu fais moins de 50 vues, tu es shadowban.",
+        en: "Sometimes there’s no message. If you get under 50 views, you’re shadowbanned.",
       },
       {
         type: "steps",
-        title: { fr: "Change à chaque post", en: "Change on every post" },
+        title: { fr: "Les raisons d’un shadowban ?", en: "Why does a shadowban happen?" },
         items: [
-          step("Photos (autres visages, autres aliments, autre crop).", "Photos (other faces, other foods, other crop)."),
-          step("Texte du hook (même promesse, autre formulation).", "Hook text (same promise, different wording)."),
-          step("Ordre des slides du protocole, filtre, légère rotation.", "Protocol slide order, filter, slight rotation."),
+          step("Tu n’as pas (assez) chauffé ton compte.", "You didn’t warm up the account (enough)."),
+          step("Tu postes des slideshows full IA.", "You post full-AI slideshows."),
+          step("Tu as posté beaucoup de slideshows en peu de temps.", "You posted a lot of slideshows in a short time."),
         ],
       },
       {
-        type: "dont",
-        title: { fr: "Signaux de shadowban", en: "Shadowban signals" },
+        type: "steps",
+        title: { fr: "Comment ne pas être shadowban", en: "How not to get shadowbanned" },
         items: [
-          step("Moins de 50 vues et le bouton « Plus de données » est grisé.", "Under 50 views and the “More data” button is greyed out."),
-          step("Compte pas assez chauffé, ou trop de posts en trop peu de temps.", "Account not warmed up enough, or too many posts in too little time."),
-          step("TikTok reconnaît l’image — tu as recollé le même JPG.", "TikTok recognizes the image — you reused the same JPG."),
+          step("Si tu es shadowban, ARRÊTE DE POSTER pendant 2 jours.", "If you’re shadowbanned, STOP POSTING for 2 days."),
+          step("Scroll et like 15 min / jour.", "Scroll and like 15 min / day."),
+          step("Va sur TikTok Shop.", "Go to TikTok Shop."),
+          step("Ajoute des articles au panier.", "Add items to the cart."),
+          step("Mets toutes tes infos jusqu’au paiement.", "Fill in all your info up to checkout."),
+          step("Relance l’app TikTok.", "Relaunch the TikTok app."),
+          step("Continue de scroller.", "Keep scrolling."),
+          step("Remplis toutes les vérifications d’identité (numéro, email…).", "Complete every identity check (phone, email…)."),
+          step("Poste 1 slideshow au bout de 3 jours.", "Post 1 slideshow after 3 days."),
         ],
       },
     ],
@@ -415,7 +364,7 @@ export const METHOD_MODULES = [
     id: "viral",
     index: 5,
     title: { fr: "Slideshow viraux", en: "Viral slideshows" },
-    nav: { fr: "5. Viral", en: "5. Viral" },
+    nav: { fr: "Viral", en: "Viral" },
     kicker: { fr: "Hook, son, recycle", en: "Hook, sound, recycle" },
     blocks: [
       {
@@ -430,8 +379,8 @@ export const METHOD_MODULES = [
       },
       {
         type: "callout",
-        fr: "Dès qu’un post passe 40k, tu le dupliques : même hook, nouvel angle, nouvelles photos. Les primes sont plafonnées à $300 / vidéo — le volume de hits compte.",
-        en: "When a post clears 40k, duplicate it: same hook, new angle, new photos. Bonuses cap at $300 / video — hit volume matters.",
+        fr: "Dès qu’un post passe 40k, tu le dupliques : même hook, nouvel angle, nouvelles photos. Toutes les vidéos du compte comptent pour les primes — le volume de hits accélère le palier.",
+        en: "When a post clears 40k, duplicate it: same hook, new angle, new photos. Every video on the account counts toward bonuses — more hits, faster tiers.",
       },
       {
         type: "steps",
@@ -448,7 +397,7 @@ export const METHOD_MODULES = [
     id: "poster",
     index: 6,
     title: { fr: "Poster un carousel", en: "Post a carousel" },
-    nav: { fr: "6. Poster", en: "6. Post" },
+    nav: { fr: "Poster", en: "Post" },
     kicker: { fr: "TikTok Photo Mode", en: "TikTok Photo Mode" },
     blocks: [
       {
@@ -476,165 +425,40 @@ export const METHOD_MODULES = [
   {
     id: "convertir",
     index: 8,
-    title: { fr: "Convertir vers l’app", en: "Convert to the app" },
-    nav: { fr: "7. Convertir", en: "7. Convert" },
-    kicker: { fr: "Process gagne à l’abo", en: "Process earns on the sub" },
+    title: { fr: "Techniques", en: "Techniques" },
+    nav: { fr: "Techniques", en: "Techniques" },
     blocks: [
       {
-        type: "lead",
-        fr: "Blow Up paie les vues. Process paie l’abonnement. Un carousel sans lien est un post mort.",
-        en: "Blow Up pays for views. Process pays for the subscription. A carousel with no link is a dead post.",
-      },
-      {
-        type: "steps",
-        title: { fr: "Les 3 points de tracking", en: "The 3 tracking points" },
+        type: "bullets",
         items: [
-          step("Bio = {link} (toujours).", "Bio = {link} (always)."),
-          step("Commentaire épinglé = même lien + code {code}.", "Pinned comment = same link + code {code}."),
-          step("Cookie 30 jours. Chaque clic ou usage du code reset la fenêtre.", "30-day cookie. Each click or code use resets the window."),
-        ],
-      },
-      {
-        type: "steps",
-        title: { fr: "Ce que tu dis", en: "What you say" },
-        items: [
-          step("Caption : valeur d’abord, puis « Process Debloat » sur App Store.", "Caption: value first, then “Process Debloat” on the App Store."),
-          step("Réponds aux « je trouve pas l’app » avec une capture App Store (tape Process).", "Reply to “I can’t find the app” with an App Store screenshot (search Process)."),
-          step("Bio = {link}. Commentaire épinglé = même lien + code {code}.", "Bio = {link}. Pinned comment = same link + code {code}."),
-        ],
-      },
-      {
-        type: "dont",
-        title: { fr: "Ce que tu ne dis pas", en: "What you don't say" },
-        items: [
-          step("Pas de pub payante. Pas de “guérit l’œdème”.", "No paid ads. No “cures edema”."),
-          step("Pas de page de vente externe. Uniquement {link}.", "No external sales page. Only {link}."),
-        ],
-      },
-      {
-        type: "links",
-        items: [
-          {
-            id: "join",
-            hrefKey: "linkUrl",
-            fr: "Ton lien — {code}",
-            en: "Your link — {code}",
-          },
-          {
-            id: "manny",
-            href: MANNY_TIKTOK_URL,
-            fr: `${MANNY_TIKTOK_HANDLE} — référence`,
-            en: `${MANNY_TIKTOK_HANDLE} — reference`,
-          },
-          {
-            id: "leks",
-            href: AFFILIATE_X_DM_URL,
-            fr: "DM leks sur X",
-            en: "DM leks on X",
-          },
-        ],
-      },
-      {
-        type: "shot",
-        src: `${ASSET}/manny-foods-live.jpg`,
-        fr: "Exemple live @mannyprcs — format 03, caption App Store, réponses en commentaire.",
-        en: "Live @mannyprcs example — format 03, App Store caption, replies in comments.",
-      },
-      {
-        type: "callout",
-        fr: "Overview : clics, leads, ventes. Si les vues montent et les leads restent à 0, le pin n’est pas là.",
-        en: "Overview: clicks, leads, sales. If views climb and leads stay at 0, the pin isn't there.",
-      },
-      { type: "cta-links" },
-    ],
-  },
-  {
-    id: "primes",
-    index: 9,
-    title: { fr: "Primes et exemples", en: "Bonuses and examples" },
-    nav: { fr: "8. Primes", en: "8. Bonuses" },
-    kicker: { fr: "En plus des 40 %", en: "On top of 40%" },
-    blocks: [
-      {
-        type: "lead",
-        fr: `Les paliers se cumulent sur une même vidéo, jusqu’à $${VIEW_BONUS_MAX_PER_VIDEO_USD}. Review manuelle : tu envoies le lien TikTok à leks.`,
-        en: `Tiers stack on the same video, up to $${VIEW_BONUS_MAX_PER_VIDEO_USD}. Manual review: send the TikTok link to leks.`,
-      },
-      { type: "bonus" },
-      {
-        type: "steps",
-        title: { fr: "Comment claim", en: "How to claim" },
-        items: [
-          step("Le post doit parler de Process (scan, protocole, app).", "The post has to be about Process (scan, protocol, app)."),
-          step("Éligibilité track primes : 500k+ vues / 28 jours et 5+ vidéos Process.", "Bonus-track eligibility: 500k+ views / 28 days and 5+ Process videos."),
-          step("DM leks sur X avec l’URL TikTok dès qu’un palier est hit (40k, 100k, 500k, 1M).", "DM leks on X with the TikTok URL as soon as a tier is hit (40k, 100k, 500k, 1M)."),
-        ],
-      },
-      {
-        type: "links",
-        items: [
-          {
-            id: "leks",
-            href: AFFILIATE_X_DM_URL,
-            fr: "Envoyer un palier à leks",
-            en: "Send a tier to leks",
-          },
-          {
-            id: "manny",
-            href: MANNY_TIKTOK_URL,
-            fr: `Exemples live · ${MANNY_TIKTOK_HANDLE}`,
-            en: `Live examples · ${MANNY_TIKTOK_HANDLE}`,
-          },
-        ],
-      },
-      {
-        type: "examples",
-        items: [
-          {
-            format: "01",
-            hook: { fr: "visage gonflé ? fais ça 72h", en: "puffy face? do this for 72h" },
-            why: {
-              fr: "Before/after + scan dans la grille. Le viewer veut le protocole → lien bio.",
-              en: "Before/after + scan in the grid. The viewer wants the protocol → bio link.",
-            },
-            src: `${ASSET}/format-01/hook.jpg`,
-          },
-          {
-            format: "02",
-            hook: { fr: "Comment glow up (méthode Damson)", en: "How to glow up (Damson method)" },
-            why: {
-              fr: "Visage connu + tips concrets. La dernière slide = Process.",
-              en: "Known face + concrete tips. Last slide = Process.",
-            },
-            src: `${ASSET}/format-02/hook.jpg`,
-          },
-          {
-            format: "03",
-            hook: { fr: "Tous les aliments full debloat sont sur l'app", en: "Every full debloat food is in the app" },
-            why: {
-              fr: "Caption App Store + réponses en commentaire. C’est le post @mannyprcs à copier.",
-              en: "App Store caption + replies in comments. This is the @mannyprcs post to copy.",
-            },
-            src: `${ASSET}/manny-foods-live.jpg`,
-          },
-          {
-            format: "04",
-            hook: { fr: "Comment être mieux dès aujourd’hui", en: "How to look better starting today" },
-            why: {
-              fr: "Cause → effet. Debloat gagne contre l’eau de coco.",
-              en: "Cause → effect. Debloat wins against coconut water.",
-            },
-            src: `${ASSET}/format-04/hook.jpg`,
-          },
-          {
-            format: "05",
-            hook: { fr: "Debloat > eau de coco", en: "Debloat > coconut water" },
-            why: {
-              fr: "Comparaison. Le gagnant visuel = screen Process.",
-              en: "Comparison. Visual winner = Process screen.",
-            },
-            src: `${ASSET}/format-05/debloat.jpg`,
-          },
+          step(
+            "Ne jamais télécharger ses posts pour les reposter. TikTok reconnaît le fichier → shadowban.",
+            "Never download your posts to repost them. TikTok recognizes the file → shadowban."
+          ),
+          step(
+            "Varier entre 4 formats différents minimum.",
+            "Rotate across 4 different formats minimum."
+          ),
+          step(
+            "Les sons sont très importants : démarre toujours un TikTok à partir d’un son qui a déjà percé sur un autre TikTok.",
+            "Sounds matter a lot: always start a TikTok from a sound that already blew up on another TikTok."
+          ),
+          step(
+            "Le contenu marqué « généré par IA » est moins mis en avant. Passe en anti-IA : crée un script avec Claude.",
+            "Content labeled “AI generated” gets less push. Go anti-AI: write a script with Claude."
+          ),
+          step(
+            "5 min après le post, commente avec un autre compte « C’est quoi l’app ? » — et réponds avec un screen App Store.",
+            "5 min after posting, comment from another account “what’s the app?” — and reply with an App Store screenshot."
+          ),
+          step(
+            "Mets un sondage en commentaire : « Tu vas télécharger Process ? » — OUI et OUI.",
+            "Put a poll in the comments: “Are you going to download Process?” — YES and YES."
+          ),
+          step(
+            "8 comptes MAXIMUM par téléphone. Au-dessus de 5 comptes, poste en 5G. 5 comptes sur le même Wi-Fi se font shadowban facilement.",
+            "8 accounts MAXIMUM per phone. Above 5 accounts, post on 5G. 5 accounts on the same Wi-Fi get shadowbanned easily."
+          ),
         ],
       },
     ],
@@ -642,7 +466,8 @@ export const METHOD_MODULES = [
 ];
 
 export function moduleByQuery(raw) {
-  const value = String(raw || "").trim();
+  const incoming = String(raw || "").trim().toLowerCase();
+  const value = METHOD_QUERY_ALIASES[incoming] || incoming;
   if (!value) return METHOD_MODULES[0];
   return (
     METHOD_MODULES.find((mod) => String(mod.index) === value || mod.id === value) ||

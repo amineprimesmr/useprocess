@@ -128,7 +128,7 @@ struct FaceScanCaptureScreen: View {
     }
 
     private var portraitFieldOfView: CGFloat {
-        (isScanDayHubCamera || usesOnboardingFaceOval) ? 24 : 32
+        (isScanDayHubCamera || usesOnboardingFaceOval) ? 28 : 32
     }
 
     private var portraitLockProfile: ProcessScanPortraitLockProfile {
@@ -499,9 +499,9 @@ struct FaceScanCaptureScreen: View {
             let ovalWidth: CGFloat = {
                 guard usesOnboardingFaceOval else { return squareDiameter }
                 if AdaptiveScreenLayout.isRegularWidth(horizontalSizeClass) {
-                    return min(280, geometry.size.width - 160)
+                    return min(312, geometry.size.width - 120)
                 }
-                return min(geometry.size.width - 128, 248)
+                return min(geometry.size.width - 88, 276)
             }()
             let viewportSize = usesOnboardingFaceOval
                 ? CGSize(width: ovalWidth, height: ovalWidth * FaceScanViewportMetrics.onboardingOvalAspect)

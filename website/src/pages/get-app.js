@@ -7,6 +7,7 @@ export default {
     initSiteLanguage();
     const el = document.getElementById("landing-legal-content");
     if (el) el.innerHTML = getGetAppPageHtml();
+    document.documentElement.classList.remove("app-booting");
     await mountGetAppPage();
   },
 };

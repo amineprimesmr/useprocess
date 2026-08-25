@@ -6,10 +6,13 @@ import { FUNCTIONS_BASE } from "../features/firebase-client.js";
 export const SUPPORT_EMAIL = "support@useprocess.xyz";
 export const AFFILIATE_X_HANDLE = "leksoudblt";
 export const AFFILIATE_X_DM_URL = `https://x.com/messages/compose?screen_name=${AFFILIATE_X_HANDLE}`;
+export const SUPPORT_WHATSAPP_E164 = "33782637720";
+export const SUPPORT_WHATSAPP_DISPLAY = "07 82 63 77 20";
+export const SUPPORT_WHATSAPP_URL = `https://wa.me/${SUPPORT_WHATSAPP_E164}`;
 export const COMMISSION_PERCENT = 40;
 export const HOLD_DAYS = 30;
 
-/** Cash view bonuses on top of lifetime commission — cumulative per video, capped. */
+/** Cash view bonuses on top of lifetime 40% commission — account-wide views, capped. */
 export const VIEW_BONUS_TIERS = [
   { amountUsd: 20, views: 40_000 },
   { amountUsd: 30, views: 100_000 },
@@ -22,6 +25,12 @@ export const VIEW_BONUS_ELIGIBILITY = {
   minVideos: 5,
   windowDays: 28,
 };
+
+/** Lifetime 40% commission (EUR) required before cash view bonuses unlock. */
+export const VIEW_BONUS_UNLOCK_EUR = 200;
+
+/** Extra lifetime commission (EUR) required before the flagship prize (iPhone). */
+export const VIEW_BONUS_FLAGSHIP_UNLOCK_EUR = 1000;
 
 export function formatViewCount(views) {
   const n = Number(views) || 0;
@@ -49,16 +58,17 @@ export function viewBonusEligibilityLabel() {
   const views = formatViewCount(VIEW_BONUS_ELIGIBILITY.minViews28d);
   const days = VIEW_BONUS_ELIGIBILITY.windowDays;
   const videos = VIEW_BONUS_ELIGIBILITY.minVideos;
+  const unlock = VIEW_BONUS_UNLOCK_EUR;
   return appCopy(
-    `${views}+ vues / ${days}j • ${videos}+ vidéos`,
-    `${views}+ views / ${days}d • ${videos}+ videos`
+    `${views}+ vues / ${days}j • ${videos}+ vidéos • ${unlock} € de commission`,
+    `${views}+ views / ${days}d • ${videos}+ videos • ${unlock} EUR in commission`
   );
 }
 
 export function viewBonusCapLabel() {
   return appCopy(
-    `$${VIEW_BONUS_MAX_PER_VIDEO_USD} max par vidéo`,
-    `$${VIEW_BONUS_MAX_PER_VIDEO_USD} max per video`
+    `$${VIEW_BONUS_MAX_PER_VIDEO_USD} max de primes vues`,
+    `$${VIEW_BONUS_MAX_PER_VIDEO_USD} max in view bonuses`
   );
 }
 
@@ -169,6 +179,15 @@ export function formatApplyError(error) {
       "Invalid code — at least 3 characters (letters, numbers, or hyphen)."
     );
   }
+  if (message === "INVALID_PHONE") {
+    return appCopy(
+      "Numéro de téléphone invalide.",
+      "Invalid phone number."
+    );
+  }
+  if (message === "INVALID_TEXT") {
+    return appCopy("Indique un prénom.", "Enter a first name.");
+  }
   return message || appCopy("Échec de la candidature.", "Application failed.");
 }
 
@@ -259,17 +278,34 @@ export const AFFILIATE_ROUTE_ALIASES = {
   methodes: "methode",
   methods: "methode",
   automation: "automatisation",
-  usa: "us",
-  "poster-us": "us",
-  "tiktok-us": "us",
+  clipper: "clippers",
+  clippers: "clippers",
+  ranking: "clippers",
+  podium: "clippers",
+  leaderboard: "clippers",
+  classement: "clippers",
+  formats: "tiktoks",
+  format: "tiktoks",
+  library: "tiktoks",
+  tiktok: "tiktoks",
+  useful: "utiles",
+  utiles: "utiles",
+  questions: "utiles",
+  shadowban: "utiles",
+  aide: "utiles",
+  help: "utiles",
+  whatsapp: "utiles",
 };
 
 export const AFFILIATE_DASHBOARD_ROUTES = new Set([
   "overview",
   "formats",
   "methode",
+  "tiktoks",
+  "clippers",
   "automatisation",
   "us",
+  "utiles",
   "payouts",
   "settings",
 ]);
@@ -278,8 +314,8 @@ export function canonicalizeAffiliateRoute(route, query = {}) {
   const raw = String(route || "").trim();
   const aliased = AFFILIATE_ROUTE_ALIASES[raw] || raw;
   const moduleKey = String(query.m || "").trim();
-  if (aliased === "methode" && (moduleKey === "7" || moduleKey === "formats")) {
-    return "formats";
+  if (aliased === "methode" && (moduleKey === "7" || moduleKey === "formats" || moduleKey === "tiktoks")) {
+    return "tiktoks";
   }
   return aliased;
 }
@@ -381,6 +417,13 @@ export function formatShortDate(ms) {
   } catch {
     return new Date(ms).toLocaleDateString();
   }
+}
+
+export function formatPercent(part, total) {
+  const n = Number(part) || 0;
+  const d = Number(total) || 0;
+  if (!d) return "—";
+  return `${Math.round((n / d) * 100)}%`;
 }
 
 export function buildSocialMailBody(displayName, handle) {

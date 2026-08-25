@@ -6,8 +6,10 @@ import {
   COMMISSION_PERCENT,
   HOLD_DAYS,
   SUPPORT_EMAIL,
+  VIEW_BONUS_FLAGSHIP_UNLOCK_EUR,
   VIEW_BONUS_MAX_PER_VIDEO_USD,
   VIEW_BONUS_TIERS,
+  VIEW_BONUS_UNLOCK_EUR,
   formatViewCount,
   viewBonusUsdForViews,
 } from "./affiliate-utils.js";
@@ -195,8 +197,8 @@ function RevenueSimulator() {
       <p className="af-ld-sim__title">{appCopy("Simulateur de revenu", "Revenue simulator")}</p>
       <p className="af-ld-sim__lead">
         {appCopy(
-          `${COMMISSION_PERCENT} % à vie + primes jusqu'à $${VIEW_BONUS_MAX_PER_VIDEO_USD} / vidéo`,
-          `${COMMISSION_PERCENT}% for life + bonuses up to $${VIEW_BONUS_MAX_PER_VIDEO_USD} / video`
+          `${COMMISSION_PERCENT} % du net (après Apple / Google) + primes jusqu'à $${VIEW_BONUS_MAX_PER_VIDEO_USD}`,
+          `${COMMISSION_PERCENT}% of net (after Apple / Google) + bonuses up to $${VIEW_BONUS_MAX_PER_VIDEO_USD}`
         )}
       </p>
 
@@ -216,7 +218,7 @@ function RevenueSimulator() {
 
       <SimSlider
         labelId={viewsId}
-        label={appCopy("Vues par vidéo", "Views per video")}
+        label={appCopy("Vues du compte", "Account views")}
         min={0}
         max={SIM_VIEW_STOPS.length - 1}
         step={1}
@@ -225,7 +227,7 @@ function RevenueSimulator() {
         bubble={viewsLabel}
         startBound="0"
         endBound={formatViewCount(SIM_VIEW_STOPS[SIM_VIEW_STOPS.length - 1])}
-        ariaLabel={appCopy("Vues par vidéo", "Views per video")}
+        ariaLabel={appCopy("Vues du compte", "Account views")}
         ariaValuetext={`${viewsLabel} ${appCopy("vues", "views")}`}
       />
 
@@ -265,7 +267,7 @@ function RevenueSimulator() {
           <span className="af-ld-sim__kicker">{appCopy("Primes", "Bonuses")}</span>
           <strong>
             +${bonus}
-            <span className="af-ld-sim__period">{appCopy("/vidéo", "/video")}</span>
+            <span className="af-ld-sim__period">{appCopy("sur le compte", "on the account")}</span>
           </strong>
           <span className="af-ld-sim__hint">
             {views === 0
@@ -295,8 +297,8 @@ function StepsSection() {
         <h2 id="af-ld-how-heading">{appCopy("Devenez affilié en 3 étapes", "Become an affiliate in 3 steps")}</h2>
         <p>
           {appCopy(
-            `Configuré en moins de 2 minutes. Partagez votre lien. Gagnez ${COMMISSION_PERCENT}% sur chaque abonnement généré, chaque mois, pour toujours.`,
-            `Set up in under 2 minutes. Share your link. Earn ${COMMISSION_PERCENT}% on every subscription you generate, every month, forever.`
+            `Configuré en moins de 2 minutes. Partagez votre lien. Gagnez ${COMMISSION_PERCENT} % du net (après Apple / Google) sur chaque abonnement généré, chaque mois, pour toujours.`,
+            `Set up in under 2 minutes. Share your link. Earn ${COMMISSION_PERCENT}% of net (after Apple / Google) on every subscription you generate, every month, forever.`
           )}
         </p>
       </header>
@@ -375,8 +377,8 @@ function StepsSection() {
               <h3>{appCopy("Gagnez chaque mois", "Earn every month")}</h3>
               <p>
                 {appCopy(
-                  `Recevez ${COMMISSION_PERCENT}% de chaque abonnement généré, tant que votre filleul reste actif.`,
-                  `Receive ${COMMISSION_PERCENT}% of every subscription generated, as long as your referral stays active.`
+                  `Recevez ${COMMISSION_PERCENT} % du net (après Apple / Google) sur chaque abonnement généré, tant que votre filleul reste actif.`,
+                  `Receive ${COMMISSION_PERCENT}% of net (after Apple / Google) on every subscription generated, as long as your referral stays active.`
                 )}
               </p>
             </div>
@@ -394,14 +396,14 @@ function PrimesSection() {
         <BracketKicker>{appCopy("PRIMES", "BONUSES")}</BracketKicker>
         <h2 id="af-ld-primes-heading">
           {appCopy(
-            `Jusqu'à $${VIEW_BONUS_MAX_PER_VIDEO_USD} par vidéo`,
-            `Up to $${VIEW_BONUS_MAX_PER_VIDEO_USD} per video`
+            `Jusqu'à $${VIEW_BONUS_MAX_PER_VIDEO_USD} de primes vues`,
+            `Up to $${VIEW_BONUS_MAX_PER_VIDEO_USD} in view bonuses`
           )}
         </h2>
         <p>
           {appCopy(
-            `En plus des ${COMMISSION_PERCENT} % à vie. Les paliers se cumulent sur une même vidéo, jusqu'au plafond.`,
-            `On top of ${COMMISSION_PERCENT}% for life. Tiers stack on the same video, up to the cap.`
+            `En plus des ${COMMISSION_PERCENT} % du net. Toutes les vidéos du compte comptent, donc ça avance plus vite. Les primes cash se débloquent à ${VIEW_BONUS_UNLOCK_EUR} € de commission déjà générée.`,
+            `On top of ${COMMISSION_PERCENT}% of net. Every video on the account counts, so it stacks faster. Cash bonuses unlock at ${VIEW_BONUS_UNLOCK_EUR} EUR of commission already earned.`
           )}
         </p>
       </header>
@@ -417,6 +419,22 @@ function FaqSection() {
   const baseId = useId();
   const [openId, setOpenId] = useState(null);
   const items = [
+    {
+      id: "commission",
+      q: appCopy(`Les ${COMMISSION_PERCENT} % c'est sur quoi ?`, `What is the ${COMMISSION_PERCENT}% based on?`),
+      a: appCopy(
+        `Sur le net, après les frais Apple / Google. Tu gagnes ${COMMISSION_PERCENT} % de ce qui reste, à vie, tant que l'abonnement est actif.`,
+        `On net, after Apple / Google fees. You earn ${COMMISSION_PERCENT}% of what's left, for life, as long as the subscription stays active.`
+      ),
+    },
+    {
+      id: "primes",
+      q: appCopy("Comment marchent les primes vues ?", "How do view bonuses work?"),
+      a: appCopy(
+        `Toutes les vidéos du compte comptent, donc ça avance plus vite. Les primes cash se débloquent à ${VIEW_BONUS_UNLOCK_EUR} € de commission déjà générée. L'iPhone à ${VIEW_BONUS_FLAGSHIP_UNLOCK_EUR} €. C'est en plus des ${COMMISSION_PERCENT} % du net, pas à la place.`,
+        `Every video on the account counts, so it stacks faster. Cash bonuses unlock at ${VIEW_BONUS_UNLOCK_EUR} EUR of commission already earned. The iPhone at ${VIEW_BONUS_FLAGSHIP_UNLOCK_EUR} EUR. That's on top of ${COMMISSION_PERCENT}% of net, not instead of it.`
+      ),
+    },
     {
       id: "payout",
       q: appCopy("A quelle fréquence les paiements sont effectués ?", "How often are payouts made?"),
@@ -590,14 +608,14 @@ export function AffiliateLanding({ onApply, onLogin, loggedIn = false, onWorkspa
           <HeroBadge />
           <h1 id="af-ld-hero-title" className="af-ld-hero-title">
             {appCopy(
-              `Gagnez ${COMMISSION_PERCENT}% à vie sur chaque abonnement généré`,
-              `Earn ${COMMISSION_PERCENT}% for life on every subscription you generate`
+              `Gagnez ${COMMISSION_PERCENT} % du net à vie sur chaque abonnement généré`,
+              `Earn ${COMMISSION_PERCENT}% of net for life on every subscription you generate`
             )}
           </h1>
           <p className="af-ld-hero-lead">
             {appCopy(
-              "Un lien et un code de réduction. Sans limites. Revenus mensuels automatisés.",
-              "A link and a discount code. No limits. Automated monthly income."
+              `Un lien et un code de réduction. ${COMMISSION_PERCENT} % du net, après Apple / Google. Sans limites.`,
+              `A link and a discount code. ${COMMISSION_PERCENT}% of net, after Apple / Google. No limits.`
             )}
           </p>
           <HeroCta onApply={onApply} />

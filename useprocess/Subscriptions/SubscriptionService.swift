@@ -132,6 +132,36 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
     #endif
 
+    func activateAffiliateLifetimePass() {
+        applyAffiliateLifetimePassIfNeeded()
+        if subscriptionStatus.isActive {
+            markSubscriptionStatusResolvedAndFlushRetention()
+        }
+    }
+
+    private func applyAffiliateLifetimePassIfNeeded() {
+        guard ProcessAffiliateLifetimePass.isUnlocked else { return }
+        guard !subscriptionStatus.isActive else { return }
+        subscriptionStatus = .subscribed
+        isInFreeTrial = false
+        trialExpirationDate = nil
+        activeProductIdentifier = ProcessAffiliateLifetimePass.productIdentifier
+        ProcessMarketingNotificationService.shared.cancelAll()
+        AppLaunchRouter.shared.clearSpinPresentation()
+        Task { @MainActor in
+            ProcessHomeScreenQuickActions.syncForCurrentUser()
+        }
+    }
+
+    private func applyLocalPremiumOverridesIfNeeded() {
+        applyAffiliateLifetimePassIfNeeded()
+        #if DEBUG
+        if !subscriptionStatus.isActive {
+            applyPersistedDeveloperPremiumAccessIfNeeded()
+        }
+        #endif
+    }
+
     private override init() {
         super.init()
         referralTrialCatalogObserver = NotificationCenter.default.addObserver(
@@ -143,9 +173,7 @@ final class SubscriptionService: NSObject, ObservableObject {
                 await self?.loadSubscriptions()
             }
         }
-        #if DEBUG
-        applyPersistedDeveloperPremiumAccessIfNeeded()
-        #endif
+        applyLocalPremiumOverridesIfNeeded()
     }
 
     // MARK: - Setup
@@ -190,6 +218,10 @@ final class SubscriptionService: NSObject, ObservableObject {
     /// Attributs RevenueCat pour savoir d’où viennent les ventes (referral / ASA / UTM).
     func syncAcquisitionAttributesIfPossible() async {
         guard isConfigured else { return }
+        Purchases.shared.attribution.collectDeviceIdentifiers()
+        if let afid = ProcessAppsFlyer.shared.appsFlyerUID {
+            Purchases.shared.attribution.setAppsflyerID(afid)
+        }
         let attrs = ProcessAcquisitionAttribution.revenueCatAttributes()
         guard !attrs.isEmpty else { return }
         Purchases.shared.attribution.setAttributes(attrs)
@@ -267,14 +299,14 @@ final class SubscriptionService: NSObject, ObservableObject {
     private func fallbackPrice(forProductID id: String) -> String {
         switch id {
         case SubscriptionConfiguration.weekly899ProductID:
-            return PaywallPricingExperiment.Variant.shipped.fallbackShortPrice
+            return PaywallPricingExperiment.shared.activeVariant.fallbackShortPrice
         case SubscriptionConfiguration.monthly999ProductID, SubscriptionConfiguration.monthlyProductID:
-            return PaywallPricingExperiment.Variant.shipped.fallbackShortPrice
+            return PaywallPricingExperiment.shared.activeVariant.fallbackShortPrice
         case SubscriptionConfiguration.annual3499ProductID,
              SubscriptionConfiguration.annual3499TrialProductID:
-            return PaywallPricingExperiment.Variant.shipped.fallbackAnnualPrice
+            return PaywallPricingExperiment.shared.activeVariant.fallbackAnnualPrice
         case SubscriptionConfiguration.annual4999ProductID, SubscriptionConfiguration.annualProductID:
-            return PaywallPricingExperiment.Variant.shipped.fallbackAnnualPrice
+            return PaywallPricingExperiment.shared.activeVariant.fallbackAnnualPrice
         case SubscriptionConfiguration.lifetimeProductID:
             return winbackLifetimeDisplayPrice
         default:
@@ -325,8 +357,7 @@ final class SubscriptionService: NSObject, ObservableObject {
 
         await SubscriptionMarketPolicy.refreshStorefrontCountryCode()
 
-        // Catalogue unique mensuel + annuel (essai parrainage géré à part).
-        PaywallPricingExperiment.shared.resolve()
+        await PaywallPricingExperiment.shared.resolveWhenFlagsReady()
         let variant = pricingVariant
         let shortPlan = variant.shortPlan
         let ids = SubscriptionConfiguration.paywallCatalogProductIDs
@@ -392,10 +423,14 @@ final class SubscriptionService: NSObject, ObservableObject {
             annualPackage = resolvePackage(
                 in: offering,
                 productID: variant.annualProductID,
-                packageID: SubscriptionConfiguration.annualPackageID,
-                fallbackType: .annual
+                packageID: variant.annualProductID == SubscriptionConfiguration.annual3499TrialProductID
+                    ? SubscriptionConfiguration.annualTrialPackageID
+                    : SubscriptionConfiguration.annualPackageID,
+                fallbackType: variant.annualProductID == SubscriptionConfiguration.annual3499TrialProductID
+                    ? nil
+                    : .annual
             )
-            if annualPackage == nil, ProcessReferralTrialEligibility.isUnlocked {
+            if annualPackage == nil, variant.annualProductID == SubscriptionConfiguration.annual3499TrialProductID {
                 annualPackage = resolvePackage(
                     in: offering,
                     productID: SubscriptionConfiguration.annual3499ProductID,
@@ -612,9 +647,7 @@ final class SubscriptionService: NSObject, ObservableObject {
     func checkSubscriptionStatus() async {
         guard isConfigured else {
             await checkStoreKitSubscriptionStatus()
-            #if DEBUG
-            applyPersistedDeveloperPremiumAccessIfNeeded()
-            #endif
+            applyLocalPremiumOverridesIfNeeded()
             markSubscriptionStatusResolvedAndFlushRetention()
             return
         }
@@ -623,9 +656,7 @@ final class SubscriptionService: NSObject, ObservableObject {
             let info = try await Purchases.shared.customerInfo()
             applyCustomerInfo(info)
         } catch {
-            #if DEBUG
-            applyPersistedDeveloperPremiumAccessIfNeeded()
-            #endif
+            applyLocalPremiumOverridesIfNeeded()
             markSubscriptionStatusResolvedAndFlushRetention()
         }
     }
@@ -644,9 +675,7 @@ final class SubscriptionService: NSObject, ObservableObject {
             isInFreeTrial = false
             trialExpirationDate = nil
             ProcessHomeScreenQuickActions.syncForCurrentUser()
-            #if DEBUG
-            applyPersistedDeveloperPremiumAccessIfNeeded()
-            #endif
+            applyLocalPremiumOverridesIfNeeded()
             markSubscriptionStatusResolvedAndFlushRetention()
             return
         }
@@ -678,11 +707,7 @@ final class SubscriptionService: NSObject, ObservableObject {
             trialExpirationDate = nil
         }
 
-        #if DEBUG
-        if !subscriptionStatus.isActive {
-            applyPersistedDeveloperPremiumAccessIfNeeded()
-        }
-        #endif
+        applyLocalPremiumOverridesIfNeeded()
 
         ProcessHomeScreenQuickActions.syncForCurrentUser()
         markSubscriptionStatusResolvedAndFlushRetention()
@@ -693,8 +718,7 @@ final class SubscriptionService: NSObject, ObservableObject {
 
         let groupID = SubscriptionConfiguration.subscriptionGroupID
         let storeEligible = await Product.SubscriptionInfo.isEligibleForIntroOffer(for: groupID)
-        let referralUnlocksTrial = ProcessReferralTrialEligibility.isUnlocked
-        isIntroOfferEligible = storeEligible && referralUnlocksTrial
+        isIntroOfferEligible = storeEligible && SubscriptionConfiguration.supportsFreeTrial(.annual)
         isRetentionTrialOfferActive = false
 
         if let weeklyDisplay {
@@ -704,7 +728,8 @@ final class SubscriptionService: NSObject, ObservableObject {
             self.monthlyDisplay = monthlyDisplay.updatingIntroEligibility(false)
         }
         if var annualDisplay {
-            let trialAllowed = SubscriptionConfiguration.supportsFreeTrial(.annual)
+            let loadedTrialSKU = annualDisplay.productID == SubscriptionConfiguration.annual3499TrialProductID
+            let trialAllowed = SubscriptionConfiguration.supportsFreeTrial(.annual) && loadedTrialSKU
             let eligible = isIntroOfferEligible && trialAllowed
             if eligible, annualDisplay.freeTrialDays == nil,
                let fallbackDays = SubscriptionConfiguration.configuredFallbackTrialDays(for: .annual) {
@@ -722,7 +747,9 @@ final class SubscriptionService: NSObject, ObservableObject {
 
     private func applyRetentionTrialDisplayState() {
         guard var annualDisplay else { return }
-        let eligible = isIntroOfferEligible && SubscriptionConfiguration.supportsFreeTrial(.annual)
+        let eligible = isIntroOfferEligible
+            && SubscriptionConfiguration.supportsFreeTrial(.annual)
+            && annualDisplay.productID == SubscriptionConfiguration.annual3499TrialProductID
         if eligible, annualDisplay.freeTrialDays == nil,
            let fallbackDays = SubscriptionConfiguration.configuredFallbackTrialDays(for: .annual) {
             annualDisplay = annualDisplay.updatingTrial(days: fallbackDays, eligible: true)
@@ -784,7 +811,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         }
 
         let annualTrialDays = SubscriptionConfiguration.configuredFallbackTrialDays(for: .annual)
-        let annualIntroEligible = ProcessReferralTrialEligibility.isUnlocked && annualTrialDays != nil
+        let annualIntroEligible = SubscriptionConfiguration.supportsFreeTrial(.annual) && annualTrialDays != nil
         annualDisplay = .fallback(
             for: .annual,
             freeTrialDays: annualTrialDays,
@@ -852,7 +879,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         in offering: Offering?,
         productID: String,
         packageID: String,
-        fallbackType: PackageType
+        fallbackType: PackageType?
     ) -> Package? {
         guard let offering else { return nil }
 
@@ -860,7 +887,8 @@ final class SubscriptionService: NSObject, ObservableObject {
             return match
         }
 
-        if let typed = offering.package(identifier: packageID) {
+        if let typed = offering.package(identifier: packageID),
+           typed.storeProduct.productIdentifier == productID {
             return typed
         }
 
@@ -1027,14 +1055,24 @@ final class SubscriptionService: NSObject, ObservableObject {
 
     private func configuredTrialDays(from product: StoreProduct, plan: SubscriptionBillingPlan) -> Int? {
         guard SubscriptionConfiguration.supportsFreeTrial(plan) else { return nil }
-        return SubscriptionIntroOfferParser.trialDays(from: product)
-            ?? SubscriptionConfiguration.configuredFallbackTrialDays(for: plan)
+        if let parsed = SubscriptionIntroOfferParser.trialDays(from: product) {
+            return parsed
+        }
+        guard product.productIdentifier == SubscriptionConfiguration.annual3499TrialProductID else {
+            return nil
+        }
+        return SubscriptionConfiguration.configuredFallbackTrialDays(for: plan)
     }
 
     private func trialDays(from product: Product, plan: SubscriptionBillingPlan) -> Int? {
         guard SubscriptionConfiguration.supportsFreeTrial(plan) else { return nil }
-        return SubscriptionIntroOfferParser.trialDays(from: product)
-            ?? SubscriptionConfiguration.configuredFallbackTrialDays(for: plan)
+        if let parsed = SubscriptionIntroOfferParser.trialDays(from: product) {
+            return parsed
+        }
+        guard product.id == SubscriptionConfiguration.annual3499TrialProductID else {
+            return nil
+        }
+        return SubscriptionConfiguration.configuredFallbackTrialDays(for: plan)
     }
 
     private func purchaseWithStoreKit(plan: SubscriptionBillingPlan) async throws {
@@ -1099,9 +1137,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         } else {
             subscriptionStatus = .notSubscribed
             trialExpirationDate = nil
-            #if DEBUG
-            applyPersistedDeveloperPremiumAccessIfNeeded()
-            #endif
+            applyLocalPremiumOverridesIfNeeded()
         }
 
         ProcessHomeScreenQuickActions.syncForCurrentUser()

@@ -1,65 +1,50 @@
-# Paywall — catalogue unique + essai parrainage
+# Paywall — A/B essai annuel 3 jours
 
-L’A/B `paywall-pricing-ab` est **terminé** (PostHog experiment 89144, flag désactivé).
+## En cours : `paywall-annual-trial-ab`
 
-## Offre actuelle
+Experiment : [Paywall annual 3-day trial](https://eu.posthog.com/project/240558/experiments/92662) (id **92662**).
 
-| Plan | Product ID | Prix EUR | Essai |
-|------|------------|----------|-------|
-| Mensuel | `com.useprocess.monthly999` | **9,99 € / mois** | aucun |
-| Annuel | `com.useprocess.annual3499` | **34,99 € / an** | aucun |
-| Annuel + parrainage | `com.useprocess.annual3499trial` | **34,99 € / an** | **3 jours gratuits** (intro Apple) |
+Flag : `paywall-annual-trial-ab` — **ne pas** réutiliser `paywall-pricing-ab`.
 
-Sans code validé (créateur **ou** ami) : le paywall n’affiche **aucun** essai, et l’achat annuel part sur `annual3499`.
+| Bras | SKU annuel | Essai | Prix |
+|------|------------|-------|------|
+| **control** | `com.useprocess.annual3499` | aucun | 9,99 € / mois + 34,99 € / an |
+| **test** | `com.useprocess.annual3499trial` | **3 jours** (intro Apple) | mêmes prix |
 
-Avec code validé : bandeau + CTA « Démarrer mon essai gratuit », achat sur `annual3499trial`.
+Un code parrainage / créateur validé débloque l’essai **dans les deux bras** (override).
 
-Les SKUs A/B (`weekly899`, `annual4999`) restent pour les abonnés déjà dessus.
+Fallback si le flag est down : **control** (comportement actuel). Variante sticky dans `process.paywall_annual_trial_variant`.
 
----
+### Métriques
 
-## App Store Connect (fait 20 août 2026)
+- Primaire : funnel exposure → `purchase_completed` (l’essai gonfle les conversions — juger aussi les cancels).
+- Secondaire : funnel exposure → `purchase_cancelled` (goal decrease).
 
-Groupe **Process Premium** (`21837790`) :
+Pas de propriété `revenue` sur `purchase_completed` aujourd’hui. Ne pas conclure au revenu Apple depuis ce funnel seul.
 
-- Intro 3 jours **retirée** de `annual3499`, `annual4999` et `annual` (legacy).
-- SKU créé : `com.useprocess.annual3499trial` (ASC `6803672506`), **WAITING_FOR_REVIEW**.
-- Prix : **34,99 €** (FRA) / **29,99 $** (USA), égalisé sur 175 territoires.
-- Intro : **3 jours gratuits**, 175 territoires.
-- Localisations `en-US` + `fr-FR`, screenshot de review copié depuis `annual3499`.
+### App
 
----
+- `PaywallPricingExperiment` lit `PostHogSDK.shared.getFeatureFlag("paywall-annual-trial-ab")`.
+- Catalogue RC **`Premium`** inchangé : `$rc_annual` → `annual3499`, `annual_trial` → `annual3499trial`.
+- StoreKit : intro 3 jours uniquement sur `annual3499trial`.
 
-## RevenueCat (fait 20 août 2026)
+### Test local
 
-- Produit importé : `com.useprocess.annual3499trial` (attaché à l’entitlement `premium`).
-- Offering **`Premium`** (current) :
-  - `$rc_monthly` → `com.useprocess.monthly999`
-  - `$rc_annual` → `com.useprocess.annual3499`
-  - `annual_trial` → `com.useprocess.annual3499trial`
-- `Premium_A` / `Premium_B` inchangés (historique A/B).
+Scheme Xcode + `SubscriptionProducts.storekit`.
+
+1. Control, sans code → annuel 34,99, CTA sans essai, achat `annual3499`.
+2. Test, sans code → bandeau « 3 jours offerts », CTA essai, achat `annual3499trial`.
+3. Control **avec** code valide → même essai que le bras test (override parrainage).
+4. Rebuild Xcode / TestFlight — l’experiment est **running** depuis le 24 août 2026. L’app **1.09** (build 33) évalue `paywall-annual-trial-ab`. Le 1.08 en store ne le lit pas.
 
 ---
 
-## PostHog
+## Historique : `paywall-pricing-ab` (terminé)
 
-- Experiment : [Paywall pricing A/B](https://eu.posthog.com/project/240558/experiments/89144) — **stopped** (`stopped_early`).
-- Flag `paywall-pricing-ab` : **inactif**.
-- Events utiles : `referral_annual_trial_unlocked`, `purchase_completed` (`offer=trial|standard`).
+Experiment [89144](https://eu.posthog.com/project/240558/experiments/89144) — **stopped** (`stopped_early`). Flag inactif.
 
----
+Offre figée ensuite : 9,99 € / mois + 34,99 € / an. Essai 3 jours d’abord limité au parrainage, puis testé pour tout le monde via `paywall-annual-trial-ab`.
 
-## Test local
+SKU `com.useprocess.annual3499trial` (ASC `6803672506`) — vérifier qu’il est **Ready to Submit / Approved** avant prod. Créé le 20 août 2026, intro 3 jours, 175 territoires.
 
-Scheme Xcode + `SubscriptionProducts.storekit` (intro 3 jours sur `annual3499trial`).
-
-1. Onboarding **sans** code → paywall mensuel 9,99 / annuel 34,99, CTA sans essai.
-2. Code 5 caractères valide (créateur ou ami) → bandeau « 3 jours offerts », CTA essai, achat `annual3499trial`.
-3. Menu paywall **Code de parrainage** : même déblocage.
-4. Lien `?ref=` / `?code=` : revalidation au paywall.
-
----
-
-## Lifetime winback (`com.useprocess.lifetime`)
-
-Inchangé : prix StoreKit, fallback 19 € FR / $24.99 EN. Pas d’essai gratuit.
+SKUs A/B anciens (`weekly899`, `annual4999`) : abonnés déjà dessus seulement.

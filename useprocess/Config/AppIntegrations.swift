@@ -16,6 +16,7 @@ final class AppIntegrations {
         authReady = firebaseReady && AuthUser.current != nil
         // Analytics avant abonnements.
         ProcessAnalytics.configure()
+        ProcessAppsFlyer.shared.configure()
         ProcessCrispSupport.configure()
         analyticsReady = ProcessAnalytics.isReady
         PaywallPricingExperiment.shared.resolve()

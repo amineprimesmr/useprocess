@@ -53,6 +53,7 @@ export function normalizeOnboardingAnswers(answers) {
 export function emptyOnboardingAnswers() {
   return {
     firstName: "",
+    phone: "",
     postedTiktok: "",
     tiktokHandle: "",
     tiktokHandles: [""],

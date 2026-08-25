@@ -1,11 +1,30 @@
 /** FR / EN / JA / DE / KO / ES / PT-BR — aligné sur ProcessAppLanguage (`process.app.language`). */
-import { catalogs } from "../i18n/catalogs.js";
 import {
   APP_STORE_STOREFRONT,
   SITE_LANGUAGE_CODES,
   SITE_LANGUAGES,
   normalizeSiteLanguage,
 } from "./languages.js";
+
+let catalogs = null;
+let catalogsLoad = null;
+
+function ensureCatalogs() {
+  if (catalogs) return Promise.resolve(catalogs);
+  if (!catalogsLoad) {
+    catalogsLoad = import("../i18n/catalogs.js")
+      .then((mod) => {
+        catalogs = mod.catalogs || null;
+        notifyLanguageChange(getSiteLanguage());
+        return catalogs;
+      })
+      .catch(() => {
+        catalogsLoad = null;
+        return null;
+      });
+  }
+  return catalogsLoad;
+}
 
 export const SITE_LANGUAGE_KEY = "process.app.language";
 export { SITE_LANGUAGES, SITE_LANGUAGE_CODES };
@@ -86,7 +105,10 @@ export function appCopy(fr, en) {
   const lang = getSiteLanguage();
   if (lang === "fr") return fr;
   if (lang === "en") return en;
-  return catalogs[lang]?.[en] || en;
+  const translated = catalogs?.[lang]?.[en];
+  if (translated) return translated;
+  void ensureCatalogs();
+  return en;
 }
 
 export function subscribeSiteLanguage(callback) {
@@ -200,7 +222,9 @@ export function initSiteLanguage() {
       /* ignore */
     }
   }
-  applySiteDocumentLanguage(getSiteLanguage());
+  const lang = getSiteLanguage();
+  if (lang !== "fr" && lang !== "en") void ensureCatalogs();
+  applySiteDocumentLanguage(lang);
 }
 
 export function siteStorefront() {

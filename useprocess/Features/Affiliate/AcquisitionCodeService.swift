@@ -10,6 +10,7 @@ enum AcquisitionCodeService {
     ) async {
         let normalized = ProcessAffiliateLink.normalizeCode(code)
         guard !normalized.isEmpty else { return }
+        guard !ProcessAffiliateLifetimePass.matches(normalized) else { return }
 
         if let resolved = await AffiliateService.shared.resolveCode(normalized) {
             switch resolved.type {

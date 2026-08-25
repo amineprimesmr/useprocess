@@ -59,6 +59,33 @@ enum AffiliateRemoteService {
         )
     }
 
+    static func trackFunnel(event: String, code: String) async {
+        let normalized = ProcessAffiliateLink.normalizeCode(code)
+        guard !normalized.isEmpty else { return }
+
+        let payload: [String: Any] = [
+            "event": event,
+            "code": normalized,
+            "visitorId": AffiliateService.visitorId
+        ]
+        let requiresAuth = Auth.auth().currentUser != nil
+        do {
+            _ = try await post(
+                function: "affiliateTrackFunnel",
+                payload: payload,
+                requiresAuth: requiresAuth
+            )
+        } catch {
+            if requiresAuth {
+                _ = try? await post(
+                    function: "affiliateTrackFunnel",
+                    payload: payload,
+                    requiresAuth: false
+                )
+            }
+        }
+    }
+
     static func apply(displayName: String, code: String?, email: String?) async throws {
         var payload: [String: Any] = ["displayName": displayName]
         if let code, !code.isEmpty { payload["code"] = code }

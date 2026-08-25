@@ -36,6 +36,11 @@ enum ProcessAcquisitionAttribution {
         var lastContent: String?
         var lastTerm: String?
         var lastReferralCode: String?
+        var appsflyerUID: String?
+        var appsflyerStatus: String?
+        var appsflyerMediaSource: String?
+        var appsflyerCampaign: String?
+        var appsflyerAdset: String?
         var updatedAt: Date?
 
         /// Canal principal pour PostHog / RevenueCat (first-touch).
@@ -100,6 +105,7 @@ enum ProcessAcquisitionAttribution {
     static func captureReferralCode(_ raw: String, source: String = "referral", medium: String = "referral") {
         let code = ProcessReferralLink.normalizeCode(raw)
         guard !code.isEmpty else { return }
+        guard !ProcessAffiliateLifetimePass.matches(code) else { return }
         applyTouch(
             Touch(source: source, medium: medium, referralCode: code),
             reason: "referral_code",
@@ -110,6 +116,7 @@ enum ProcessAcquisitionAttribution {
     static func captureAffiliateCode(_ raw: String, source: String = "affiliate", medium: String = "creator") {
         let code = ProcessAffiliateLink.normalizeCode(raw)
         guard !code.isEmpty else { return }
+        guard !ProcessAffiliateLifetimePass.matches(code) else { return }
         applyTouch(
             Touch(source: source, medium: medium, affiliateCode: code),
             reason: "affiliate_code",
@@ -133,6 +140,52 @@ enum ProcessAcquisitionAttribution {
         )
         guard hasSignal(touch) else { return }
         applyTouch(touch, reason: "campaign", allowDowngrade: false)
+    }
+
+    static func captureAppsFlyerConversion(_ info: [AnyHashable: Any]) {
+        var dict: [String: Any] = [:]
+        for (key, value) in info {
+            guard let name = key as? String else { continue }
+            dict[name] = value
+        }
+
+        let mediaSourceRaw = stringValue(dict["media_source"])
+        let campaign = stringValue(dict["campaign"]) ?? stringValue(dict["c"])
+        let adset = stringValue(dict["adset"]) ?? stringValue(dict["af_adset"])
+        let ad = stringValue(dict["ad"]) ?? stringValue(dict["af_ad"])
+        let status = stringValue(dict["af_status"])
+
+        var next = snapshot
+        if let uid = ProcessAppsFlyer.shared.appsFlyerUID {
+            next.appsflyerUID = uid
+        }
+        if let status { next.appsflyerStatus = status }
+        if let mediaSourceRaw { next.appsflyerMediaSource = mediaSourceRaw }
+        if let campaign { next.appsflyerCampaign = campaign }
+        if let adset { next.appsflyerAdset = adset }
+        next.updatedAt = Date()
+        snapshot = next
+
+        let statusLower = status?.lowercased()
+        let isNonOrganic = statusLower == "non-organic"
+            || (mediaSourceRaw != nil && mediaSourceRaw?.lowercased() != "organic")
+        guard isNonOrganic, let media = mediaSourceRaw, !media.isEmpty else {
+            syncToAnalytics(emitResolvedEvent: false)
+            return
+        }
+
+        let normalized = normalizeAppsFlyerMediaSource(media)
+        applyTouch(
+            Touch(
+                source: normalized,
+                medium: "paid",
+                campaign: campaign,
+                content: ad,
+                term: adset
+            ),
+            reason: "appsflyer",
+            allowDowngrade: false
+        )
     }
 
     // MARK: - Analytics / RC payloads
@@ -172,6 +225,11 @@ enum ProcessAcquisitionAttribution {
         if let value = snapshot.asaOrgId { props["asa_org_id"] = value }
         if let value = snapshot.asaCountryOrRegion { props["asa_country"] = value }
         if let value = snapshot.asaConversionType { props["asa_conversion_type"] = value }
+        if let value = snapshot.appsflyerUID { props["appsflyer_id"] = value }
+        if let value = snapshot.appsflyerStatus { props["appsflyer_status"] = value }
+        if let value = snapshot.appsflyerMediaSource { props["appsflyer_media_source"] = value }
+        if let value = snapshot.appsflyerCampaign { props["appsflyer_campaign"] = value }
+        if let value = snapshot.appsflyerAdset { props["appsflyer_adset"] = value }
 
         if includeLastTouch {
             if let value = snapshot.lastSource { props["acquisition_last_source"] = value }
@@ -202,6 +260,12 @@ enum ProcessAcquisitionAttribution {
                 attrs["asa_campaign_id"] = String(id.prefix(40))
             }
         }
+        if let value = snapshot.appsflyerMediaSource, !value.isEmpty {
+            attrs["appsflyer_media_source"] = String(value.prefix(40))
+        }
+        if let value = snapshot.appsflyerCampaign, !value.isEmpty {
+            attrs["appsflyer_campaign"] = String(value.prefix(40))
+        }
         for (key, value) in SubscriptionMarketPolicy.analyticsProperties {
             attrs[key] = value
         }
@@ -215,7 +279,7 @@ enum ProcessAcquisitionAttribution {
 
         if emitResolvedEvent,
            !UserDefaults.standard.bool(forKey: didEmitResolvedEventKey),
-           snapshot.primarySource != "organic" || snapshot.referralCode != nil || snapshot.asaAttributed == true {
+           snapshot.primarySource != "organic" || snapshot.referralCode != nil || snapshot.asaAttributed == true || snapshot.appsflyerStatus?.lowercased() == "non-organic" {
             UserDefaults.standard.set(true, forKey: didEmitResolvedEventKey)
             ProcessAnalytics.capture("acquisition_resolved", properties: props)
         }
@@ -315,8 +379,11 @@ enum ProcessAcquisitionAttribution {
             return nil
         }
 
-        let referral = ProcessReferralLink.parseCode(from: url)
+        var referral = ProcessReferralLink.parseCode(from: url)
             ?? query("ref", "code").map { ProcessReferralLink.normalizeCode($0) }
+        if let code = referral, ProcessAffiliateLifetimePass.matches(code) {
+            referral = nil
+        }
 
         var source = query("utm_source", "source")
         var medium = query("utm_medium", "medium")
@@ -327,7 +394,7 @@ enum ProcessAcquisitionAttribution {
         // App Store campaign token `ct=ref_CODE` (si jamais relayé).
         if referral == nil, let ct = query("ct"), ct.lowercased().hasPrefix("ref_") {
             let code = ProcessReferralLink.normalizeCode(String(ct.dropFirst(4)))
-            if !code.isEmpty {
+            if !code.isEmpty, !ProcessAffiliateLifetimePass.matches(code) {
                 return Touch(
                     source: source ?? "referral",
                     medium: medium ?? "referral",
@@ -465,6 +532,29 @@ enum ProcessAcquisitionAttribution {
 
     private static func shouldUpgradeFirstTouch(current: String?, incoming: String) -> Bool {
         priority(for: incoming) > priority(for: current)
+    }
+
+    private static func normalizeAppsFlyerMediaSource(_ raw: String) -> String {
+        let source = raw.lowercased()
+        if source.contains("tiktok") || source.contains("bytedance") || source.contains("pangle") {
+            return "tiktok"
+        }
+        if source.contains("facebook") || source.contains("meta") || source.contains("instagram") {
+            return "meta"
+        }
+        if source.contains("google") || source.contains("adwords") || source.contains("uac") {
+            return "google"
+        }
+        if source.contains("snap") {
+            return "snapchat"
+        }
+        if source.contains("apple search") || source == "asa" {
+            return "asa"
+        }
+        if source == "organic" || source == "unknown" {
+            return "organic"
+        }
+        return source.replacingOccurrences(of: "_int", with: "")
     }
 
     private static func stringValue(_ any: Any?) -> String? {

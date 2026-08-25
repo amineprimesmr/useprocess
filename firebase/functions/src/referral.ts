@@ -5,6 +5,7 @@ import {
   httpStatusForError,
   normalizeReferralCode,
   isValidReferralCode,
+  isReservedLifetimePassCode,
   registerReferralRecord,
   resolveReferrerUserId,
   setCors,
@@ -37,7 +38,7 @@ export const referralSyncProgram = onRequest(
 
       const referralCode = normalizeReferralCode(String(req.body?.referralCode ?? ""));
       const displayName = String(req.body?.displayName ?? "").trim();
-      if (!isValidReferralCode(referralCode)) {
+      if (!isValidReferralCode(referralCode) || isReservedLifetimePassCode(referralCode)) {
         res.status(400).json({ error: "INVALID_CODE" });
         return;
       }
@@ -81,7 +82,7 @@ export const referralRegister = onRequest(
 
       const referralCode = normalizeReferralCode(String(req.body?.referralCode ?? ""));
       const displayName = String(req.body?.displayName ?? "").trim();
-      if (!isValidReferralCode(referralCode)) {
+      if (!isValidReferralCode(referralCode) || isReservedLifetimePassCode(referralCode)) {
         res.status(400).json({ error: "INVALID_CODE" });
         return;
       }

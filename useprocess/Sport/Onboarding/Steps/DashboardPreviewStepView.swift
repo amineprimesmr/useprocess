@@ -2,7 +2,7 @@
 //  DashboardPreviewStepView.swift
 //  Process
 //
-//  Aperçu du dashboard — vraies pages Accueil / Routine / Série / Profil.
+//  Aperçu du dashboard — Accueil / Série / Routine / Scan.
 //
 
 import AVFoundation
@@ -74,11 +74,10 @@ struct DashboardPreviewStepView: View {
     var body: some View {
         ZStack {
             tourOrHiddenBackground
-            liveScanOverlay
             resultsOverlay
         }
         .animation(OnboardingScanFlowMotion.animation, value: embeddedScanResult?.id)
-        .animation(OnboardingScanFlowMotion.animation, value: isScanPageInteractive)
+        .environment(\.onboardingDashboardScanSession, dashboardFirstScanSession)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
             restorePersistedSessionIfNeeded()
@@ -100,25 +99,7 @@ struct DashboardPreviewStepView: View {
     private var tourOrHiddenBackground: some View {
         dashboardTourLayer
             .opacity(embeddedScanResult == nil ? 1 : 0)
-            .allowsHitTesting(embeddedScanResult == nil && !isScanPageInteractive)
-    }
-
-    @ViewBuilder
-    private var liveScanOverlay: some View {
-        if isScanPageInteractive, embeddedScanResult == nil, let session = dashboardFirstScanSession {
-            DashboardPreviewEmbeddedFaceScanSession(
-                isTabActive: scenePhase == .active,
-                isCaptureEnabled: true,
-                onCancel: session.onCancel,
-                onSkipLater: session.onSkipLater,
-                onResultReady: session.onResult,
-                onContinueAfterResults: session.onContinue
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .transition(OnboardingScanFlowMotion.forwardTransition)
-            .zIndex(40)
-            .allowsHitTesting(true)
-        }
+            .allowsHitTesting(embeddedScanResult == nil)
     }
 
     @ViewBuilder
@@ -214,7 +195,6 @@ struct DashboardPreviewStepView: View {
     }
 
     private func applyPersistedScanState(_ state: OnboardingDashboardScanPersistedState) {
-        // Ancienne 4ᵉ slide « discover-scan » → clamp sur le tour 3 slides.
         carouselStep = min(max(0, state.carouselStep), max(0, slides.count - 1))
         scanExpandProgress = CGFloat(state.scanExpandProgress)
         isScanPageInteractive = state.isScanPageInteractive
@@ -293,15 +273,9 @@ struct DashboardPreviewStepView: View {
 
     private var footerCaption: some View {
         let copy = currentSlide.tourCopy
-        let footerText: String = {
-            if isLastSlide, !hasCompletedFirstScan {
-                return lastSlideScanFooter
-            }
-            return copy.footer
-        }()
         return DashboardPreviewStepContent(stepIndex: logicalSlideIndex) {
             Group {
-                if let percent = copy.footerPercent, !(isLastSlide && !hasCompletedFirstScan) {
+                if let percent = copy.footerPercent {
                     (
                         Text(copy.footerPrefix)
                         + Text(percent)
@@ -310,7 +284,7 @@ struct DashboardPreviewStepView: View {
                         + Text(copy.footerSuffix)
                     )
                 } else {
-                    Text(footerText)
+                    Text(copy.footer)
                 }
             }
             .font(.system(size: 16, weight: .medium))
@@ -465,11 +439,15 @@ struct DashboardPreviewStepView: View {
         withAnimation(DashboardPreviewCarouselMotion.expandScan) {
             scanExpandProgress = 1
         }
-        isScanPageInteractive = true
         syncPersistedScanState()
 
         firstScanLaunchTask = Task { @MainActor in
-            await requestFirstScanPermissionAndTrack()
+            async let permission: Void = requestFirstScanPermissionAndTrack()
+            try? await Task.sleep(for: .milliseconds(320))
+            _ = await permission
+            guard !Task.isCancelled else { return }
+            isScanPageInteractive = true
+            syncPersistedScanState()
         }
     }
 
@@ -556,14 +534,6 @@ struct DashboardPreviewStepView: View {
         }
         return OnboardingCopy.continueCTA
     }
-
-    /// Dernière slide tour → message scan (plus de carte marketing séparée).
-    private var lastSlideScanFooter: String {
-        OnboardingCopy.t(
-            "Lance ton premier scan pour calibrer Process",
-            en: "Take your first scan to calibrate Process"
-        )
-    }
 }
 
 private struct DashboardPreviewScanSessionSnapshot {
@@ -632,10 +602,17 @@ private struct DashboardPreviewTourProgressBar: View {
 
 private enum DashboardPreviewCarouselLayout {
     static func cardHeight(
+        for pageKind: DashboardPreviewPageKind,
         cardWidth: CGFloat,
         screenSize: CGSize
     ) -> CGFloat {
-        min(screenSize.height * 0.90, cardWidth * 2.05)
+        let screenAspect = screenSize.height / max(screenSize.width, 1)
+        switch pageKind {
+        case .faceScanCapture:
+            return cardWidth * screenAspect
+        case .appTab:
+            return min(screenSize.height * 0.90, cardWidth * 2.05)
+        }
     }
 
     static func tallestCardHeight(
@@ -643,7 +620,9 @@ private enum DashboardPreviewCarouselLayout {
         cardWidth: CGFloat,
         screenSize: CGSize
     ) -> CGFloat {
-        cardHeight(cardWidth: cardWidth, screenSize: screenSize)
+        slides
+            .map { cardHeight(for: $0.pageKind, cardWidth: cardWidth, screenSize: screenSize) }
+            .max() ?? (cardWidth * (screenSize.height / max(screenSize.width, 1)))
     }
 
     static func slide(at index: Int, in slides: [DashboardPreviewSlide]) -> DashboardPreviewSlide {
@@ -691,12 +670,17 @@ private struct DashboardPreviewCarousel: View {
             ) { index, isFocused in
                 let slide = DashboardPreviewCarouselLayout.slide(at: index, in: slides)
                 let cardHeight = DashboardPreviewCarouselLayout.cardHeight(
+                    for: slide.pageKind,
                     cardWidth: compactCardWidth,
                     screenSize: screenSize
                 )
                 let itemCardSize = CGSize(width: compactCardWidth, height: cardHeight)
-                let shouldLoadLivePreview = isFocused
-                    || (!hideNeighbors && abs(index - focusedIndex) <= 1)
+                let shouldLoadLivePreview: Bool = {
+                    if slide.pageKind == .faceScanCapture {
+                        return isFocused
+                    }
+                    return isFocused || (!hideNeighbors && abs(index - focusedIndex) <= 1)
+                }()
 
                 DashboardPreviewCard(
                     pageKind: slide.pageKind,
@@ -705,10 +689,10 @@ private struct DashboardPreviewCarousel: View {
                     previewPagesReady: previewPagesReady,
                     shouldLoadLivePreview: shouldLoadLivePreview,
                     isSidePreview: !isFocused,
-                    isPageActive: isFocused && !isScanInteractive,
+                    isPageActive: isFocused,
                     revealsContent: revealsContent,
                     expandProgress: isFocused ? expandProgress : 0,
-                    isInteractive: false
+                    isInteractive: isScanInteractive && isFocused && slide.pageKind == .faceScanCapture
                 )
             }
         }
@@ -782,7 +766,7 @@ private struct DashboardPreviewCard: View {
                             isInteractive: isInteractive
                         )
                     } else {
-                        DashboardPreviewFrozenSlide()
+                        DashboardPreviewFrozenSlide(pageKind: pageKind)
                     }
                 }
                 .opacity(revealsContent ? 1 : 0)
@@ -870,12 +854,43 @@ private struct DashboardPreviewEmptyScreen: View {
     }
 }
 
-/// Aperçu statique pour les cartes latérales — évite plusieurs pages live en parallèle.
+/// Aperçu statique pour les cartes latérales — évite 4 vraies pages + caméras en parallèle.
 private struct DashboardPreviewFrozenSlide: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    let pageKind: DashboardPreviewPageKind
+
     var body: some View {
-        ProcessScreenBackground()
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .accessibilityHidden(true)
+        ZStack(alignment: .top) {
+            ProcessScreenBackground()
+
+            if pageKind == .faceScanCapture {
+                faceScanCapturePlaceholder
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityHidden(true)
+    }
+
+    private var faceScanCapturePlaceholder: some View {
+        VStack(spacing: 10) {
+            Spacer(minLength: 28)
+
+            FaceScanOnboardingOvalShape()
+                .fill(Color(red: 0.09, green: 0.09, blue: 0.10))
+                .overlay {
+                    FaceScanOnboardingOvalShape()
+                        .stroke(Color.white.opacity(colorScheme == .dark ? 0.10 : 0.14), lineWidth: 0.75)
+                }
+                .frame(width: 92, height: 120)
+
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.08))
+                .frame(width: 118, height: 10)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
     }
 }
 
@@ -925,14 +940,24 @@ private struct DashboardPreviewAppPage: View {
     }
 
     var body: some View {
-        ProcessIGTabShell(
-            selectedSection: lockedSection,
-            onMealScan: nil,
-            hidesTabChrome: true
-        ) {
-            tabRoot(for: pageKind.tabSection ?? .plan)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .background(Color.clear)
+        Group {
+            switch pageKind {
+            case .faceScanCapture:
+                DashboardPreviewFaceScanCapturePage(
+                    isTabActive: effectiveTabActive,
+                    isInteractive: isInteractive
+                )
+            case .appTab:
+                ProcessIGTabShell(
+                    selectedSection: lockedSection,
+                    onMealScan: nil,
+                    hidesTabChrome: true
+                ) {
+                    tabRoot(for: pageKind.tabSection ?? .plan)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .background(Color.clear)
+                }
+            }
         }
         .processAppPageBackground()
         .ignoresSafeArea()
@@ -978,6 +1003,36 @@ private struct DashboardPreviewAppPage: View {
     }
 }
 
+/// Aperçu caméra de la 4ᵉ carte — même instance que la capture après zoom.
+private struct DashboardPreviewFaceScanCapturePage: View {
+    var isTabActive: Bool
+    var isInteractive: Bool = false
+
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.onboardingDashboardScanSession) private var scanSession
+    @EnvironmentObject private var profileService: UnifiedProfileService
+
+    var body: some View {
+        Group {
+            if let session = scanSession {
+                DashboardPreviewEmbeddedFaceScanSession(
+                    isTabActive: isTabActive,
+                    isCaptureEnabled: isInteractive,
+                    onCancel: session.onCancel,
+                    onSkipLater: session.onSkipLater,
+                    onResultReady: session.onResult,
+                    onContinueAfterResults: session.onContinue
+                )
+                .environmentObject(profileService)
+            } else {
+                ProcessScreenBackground()
+            }
+        }
+        .processClearUIKitHostingBackground()
+        .background(ProcessBackgroundPalette.base(for: colorScheme))
+    }
+}
+
 /// Capture → analyse → résultats, zoom plein écran depuis le dashboard.
 private struct DashboardPreviewEmbeddedFaceScanSession: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -1000,6 +1055,17 @@ private struct DashboardPreviewEmbeddedFaceScanSession: View {
 
     private var sessionBackground: Color {
         ProcessBackgroundPalette.base(for: colorScheme)
+    }
+
+    private var skipHandler: (() -> Void)? {
+        guard isCaptureEnabled else { return nil }
+        return {
+            ProcessAnalytics.trackMossAction(
+                page: ProcessAnalytics.MossPage.faceScanCapture,
+                action: "skipped_later"
+            )
+            onSkipLater()
+        }
     }
 
     var body: some View {
@@ -1028,7 +1094,7 @@ private struct DashboardPreviewEmbeddedFaceScanSession: View {
             } else {
                 FaceScanCaptureScreen(
                     presentation: .fullScreen,
-                    showsBackButton: true,
+                    showsBackButton: isCaptureEnabled,
                     onBack: {
                         ProcessAnalytics.trackMossAction(
                             page: ProcessAnalytics.MossPage.faceScanCapture,
@@ -1036,19 +1102,14 @@ private struct DashboardPreviewEmbeddedFaceScanSession: View {
                         )
                         onCancel()
                     },
-                    onSkip: {
-                        ProcessAnalytics.trackMossAction(
-                            page: ProcessAnalytics.MossPage.faceScanCapture,
-                            action: "skipped_later"
-                        )
-                        onSkipLater()
-                    },
+                    onSkip: skipHandler,
                     isCameraSessionActive: isTabActive,
                     skipsHeadTiltPhase: true,
                     usesOnboardingFaceOval: true,
                     usesAppScreenBackground: true,
                     playsArrivalCountdown: false,
                     isScanCaptureEnabled: isCaptureEnabled,
+                    showsInFrameCameraPermissionGate: isCaptureEnabled,
                     onContinue: { payload, markers in
                         ProcessAnalytics.trackMossAction(
                             page: ProcessAnalytics.MossPage.faceScanCapture,
@@ -1059,15 +1120,14 @@ private struct DashboardPreviewEmbeddedFaceScanSession: View {
                         }
                     }
                 )
-                .transition(OnboardingScanFlowMotion.forwardTransition)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .processClearUIKitHostingBackground()
         .background(sessionBackground)
         .animation(OnboardingScanFlowMotion.animation, value: captureInput?.payload.scanId)
-        .onAppear {
-            if captureInput == nil, completedResult == nil {
+        .onChange(of: isCaptureEnabled) { _, enabled in
+            if enabled, captureInput == nil, completedResult == nil {
                 ProcessAnalytics.trackMossPageViewed(ProcessAnalytics.MossPage.faceScanCapture)
             }
         }
@@ -1086,6 +1146,7 @@ private struct DashboardPreviewEmbeddedFaceScanSession: View {
 
 private enum DashboardPreviewPageKind: Hashable {
     case appTab(ProcessMainSection)
+    case faceScanCapture
 
     var tabSection: ProcessMainSection? {
         if case .appTab(let section) = self { return section }
@@ -1106,7 +1167,8 @@ private struct DashboardPreviewSlide: Identifiable, Hashable {
     static let firstScanCatalog: [DashboardPreviewSlide] = [
         .init(id: "discover-plan", pageKind: .appTab(.plan)),
         .init(id: "discover-streak", pageKind: .appTab(.statistics)),
-        .init(id: "discover-routine", pageKind: .appTab(.routine))
+        .init(id: "discover-routine", pageKind: .appTab(.routine)),
+        .init(id: "discover-scan", pageKind: .faceScanCapture)
     ]
 
     @MainActor
@@ -1114,6 +1176,20 @@ private struct DashboardPreviewSlide: Identifiable, Hashable {
         switch pageKind {
         case .appTab(let section):
             return tourCopy(forSection: section)
+        case .faceScanCapture:
+            return DashboardPreviewTourCopy(
+                titlePrefix: OnboardingCopy.t("Scanne ", en: "Scan "),
+                titleAccent: OnboardingCopy.t("ton visage", en: "your face"),
+                titleAccessibilityLabel: OnboardingCopy.t("Scanne ton visage", en: "Scan your face"),
+                subtitle: OnboardingCopy.t(
+                    "Un scan rapide voit ce que le miroir ne montre pas.",
+                    en: "A quick scan catches what the mirror can't."
+                ),
+                footer: OnboardingCopy.t(
+                    "Lance ton premier scan pour calibrer Process",
+                    en: "Take your first scan to calibrate Process"
+                )
+            )
         }
     }
 
@@ -1129,7 +1205,7 @@ private struct DashboardPreviewSlide: Identifiable, Hashable {
                     en: "Your future dashboard, where everything will live."
                 ),
                 footerPrefix: OnboardingCopy.t("On est à ", en: "We're "),
-                footerPercent: OnboardingCopy.t("33 %", en: "33%"),
+                footerPercent: OnboardingCopy.t("25 %", en: "25%"),
                 footerSuffix: OnboardingCopy.t(" de ton dashboard", en: " into your dashboard")
             )
         case .statistics:

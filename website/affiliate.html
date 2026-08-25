@@ -23,7 +23,61 @@
         display: block;
         min-height: 100vh;
       }
+      .af-boot {
+        display: none;
+        min-height: 100vh;
+        grid-template-columns: 240px minmax(0, 1fr);
+        font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      }
+      html.af-session .af-boot {
+        display: grid;
+      }
+      #affiliate-root:not(:empty) ~ .af-boot {
+        display: none;
+      }
+      .af-boot aside {
+        border-right: 1px solid #e5e7eb;
+        padding: 18px 14px;
+      }
+      .af-boot strong {
+        display: block;
+        font-size: 15px;
+        letter-spacing: -0.04em;
+      }
+      .af-boot main {
+        padding: 24px 20px;
+      }
+      .af-boot i {
+        display: block;
+        height: 10px;
+        border-radius: 999px;
+        background: #f4f4f5;
+        margin: 0 0 10px;
+      }
+      @media (max-width: 960px) {
+        html.af-session .af-boot {
+          grid-template-columns: 1fr;
+        }
+        .af-boot aside {
+          display: none;
+        }
+      }
     </style>
+    <script>
+      try {
+        var hit = localStorage.getItem("process.affiliate.uid");
+        if (!hit) {
+          for (var i = 0; i < sessionStorage.length; i++) {
+            var key = sessionStorage.key(i);
+            if (key && key.indexOf("process-affiliate-dashboard:") === 0) {
+              hit = "1";
+              break;
+            }
+          }
+        }
+        if (hit) document.documentElement.classList.add("af-session");
+      } catch (e) {}
+    </script>
     <script>
       window.addEventListener("error", function (event) {
         var root = document.getElementById("affiliate-root");
@@ -45,6 +99,14 @@
   <body>
     <div id="page-affiliate">
       <div id="affiliate-root"></div>
+      <div class="af-boot" aria-hidden="true">
+        <aside><strong>PROCE$$ CLIPPING</strong></aside>
+        <main>
+          <i style="width: 28%"></i>
+          <i style="width: 72%; height: 18px"></i>
+          <i style="width: 54%; height: 18px; margin-top: 18px"></i>
+        </main>
+      </div>
     </div>
     <script type="module" src="/src/affiliate/mount.jsx"></script>
   </body>

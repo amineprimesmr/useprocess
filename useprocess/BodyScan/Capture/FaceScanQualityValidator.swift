@@ -74,22 +74,23 @@ enum FaceScanQualityValidator {
         case tooClose
     }
 
-    /// Distance caméra (mètres) + fill écran. Plages élargies vs l’ancien 0.14–0.52 m.
+    /// Distance caméra (mètres) + fill dans le viewport visible.
+    /// Le fill est déjà dans le cadre (ovale) — ne pas le diviser par zoom²
+    /// (un visage bien cadré passait pour « trop loin »).
     static func distanceFeedback(
         distanceMeters: Float?,
         screenFillRatio: CGFloat?,
         cameraZoom: CGFloat = 1
     ) -> FaceDistanceFeedback {
+        _ = cameraZoom
         if let distance = distanceMeters {
-            if distance < 0.09 { return .tooClose }
-            if distance > 0.72 { return .tooFar }
+            if distance < 0.07 { return .tooClose }
+            if distance > 0.90 { return .tooFar }
         }
 
         if let ratio = screenFillRatio {
-            let zoom = max(1, cameraZoom)
-            let adjustedRatio = ratio / (zoom * zoom)
-            if adjustedRatio < 0.06 { return .tooFar }
-            if adjustedRatio > 0.58 { return .tooClose }
+            if ratio < 0.028 { return .tooFar }
+            if ratio > 0.82 { return .tooClose }
         }
 
         return .ok

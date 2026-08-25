@@ -33,10 +33,11 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.REFERRAL_CODE_LENGTH = exports.REFERRER_REWARD_ANNUAL = exports.REFERRER_REWARD_SHORT = exports.PREMIUM_ENTITLEMENT = void 0;
+exports.AFFILIATE_LIFETIME_PASS_CODE = exports.REFERRAL_CODE_LENGTH = exports.REFERRER_REWARD_ANNUAL = exports.REFERRER_REWARD_SHORT = exports.PREMIUM_ENTITLEMENT = void 0;
 exports.db = db;
 exports.normalizeReferralCode = normalizeReferralCode;
 exports.isValidReferralCode = isValidReferralCode;
+exports.isReservedLifetimePassCode = isReservedLifetimePassCode;
 exports.setCors = setCors;
 exports.verifyFirebaseUser = verifyFirebaseUser;
 exports.verifyAppAttestation = verifyAppAttestation;
@@ -55,6 +56,8 @@ function db() {
     return admin.firestore();
 }
 exports.REFERRAL_CODE_LENGTH = 5;
+/** Code affiliés : accès lifetime offert. Jamais un parrainage ami ni une commission. */
+exports.AFFILIATE_LIFETIME_PASS_CODE = "CREW7";
 function normalizeReferralCode(raw) {
     const alnum = String(raw || "")
         .trim()
@@ -65,6 +68,13 @@ function normalizeReferralCode(raw) {
 }
 function isValidReferralCode(raw) {
     return normalizeReferralCode(raw).length === exports.REFERRAL_CODE_LENGTH;
+}
+function isReservedLifetimePassCode(raw) {
+    const compact = String(raw || "")
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "");
+    return compact === exports.AFFILIATE_LIFETIME_PASS_CODE;
 }
 function setCors(res) {
     res.set("Access-Control-Allow-Origin", "*");
@@ -130,6 +140,8 @@ async function resolveReferrerUserId(code) {
     const normalized = normalizeReferralCode(code);
     if (!isValidReferralCode(normalized))
         return null;
+    if (isReservedLifetimePassCode(normalized))
+        return null;
     const snapshot = await db().collection("referralCodes").doc(normalized).get();
     if (!snapshot.exists)
         return null;
@@ -139,6 +151,8 @@ async function resolveReferrerUserId(code) {
 async function upsertReferralCode(params) {
     const normalized = normalizeReferralCode(params.referralCode);
     if (!isValidReferralCode(normalized))
+        throw new Error("INVALID_CODE");
+    if (isReservedLifetimePassCode(normalized))
         throw new Error("INVALID_CODE");
     const ref = db().collection("referralCodes").doc(normalized);
     await db().runTransaction(async (transaction) => {
@@ -176,6 +190,9 @@ async function upsertReferralCode(params) {
 async function registerReferralRecord(params) {
     if (params.referrerUserId === params.referredUserId) {
         throw new Error("SELF_REFERRAL");
+    }
+    if (isReservedLifetimePassCode(params.referralCode)) {
+        throw new Error("INVALID_CODE");
     }
     const referredMetaRef = db()
         .collection("users")

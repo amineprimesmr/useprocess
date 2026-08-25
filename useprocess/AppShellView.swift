@@ -109,6 +109,7 @@ struct AppShellView: View {
         .environmentObject(PermissionsManager.shared)
         .environmentObject(DailyDataManager.shared)
         .onOpenURL { url in
+            ProcessAppsFlyer.shared.handleOpen(url)
             if ProcessReferralLink.parseCode(from: url) != nil {
                 ProcessReferralAttribution.capture(from: url)
                 NotificationCenter.default.post(name: .processReferralCodeCaptured, object: nil)
@@ -128,6 +129,7 @@ struct AppShellView: View {
             }
             AppSession.shared.reloadForCurrentUser()
             ProcessAnalytics.configure()
+            ProcessAppsFlyer.shared.configure()
             ProcessCrispSupport.configure()
             ProcessAnalytics.trackAppOpened(hasCompletedOnboarding: session.hasCompletedOnboarding)
             if let uid = AuthUser.current?.uid {

@@ -121,17 +121,7 @@ async function ensureExpressAccount(params) {
     const data = affiliateSnap.data() ?? {};
     const stripe = stripeClient(params.secret);
     if (data.stripeAccountId) {
-        const accountId = String(data.stripeAccountId);
-        try {
-            await stripe.accounts.update(accountId, {
-                business_type: "individual",
-                business_profile: individualBusinessProfile(data),
-            });
-        }
-        catch (error) {
-            console.warn("[ensureExpressAccount] prefill skipped", error);
-        }
-        return accountId;
+        return String(data.stripeAccountId);
     }
     const account = await stripe.accounts.create({
         type: "express",
@@ -172,8 +162,10 @@ exports.affiliateStripeConnectStart = (0, https_1.onRequest)({
     invoker: "public",
     cors: true,
     secrets: [stripeSecretKey],
-    timeoutSeconds: 30,
-    memory: "256MiB",
+    timeoutSeconds: 20,
+    memory: "512MiB",
+    minInstances: 1,
+    concurrency: 40,
 }, async (req, res) => {
     (0, referralShared_1.setCors)(res);
     if (req.method === "OPTIONS") {
@@ -194,14 +186,15 @@ exports.affiliateStripeConnectStart = (0, https_1.onRequest)({
         }
         const secret = stripeSecretKey.value();
         const country = String(req.body?.country ?? "FR").trim() || "FR";
-        const accountId = await ensureExpressAccount({
-            affiliateId: affiliate.affiliateId,
-            uid,
-            email: affiliate.email ?? undefined,
-            displayName: affiliate.displayName,
-            country,
-            secret,
-        });
+        const accountId = affiliate.stripeAccountId ||
+            (await ensureExpressAccount({
+                affiliateId: affiliate.affiliateId,
+                uid,
+                email: affiliate.email ?? undefined,
+                displayName: affiliate.displayName,
+                country,
+                secret,
+            }));
         const stripe = stripeClient(secret);
         const link = await stripe.accountLinks.create({
             account: accountId,
@@ -222,7 +215,7 @@ exports.affiliateStripeConnectSync = (0, https_1.onRequest)({
     invoker: "public",
     cors: true,
     secrets: [stripeSecretKey],
-    timeoutSeconds: 30,
+    timeoutSeconds: 20,
     memory: "256MiB",
 }, async (req, res) => {
     (0, referralShared_1.setCors)(res);
@@ -242,8 +235,7 @@ exports.affiliateStripeConnectSync = (0, https_1.onRequest)({
             res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
             return;
         }
-        const affiliateSnap = await (0, affiliateShared_1.db)().collection("affiliates").doc(affiliate.affiliateId).get();
-        const accountId = affiliateSnap.data()?.stripeAccountId;
+        const accountId = affiliate.stripeAccountId;
         if (!accountId) {
             res.status(404).json({ error: "STRIPE_NOT_LINKED" });
             return;
@@ -262,8 +254,10 @@ exports.affiliateStripeConnectDashboard = (0, https_1.onRequest)({
     invoker: "public",
     cors: true,
     secrets: [stripeSecretKey],
-    timeoutSeconds: 30,
-    memory: "256MiB",
+    timeoutSeconds: 20,
+    memory: "512MiB",
+    minInstances: 1,
+    concurrency: 40,
 }, async (req, res) => {
     (0, referralShared_1.setCors)(res);
     if (req.method === "OPTIONS") {
@@ -282,8 +276,7 @@ exports.affiliateStripeConnectDashboard = (0, https_1.onRequest)({
             res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
             return;
         }
-        const affiliateSnap = await (0, affiliateShared_1.db)().collection("affiliates").doc(affiliate.affiliateId).get();
-        const accountId = affiliateSnap.data()?.stripeAccountId;
+        const accountId = affiliate.stripeAccountId;
         if (!accountId) {
             res.status(404).json({ error: "STRIPE_NOT_LINKED" });
             return;

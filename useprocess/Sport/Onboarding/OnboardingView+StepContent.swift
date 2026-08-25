@@ -55,7 +55,9 @@ extension SportOnboardingView {
             OnboardingCreatorCodeStepView(
                 draftCode: $viewModel.creatorCodeDraft,
                 isVerified: $viewModel.creatorCodeIsVerified,
-                onAutoContinue: advanceFromVerifiedCreatorCode
+                continueAttempt: viewModel.creatorCodeContinueAttempt,
+                onAutoContinue: advanceFromVerifiedCreatorCode,
+                onSkip: skipCreatorCodeStep
             )
             .onAppear {
                 viewModel.bootstrapCreatorCodeDraftIfNeeded()

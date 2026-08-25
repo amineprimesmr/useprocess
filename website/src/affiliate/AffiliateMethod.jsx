@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { appCopy } from "../features/app-copy.js";
 import { IconChevronDown, IconExternal, IconLink } from "./AffiliateIcons.jsx";
+import { ClipperBonusLadder } from "./ClipperBonusLadder.jsx";
 import { ViewBonusBoard, ViewBonusNote } from "./ViewBonusBoard.jsx";
 import { navigateHash, readHashQuery } from "./affiliate-utils.js";
 import { readMethodPace } from "./affiliate-onboarding-state.js";
@@ -137,14 +138,86 @@ function MethodBlock({ block, vars, pace, onGoLinks, onGoFormats }) {
   }
 
   if (block.type === "links") {
-    return <MethodLinks items={block.items} vars={vars} />;
+    const list = <MethodLinks items={block.items} vars={vars} />;
+    if (!block.title) return list;
+    return (
+      <section className="af-md-section">
+        <h3>{copyPair(block.title, vars)}</h3>
+        {list}
+      </section>
+    );
+  }
+
+  if (block.type === "section") {
+    const paragraphs = copyText(block.fr, block.en, vars)
+      .split(/\n\n+/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    return (
+      <section className="af-md-section">
+        {block.title ? <h3>{copyPair(block.title, vars)}</h3> : null}
+        {paragraphs.map((part) => (
+          <p key={part.slice(0, 48)}>{part}</p>
+        ))}
+      </section>
+    );
+  }
+
+  if (block.type === "bullets") {
+    return (
+      <section className="af-md-section">
+        {block.title ? <h3>{copyPair(block.title, vars)}</h3> : null}
+        <ul className="af-md-ul">
+          {block.items.map((item) => (
+            <li key={item.en}>{copyPair(item, vars)}</li>
+          ))}
+        </ul>
+      </section>
+    );
+  }
+
+  if (block.type === "pay") {
+    return (
+      <section className="af-md-pay">
+        <h3>{copyPair(block.title, vars)}</h3>
+        <p className="af-md-pay__main">{copyText(block.fr, block.en, vars)}</p>
+        {block.sub ? <p className="af-md-pay__sub">{copyText(block.sub.fr, block.sub.en, vars)}</p> : null}
+      </section>
+    );
+  }
+
+  if (block.type === "access") {
+    const href = vars.linkUrl || `https://${vars.link}`;
+    return (
+      <section className="af-md-section">
+        {block.title ? <h3>{copyPair(block.title, vars)}</h3> : null}
+        <a className="af-md-access" href={href} target="_blank" rel="noopener noreferrer">
+          {copyText(block.fr, block.en, vars)}
+          <IconExternal />
+        </a>
+      </section>
+    );
+  }
+
+  if (block.type === "ladder") {
+    return (
+      <section className="af-md-section">
+        {block.title ? <h3>{copyPair(block.title, vars)}</h3> : null}
+        <ClipperBonusLadder />
+      </section>
+    );
   }
 
   if (block.type === "bonus") {
     return (
       <div className="af-md-bonus">
-        <ViewBonusBoard variant="light" />
-        <ViewBonusNote />
+        {block.title ? <h3>{copyPair(block.title, vars)}</h3> : null}
+        <ViewBonusBoard
+          variant="light"
+          compact={Boolean(block.compact)}
+          showEligibility={block.showEligibility !== false}
+        />
+        {block.hideNote ? null : <ViewBonusNote />}
       </div>
     );
   }
@@ -192,10 +265,11 @@ function MethodBlock({ block, vars, pace, onGoLinks, onGoFormats }) {
   }
 
   if (block.type === "shot") {
+    const caption = copyText(block.fr, block.en, vars);
     return (
-      <figure className="af-md-shot">
-        <img src={block.src} alt={copyText(block.fr, block.en, vars)} />
-        <figcaption>{copyText(block.fr, block.en, vars)}</figcaption>
+      <figure className={`af-md-shot${block.variant === "banner" ? " af-md-shot--banner" : ""}`}>
+        <img src={block.src} alt={caption} />
+        {block.hideCaption ? null : <figcaption>{caption}</figcaption>}
       </figure>
     );
   }
@@ -231,7 +305,7 @@ function MethodBlock({ block, vars, pace, onGoLinks, onGoFormats }) {
   if (block.type === "cta-formats" && onGoFormats) {
     return (
       <button type="button" className="af-md-inline-link" onClick={onGoFormats}>
-        {appCopy("Ouvrir Formats", "Open Formats")}
+        {appCopy("Ouvrir Tiktoks", "Open Tiktoks")}
       </button>
     );
   }
@@ -294,9 +368,9 @@ export function AffiliateMethodPage({ linkUrl = "", primaryCode = "", onGoLinks,
         ))}
       </nav>
 
-      <article className="af-md-page" key={mod.id}>
-        <p className="af-md-kicker">{copyPair(mod.kicker, vars)}</p>
-        <h2>{copyPair(mod.title, vars)}</h2>
+      <article className={`af-md-page${mod.id === "devenir" ? " af-md-page--clipper" : ""}`} key={mod.id}>
+        {mod.kicker ? <p className="af-md-kicker">{copyPair(mod.kicker, vars)}</p> : null}
+        {mod.title ? <h2>{copyPair(mod.title, vars)}</h2> : null}
         {mod.blocks.map((block, i) => (
           <MethodBlock
             key={`${mod.id}-${block.type}-${i}`}

@@ -18,6 +18,7 @@ final class ProcessAppDelegate: NSObject, UIApplicationDelegate {
         // et l’app reprend l’onboarding (dashboard preview).
         UNUserNotificationCenter.current().delegate = CoachNotificationCenterDelegate.shared
         ProcessCrispSupport.configure()
+        ProcessAppsFlyer.shared.configure()
 
         // Fallback sans UIScene (peu probable avec SwiftUI App).
         if let shortcut = launchOptions?[.shortcutItem] as? UIApplicationShortcutItem {
@@ -85,6 +86,7 @@ struct useprocessApp: App {
         ProcessAudioSession.configureForMixingWithOthers()
         FirebaseBootstrap.configure()
         ProcessAnalytics.configure()
+        ProcessAppsFlyer.shared.configure()
         ProcessCrispSupport.configure()
     }
 
@@ -95,6 +97,7 @@ struct useprocessApp: App {
                     // Idempotent si déjà fait dans init ; MetricKit / notifs hors chemin critique.
                     FirebaseBootstrap.configure()
                     ProcessAnalytics.configure()
+                    ProcessAppsFlyer.shared.configure()
                     ProcessCrispSupport.configure()
                     ProcessMetricKitMonitor.shared.start()
 

@@ -4,11 +4,25 @@ import Foundation
 final class AffiliateService {
     static let shared = AffiliateService()
 
+    private static let visitorIdKey = "process.affiliate.visitorId"
+
+    static var visitorId: String {
+        if let existing = UserDefaults.standard.string(forKey: visitorIdKey),
+           existing.count >= 8 {
+            return existing
+        }
+        let generated = UUID().uuidString.replacingOccurrences(of: "-", with: "")
+        let value = String(generated.prefix(32))
+        UserDefaults.standard.set(value, forKey: visitorIdKey)
+        return value
+    }
+
     private init() {}
 
     func resolveCode(_ rawCode: String) async -> ProcessAffiliateResolveResult? {
         let normalized = ProcessAffiliateLink.normalizeCode(rawCode)
         guard !normalized.isEmpty else { return nil }
+        guard !ProcessAffiliateLifetimePass.matches(normalized) else { return nil }
 
         guard FirebaseBootstrap.isConfigured,
               ClaudeConfiguration.functionsBaseURL != nil else {
@@ -32,6 +46,7 @@ final class AffiliateService {
     ) async throws {
         let normalized = ProcessAffiliateLink.normalizeCode(code)
         guard !normalized.isEmpty else { return }
+        guard !ProcessAffiliateLifetimePass.matches(normalized) else { return }
 
         persistLocalReferredBy(code: normalized, userId: referredUserId, kind: .affiliate)
         ProcessAffiliateAttribution.clearPending()
@@ -102,6 +117,13 @@ final class AffiliateService {
             return nil
         }
         return stored.code
+    }
+
+    func trackPaywallReached() async {
+        let raw = ProcessAcquisitionAttribution.snapshot.affiliateCode?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !raw.isEmpty else { return }
+        await AffiliateRemoteService.trackFunnel(event: "paywall", code: raw)
     }
 
     private func persistLocalReferredBy(

@@ -43,6 +43,14 @@ export function consumeApplyAfterLink() {
   }
 }
 
+export function peekApplyAfterLink() {
+  try {
+    return window.sessionStorage.getItem(APPLY_AFTER_LINK_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 export async function ensureAnonymousAffiliateUser() {
   const auth = await getFirebaseAuth();
   if (auth.currentUser) return auth.currentUser;
@@ -66,8 +74,17 @@ export async function ensureAnonymousAffiliateUser() {
   }
 }
 
+export function hrefLooksLikeEmailLink(href = window.location.href) {
+  return (
+    href.includes("oobCode=") ||
+    href.includes("emailLink=1") ||
+    href.includes("mode=signIn")
+  );
+}
+
 export async function completeAffiliateEmailLink() {
   const href = window.location.href;
+  if (!hrefLooksLikeEmailLink(href)) return null;
   const auth = await getFirebaseAuth();
   const { isSignInWithEmailLink, signInWithEmailLink, EmailAuthProvider, linkWithCredential } =
     await getFirebaseAuthModule();

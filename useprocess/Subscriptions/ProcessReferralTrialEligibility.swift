@@ -1,7 +1,7 @@
 import Foundation
 
-/// 3 jours d’essai annuel **uniquement** après un code créateur / parrainage validé.
-/// Sans code : aucun essai (ni UI, ni achat intro).
+/// 3 jours d’essai annuel après un code créateur / parrainage validé.
+/// Le bras test `paywall-annual-trial-ab` débloque le même essai sans code.
 @MainActor
 enum ProcessReferralTrialEligibility {
     static let trialDays = 3
@@ -22,6 +22,7 @@ enum ProcessReferralTrialEligibility {
     static func unlock(code: String) {
         let normalized = ProcessReferralCode.normalize(code)
         guard ProcessReferralCode.isValid(normalized) else { return }
+        guard !ProcessAffiliateLifetimePass.matches(normalized) else { return }
         let wasUnlocked = isUnlocked
         UserDefaults.standard.set(true, forKey: unlockedKey)
         UserDefaults.standard.set(normalized, forKey: verifiedCodeKey)
@@ -58,6 +59,7 @@ enum ProcessReferralTrialEligibility {
         guard !candidates.isEmpty else { return false }
 
         for code in candidates {
+            if ProcessAffiliateLifetimePass.matches(code) { continue }
             if let resolved = await AffiliateService.shared.resolveCode(code) {
                 unlock(code: resolved.code)
                 return true
@@ -79,7 +81,9 @@ enum ProcessReferralTrialEligibility {
             verifiedCode
         ] {
             let normalized = ProcessReferralCode.normalize(raw ?? "")
-            guard ProcessReferralCode.isValid(normalized), !seen.contains(normalized) else { continue }
+            guard ProcessReferralCode.isValid(normalized),
+                  !ProcessAffiliateLifetimePass.matches(normalized),
+                  !seen.contains(normalized) else { continue }
             seen.insert(normalized)
             codes.append(normalized)
         }

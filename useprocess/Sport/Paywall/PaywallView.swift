@@ -145,8 +145,8 @@ struct PaywallView: View {
         }
         .task {
             _ = await ProcessReferralTrialEligibility.refreshByResolvingAttributedCode()
-            referralTrialUnlocked = ProcessReferralTrialEligibility.isUnlocked
             await subscriptionService.loadSubscriptions()
+            referralTrialUnlocked = PaywallPricingExperiment.shared.grantsAnnualTrial
             if !didSetInitialPlan {
                 if subscriptionService.hasLiveAnnualProduct {
                     selectedBillingPlan = .annual
@@ -161,8 +161,8 @@ struct PaywallView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .processReferralAnnualTrialDidChange)) { _ in
-            referralTrialUnlocked = ProcessReferralTrialEligibility.isUnlocked
-            if referralTrialUnlocked {
+            referralTrialUnlocked = PaywallPricingExperiment.shared.grantsAnnualTrial
+            if ProcessReferralTrialEligibility.isUnlocked {
                 selectedBillingPlan = .annual
             }
         }
@@ -802,6 +802,19 @@ private struct PaywallReferralCodeSheet: View {
 
         isSubmitting = true
         defer { isSubmitting = false }
+
+        if ProcessAffiliateLifetimePass.matches(normalized) {
+            ProcessAffiliateLifetimePass.unlock()
+            await SubscriptionService.shared.checkSubscriptionStatus()
+            HapticManager.shared.notification(.success)
+            feedback = OnboardingCopy.t(
+                "Accès offert à vie. Bienvenue.",
+                en: "Lifetime access unlocked. Welcome."
+            )
+            try? await Task.sleep(for: .milliseconds(650))
+            dismiss()
+            return
+        }
 
         let resolved = await AffiliateService.shared.resolveCode(normalized)
         let canUnlockWithoutNetwork = !FirebaseBootstrap.isConfigured

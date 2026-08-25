@@ -15,6 +15,7 @@ final class ProcessSceneDelegate: NSObject, UIWindowSceneDelegate {
         }
         for context in connectionOptions.urlContexts {
             Task { @MainActor in
+                ProcessAppsFlyer.shared.handleOpen(context.url)
                 handleIncomingURL(context.url)
             }
         }
@@ -37,6 +38,7 @@ final class ProcessSceneDelegate: NSObject, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         Task { @MainActor in
             for context in URLContexts {
+                ProcessAppsFlyer.shared.handleOpen(context.url)
                 handleIncomingURL(context.url)
             }
         }
@@ -47,6 +49,7 @@ final class ProcessSceneDelegate: NSObject, UIWindowSceneDelegate {
     }
 
     private func handleUserActivity(_ userActivity: NSUserActivity) {
+        ProcessAppsFlyer.shared.continueUserActivity(userActivity)
         guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
               let url = userActivity.webpageURL else { return }
         Task { @MainActor in

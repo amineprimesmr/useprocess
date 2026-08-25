@@ -13,6 +13,7 @@ final class ReferralService {
     ) async throws {
         let normalized = ProcessReferralLink.normalizeCode(referralCode)
         guard ProcessReferralCode.isValid(normalized) else { return }
+        guard !ProcessAffiliateLifetimePass.matches(normalized) else { return }
 
         persistLocalReferredBy(code: normalized, userId: referredUserId)
         ProcessReferralAttribution.clearPending()

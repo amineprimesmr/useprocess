@@ -18,7 +18,7 @@ import {
   rememberReferralCode,
   resolveAcquisitionUtm,
 } from "./referral-link.js";
-import { resolveAcquisitionCode } from "./acquisition-link.js";
+import { resolveAcquisitionCode, trackAffiliateLinkEvent } from "./acquisition-link.js";
 
 const QR_SCRIPT = "/js/qr_code_styling.js";
 
@@ -259,6 +259,7 @@ async function renderQR(referralCode = "", utm = {}) {
 function wireStoreButton(btn, referralCode, utm) {
   if (!btn) return;
   btn.addEventListener("click", () => {
+    if (referralCode) trackAffiliateLinkEvent(referralCode, "store");
     const storeUrl = buildAppStoreUrlWithReferral(referralCode, utm);
     if (shouldUseSafariStoreFlow()) {
       window.location.href = getStoreButtonHref(storeUrl);
@@ -276,25 +277,29 @@ function wireStoreButtons(referralCode = "", utm = {}) {
 export async function mountGetAppPage() {
   const referralCode = parseReferralCodeFromLocation();
   const utm = resolveAcquisitionUtm();
-  const resolved = referralCode ? await resolveAcquisitionCode(referralCode) : null;
-  const resync = () => {
+  let resolved = null;
+
+  const paint = () => {
     applyGetAppDocumentLanguage();
     applyGetAppChromeCopy();
     if (referralCode) applyReferralLayout(referralCode, resolved);
     else applyPlainLayout();
     applyGetAppPageCopy();
   };
-  subscribeSiteLanguage(resync);
+
+  subscribeSiteLanguage(paint);
 
   if (referralCode) {
     rememberReferralCode(referralCode);
     injectSmartAppBanner(referralCode, utm);
-    applyReferralLayout(referralCode, resolved);
+    applyReferralLayout(referralCode, null);
     applyGetAppDocumentLanguage();
   } else {
     applyPlainLayout();
     applyGetAppPageCopy();
   }
+
+  document.documentElement.classList.remove("app-booting");
 
   if (
     !referralCode &&
@@ -309,11 +314,15 @@ export async function mountGetAppPage() {
 
   wireStoreButtons(referralCode, utm);
 
+  if (referralCode) {
+    trackAffiliateLinkEvent(referralCode, "view");
+    resolved = await resolveAcquisitionCode(referralCode);
+    if (resolved) applyReferralLayout(referralCode, resolved);
+  }
+
   if (referralCode && !isMobileDevice()) {
-    try {
-      await renderQR(referralCode, utm);
-    } catch (err) {
+    void renderQR(referralCode, utm).catch((err) => {
       console.warn("[get-app] QR indisponible :", err?.message || err);
-    }
+    });
   }
 }

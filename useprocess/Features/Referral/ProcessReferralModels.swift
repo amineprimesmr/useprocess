@@ -26,14 +26,20 @@ enum ProcessReferralCode {
         let seed = "\(userId)|\(tag)"
         var state = fnv1a64(seed)
 
-        var chars: [Character] = []
-        chars.reserveCapacity(length)
-        while chars.count < length {
-            state = mix(state)
-            let index = Int(state % UInt64(alphabet.count))
-            chars.append(alphabet[index])
+        for _ in 0..<8 {
+            var chars: [Character] = []
+            chars.reserveCapacity(length)
+            while chars.count < length {
+                state = mix(state)
+                let index = Int(state % UInt64(alphabet.count))
+                chars.append(alphabet[index])
+            }
+            let candidate = String(chars)
+            if !ProcessAffiliateLifetimePass.matches(candidate) {
+                return candidate
+            }
         }
-        return String(chars)
+        return "X7PRC"
     }
 
     private static func fnv1a64(_ value: String) -> UInt64 {

@@ -46,22 +46,46 @@ export async function getFirebaseAuth() {
   return appPromise;
 }
 
-export async function affiliateApi(functionName, { token, body = {} } = {}) {
-  const response = await fetch(`${FUNCTIONS_BASE}/${functionName}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(body),
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const err = new Error(data.error || `HTTP ${response.status}`);
-    err.status = response.status;
-    err.data = data;
+export async function affiliateApi(functionName, { token, body = {}, timeoutMs = 12000 } = {}) {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), Math.max(1500, Number(timeoutMs) || 12000));
+  try {
+    const response = await fetch(`${FUNCTIONS_BASE}/${functionName}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const err = new Error(data.error || `HTTP ${response.status}`);
+      err.status = response.status;
+      err.data = data;
+      throw err;
+    }
+    return data;
+  } catch (err) {
+    if (err?.name === "AbortError") {
+      const timeout = new Error("TIMEOUT");
+      timeout.status = 408;
+      throw timeout;
+    }
     throw err;
+  } finally {
+    window.clearTimeout(timer);
   }
-  return data;
+}
+
+export function warmAffiliateFunctions() {
+  if (typeof fetch !== "function") return;
+  for (const name of ["affiliateDashboard", "affiliateStripeConnectStart", "affiliateLeaderboard", "affiliateLibrary", "affiliateMcp"]) {
+    void fetch(`${FUNCTIONS_BASE}/${name}`, {
+      method: "OPTIONS",
+      keepalive: true,
+    }).catch(() => {});
+  }
 }

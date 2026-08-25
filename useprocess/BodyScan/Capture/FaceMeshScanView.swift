@@ -89,7 +89,7 @@ struct FaceMeshScanView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> PreviewContainer {
         let container = PreviewContainer()
-        container.previewZoom = max(ProcessScanCamera.frontPreviewLayoutZoom, cameraZoom)
+        container.previewZoom = max(1, cameraZoom)
         let view = container.arView
         view.delegate = context.coordinator
         view.session.delegate = context.coordinator
@@ -143,7 +143,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         context.coordinator.isPreviewOnly = isPreviewOnly
         context.coordinator.allowsScreenFlash = allowsScreenFlash
         context.coordinator.skipsHeadTiltPhase = skipsHeadTiltPhase
-        let zoom = max(ProcessScanCamera.frontPreviewLayoutZoom, cameraZoom)
+        let zoom = max(1, cameraZoom)
         uiView.previewZoom = zoom
         context.coordinator.cameraZoom = zoom
         context.coordinator.portraitFieldOfView = portraitFieldOfView
@@ -751,9 +751,9 @@ struct FaceMeshScanView: UIViewRepresentable {
             if scanStartTime == nil {
                 guard trackedFrameCount >= minTrackedFramesBeforeScan else {
                     publishUI(force: false) {
-                        self.isFaceDetected = false
-                        self.instruction = AppCopy.tSync("Place ton visage dans le cadre.", en: "Place your face in the frame.")
-                        self.frameHint = AppCopy.tSync("Rapproche-toi pour bien remplir le cadre.", en: "Move closer to fill the frame.")
+                        self.isFaceDetected = true
+                        self.instruction = AppCopy.tSync("Ne bouge plus. Le scan va démarrer.", en: "Hold still. The scan is about to start.")
+                        self.frameHint = AppCopy.tSync("Ne bouge plus. Le scan va démarrer.", en: "Hold still. The scan is about to start.")
                     }
                     return
                 }
@@ -1437,12 +1437,7 @@ struct FaceMeshScanView: UIViewRepresentable {
                 let local = transform * SIMD4<Float>(vertex.x, vertex.y, vertex.z, 1)
                 let projected = renderer.projectPoint(SCNVector3(local.x, local.y, local.z))
                 guard projected.z > 0, projected.z < 1 else { continue }
-
-                var point = CGPoint(x: CGFloat(projected.x), y: CGFloat(projected.y))
-                if let arView {
-                    point.x += arView.frame.minX
-                    point.y += arView.frame.minY
-                }
+                let point = CGPoint(x: CGFloat(projected.x), y: CGFloat(projected.y))
                 minX = min(minX, point.x)
                 maxX = max(maxX, point.x)
                 minY = min(minY, point.y)
@@ -1450,9 +1445,11 @@ struct FaceMeshScanView: UIViewRepresentable {
                 projectedCount += 1
             }
 
-            guard projectedCount >= 10 else { return nil }
+            guard projectedCount >= 8 else { return nil }
             let faceArea = (maxX - minX) * (maxY - minY)
             guard faceArea > 1 else { return nil }
+            // `projectPoint` is already in ARSCNView bounds (pre-transform).
+            // Do not offset by `frame.origin` — UIView zoom transform inflates `frame`.
             return faceArea / (viewport.width * viewport.height)
         }
 

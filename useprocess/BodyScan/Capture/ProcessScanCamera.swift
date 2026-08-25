@@ -29,10 +29,10 @@ enum ProcessScanCamera {
     nonisolated static let scanDayHubPreviewZoom: CGFloat = 2.40
     /// Zoom capteur front hub — force l’optique 1× puis crop selfie.
     nonisolated static let scanDayHubPortraitZoom: CGFloat = 2.25
-    /// Zoom capteur onboarding — optique standard dual-front + crop serré.
-    nonisolated static let onboardingPortraitSensorZoom: CGFloat = 2.40
-    /// Crop UIKit scan onboarding ovale (dashboard + premier scan).
-    nonisolated static let onboardingPortraitPreviewZoom: CGFloat = 2.55
+    /// Zoom capteur onboarding — un peu plus de champ que le crop 50 mm.
+    nonisolated static let onboardingPortraitSensorZoom: CGFloat = 2.12
+    /// Crop UIKit scan onboarding ovale (dashboard + premier scan) — champ un peu plus large.
+    nonisolated static let onboardingPortraitPreviewZoom: CGFloat = 2.12
     /// Zoom capteur AVCapture — ≥ switchover 1×, jamais 0,5× ultra grand-angle.
     nonisolated static let frontPortraitZoom: CGFloat = 2.20
 

@@ -153,6 +153,15 @@
         "revision" : "629a56ecef190469914b8f0914bf0446363eb09f",
         "version" : "5.78.0"
       }
+    },
+    {
+      "identity" : "appsflyerframework-static",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/AppsFlyerSDK/AppsFlyerFramework-Static",
+      "state" : {
+        "revision" : "14ab04fdb7cfd40623477e111698fe1cad888728",
+        "version" : "7.0.2"
+      }
     }
   ],
   "version" : 3

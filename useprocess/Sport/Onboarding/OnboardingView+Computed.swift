@@ -18,10 +18,7 @@ var shouldShowGlobalContinueButton: Bool {
 }
 
 var continueButtonTitle: String {
-    if OnboardingStep(rawValue: viewModel.currentStep) == .referralCode {
-        return AppCopy.tSync("PASSER", en: "SKIP")
-    }
-    return OnboardingCopy.continueCTAUpper
+    OnboardingCopy.continueCTAUpper
 }
 
 var continueButtonOpacity: Double {
@@ -155,7 +152,7 @@ func handleContinueButtonTap() {
         nextStep()
 
     case .referralCode:
-        skipCreatorCodeStep()
+        handleReferralCodeContinue()
 
     default:
         nextStep()

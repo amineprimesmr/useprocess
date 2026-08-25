@@ -32,7 +32,15 @@ Voir aussi : [`docs/REVENUECAT_SETUP.md`](../docs/REVENUECAT_SETUP.md)
 | Legacy annuel | `com.useprocess.annual` |
 | Lifetime (hors abo) | `com.useprocess.lifetime` |
 
-**Endpoint URL** : RevenueCat → **Project Settings** → **Apps** → app iOS → section **Apple Retention Messaging** (copier l’URL sandbox puis prod après le perf test).
+**Endpoint URL** (copier-coller tel quel dans le formulaire Apple) :
+
+```
+https://api.revenuecat.com/v1/incoming-webhooks/apple-retention-messaging-api/RsRcCmdHPMbZOTZqnFQMmK
+```
+
+Où le trouver dans RC : **[App iOS Process](https://app.revenuecat.com/projects/ab4f477a/apps/app1dab14dae3)** → section **Apple Retention Messaging API settings (Preview)** → **Retention Messaging API Notification URL**.
+
+Alternative : **[Lifecycle → Retention](https://app.revenuecat.com/projects/ab4f477a/lifecycle/retention)** → panneau **Apple Retention Messaging API** (après approbation Apple + perf test sandbox).
 
 ---
 

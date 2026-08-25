@@ -36,10 +36,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.commissionFromRevenueCatEvent = exports.LIFETIME_PRODUCT_ID = exports.AFFILIATE_NET_FACTOR = exports.AFFILIATE_HOLD_DAYS = exports.AFFILIATE_COMMISSION_RATE = void 0;
 exports.db = db;
 exports.normalizeAffiliateCode = normalizeAffiliateCode;
+exports.isReservedVanityAffiliateCode = isReservedVanityAffiliateCode;
+exports.allocateUniqueAffiliateCode = allocateUniqueAffiliateCode;
 exports.affiliateHttpStatus = affiliateHttpStatus;
 exports.resolveAffiliateByCode = resolveAffiliateByCode;
 exports.resolveCodeKind = resolveCodeKind;
 exports.commissionDocId = commissionDocId;
+exports.bumpAffiliateDaily = bumpAffiliateDaily;
 exports.registerAffiliateAttribution = registerAffiliateAttribution;
 exports.getAffiliateAttributionForUser = getAffiliateAttributionForUser;
 exports.accrueAffiliateCommission = accrueAffiliateCommission;
@@ -50,6 +53,8 @@ exports.readOwnedProcessReferralCode = readOwnedProcessReferralCode;
 exports.pickPrimaryAffiliateCode = pickPrimaryAffiliateCode;
 exports.ensureAffiliateProfile = ensureAffiliateProfile;
 exports.createAffiliateWithCode = createAffiliateWithCode;
+exports.syncAffiliateCodesDisplayName = syncAffiliateCodesDisplayName;
+exports.updateAffiliateInviteProfile = updateAffiliateInviteProfile;
 exports.ensureEmailPasswordSignInEnabled = ensureEmailPasswordSignInEnabled;
 exports.provisionAffiliateAuthUser = provisionAffiliateAuthUser;
 exports.linkAffiliateAuthUser = linkAffiliateAuthUser;
@@ -62,12 +67,37 @@ const commissionShared_1 = require("./commissionShared");
 Object.defineProperty(exports, "LIFETIME_PRODUCT_ID", { enumerable: true, get: function () { return commissionShared_1.LIFETIME_PRODUCT_ID; } });
 Object.defineProperty(exports, "commissionFromRevenueCatEvent", { enumerable: true, get: function () { return commissionShared_1.commissionFromRevenueCatEvent; } });
 const referralShared_1 = require("./referralShared");
+const affiliateAnalytics_1 = require("./affiliateAnalytics");
 exports.AFFILIATE_COMMISSION_RATE = commissionShared_1.COMMISSION_RATE;
 exports.AFFILIATE_HOLD_DAYS = commissionShared_1.COMMISSION_HOLD_DAYS;
 exports.AFFILIATE_NET_FACTOR = commissionShared_1.COMMISSION_NET_FACTOR;
 function db() {
     return admin.firestore();
 }
+const RESERVED_VANITY_AFFILIATE_CODES = new Set([
+    "JOIN",
+    "GET",
+    "APP",
+    "ADMIN",
+    "API",
+    "WWW",
+    "FAQ",
+    "SUPPORT",
+    "LOGIN",
+    "APPLY",
+    "AUTH",
+    "PROGRAM",
+    "PROCESS",
+    "CLIP",
+    "CLIPPER",
+    "REF",
+    "REFERRAL",
+    "INVITE",
+    "LINK",
+    "CODE",
+    "NULL",
+    "UNDEFINED",
+]);
 function normalizeAffiliateCode(raw) {
     return String(raw || "")
         .trim()
@@ -75,6 +105,35 @@ function normalizeAffiliateCode(raw) {
         .replace(/\s+/g, "")
         .replace(/[^A-Z0-9-]/g, "")
         .slice(0, 24);
+}
+function isReservedVanityAffiliateCode(raw) {
+    const code = normalizeAffiliateCode(raw);
+    return !code || RESERVED_VANITY_AFFILIATE_CODES.has(code) || (0, referralShared_1.isReservedLifetimePassCode)(code);
+}
+async function allocateUniqueAffiliateCode(displayName) {
+    const letters = normalizeAffiliateCode(String(displayName || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")).replace(/-/g, "");
+    const base = (letters.slice(0, 8) || "CLIP").padEnd(3, "X");
+    const isFree = async (code) => {
+        if (!code || code.length < 3)
+            return false;
+        if ((0, referralShared_1.isReservedLifetimePassCode)(code))
+            return false;
+        const snap = await db().collection("affiliateCodes").doc(code).get();
+        return !snap.exists;
+    };
+    if (await isFree(base))
+        return base;
+    for (let i = 0; i < 40; i += 1) {
+        const candidate = normalizeAffiliateCode(`${base.slice(0, 8)}${10 + Math.floor(Math.random() * 90)}`);
+        if (await isFree(candidate))
+            return candidate;
+    }
+    const fallback = normalizeAffiliateCode(`P${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`.toUpperCase());
+    if (await isFree(fallback))
+        return fallback;
+    return normalizeAffiliateCode(`P${Math.random().toString(36).slice(2, 10).toUpperCase()}`);
 }
 function affiliateHttpStatus(message) {
     if (message === "UNAUTHORIZED")
@@ -90,6 +149,8 @@ function affiliateHttpStatus(message) {
     if (message === "ALREADY_ATTRIBUTED")
         return 409;
     if (message === "AFFILIATE_NOT_FOUND")
+        return 404;
+    if (message === "NOT_FOUND")
         return 404;
     if (message === "AFFILIATE_INACTIVE")
         return 403;
@@ -107,6 +168,8 @@ function affiliateHttpStatus(message) {
         return 401;
     if (message === "INVALID_TEXT")
         return 400;
+    if (message === "INVALID_PHONE")
+        return 400;
     if (message === "INVALID_PAYOUT")
         return 400;
     return 500;
@@ -114,6 +177,8 @@ function affiliateHttpStatus(message) {
 async function resolveAffiliateByCode(code) {
     const normalized = normalizeAffiliateCode(code);
     if (!normalized)
+        return null;
+    if ((0, referralShared_1.isReservedLifetimePassCode)(normalized))
         return null;
     const snapshot = await db().collection("affiliateCodes").doc(normalized).get();
     if (!snapshot.exists)
@@ -124,6 +189,8 @@ async function resolveAffiliateByCode(code) {
     return { affiliateId: data.affiliateId, doc: data };
 }
 async function resolveCodeKind(code) {
+    if ((0, referralShared_1.isReservedLifetimePassCode)(code))
+        return null;
     const normalizedAffiliate = normalizeAffiliateCode(code);
     if (normalizedAffiliate) {
         const affiliateSnap = await db()
@@ -156,6 +223,19 @@ async function resolveCodeKind(code) {
 }
 function commissionDocId(affiliateId, rcEventId) {
     return (0, commissionShared_1.commissionDocId)(affiliateId, rcEventId);
+}
+function bumpAffiliateDaily(transaction, affiliateId, patch, now = admin.firestore.Timestamp.now()) {
+    const day = (0, affiliateAnalytics_1.utcDayKey)();
+    const data = {
+        day,
+        updatedAt: now,
+    };
+    for (const [key, value] of Object.entries(patch)) {
+        if (typeof value === "number" && value !== 0) {
+            data[key] = admin.firestore.FieldValue.increment(value);
+        }
+    }
+    transaction.set(db().collection("affiliates").doc(affiliateId).collection("daily").doc(day), data, { merge: true });
 }
 async function registerAffiliateAttribution(params) {
     const affiliateRef = db().collection("affiliates").doc(params.affiliateId);
@@ -199,6 +279,7 @@ async function registerAffiliateAttribution(params) {
             "stats.referredCount": admin.firestore.FieldValue.increment(1),
             updatedAt: now,
         }, { merge: true });
+        bumpAffiliateDaily(transaction, params.affiliateId, { attributions: 1 }, now);
     });
 }
 async function getAffiliateAttributionForUser(inviteeUid) {
@@ -261,17 +342,34 @@ async function accrueAffiliateCommission(params) {
         holdUntil,
         createdAt: now,
     };
+    const attributionRef = affiliateRef.collection("attributions").doc(params.inviteeUid);
     await db().runTransaction(async (transaction) => {
+        const attrSnap = await transaction.get(attributionRef);
+        const attrData = attrSnap.data() ?? {};
+        const isFirstPaid = isInitial && !attrData.firstPaidAt;
+        const needsActive = isInitial && attrData.countedAsActive !== true;
         transaction.set(commissionRef, commission);
         transaction.set(affiliateRef, {
             "stats.pendingCents": admin.firestore.FieldValue.increment(amounts.commissionCents),
             "stats.lifetimeCents": admin.firestore.FieldValue.increment(amounts.commissionCents),
+            ...(isFirstPaid
+                ? { "stats.paidCount": admin.firestore.FieldValue.increment(1) }
+                : {}),
+            ...(needsActive
+                ? { "stats.activeSubscribers": admin.firestore.FieldValue.increment(1) }
+                : {}),
             updatedAt: now,
         }, { merge: true });
-        transaction.set(affiliateRef.collection("attributions").doc(params.inviteeUid), {
+        transaction.set(attributionRef, {
             lastCommissionAt: now,
             lastProductId: amounts.productId ?? null,
+            ...(isFirstPaid ? { firstPaidAt: now } : {}),
+            ...(needsActive ? { countedAsActive: true } : {}),
         }, { merge: true });
+        bumpAffiliateDaily(transaction, attribution.affiliateId, {
+            earningsCents: amounts.commissionCents,
+            ...(isFirstPaid ? { sales: 1 } : {}),
+        }, now);
     });
     return { created: true, commissionId };
 }
@@ -330,18 +428,25 @@ async function markAffiliateAttributionChurned(inviteeUid) {
     if (!attribution)
         return;
     const now = admin.firestore.Timestamp.now();
+    const attributionRef = db()
+        .collection("affiliates")
+        .doc(attribution.affiliateId)
+        .collection("attributions")
+        .doc(inviteeUid);
+    const attrSnap = await attributionRef.get();
+    const wasActive = attrSnap.data()?.countedAsActive === true;
     await db()
         .collection("users")
         .doc(inviteeUid)
         .collection("affiliateMeta")
         .doc("referredBy")
         .set({ status: "churned" }, { merge: true });
-    await db()
-        .collection("affiliates")
-        .doc(attribution.affiliateId)
-        .collection("attributions")
-        .doc(inviteeUid)
-        .set({ status: "churned" }, { merge: true });
+    await attributionRef.set({
+        status: "churned",
+        countedAsActive: false,
+    }, { merge: true });
+    if (!wasActive)
+        return;
     await db()
         .collection("affiliates")
         .doc(attribution.affiliateId)
@@ -426,6 +531,7 @@ async function ensureAffiliateProfile(params) {
         await affiliateRef.set({
             displayName: params.displayName.slice(0, 80),
             ...(params.email ? { email: params.email.slice(0, 120) } : {}),
+            ...(params.phone ? { phone: params.phone.slice(0, 40) } : {}),
             updatedAt: now,
         }, { merge: true });
         return { affiliateId };
@@ -434,6 +540,7 @@ async function ensureAffiliateProfile(params) {
         uid: params.uid ?? null,
         displayName: params.displayName.slice(0, 80),
         email: params.email?.slice(0, 120) ?? null,
+        ...(params.phone ? { phone: params.phone.slice(0, 40) } : {}),
         status: params.status ?? "active",
         codes: [],
         stats: {
@@ -443,6 +550,10 @@ async function ensureAffiliateProfile(params) {
             payableCents: 0,
             paidCents: 0,
             lifetimeCents: 0,
+            linkViews: 0,
+            storeClicks: 0,
+            paywallCount: 0,
+            paidCount: 0,
         },
         createdAt: now,
         updatedAt: now,
@@ -452,6 +563,8 @@ async function ensureAffiliateProfile(params) {
 async function createAffiliateWithCode(params) {
     const code = normalizeAffiliateCode(params.code);
     if (!code || code.length < 3)
+        throw new Error("INVALID_CODE");
+    if ((0, referralShared_1.isReservedLifetimePassCode)(code))
         throw new Error("INVALID_CODE");
     const affiliateId = params.affiliateId.trim();
     if (!affiliateId)
@@ -506,6 +619,10 @@ async function createAffiliateWithCode(params) {
                         payableCents: 0,
                         paidCents: 0,
                         lifetimeCents: 0,
+                        linkViews: 0,
+                        storeClicks: 0,
+                        paywallCount: 0,
+                        paidCount: 0,
                     },
                 }),
             createdAt: affiliateSnap.data()?.createdAt ?? now,
@@ -513,6 +630,74 @@ async function createAffiliateWithCode(params) {
         }, { merge: true });
     });
     return { affiliateId, code };
+}
+async function syncAffiliateCodesDisplayName(affiliateId, displayName) {
+    const name = displayName.slice(0, 80);
+    if (!affiliateId || !name)
+        return;
+    const snap = await db()
+        .collection("affiliateCodes")
+        .where("affiliateId", "==", affiliateId)
+        .limit(40)
+        .get();
+    if (snap.empty)
+        return;
+    const now = admin.firestore.Timestamp.now();
+    const batch = db().batch();
+    for (const doc of snap.docs) {
+        batch.set(doc.ref, { displayName: name, updatedAt: now }, { merge: true });
+    }
+    await batch.commit();
+}
+async function updateAffiliateInviteProfile(params) {
+    const affiliateRef = db().collection("affiliates").doc(params.affiliateId);
+    const snap = await affiliateRef.get();
+    if (!snap.exists)
+        throw new Error("AFFILIATE_NOT_FOUND");
+    const current = snap.data();
+    const nextName = (params.displayName || current.displayName || "").trim().slice(0, 80);
+    if (!nextName)
+        throw new Error("INVALID_TEXT");
+    const requested = normalizeAffiliateCode(params.code || "");
+    const currentPrimary = String(current.primaryCode || current.codes?.[0] || "");
+    if (requested) {
+        if (requested.length < 3 || isReservedVanityAffiliateCode(requested)) {
+            throw new Error("INVALID_CODE");
+        }
+        if ((0, referralShared_1.isValidReferralCode)(requested)) {
+            const owner = await (0, referralShared_1.resolveReferrerUserId)(requested);
+            if (owner && owner !== params.uid)
+                throw new Error("CODE_CONFLICT");
+        }
+        if (requested !== currentPrimary) {
+            await createAffiliateWithCode({
+                affiliateId: params.affiliateId,
+                code: requested,
+                displayName: nextName,
+                email: params.email || current.email || undefined,
+                uid: params.uid,
+                status: params.status || current.status,
+                makePrimary: true,
+            });
+            await affiliateRef.set({
+                customPrimaryCode: true,
+                displayName: nextName,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            }, { merge: true });
+        }
+    }
+    if (nextName !== current.displayName || !requested) {
+        await affiliateRef.set({
+            displayName: nextName,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+    }
+    await syncAffiliateCodesDisplayName(params.affiliateId, nextName);
+    const fresh = await affiliateRef.get();
+    const data = fresh.data() || current;
+    const codes = Array.isArray(data.codes) ? data.codes : [];
+    const primaryCode = pickPrimaryAffiliateCode(codes, data.primaryCode, null);
+    return { displayName: data.displayName || nextName, primaryCode, codes };
 }
 async function ensureEmailPasswordSignInEnabled() {
     const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;

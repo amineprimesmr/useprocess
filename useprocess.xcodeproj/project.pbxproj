@@ -13,6 +13,7 @@
 		67E2B3222FDD8C240016422D /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = RC1A2B3C52FD90001006422D /* RevenueCat */; };
 		67E2B3232FDD8C240016422D /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C82FD90001006422D /* FirebaseAppCheck */; };
 		67E314BD303349AA00A1EDD8 /* Crisp in Frameworks */ = {isa = PBXBuildFile; productRef = CR1A2B3C52FD90001006422D /* Crisp */; };
+		AF1A2B3C62FD90001006422D /* AppsFlyerLib-Static in Frameworks */ = {isa = PBXBuildFile; productRef = AF1A2B3C52FD90001006422D /* AppsFlyerLib-Static */; };
 		HY1A2B3C12FD90001006422D /* ProcessWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = HY1A2B3C02FD90001006422D /* ProcessWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		LT1A2B3C62FD90001006422D /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = LT1A2B3C52FD90001006422D /* Lottie */; };
 		PH1A2B3C62FD90001006422D /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = PH1A2B3C52FD90001006422D /* PostHog */; };
@@ -90,6 +91,7 @@
 				67E2B3222FDD8C240016422D /* RevenueCat in Frameworks */,
 				LT1A2B3C62FD90001006422D /* Lottie in Frameworks */,
 				PH1A2B3C62FD90001006422D /* PostHog in Frameworks */,
+				AF1A2B3C62FD90001006422D /* AppsFlyerLib-Static in Frameworks */,
 				67E2B31F2FDD8C240016422D /* FirebaseCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -154,6 +156,7 @@
 				LT1A2B3C52FD90001006422D /* Lottie */,
 				PH1A2B3C52FD90001006422D /* PostHog */,
 				CR1A2B3C52FD90001006422D /* Crisp */,
+				AF1A2B3C52FD90001006422D /* AppsFlyerLib-Static */,
 			);
 			productName = useprocess;
 			productReference = 67E2AE312FDD89E60016422D /* useprocess.app */;
@@ -222,6 +225,7 @@
 				LT1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "lottie-ios" */,
 				PH1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "posthog-ios" */,
 				CR1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "crisp-sdk-ios" */,
+				AF1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "AppsFlyerFramework-Static" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 67E2AE322FDD89E60016422D /* Products */;
@@ -405,7 +409,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = useprocess/useprocess.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = F2CJGJ69XU;
 				ENABLE_APP_SANDBOX = NO;
@@ -436,7 +440,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 1.08;
+				MARKETING_VERSION = 1.09;
 				PRODUCT_BUNDLE_IDENTIFIER = com.useprocess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -460,7 +464,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = useprocess/useprocess.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = F2CJGJ69XU;
 				ENABLE_APP_SANDBOX = NO;
@@ -491,7 +495,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 1.08;
+				MARKETING_VERSION = 1.09;
 				PRODUCT_BUNDLE_IDENTIFIER = com.useprocess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -515,7 +519,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ProcessWidgets/ProcessWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				DEVELOPMENT_TEAM = F2CJGJ69XU;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ProcessWidgets/Info.plist;
@@ -527,7 +531,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.08;
+				MARKETING_VERSION = 1.09;
 				PRODUCT_BUNDLE_IDENTIFIER = com.useprocess.ProcessWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -550,7 +554,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ProcessWidgets/ProcessWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				DEVELOPMENT_TEAM = F2CJGJ69XU;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ProcessWidgets/Info.plist;
@@ -562,7 +566,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.08;
+				MARKETING_VERSION = 1.09;
 				PRODUCT_BUNDLE_IDENTIFIER = com.useprocess.ProcessWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -610,6 +614,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		AF1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "AppsFlyerFramework-Static" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AppsFlyerSDK/AppsFlyerFramework-Static";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.0.0;
+			};
+		};
 		CR1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "crisp-sdk-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/crisp-im/crisp-sdk-ios";
@@ -653,6 +665,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		AF1A2B3C52FD90001006422D /* AppsFlyerLib-Static */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AF1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "AppsFlyerFramework-Static" */;
+			productName = "AppsFlyerLib-Static";
+		};
 		CR1A2B3C52FD90001006422D /* Crisp */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = CR1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "crisp-sdk-ios" */;

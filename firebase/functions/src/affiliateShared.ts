@@ -9,7 +9,8 @@ import {
   commissionFromRevenueCatEvent,
   type CommissionStatus,
 } from "./commissionShared";
-import { normalizeReferralCode, resolveReferrerUserId, isValidReferralCode } from "./referralShared";
+import { normalizeReferralCode, resolveReferrerUserId, isValidReferralCode, isReservedLifetimePassCode } from "./referralShared";
+import { utcDayKey, type AffiliateDailyCounts } from "./affiliateAnalytics";
 
 export const AFFILIATE_COMMISSION_RATE = COMMISSION_RATE;
 export const AFFILIATE_HOLD_DAYS = COMMISSION_HOLD_DAYS;
@@ -34,6 +35,7 @@ export interface AffiliateDoc {
   uid?: string;
   displayName: string;
   email?: string;
+  phone?: string;
   /** @deprecated Legacy PayPal field — payouts use Stripe Connect */
   paypalEmail?: string | null;
   stripeAccountId?: string | null;
@@ -45,6 +47,8 @@ export interface AffiliateDoc {
   status: AffiliateStatus;
   codes: string[];
   primaryCode?: string;
+  /** When true, dashboard must not overwrite primaryCode with the in-app Process referral code. */
+  customPrimaryCode?: boolean;
   stats: {
     referredCount: number;
     activeSubscribers: number;
@@ -52,6 +56,10 @@ export interface AffiliateDoc {
     payableCents: number;
     paidCents: number;
     lifetimeCents: number;
+    linkViews?: number;
+    storeClicks?: number;
+    paywallCount?: number;
+    paidCount?: number;
   };
   createdAt: admin.firestore.Timestamp;
   updatedAt: admin.firestore.Timestamp;
@@ -82,6 +90,31 @@ export function db() {
   return admin.firestore();
 }
 
+const RESERVED_VANITY_AFFILIATE_CODES = new Set([
+  "JOIN",
+  "GET",
+  "APP",
+  "ADMIN",
+  "API",
+  "WWW",
+  "FAQ",
+  "SUPPORT",
+  "LOGIN",
+  "APPLY",
+  "AUTH",
+  "PROGRAM",
+  "PROCESS",
+  "CLIP",
+  "CLIPPER",
+  "REF",
+  "REFERRAL",
+  "INVITE",
+  "LINK",
+  "CODE",
+  "NULL",
+  "UNDEFINED",
+]);
+
 export function normalizeAffiliateCode(raw: string): string {
   return String(raw || "")
     .trim()
@@ -89,6 +122,42 @@ export function normalizeAffiliateCode(raw: string): string {
     .replace(/\s+/g, "")
     .replace(/[^A-Z0-9-]/g, "")
     .slice(0, 24);
+}
+
+export function isReservedVanityAffiliateCode(raw: string): boolean {
+  const code = normalizeAffiliateCode(raw);
+  return !code || RESERVED_VANITY_AFFILIATE_CODES.has(code) || isReservedLifetimePassCode(code);
+}
+
+export async function allocateUniqueAffiliateCode(displayName: string): Promise<string> {
+  const letters = normalizeAffiliateCode(
+    String(displayName || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+  ).replace(/-/g, "");
+  const base = (letters.slice(0, 8) || "CLIP").padEnd(3, "X");
+
+  const isFree = async (code: string): Promise<boolean> => {
+    if (!code || code.length < 3) return false;
+    if (isReservedLifetimePassCode(code)) return false;
+    const snap = await db().collection("affiliateCodes").doc(code).get();
+    return !snap.exists;
+  };
+
+  if (await isFree(base)) return base;
+
+  for (let i = 0; i < 40; i += 1) {
+    const candidate = normalizeAffiliateCode(
+      `${base.slice(0, 8)}${10 + Math.floor(Math.random() * 90)}`
+    );
+    if (await isFree(candidate)) return candidate;
+  }
+
+  const fallback = normalizeAffiliateCode(
+    `P${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`.toUpperCase()
+  );
+  if (await isFree(fallback)) return fallback;
+  return normalizeAffiliateCode(`P${Math.random().toString(36).slice(2, 10).toUpperCase()}`);
 }
 
 export function affiliateHttpStatus(message: string): number {
@@ -99,6 +168,7 @@ export function affiliateHttpStatus(message: string): number {
   if (message === "SELF_ATTRIBUTION") return 400;
   if (message === "ALREADY_ATTRIBUTED") return 409;
   if (message === "AFFILIATE_NOT_FOUND") return 404;
+  if (message === "NOT_FOUND") return 404;
   if (message === "AFFILIATE_INACTIVE") return 403;
   if (message === "AFFILIATE_NOT_LINKED") return 403;
   if (message === "STRIPE_NOT_LINKED") return 404;
@@ -107,6 +177,7 @@ export function affiliateHttpStatus(message: string): number {
   if (message === "CODE_CONFLICT") return 409;
   if (message === "INVALID_ADMIN") return 401;
   if (message === "INVALID_TEXT") return 400;
+  if (message === "INVALID_PHONE") return 400;
   if (message === "INVALID_PAYOUT") return 400;
   return 500;
 }
@@ -116,6 +187,7 @@ export async function resolveAffiliateByCode(
 ): Promise<{ affiliateId: string; doc: AffiliateCodeDoc } | null> {
   const normalized = normalizeAffiliateCode(code);
   if (!normalized) return null;
+  if (isReservedLifetimePassCode(normalized)) return null;
 
   const snapshot = await db().collection("affiliateCodes").doc(normalized).get();
   if (!snapshot.exists) return null;
@@ -133,6 +205,8 @@ export async function resolveCodeKind(
   | { type: "referral"; code: string; displayName?: string; referrerUserId: string }
   | null
 > {
+  if (isReservedLifetimePassCode(code)) return null;
+
   const normalizedAffiliate = normalizeAffiliateCode(code);
   if (normalizedAffiliate) {
     const affiliateSnap = await db()
@@ -166,6 +240,29 @@ export async function resolveCodeKind(
 
 export function commissionDocId(affiliateId: string, rcEventId: string): string {
   return sharedCommissionDocId(affiliateId, rcEventId);
+}
+
+export function bumpAffiliateDaily(
+  transaction: admin.firestore.Transaction,
+  affiliateId: string,
+  patch: Partial<AffiliateDailyCounts>,
+  now = admin.firestore.Timestamp.now()
+) {
+  const day = utcDayKey();
+  const data: Record<string, unknown> = {
+    day,
+    updatedAt: now,
+  };
+  for (const [key, value] of Object.entries(patch)) {
+    if (typeof value === "number" && value !== 0) {
+      data[key] = admin.firestore.FieldValue.increment(value);
+    }
+  }
+  transaction.set(
+    db().collection("affiliates").doc(affiliateId).collection("daily").doc(day),
+    data,
+    { merge: true }
+  );
 }
 
 export { commissionFromRevenueCatEvent };
@@ -227,6 +324,7 @@ export async function registerAffiliateAttribution(params: {
       },
       { merge: true }
     );
+    bumpAffiliateDaily(transaction, params.affiliateId, { attributions: 1 }, now);
   });
 }
 
@@ -309,24 +407,48 @@ export async function accrueAffiliateCommission(params: {
     createdAt: now,
   };
 
+  const attributionRef = affiliateRef.collection("attributions").doc(params.inviteeUid);
+
   await db().runTransaction(async (transaction) => {
+    const attrSnap = await transaction.get(attributionRef);
+    const attrData = attrSnap.data() ?? {};
+    const isFirstPaid = isInitial && !attrData.firstPaidAt;
+    const needsActive = isInitial && attrData.countedAsActive !== true;
+
     transaction.set(commissionRef, commission);
     transaction.set(
       affiliateRef,
       {
         "stats.pendingCents": admin.firestore.FieldValue.increment(amounts.commissionCents),
         "stats.lifetimeCents": admin.firestore.FieldValue.increment(amounts.commissionCents),
+        ...(isFirstPaid
+          ? { "stats.paidCount": admin.firestore.FieldValue.increment(1) }
+          : {}),
+        ...(needsActive
+          ? { "stats.activeSubscribers": admin.firestore.FieldValue.increment(1) }
+          : {}),
         updatedAt: now,
       },
       { merge: true }
     );
     transaction.set(
-      affiliateRef.collection("attributions").doc(params.inviteeUid),
+      attributionRef,
       {
         lastCommissionAt: now,
         lastProductId: amounts.productId ?? null,
+        ...(isFirstPaid ? { firstPaidAt: now } : {}),
+        ...(needsActive ? { countedAsActive: true } : {}),
       },
       { merge: true }
+    );
+    bumpAffiliateDaily(
+      transaction,
+      attribution.affiliateId,
+      {
+        earningsCents: amounts.commissionCents,
+        ...(isFirstPaid ? { sales: 1 } : {}),
+      },
+      now
     );
   });
 
@@ -420,6 +542,14 @@ export async function markAffiliateAttributionChurned(
   if (!attribution) return;
 
   const now = admin.firestore.Timestamp.now();
+  const attributionRef = db()
+    .collection("affiliates")
+    .doc(attribution.affiliateId)
+    .collection("attributions")
+    .doc(inviteeUid);
+  const attrSnap = await attributionRef.get();
+  const wasActive = attrSnap.data()?.countedAsActive === true;
+
   await db()
     .collection("users")
     .doc(inviteeUid)
@@ -427,12 +557,15 @@ export async function markAffiliateAttributionChurned(
     .doc("referredBy")
     .set({ status: "churned" satisfies AffiliateAttributionStatus }, { merge: true });
 
-  await db()
-    .collection("affiliates")
-    .doc(attribution.affiliateId)
-    .collection("attributions")
-    .doc(inviteeUid)
-    .set({ status: "churned" satisfies AffiliateAttributionStatus }, { merge: true });
+  await attributionRef.set(
+    {
+      status: "churned" satisfies AffiliateAttributionStatus,
+      countedAsActive: false,
+    },
+    { merge: true }
+  );
+
+  if (!wasActive) return;
 
   await db()
     .collection("affiliates")
@@ -529,6 +662,7 @@ export async function ensureAffiliateProfile(params: {
   affiliateId: string;
   displayName: string;
   email?: string;
+  phone?: string;
   uid?: string;
   status?: AffiliateStatus;
 }): Promise<{ affiliateId: string }> {
@@ -543,6 +677,7 @@ export async function ensureAffiliateProfile(params: {
       {
         displayName: params.displayName.slice(0, 80),
         ...(params.email ? { email: params.email.slice(0, 120) } : {}),
+        ...(params.phone ? { phone: params.phone.slice(0, 40) } : {}),
         updatedAt: now,
       },
       { merge: true }
@@ -554,6 +689,7 @@ export async function ensureAffiliateProfile(params: {
     uid: params.uid ?? null,
     displayName: params.displayName.slice(0, 80),
     email: params.email?.slice(0, 120) ?? null,
+    ...(params.phone ? { phone: params.phone.slice(0, 40) } : {}),
     status: params.status ?? "active",
     codes: [],
     stats: {
@@ -563,6 +699,10 @@ export async function ensureAffiliateProfile(params: {
       payableCents: 0,
       paidCents: 0,
       lifetimeCents: 0,
+      linkViews: 0,
+      storeClicks: 0,
+      paywallCount: 0,
+      paidCount: 0,
     },
     createdAt: now,
     updatedAt: now,
@@ -582,6 +722,7 @@ export async function createAffiliateWithCode(params: {
 }): Promise<{ affiliateId: string; code: string }> {
   const code = normalizeAffiliateCode(params.code);
   if (!code || code.length < 3) throw new Error("INVALID_CODE");
+  if (isReservedLifetimePassCode(code)) throw new Error("INVALID_CODE");
 
   const affiliateId = params.affiliateId.trim();
   if (!affiliateId) throw new Error("INVALID_CODE");
@@ -647,6 +788,10 @@ export async function createAffiliateWithCode(params: {
                 payableCents: 0,
                 paidCents: 0,
                 lifetimeCents: 0,
+                linkViews: 0,
+                storeClicks: 0,
+                paywallCount: 0,
+                paidCount: 0,
               },
             }),
         createdAt: affiliateSnap.data()?.createdAt ?? now,
@@ -657,6 +802,92 @@ export async function createAffiliateWithCode(params: {
   });
 
   return { affiliateId, code };
+}
+
+export async function syncAffiliateCodesDisplayName(
+  affiliateId: string,
+  displayName: string
+): Promise<void> {
+  const name = displayName.slice(0, 80);
+  if (!affiliateId || !name) return;
+  const snap = await db()
+    .collection("affiliateCodes")
+    .where("affiliateId", "==", affiliateId)
+    .limit(40)
+    .get();
+  if (snap.empty) return;
+  const now = admin.firestore.Timestamp.now();
+  const batch = db().batch();
+  for (const doc of snap.docs) {
+    batch.set(doc.ref, { displayName: name, updatedAt: now }, { merge: true });
+  }
+  await batch.commit();
+}
+
+export async function updateAffiliateInviteProfile(params: {
+  affiliateId: string;
+  uid: string;
+  email?: string;
+  status?: AffiliateStatus;
+  displayName?: string;
+  code?: string;
+}): Promise<{ displayName: string; primaryCode: string; codes: string[] }> {
+  const affiliateRef = db().collection("affiliates").doc(params.affiliateId);
+  const snap = await affiliateRef.get();
+  if (!snap.exists) throw new Error("AFFILIATE_NOT_FOUND");
+
+  const current = snap.data() as AffiliateDoc;
+  const nextName = (params.displayName || current.displayName || "").trim().slice(0, 80);
+  if (!nextName) throw new Error("INVALID_TEXT");
+
+  const requested = normalizeAffiliateCode(params.code || "");
+  const currentPrimary = String(current.primaryCode || current.codes?.[0] || "");
+  if (requested) {
+    if (requested.length < 3 || isReservedVanityAffiliateCode(requested)) {
+      throw new Error("INVALID_CODE");
+    }
+    if (isValidReferralCode(requested)) {
+      const owner = await resolveReferrerUserId(requested);
+      if (owner && owner !== params.uid) throw new Error("CODE_CONFLICT");
+    }
+    if (requested !== currentPrimary) {
+      await createAffiliateWithCode({
+        affiliateId: params.affiliateId,
+        code: requested,
+        displayName: nextName,
+        email: params.email || current.email || undefined,
+        uid: params.uid,
+        status: params.status || current.status,
+        makePrimary: true,
+      });
+      await affiliateRef.set(
+        {
+          customPrimaryCode: true,
+          displayName: nextName,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    }
+  }
+
+  if (nextName !== current.displayName || !requested) {
+    await affiliateRef.set(
+      {
+        displayName: nextName,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+  }
+
+  await syncAffiliateCodesDisplayName(params.affiliateId, nextName);
+
+  const fresh = await affiliateRef.get();
+  const data = (fresh.data() as AffiliateDoc) || current;
+  const codes = Array.isArray(data.codes) ? data.codes : [];
+  const primaryCode = pickPrimaryAffiliateCode(codes, data.primaryCode, null);
+  return { displayName: data.displayName || nextName, primaryCode, codes };
 }
 
 export async function ensureEmailPasswordSignInEnabled(): Promise<void> {

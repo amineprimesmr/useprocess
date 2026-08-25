@@ -57,7 +57,7 @@ exports.referralSyncProgram = (0, https_1.onRequest)({
         await (0, referralShared_1.verifyAppAttestation)(req);
         const referralCode = (0, referralShared_1.normalizeReferralCode)(String(req.body?.referralCode ?? ""));
         const displayName = String(req.body?.displayName ?? "").trim();
-        if (!(0, referralShared_1.isValidReferralCode)(referralCode)) {
+        if (!(0, referralShared_1.isValidReferralCode)(referralCode) || (0, referralShared_1.isReservedLifetimePassCode)(referralCode)) {
             res.status(400).json({ error: "INVALID_CODE" });
             return;
         }
@@ -94,7 +94,7 @@ exports.referralRegister = (0, https_1.onRequest)({
         await (0, referralShared_1.verifyAppAttestation)(req);
         const referralCode = (0, referralShared_1.normalizeReferralCode)(String(req.body?.referralCode ?? ""));
         const displayName = String(req.body?.displayName ?? "").trim();
-        if (!(0, referralShared_1.isValidReferralCode)(referralCode)) {
+        if (!(0, referralShared_1.isValidReferralCode)(referralCode) || (0, referralShared_1.isReservedLifetimePassCode)(referralCode)) {
             res.status(400).json({ error: "INVALID_CODE" });
             return;
         }

@@ -1,7 +1,7 @@
 import Foundation
 import StoreKit
 
-/// L’essai intro 3 jours n’est plus un droit marché FR : il est **débloqué par un code**.
+/// L’essai intro 3 jours : bras test A/B (`paywall-annual-trial-ab`) ou code parrainage.
 enum SubscriptionMarketPolicy {
     private(set) static var cachedStorefrontCountryCode: String?
 
@@ -9,10 +9,10 @@ enum SubscriptionMarketPolicy {
         cachedStorefrontCountryCode
     }
 
-    /// Vrai seulement après un code parrainage / créateur validé.
+    /// Vrai si le bras test est actif **ou** un code parrainage / créateur est validé.
     @MainActor
     static var allowsIntroductoryFreeTrial: Bool {
-        ProcessReferralTrialEligibility.isUnlocked
+        PaywallPricingExperiment.shared.grantsAnnualTrial
     }
 
     @MainActor

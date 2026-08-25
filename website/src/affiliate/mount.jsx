@@ -1,13 +1,12 @@
 import { createRoot } from "react-dom/client";
-import { warmFirebaseAuth } from "../features/firebase-client.js";
+import { warmFirebaseAuth, warmAffiliateFunctions } from "../features/firebase-client.js";
 import { initSiteLanguage } from "../features/app-copy.js";
-import { dismissCrispChat } from "../features/crisp-chat.js";
 import { AffiliateApp } from "./AffiliateApp.jsx";
 
 export function mountAffiliate() {
   initSiteLanguage();
-  dismissCrispChat();
   warmFirebaseAuth();
+  warmAffiliateFunctions();
   const el = document.getElementById("affiliate-root");
   if (!el) return;
   el.dataset.mounted = "1";

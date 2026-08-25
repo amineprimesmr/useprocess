@@ -21,6 +21,16 @@ export function normalizeReferralCode(raw) {
     .slice(0, REFERRAL_CODE_LENGTH);
 }
 
+/** Codes affiliés / join (plus longs que les codes parrainage à 5 caractères). */
+export function normalizeAcquisitionCodeFromUrl(raw) {
+  return String(raw || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/[^A-Z0-9-]/g, "")
+    .slice(0, 24);
+}
+
 export function isValidReferralCode(raw) {
   return normalizeReferralCode(raw).length === REFERRAL_CODE_LENGTH;
 }
@@ -118,18 +128,18 @@ export function parseReferralCodeFromLocation(location = window.location) {
   if (host === "join.useprocess.xyz" && path) {
     const rootCode = path.replace(/^\//, "");
     if (rootCode && !["get", "telecharger", "join", "c"].includes(rootCode.toLowerCase())) {
-      return normalizeReferralCode(decodeURIComponent(rootCode));
+      return normalizeAcquisitionCodeFromUrl(decodeURIComponent(rootCode));
     }
   }
 
   const joinMatch = path.match(/^\/join\/([^/]+)$/i);
   if (joinMatch?.[1]) {
-    return normalizeReferralCode(decodeURIComponent(joinMatch[1]));
+    return normalizeAcquisitionCodeFromUrl(decodeURIComponent(joinMatch[1]));
   }
 
   const params = new URLSearchParams(location.search || "");
   const ref = params.get("ref") || params.get("code");
-  if (ref) return normalizeReferralCode(ref);
+  if (ref) return normalizeAcquisitionCodeFromUrl(ref);
 
   return readRememberedReferralCode();
 }
@@ -201,7 +211,7 @@ export function buildAppStoreUrlWithReferral(code, utm = {}) {
 }
 
 export function rememberReferralCode(code) {
-  const normalized = normalizeReferralCode(code);
+  const normalized = normalizeAcquisitionCodeFromUrl(code) || normalizeReferralCode(code);
   if (!normalized) return;
   try {
     localStorage.setItem(REFERRAL_STORAGE_KEY, normalized);
@@ -213,7 +223,7 @@ export function rememberReferralCode(code) {
 
 export function readRememberedReferralCode() {
   try {
-    const code = normalizeReferralCode(localStorage.getItem(REFERRAL_STORAGE_KEY) || "");
+    const code = normalizeAcquisitionCodeFromUrl(localStorage.getItem(REFERRAL_STORAGE_KEY) || "");
     if (!code) return "";
     const savedAt = Number(localStorage.getItem(REFERRAL_STORAGE_TS_KEY) || "0");
     if (savedAt > 0 && Date.now() - savedAt > REFERRAL_TTL_MS) {

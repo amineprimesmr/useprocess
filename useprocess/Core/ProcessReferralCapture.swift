@@ -116,6 +116,14 @@ enum ProcessReferralAttribution {
 
     static func applyPendingIfNeeded(to viewModel: OnboardingViewModel) {
         guard let code = pendingCode else { return }
+        if ProcessAffiliateLifetimePass.matches(code) {
+            ProcessAffiliateLifetimePass.unlock()
+            clearPending()
+            viewModel.creatorCodeDraft = ProcessAffiliateLifetimePass.code
+            viewModel.creatorCodeIsVerified = true
+            viewModel.saveProgress()
+            return
+        }
         let current = viewModel.referralCode?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if current.isEmpty {
             viewModel.referralCode = code
@@ -139,6 +147,10 @@ enum ProcessReferralAttribution {
     private static func storePending(_ code: String) {
         let normalized = ProcessReferralLink.normalizeCode(code)
         guard !normalized.isEmpty else { return }
+        if ProcessAffiliateLifetimePass.matches(normalized) {
+            ProcessAffiliateLifetimePass.unlock()
+            return
+        }
         UserDefaults.standard.set(normalized, forKey: pendingKey)
         ProcessAcquisitionAttribution.captureReferralCode(normalized)
         Task { @MainActor in

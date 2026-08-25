@@ -98,6 +98,9 @@ class OnboardingNavigationEngine {
         case .referralCode:
             return OnboardingStep.dreamFaceCommit.rawValue
         case .dreamFaceCommit:
+            if SubscriptionService.shared.subscriptionStatus.isActive {
+                return OnboardingStep.appleSignIn.rawValue
+            }
             return OnboardingStep.payment.rawValue
         case .payment:
             return OnboardingStep.appleSignIn.rawValue

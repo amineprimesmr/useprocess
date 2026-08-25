@@ -580,6 +580,8 @@ export {
 export {
   affiliatePreparePasswordless,
   affiliateResolveCode,
+  affiliateTrackLink,
+  affiliateTrackFunnel,
   affiliateRegister,
   affiliateApply,
   affiliateSyncProfile,
@@ -601,3 +603,7 @@ export {
   affiliateStripeWebhook,
 } from "./affiliateStripe";
 export { supportSendMessage, supportCrispWebhook, supportCrispPoll } from "./supportCrisp";
+export { affiliateTikTokStudio, affiliateTikTokOAuthCallback } from "./affiliateTikTok";
+export { affiliateLeaderboard } from "./affiliateLeaderboard";
+export { affiliateLibrary } from "./affiliateLibrary";
+export { affiliateMcp } from "./affiliateMcp";

@@ -262,6 +262,24 @@ func handleOnboardingBack() {
     previousStep()
 }
 
+func handleReferralCodeContinue() {
+    guard !isTransitioning else { return }
+    guard OnboardingStep(rawValue: viewModel.currentStep) == .referralCode else { return }
+
+    if viewModel.creatorCodeIsVerified {
+        advanceFromVerifiedCreatorCode()
+        return
+    }
+
+    let normalized = ProcessReferralCode.normalize(viewModel.creatorCodeDraft)
+    if normalized.isEmpty {
+        skipCreatorCodeStep()
+        return
+    }
+
+    viewModel.creatorCodeContinueAttempt += 1
+}
+
 func skipCreatorCodeStep() {
     guard !isTransitioning else { return }
     guard OnboardingStep(rawValue: viewModel.currentStep) == .referralCode else { return }

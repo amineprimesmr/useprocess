@@ -635,16 +635,17 @@ html.page-affiliate #affiliate-root:has(.af-shell) {
   gap: 2px;
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .af-sidebar-logo {
   font-weight: 800;
-  font-size: 18px;
-  letter-spacing: -0.03em;
+  font-size: 15px;
+  letter-spacing: -0.04em;
   margin-bottom: 12px;
   padding-left: 6px;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .af-program-switch {
@@ -670,12 +671,23 @@ html.page-affiliate #affiliate-root:has(.af-shell) {
 }
 
 .af-nav-label {
+  display: block;
+  width: 100%;
+  border: none;
+  background: none;
+  font: inherit;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #9ca3af;
   padding: 8px 10px 6px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.af-nav-label.is-active {
+  color: var(--af-accent);
 }
 
 .af-nav-item {
@@ -701,6 +713,12 @@ html.page-affiliate #affiliate-root:has(.af-shell) {
   flex-shrink: 0;
 }
 
+.af-nav-item .af-tiktok-mark {
+  width: 18px;
+  height: 18px;
+  overflow: visible;
+}
+
 .af-nav-item:hover {
   background: rgba(0, 0, 0, 0.04);
 }
@@ -721,6 +739,11 @@ html.page-affiliate #affiliate-root:has(.af-shell) {
   height: 12px;
   margin-left: auto;
   opacity: 0.5;
+}
+
+.af-nav-item.is-sub {
+  padding-left: 32px;
+  font-size: 13px;
 }
 
 .af-sidebar-footer {
@@ -815,6 +838,10 @@ button.af-support-link {
 
 .af-page-panel {
   min-height: 200px;
+}
+
+.af-page-pending {
+  min-height: 240px;
 }
 
 .af-main-skeleton .af-skeleton-line {
@@ -1082,15 +1109,79 @@ button.af-support-link {
   font-size: 15px;
 }
 
-.af-link-dest {
+.af-link-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.af-invite-edit {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--af-border);
+}
+
+.af-invite-fields {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 720px) {
+  .af-invite-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.af-invite-field label {
+  display: block;
+  margin-bottom: 6px;
   font-size: 12px;
-  color: var(--af-muted);
+  font-weight: 650;
+  color: #6b7280;
+}
+
+.af-invite-preview {
+  padding: 12px 14px;
+  border: 1px dashed var(--af-border);
+  border-radius: var(--af-radius);
+  background: #fafafa;
+}
+
+.af-invite-preview span {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-bottom: 6px;
+}
+
+.af-invite-preview strong {
+  display: block;
+  font-size: 16px;
+  letter-spacing: -0.03em;
+}
+
+.af-invite-preview em {
+  display: block;
   margin-top: 4px;
+  font-style: normal;
+  font-size: 13px;
+  color: var(--af-muted);
+}
+
+.af-invite-error {
+  margin: 0;
+  font-size: 13px;
+  color: #b91c1c;
 }
 
 .af-metrics-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
 }
 
 .af-metric-col {
@@ -1121,9 +1212,41 @@ button.af-support-link {
   font-weight: 700;
 }
 
+.af-metric-hint {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--af-muted);
+}
+
 .af-mini-chart {
   height: 36px;
   margin-top: 12px;
+}
+
+.af-funnel {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--af-border);
+}
+
+.af-funnel-step {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.af-funnel-step span {
+  font-size: 11px;
+  color: var(--af-muted);
+}
+
+.af-funnel-step strong {
+  font-size: 13px;
+  font-weight: 700;
 }
 
 /* ── Empty state ── */
@@ -1212,6 +1335,13 @@ button.af-support-link {
 
 .af-payout-card {
   padding: 16px 18px;
+}
+
+.af-payout-rules {
+  margin: -4px 0 16px;
+  color: var(--af-muted);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .af-status-label {
@@ -1608,6 +1738,24 @@ button.af-support-link {
 .af-badge.paid { background: #ecfdf5; color: #047857; }
 
 /* ── Responsive ── */
+@media (max-width: 1200px) {
+  .af-metrics-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .af-metric-col:nth-child(2n) {
+    border-right: none;
+  }
+
+  .af-metric-col:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--af-border);
+  }
+
+  .af-funnel {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 960px) {
   .af-shell {
     grid-template-columns: 1fr;
@@ -1648,6 +1796,14 @@ button.af-support-link {
   .af-metric-col {
     border-right: none;
     border-bottom: 1px solid var(--af-border);
+  }
+
+  .af-metric-col:last-child {
+    border-bottom: none;
+  }
+
+  .af-funnel {
+    grid-template-columns: 1fr;
   }
 
   .af-settings-layout {
@@ -1811,4 +1967,40 @@ html.page-affiliate [class*="crisp-"] {
 .af-x-fab-icon {
   width: 1.35rem;
   height: 1.35rem;
+}
+
+.af-tiktok-panel {
+  margin-top: 16px;
+}
+
+.af-tiktok-accounts {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.af-tiktok-accounts article {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--af-border);
+  border-radius: 14px;
+  font-size: 13px;
+}
+
+.af-tiktok-accounts strong {
+  min-width: 120px;
+}
+
+.af-tiktok-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #d1d5db;
+}
+
+.af-tiktok-dot.is-on {
+  background: #16a34a;
 }

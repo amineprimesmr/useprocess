@@ -36,7 +36,7 @@ export function ViewBonusBoard({
 
       <p className="af-view-bonus__cap">
         <strong>${VIEW_BONUS_MAX_PER_VIDEO_USD}</strong>
-        {` ${appCopy("max par vidéo", "max per video")}`}
+        {` ${appCopy("max de primes vues", "max in view bonuses")}`}
       </p>
     </div>
   );
@@ -47,8 +47,8 @@ export function ViewBonusNote() {
   return (
     <p className="af-view-bonus__note">
       {appCopy(
-        `Les paliers se cumulent sur une même vidéo (ex. 1M vues = $${oneMillionBonus}). En plus des ${COMMISSION_PERCENT} % à vie, versés via Stripe.`,
-        `Tiers stack on the same video (e.g. 1M views = $${oneMillionBonus}). On top of ${COMMISSION_PERCENT}% for life, paid via Stripe.`
+        `Toutes les vidéos du compte comptent (ex. 1M vues = $${oneMillionBonus}). En plus des ${COMMISSION_PERCENT} % du net, versés via Stripe.`,
+        `Every video on the account counts (e.g. 1M views = $${oneMillionBonus}). On top of ${COMMISSION_PERCENT}% of net, paid via Stripe.`
       )}
     </p>
   );

@@ -33,8 +33,8 @@ enum FaceScanViewportMetrics {
     static let roundedCornerRadius: CGFloat = 30
     /// Débordement de l’anneau de ticks autour du cercle caméra (gap + trait actif, par côté × 2).
     static let tickRingOverflow: CGFloat = 42
-    /// Scan onboarding — masque visage (plus haut que large).
-    static let onboardingOvalAspect: CGFloat = 1.30
+    /// Scan onboarding — masque tête (plus haut que large, un peu plus long qu’une ellipse).
+    static let onboardingOvalAspect: CGFloat = 1.36
     static let onboardingTickOverflow: CGFloat = 108
 }
 
@@ -131,25 +131,28 @@ struct FaceScanOnboardingOvalShape: Shape {
         CGVector(dx: CGFloat(cos(angle)), dy: CGFloat(sin(angle)))
     }
 
-    /// Superellipse douce : front un peu plus large, menton plus étroit — silhouette tête, pas une ellipse.
+    /// Superellipse : front un peu plus large, joues, menton plus étroit — silhouette tête.
     private static func contourPoint(in rect: CGRect, parametricAngle: Double) -> CGPoint {
         let rx = rect.width / 2
         let ry = rect.height / 2
         let cosine = cos(parametricAngle)
         let sine = sin(parametricAngle)
-        let exponent = 2.0 / 2.18
+        let exponent = 2.0 / 2.34
         let ax = CGFloat(copysign(pow(abs(cosine), exponent), cosine))
         let ay = CGFloat(copysign(pow(abs(sine), exponent), sine))
         let bottom = CGFloat(max(0, sine))
         let top = CGFloat(max(0, -sine))
-        let foreheadWiden: CGFloat = 0.05
-        let chinTaper: CGFloat = 0.24
+        let foreheadWiden: CGFloat = 0.09
+        let cheekRound: CGFloat = 0.04
+        let chinTaper: CGFloat = 0.30
         let widthScale = 1
-            + foreheadWiden * pow(top, 1.15)
-            - chinTaper * pow(bottom, 1.55)
+            + foreheadWiden * pow(top, 1.12)
+            + cheekRound * pow(1 - abs(sine), 2.2)
+            - chinTaper * pow(bottom, 1.45)
+        let yShift = ry * 0.018 * (top - bottom)
         return CGPoint(
             x: rect.midX + rx * ax * widthScale,
-            y: rect.midY + ry * ay
+            y: rect.midY + ry * ay + yShift
         )
     }
 }

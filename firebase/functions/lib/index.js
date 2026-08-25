@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.supportCrispPoll = exports.supportCrispWebhook = exports.supportSendMessage = exports.affiliateStripeWebhook = exports.affiliateStripeConnectDashboard = exports.affiliateStripeConnectSync = exports.affiliateStripeConnectStart = exports.affiliateReleaseHeldCommissions = exports.affiliateRevenueCatWebhook = exports.affiliateAdminMarkPaid = exports.affiliateAdminListPending = exports.affiliateAdminApprove = exports.affiliateAdminProvisionAuth = exports.affiliateAdminCreate = exports.affiliateDashboard = exports.affiliateSyncProfile = exports.affiliateApply = exports.affiliateRegister = exports.affiliateResolveCode = exports.affiliatePreparePasswordless = exports.referralRevenueCatWebhook = exports.referralConfirmSubscription = exports.referralDashboard = exports.referralRegister = exports.referralSyncProgram = exports.coachStream = exports.coachComplete = exports.appleSignInRegisterToken = exports.deleteUserAccount = void 0;
+exports.affiliateMcp = exports.affiliateLibrary = exports.affiliateLeaderboard = exports.affiliateTikTokOAuthCallback = exports.affiliateTikTokStudio = exports.supportCrispPoll = exports.supportCrispWebhook = exports.supportSendMessage = exports.affiliateStripeWebhook = exports.affiliateStripeConnectDashboard = exports.affiliateStripeConnectSync = exports.affiliateStripeConnectStart = exports.affiliateReleaseHeldCommissions = exports.affiliateRevenueCatWebhook = exports.affiliateAdminMarkPaid = exports.affiliateAdminListPending = exports.affiliateAdminApprove = exports.affiliateAdminProvisionAuth = exports.affiliateAdminCreate = exports.affiliateDashboard = exports.affiliateSyncProfile = exports.affiliateApply = exports.affiliateRegister = exports.affiliateTrackFunnel = exports.affiliateTrackLink = exports.affiliateResolveCode = exports.affiliatePreparePasswordless = exports.referralRevenueCatWebhook = exports.referralConfirmSubscription = exports.referralDashboard = exports.referralRegister = exports.referralSyncProgram = exports.coachStream = exports.coachComplete = exports.appleSignInRegisterToken = exports.deleteUserAccount = void 0;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
@@ -504,6 +504,8 @@ Object.defineProperty(exports, "referralRevenueCatWebhook", { enumerable: true, 
 var affiliate_1 = require("./affiliate");
 Object.defineProperty(exports, "affiliatePreparePasswordless", { enumerable: true, get: function () { return affiliate_1.affiliatePreparePasswordless; } });
 Object.defineProperty(exports, "affiliateResolveCode", { enumerable: true, get: function () { return affiliate_1.affiliateResolveCode; } });
+Object.defineProperty(exports, "affiliateTrackLink", { enumerable: true, get: function () { return affiliate_1.affiliateTrackLink; } });
+Object.defineProperty(exports, "affiliateTrackFunnel", { enumerable: true, get: function () { return affiliate_1.affiliateTrackFunnel; } });
 Object.defineProperty(exports, "affiliateRegister", { enumerable: true, get: function () { return affiliate_1.affiliateRegister; } });
 Object.defineProperty(exports, "affiliateApply", { enumerable: true, get: function () { return affiliate_1.affiliateApply; } });
 Object.defineProperty(exports, "affiliateSyncProfile", { enumerable: true, get: function () { return affiliate_1.affiliateSyncProfile; } });
@@ -525,4 +527,13 @@ var supportCrisp_1 = require("./supportCrisp");
 Object.defineProperty(exports, "supportSendMessage", { enumerable: true, get: function () { return supportCrisp_1.supportSendMessage; } });
 Object.defineProperty(exports, "supportCrispWebhook", { enumerable: true, get: function () { return supportCrisp_1.supportCrispWebhook; } });
 Object.defineProperty(exports, "supportCrispPoll", { enumerable: true, get: function () { return supportCrisp_1.supportCrispPoll; } });
+var affiliateTikTok_1 = require("./affiliateTikTok");
+Object.defineProperty(exports, "affiliateTikTokStudio", { enumerable: true, get: function () { return affiliateTikTok_1.affiliateTikTokStudio; } });
+Object.defineProperty(exports, "affiliateTikTokOAuthCallback", { enumerable: true, get: function () { return affiliateTikTok_1.affiliateTikTokOAuthCallback; } });
+var affiliateLeaderboard_1 = require("./affiliateLeaderboard");
+Object.defineProperty(exports, "affiliateLeaderboard", { enumerable: true, get: function () { return affiliateLeaderboard_1.affiliateLeaderboard; } });
+var affiliateLibrary_1 = require("./affiliateLibrary");
+Object.defineProperty(exports, "affiliateLibrary", { enumerable: true, get: function () { return affiliateLibrary_1.affiliateLibrary; } });
+var affiliateMcp_1 = require("./affiliateMcp");
+Object.defineProperty(exports, "affiliateMcp", { enumerable: true, get: function () { return affiliateMcp_1.affiliateMcp; } });
 //# sourceMappingURL=index.js.map

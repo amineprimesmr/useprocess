@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { appCopy } from "../features/app-copy.js";
-import { IconCheck, IconCopy, IconExternal } from "./AffiliateIcons.jsx";
+import { affiliateApi, getAuthToken } from "../features/firebase-client.js";
+import { IconCheck, IconChevronLeft, IconCopy, IconExternal, IconTikTok } from "./AffiliateIcons.jsx";
 import {
   formatShortDate,
   navigateHash,
@@ -10,9 +11,10 @@ import {
 } from "./affiliate-utils.js";
 import {
   COPY_ACCOUNTS,
-  FORMAT_LIBRARY,
   LIBRARY_CAPTURED_AT,
+  collectionCover,
   collectionTotals,
+  collectionsByViews,
   formatCompactCount,
   libraryCollectionById,
   postsByViews,
@@ -69,8 +71,33 @@ function processViewBonus(post) {
   return viewBonusUsdForViews(post.views);
 }
 
-function currentCollectionFromHash() {
-  return libraryCollectionById(readHashQuery().f);
+function currentCollectionFromHash(collections) {
+  const id = readHashQuery().f;
+  if (!id) return null;
+  return collections.find((item) => item.id === id) || libraryCollectionById(id);
+}
+
+function toCollection(row) {
+  if (!row) return null;
+  return {
+    ...row,
+    specId: row.specId || row.spec?.id || "",
+    name: row.name || { fr: "", en: "" },
+    formula: row.formula || { fr: "", en: "" },
+    posts: Array.isArray(row.posts) ? row.posts : [],
+  };
+}
+
+function LibraryDialog({ title, children, onClose }) {
+  return (
+    <div className="af-lib-dialog" role="dialog" aria-modal="true">
+      <button type="button" className="af-lib-dialog__scrim" aria-label={appCopy("Fermer", "Close")} onClick={onClose} />
+      <div className="af-lib-dialog__card">
+        <h3>{title}</h3>
+        {children}
+      </div>
+    </div>
+  );
 }
 
 function Stat({ icon: Icon, value, label }) {
@@ -85,8 +112,8 @@ function Stat({ icon: Icon, value, label }) {
 
 function PostCard({ post, rank, featured = false, delay = 0, reduceMotion, onOpen }) {
   const bonus = processViewBonus(post);
-  const hook = appCopy(post.hook.fr, post.hook.en);
-  const subject = appCopy(post.subject.fr, post.subject.en);
+  const hook = appCopy(post.hook?.fr || post.hook || "", post.hook?.en || post.hook || "");
+  const subject = appCopy(post.subject?.fr || post.subject || "", post.subject?.en || post.subject || "");
 
   return (
     <motion.button
@@ -142,7 +169,7 @@ function PostCard({ post, rank, featured = false, delay = 0, reduceMotion, onOpe
 function PostModal({ post, rank, onClose }) {
   const reduceMotion = useReducedMotion();
   const bonus = processViewBonus(post);
-  const hook = appCopy(post.hook.fr, post.hook.en);
+  const hook = appCopy(post.hook?.fr || post.hook || "", post.hook?.en || post.hook || "");
 
   useEffect(() => {
     function onKey(event) {
@@ -276,12 +303,12 @@ function CopyAccountsSection() {
   return (
     <section className="af-copy" aria-labelledby="af-copy-title">
       <div className="af-copy__intro">
-        <p className="af-lib-kicker">{appCopy("Nouveau format", "New format")}</p>
+        <p className="af-lib-kicker">{appCopy("Ensuite", "Next")}</p>
         <h3 id="af-copy-title">{appCopy("Comptes à copier", "Accounts to copy")}</h3>
         <p>
           {appCopy(
-            "Ce format arrache tout. Ouvre le compte, copie la structure — pas les fichiers.",
-            "This format is crushing it. Open the account, copy the structure — not the files."
+            "Ouvre le compte, copie la structure — pas les fichiers.",
+            "Open the account, copy the structure — not the files."
           )}
         </p>
       </div>
@@ -294,102 +321,372 @@ function CopyAccountsSection() {
   );
 }
 
-export function AffiliateFormatsPage() {
-  const reduceMotion = useReducedMotion();
-  const [collection, setCollection] = useState(() => currentCollectionFromHash());
-  const [openId, setOpenId] = useState("");
+function formatCoverSrc(collection) {
+  const live = collectionCover(collection);
+  if (live) return live;
+  return FORMAT_SPECS.find((item) => item.id === collection.specId)?.slides?.[0]?.src || "";
+}
 
-  const ranked = useMemo(() => postsByViews(collection.posts), [collection]);
-  const totals = useMemo(() => collectionTotals(collection), [collection]);
-  const spec = FORMAT_SPECS.find((item) => item.id === collection.specId);
+function FormatShelfCard({ collection, delay, reduceMotion, onOpen }) {
+  const totals = collectionTotals(collection);
+  const cover = formatCoverSrc(collection);
+  const empty = totals.posts === 0;
+  const soon = empty && collection.official !== false;
+  const name = appCopy(collection.name.fr, collection.name.en);
+
+  return (
+    <motion.button
+      type="button"
+      className={`af-shelf-card${empty ? " is-empty" : ""}`}
+      aria-label={name}
+      onClick={() => onOpen(collection)}
+      initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.36, delay, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={reduceMotion ? undefined : { y: -4 }}
+      whileTap={reduceMotion ? undefined : { scale: 0.985 }}
+    >
+      {cover ? <img src={cover} alt="" width={540} height={720} decoding="async" /> : <span className="af-shelf-card__blank" />}
+      {soon ? <span className="af-shelf-soon">{appCopy("Bientôt", "Soon")}</span> : empty ? <span className="af-shelf-soon">{appCopy("Nouveau", "New")}</span> : null}
+      <div className="af-shelf-card__meta">
+        <strong>{name}</strong>
+        {empty ? null : <span>{formatCompactCount(totals.views)}</span>}
+      </div>
+    </motion.button>
+  );
+}
+
+export function AffiliateFormatsPage({ user }) {
+  const reduceMotion = useReducedMotion();
+  const seedShelf = useMemo(() => collectionsByViews(), []);
+  const [formats, setFormats] = useState(() => seedShelf.map(toCollection));
+  const [specs, setSpecs] = useState(FORMAT_SPECS);
+  const [collection, setCollection] = useState(() => currentCollectionFromHash(seedShelf));
+  const [openId, setOpenId] = useState("");
+  const [dialog, setDialog] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [tiktokUrl, setTiktokUrl] = useState("");
+  const [tiktokFormat, setTiktokFormat] = useState("");
+  const [nameFr, setNameFr] = useState("");
+  const [nameEn, setNameEn] = useState("");
+  const [formulaFr, setFormulaFr] = useState("");
+  const [formulaEn, setFormulaEn] = useState("");
+  const [specId, setSpecId] = useState("");
+
+  const applyCatalog = useCallback((rows, nextSpecs) => {
+    const next = (rows || []).map(toCollection);
+    setFormats(next);
+    if (nextSpecs?.length) setSpecs(nextSpecs);
+    setCollection((cur) => {
+      const id = cur?.id || readHashQuery().f;
+      if (!id) return null;
+      return next.find((item) => item.id === id) || null;
+    });
+  }, []);
+
+  const load = useCallback(async () => {
+    if (!user) return;
+    try {
+      const token = await getAuthToken(user);
+      const data = await affiliateApi("affiliateLibrary", {
+        token,
+        body: { action: "list" },
+        timeoutMs: 15000,
+      });
+      applyCatalog(data.formats, data.specs);
+    } catch (err) {
+      console.warn("[tiktoks]", err);
+    }
+  }, [user, applyCatalog]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const ranked = useMemo(() => (collection ? postsByViews(collection.posts) : []), [collection]);
+  const totals = useMemo(() => (collection ? collectionTotals(collection) : null), [collection]);
+  const spec =
+    (collection && (collection.spec || specs.find((item) => item.id === collection.specId))) ||
+    (collection ? FORMAT_SPECS.find((item) => item.id === collection.specId) : null);
   const openPost = ranked.find((post) => post.id === openId);
   const openRank = openPost ? ranked.findIndex((post) => post.id === openPost.id) + 1 : 0;
 
-  const selectCollection = useCallback((next) => {
+  const openCollection = useCallback((next) => {
     setCollection(next);
     setOpenId("");
-    navigateHash(next.id === FORMAT_LIBRARY[0].id ? "formats" : `formats?f=${next.id}`);
+    navigateHash(`tiktoks?f=${next.id}`);
+  }, []);
+
+  const goLibrary = useCallback(() => {
+    setCollection(null);
+    setOpenId("");
+    navigateHash("tiktoks");
   }, []);
 
   useEffect(() => {
-    const sync = () => setCollection(currentCollectionFromHash());
+    const sync = () => setCollection(currentCollectionFromHash(formats));
     window.addEventListener("hashchange", sync);
     return () => window.removeEventListener("hashchange", sync);
-  }, []);
+  }, [formats]);
+
+  async function callLibrary(body) {
+    if (!user) throw new Error("UNAUTHORIZED");
+    const token = await getAuthToken(user);
+    return affiliateApi("affiliateLibrary", { token, body, timeoutMs: 20000 });
+  }
+
+  async function onAddTikTok(event) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const data = await callLibrary({
+        action: "addTikTok",
+        url: tiktokUrl,
+        formatId: tiktokFormat || collection?.id,
+      });
+      applyCatalog(data.formats, data.specs);
+      setTiktokUrl("");
+      setDialog("");
+    } catch (err) {
+      setError(
+        appCopy(
+          "Impossible d’ajouter ce TikTok. Vérifie le lien public.",
+          "Couldn't add that TikTok. Check the public link."
+        )
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onCreateFormat(event) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const data = await callLibrary({
+        action: "createFormat",
+        nameFr,
+        nameEn: nameEn || nameFr,
+        formulaFr,
+        formulaEn: formulaEn || formulaFr,
+        specId,
+      });
+      applyCatalog(data.formats, data.specs);
+      setNameFr("");
+      setNameEn("");
+      setFormulaFr("");
+      setFormulaEn("");
+      setSpecId("");
+      setDialog("");
+      if (data.id) {
+        const created = (data.formats || []).map(toCollection).find((item) => item.id === data.id);
+        if (created) openCollection(created);
+      }
+    } catch (err) {
+      setError(appCopy("Impossible de créer ce format.", "Couldn't create that format."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const composer = (
+    <div className="af-lib-actions">
+      <button
+        type="button"
+        className="af-lib-add"
+        onClick={() => {
+          setError("");
+          setTiktokFormat(collection?.id || formats[0]?.id || "");
+          setDialog("tiktok");
+        }}
+      >
+        {appCopy("Ajouter un TikTok", "Add a TikTok")}
+      </button>
+      <button
+        type="button"
+        className="af-lib-add is-ghost"
+        onClick={() => {
+          setError("");
+          setDialog("format");
+        }}
+      >
+        {appCopy("Nouveau format", "New format")}
+      </button>
+    </div>
+  );
+
+  const dialogs = (
+    <>
+      {dialog === "tiktok" ? (
+        <LibraryDialog title={appCopy("Ajouter un TikTok", "Add a TikTok")} onClose={() => setDialog("")}>
+          <form className="af-lib-form" onSubmit={onAddTikTok}>
+            <label>
+              {appCopy("Lien TikTok public", "Public TikTok link")}
+              <input
+                className="af-lib-input"
+                value={tiktokUrl}
+                onChange={(event) => setTiktokUrl(event.target.value)}
+                placeholder="https://www.tiktok.com/@compte/photo/…"
+                required
+              />
+            </label>
+            <label>
+              {appCopy("Format", "Format")}
+              <select
+                className="af-lib-input"
+                value={tiktokFormat || collection?.id || ""}
+                onChange={(event) => setTiktokFormat(event.target.value)}
+                required
+              >
+                {formats.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {appCopy(item.name.fr, item.name.en)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {error ? <p className="af-lib-form-error">{error}</p> : null}
+            <div className="af-lib-form-actions">
+              <button type="button" className="af-lib-add is-ghost" onClick={() => setDialog("")}>
+                {appCopy("Annuler", "Cancel")}
+              </button>
+              <button type="submit" className="af-lib-add" disabled={busy}>
+                {busy ? appCopy("Ajout…", "Adding…") : appCopy("Ajouter", "Add")}
+              </button>
+            </div>
+          </form>
+        </LibraryDialog>
+      ) : null}
+      {dialog === "format" ? (
+        <LibraryDialog title={appCopy("Nouveau format", "New format")} onClose={() => setDialog("")}>
+          <form className="af-lib-form" onSubmit={onCreateFormat}>
+            <label>
+              {appCopy("Nom (FR)", "Name (FR)")}
+              <input className="af-lib-input" value={nameFr} onChange={(event) => setNameFr(event.target.value)} required />
+            </label>
+            <label>
+              {appCopy("Nom (EN)", "Name (EN)")}
+              <input className="af-lib-input" value={nameEn} onChange={(event) => setNameEn(event.target.value)} />
+            </label>
+            <label>
+              {appCopy("Formule / hook (FR)", "Formula / hook (FR)")}
+              <textarea className="af-lib-input" rows={2} value={formulaFr} onChange={(event) => setFormulaFr(event.target.value)} />
+            </label>
+            <label>
+              {appCopy("Formule / hook (EN)", "Formula / hook (EN)")}
+              <textarea className="af-lib-input" rows={2} value={formulaEn} onChange={(event) => setFormulaEn(event.target.value)} />
+            </label>
+            <label>
+              {appCopy("Structure officielle (optionnel)", "Official structure (optional)")}
+              <select className="af-lib-input" value={specId} onChange={(event) => setSpecId(event.target.value)}>
+                <option value="">{appCopy("Aucune", "None")}</option>
+                {specs.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {appCopy(item.name.fr, item.name.en)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {error ? <p className="af-lib-form-error">{error}</p> : null}
+            <div className="af-lib-form-actions">
+              <button type="button" className="af-lib-add is-ghost" onClick={() => setDialog("")}>
+                {appCopy("Annuler", "Cancel")}
+              </button>
+              <button type="submit" className="af-lib-add" disabled={busy}>
+                {busy ? appCopy("Création…", "Creating…") : appCopy("Créer", "Create")}
+              </button>
+            </div>
+          </form>
+        </LibraryDialog>
+      ) : null}
+    </>
+  );
+
+  if (!collection) {
+    return (
+      <div className="af-lib">
+        <header className="af-lib-head">
+          <p className="af-lib-kicker">{appCopy("Bibliothèque", "Library")}</p>
+          <h2>
+            <IconTikTok />
+            {appCopy("Tiktoks", "Tiktoks")}
+          </h2>
+          <p className="af-lib-lead">
+            {appCopy(
+              "Tous les formats Process, plus ceux que les clippers ajoutent. Colle un TikTok, crée un format — le MCP les voit tous.",
+              "Every Process format, plus the ones clippers add. Paste a TikTok, create a format — MCP sees them all."
+            )}
+          </p>
+        </header>
+        {composer}
+        <div className="af-shelf">
+          {formats.map((item, index) => (
+            <FormatShelfCard
+              key={item.id}
+              collection={item}
+              delay={reduceMotion ? 0 : 0.04 + index * 0.05}
+              reduceMotion={reduceMotion}
+              onOpen={openCollection}
+            />
+          ))}
+        </div>
+        <CopyAccountsSection />
+        {dialogs}
+      </div>
+    );
+  }
 
   return (
     <div className="af-lib">
+      <button type="button" className="af-lib-back" onClick={goLibrary}>
+        <IconChevronLeft />
+        {appCopy("Tous les Tiktoks", "All Tiktoks")}
+      </button>
+
       <header className="af-lib-head">
-        <p className="af-lib-kicker">{appCopy("Référence live", "Live reference")}</p>
-        <h2>{appCopy("Bibliothèque de formats", "Format library")}</h2>
-        <p className="af-lib-lead">
-          {appCopy(
-            "Les posts live, triés par vues. Tu copies la structure, pas les fichiers.",
-            "Live posts, ranked by views. Copy the structure, not the files."
-          )}
-        </p>
-      </header>
-
-      <CopyAccountsSection />
-
-      <nav className="af-lib-tabs" aria-label={appCopy("Formats", "Formats")}>
-        {FORMAT_LIBRARY.map((item) => {
-          const count = item.posts.length;
-          const on = item.id === collection.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              className={`af-lib-tab${on ? " is-on" : ""}`}
-              onClick={() => selectCollection(item)}
-            >
-              {appCopy(item.name.fr, item.name.en)}
-              <span>{count}</span>
-            </button>
-          );
-        })}
-      </nav>
-
-      <section className="af-lib-summary">
-        <div>
-          <h3>{appCopy(collection.name.fr, collection.name.en)}</h3>
-          <p>{appCopy(collection.formula.fr, collection.formula.en)}</p>
-        </div>
-        {totals.posts > 0 ? (
-          <dl>
-            <div>
-              <dt>{appCopy("Vues", "Views")}</dt>
-              <dd>{formatCompactCount(totals.views)}</dd>
-            </div>
-            <div>
-              <dt>{appCopy("Likes", "Likes")}</dt>
-              <dd>{formatCompactCount(totals.likes)}</dd>
-            </div>
-            <div>
-              <dt>{appCopy("Saves", "Saves")}</dt>
-              <dd>{formatCompactCount(totals.saves)}</dd>
-            </div>
-            <div>
-              <dt>{appCopy("Posts", "Posts")}</dt>
-              <dd>{totals.posts}</dd>
-            </div>
-          </dl>
+        <h2>{appCopy(collection.name.fr, collection.name.en)}</h2>
+        <p className="af-lib-lead">{appCopy(collection.formula.fr, collection.formula.en)}</p>
+        {collection.official === false && collection.createdByName ? (
+          <p className="af-lib-by">
+            {appCopy("Ajouté par", "Added by")} {collection.createdByName}
+          </p>
         ) : null}
-      </section>
+      </header>
+      {composer}
+
+      {totals?.posts > 0 ? (
+        <dl className="af-lib-stats">
+          <div>
+            <dt>{appCopy("Vues", "Views")}</dt>
+            <dd>{formatCompactCount(totals.views)}</dd>
+          </div>
+          <div>
+            <dt>{appCopy("Likes", "Likes")}</dt>
+            <dd>{formatCompactCount(totals.likes)}</dd>
+          </div>
+          <div>
+            <dt>{appCopy("Saves", "Saves")}</dt>
+            <dd>{formatCompactCount(totals.saves)}</dd>
+          </div>
+        </dl>
+      ) : null}
 
       {spec ? (
         <p className="af-lib-spec">
-          {spec.canvas} · {appCopy(spec.when.fr, spec.when.en)}
+          {spec.canvas} · {appCopy(spec.when?.fr || spec.when, spec.when?.en || spec.when)}
         </p>
       ) : null}
 
       {ranked.length === 0 ? (
         <div className="af-lib-empty">
-          <strong>{appCopy("Pas encore de posts dans ce format.", "No posts in this format yet.")}</strong>
+          <strong>{appCopy("Pas encore de TikToks dans ce format.", "No TikToks in this format yet.")}</strong>
           <p>
             {appCopy(
-              "Envoie les liens TikTok — on les range ici, du plus vu au moins vu.",
-              "Send the TikTok links — we'll file them here, most-viewed first."
+              "Colle un lien public — il arrive ici, et le MCP le voit tout de suite.",
+              "Paste a public link — it lands here, and MCP sees it immediately."
             )}
           </p>
         </div>
@@ -400,8 +697,8 @@ export function AffiliateFormatsPage() {
               key={post.id}
               post={post}
               rank={index + 1}
-              featured={index === 0}
-              delay={reduceMotion ? 0 : 0.04 + index * 0.06}
+              featured={false}
+              delay={reduceMotion ? 0 : 0.04 + index * 0.05}
               reduceMotion={reduceMotion}
               onOpen={(item) => setOpenId(item.id)}
             />
@@ -411,14 +708,15 @@ export function AffiliateFormatsPage() {
 
       <p className="af-lib-foot">
         {appCopy(
-          `Stats capturées le ${formatShortDate(new Date(`${LIBRARY_CAPTURED_AT}T12:00:00Z`).getTime())}. Covers = slide 1 de chaque carousel.`,
-          `Stats captured ${formatShortDate(new Date(`${LIBRARY_CAPTURED_AT}T12:00:00Z`).getTime())}. Covers = slide 1 of each carousel.`
+          `Stats officielles capturées le ${formatShortDate(new Date(`${LIBRARY_CAPTURED_AT}T12:00:00Z`).getTime())}. Les ajouts clippers s’affichent en live.`,
+          `Official stats captured ${formatShortDate(new Date(`${LIBRARY_CAPTURED_AT}T12:00:00Z`).getTime())}. Clipper additions show live.`
         )}
       </p>
 
       <AnimatePresence>
         {openPost ? <PostModal post={openPost} rank={openRank} onClose={() => setOpenId("")} /> : null}
       </AnimatePresence>
+      {dialogs}
     </div>
   );
 }

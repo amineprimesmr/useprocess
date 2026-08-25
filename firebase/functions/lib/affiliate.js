@@ -33,13 +33,16 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.affiliateAdminMarkPaid = exports.affiliateAdminListPending = exports.affiliateAdminApprove = exports.affiliateAdminProvisionAuth = exports.affiliateAdminCreate = exports.affiliateDashboard = exports.affiliateSyncProfile = exports.affiliateApply = exports.affiliateRegister = exports.affiliateResolveCode = exports.affiliatePreparePasswordless = void 0;
+exports.affiliateAdminMarkPaid = exports.affiliateAdminListPending = exports.affiliateAdminApprove = exports.affiliateAdminProvisionAuth = exports.affiliateAdminCreate = exports.affiliateDashboard = exports.affiliateSyncProfile = exports.affiliateApply = exports.affiliateRegister = exports.affiliateTrackFunnel = exports.affiliateTrackLink = exports.affiliateResolveCode = exports.affiliatePreparePasswordless = void 0;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const affiliateShared_1 = require("./affiliateShared");
+const affiliateFunnel_1 = require("./affiliateFunnel");
+const affiliateAnalytics_1 = require("./affiliateAnalytics");
 const referralShared_1 = require("./referralShared");
 const affiliateStripe_1 = require("./affiliateStripe");
+const affiliateTikTok_1 = require("./affiliateTikTok");
 const affiliateAdminSecret = (0, params_1.defineSecret)("AFFILIATE_ADMIN_SECRET");
 const stripeSecretKey = (0, params_1.defineSecret)("STRIPE_SECRET_KEY");
 function readAffiliateOnboarding(raw) {
@@ -48,6 +51,7 @@ function readAffiliateOnboarding(raw) {
     const row = raw;
     return {
         firstName: String(row.firstName ?? "").slice(0, 80),
+        phone: String(row.phone ?? "").slice(0, 40),
         postedTiktok: String(row.postedTiktok ?? "").slice(0, 12),
         tiktokHandle: String(row.tiktokHandle ?? "").slice(0, 240),
         tiktokHandles: Array.isArray(row.tiktokHandles)
@@ -58,6 +62,10 @@ function readAffiliateOnboarding(raw) {
         experience: String(row.experience ?? "").slice(0, 40),
         goal: String(row.goal ?? "").slice(0, 40),
     };
+}
+function isValidAffiliatePhone(raw) {
+    const digits = String(raw || "").replace(/\D/g, "");
+    return digits.length >= 8 && digits.length <= 15;
 }
 exports.affiliatePreparePasswordless = (0, https_1.onRequest)({
     invoker: "public",
@@ -111,6 +119,83 @@ exports.affiliateResolveCode = (0, https_1.onRequest)({
     catch (error) {
         const message = error?.message ?? "Unknown error";
         console.error("[affiliateResolveCode]", message);
+        res.status((0, affiliateShared_1.affiliateHttpStatus)(message)).json({ error: message });
+    }
+});
+function clientIp(req) {
+    const forwarded = String(req.headers?.["x-forwarded-for"] ?? "").split(",")[0].trim();
+    return forwarded || String(req.ip || "").trim() || "unknown";
+}
+exports.affiliateTrackLink = (0, https_1.onRequest)({
+    invoker: "public",
+    cors: true,
+    timeoutSeconds: 15,
+    memory: "256MiB",
+}, async (req, res) => {
+    (0, referralShared_1.setCors)(res);
+    if (req.method === "OPTIONS") {
+        res.status(204).send("");
+        return;
+    }
+    if (req.method !== "POST") {
+        res.status(405).json({ error: "Method not allowed" });
+        return;
+    }
+    try {
+        const event = String(req.body?.event ?? "view") === "store" ? "store" : "view";
+        const result = await (0, affiliateFunnel_1.trackAffiliateLinkEvent)({
+            code: String(req.body?.code ?? ""),
+            event,
+            visitorId: String(req.body?.visitorId ?? ""),
+            userAgent: String(req.headers["user-agent"] ?? ""),
+            ip: clientIp(req),
+        });
+        res.status(200).json(result);
+    }
+    catch (error) {
+        const message = error?.message ?? "Unknown error";
+        console.error("[affiliateTrackLink]", message);
+        res.status((0, affiliateShared_1.affiliateHttpStatus)(message)).json({ error: message });
+    }
+});
+exports.affiliateTrackFunnel = (0, https_1.onRequest)({
+    invoker: "public",
+    cors: true,
+    timeoutSeconds: 15,
+    memory: "256MiB",
+}, async (req, res) => {
+    (0, referralShared_1.setCors)(res);
+    if (req.method === "OPTIONS") {
+        res.status(204).send("");
+        return;
+    }
+    if (req.method !== "POST") {
+        res.status(405).json({ error: "Method not allowed" });
+        return;
+    }
+    try {
+        const event = String(req.body?.event ?? "");
+        if (event !== "paywall") {
+            res.status(400).json({ error: "INVALID_EVENT" });
+            return;
+        }
+        let uid = null;
+        try {
+            uid = await (0, referralShared_1.verifyFirebaseUser)(req);
+        }
+        catch {
+            uid = null;
+        }
+        const result = await (0, affiliateFunnel_1.trackAffiliatePaywall)({
+            code: String(req.body?.code ?? ""),
+            visitorId: String(req.body?.visitorId ?? ""),
+            uid,
+        });
+        res.status(200).json(result);
+    }
+    catch (error) {
+        const message = error?.message ?? "Unknown error";
+        console.error("[affiliateTrackFunnel]", message);
         res.status((0, affiliateShared_1.affiliateHttpStatus)(message)).json({ error: message });
     }
 });
@@ -183,6 +268,7 @@ exports.affiliateApply = (0, https_1.onRequest)({
         const requestedCode = (0, affiliateShared_1.normalizeAffiliateCode)(String(req.body?.code ?? ""));
         const displayName = String(req.body?.displayName ?? "").trim();
         const email = String(req.body?.email ?? "").trim();
+        const phone = String(req.body?.phone ?? "").trim().slice(0, 40);
         const onboarding = readAffiliateOnboarding(req.body?.onboarding);
         if (!displayName) {
             res.status(400).json({ error: "INVALID_TEXT" });
@@ -190,35 +276,58 @@ exports.affiliateApply = (0, https_1.onRequest)({
         }
         const existing = await (0, affiliateShared_1.getAffiliateForUid)(uid);
         const affiliateId = existing?.affiliateId || uid;
+        if (!existing && !isValidAffiliatePhone(phone)) {
+            res.status(400).json({ error: "INVALID_PHONE" });
+            return;
+        }
         if (!existing) {
             await (0, affiliateShared_1.ensureAffiliateProfile)({
                 affiliateId,
                 displayName,
                 email: email || undefined,
+                phone: phone || undefined,
                 uid,
                 status: "active",
             });
         }
         let attachedCode = "";
-        if (requestedCode) {
-            const created = await (0, affiliateShared_1.createAffiliateWithCode)({
-                affiliateId,
-                code: requestedCode,
-                displayName: displayName || existing?.displayName || requestedCode,
-                email: email || existing?.email || undefined,
-                uid,
-                status: existing?.status || "active",
-                makePrimary: true,
-            });
-            attachedCode = created.code;
+        const needsCode = !requestedCode && !existing?.primaryCode && !(existing?.codes?.length);
+        if (requestedCode || needsCode) {
+            let lastError;
+            for (let attempt = 0; attempt < 6; attempt += 1) {
+                try {
+                    const code = requestedCode || (await (0, affiliateShared_1.allocateUniqueAffiliateCode)(displayName));
+                    const created = await (0, affiliateShared_1.createAffiliateWithCode)({
+                        affiliateId,
+                        code,
+                        displayName: displayName || existing?.displayName || code,
+                        email: email || existing?.email || undefined,
+                        uid,
+                        status: existing?.status || "active",
+                        makePrimary: true,
+                    });
+                    attachedCode = created.code;
+                    lastError = null;
+                    break;
+                }
+                catch (error) {
+                    lastError = error;
+                    if (requestedCode || error?.message !== "CODE_CONFLICT") {
+                        throw error;
+                    }
+                }
+            }
+            if (!attachedCode && lastError)
+                throw lastError;
         }
-        if (onboarding || email) {
+        if (onboarding || email || phone) {
             await (0, affiliateShared_1.db)()
                 .collection("affiliates")
                 .doc(affiliateId)
                 .set({
                 ...(onboarding ? { onboarding } : {}),
                 ...(email ? { email: email.slice(0, 120) } : {}),
+                ...(phone ? { phone } : {}),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             }, { merge: true });
         }
@@ -259,23 +368,31 @@ exports.affiliateSyncProfile = (0, https_1.onRequest)({
         const uid = await (0, referralShared_1.verifyFirebaseUser)(req);
         await (0, referralShared_1.verifyAppAttestation)(req);
         const displayName = String(req.body?.displayName ?? "").trim();
+        const code = String(req.body?.code ?? req.body?.affiliateCode ?? "").trim();
         const affiliate = await (0, affiliateShared_1.getAffiliateForUid)(uid);
         if (!affiliate) {
             res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
             return;
         }
-        const patch = {
+        const updated = await (0, affiliateShared_1.updateAffiliateInviteProfile)({
+            affiliateId: affiliate.affiliateId,
             uid,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        };
-        if (displayName) {
-            patch.displayName = displayName.slice(0, 80);
-        }
-        await (0, affiliateShared_1.db)()
-            .collection("affiliates")
-            .doc(affiliate.affiliateId)
-            .set(patch, { merge: true });
-        res.status(200).json({ ok: true, affiliateId: affiliate.affiliateId });
+            email: affiliate.email || undefined,
+            status: affiliate.status,
+            displayName: displayName || affiliate.displayName,
+            code,
+        });
+        res.status(200).json({
+            ok: true,
+            affiliateId: affiliate.affiliateId,
+            displayName: updated.displayName,
+            primaryCode: updated.primaryCode,
+            codes: updated.codes.map((value) => ({
+                code: value,
+                displayName: updated.displayName,
+                status: affiliate.status,
+            })),
+        });
     }
     catch (error) {
         const message = error?.message ?? "Unknown error";
@@ -286,8 +403,10 @@ exports.affiliateSyncProfile = (0, https_1.onRequest)({
 exports.affiliateDashboard = (0, https_1.onRequest)({
     invoker: "public",
     cors: true,
-    timeoutSeconds: 45,
+    timeoutSeconds: 20,
     memory: "512MiB",
+    minInstances: 1,
+    concurrency: 40,
 }, async (req, res) => {
     (0, referralShared_1.setCors)(res);
     if (req.method === "OPTIONS") {
@@ -306,56 +425,86 @@ exports.affiliateDashboard = (0, https_1.onRequest)({
             res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
             return;
         }
-        const processCode = await (0, affiliateShared_1.readOwnedProcessReferralCode)(uid);
-        if (processCode && affiliate.primaryCode !== processCode) {
+        void (async () => {
             try {
-                await (0, affiliateShared_1.createAffiliateWithCode)({
-                    affiliateId: affiliate.affiliateId,
-                    code: processCode,
-                    displayName: affiliate.displayName,
-                    email: affiliate.email || undefined,
-                    uid,
-                    status: affiliate.status,
-                    makePrimary: true,
-                });
+                const processCode = await (0, affiliateShared_1.readOwnedProcessReferralCode)(uid);
+                if (!processCode)
+                    return;
+                const latest = (await (0, affiliateShared_1.getAffiliateForUid)(uid)) || affiliate;
+                const ownsProcess = Array.isArray(latest.codes) && latest.codes.includes(processCode);
+                if (latest.customPrimaryCode) {
+                    if (!ownsProcess) {
+                        await (0, affiliateShared_1.createAffiliateWithCode)({
+                            affiliateId: latest.affiliateId,
+                            code: processCode,
+                            displayName: latest.displayName,
+                            email: latest.email || undefined,
+                            uid,
+                            status: latest.status,
+                            makePrimary: false,
+                        });
+                    }
+                    return;
+                }
+                if (latest.primaryCode !== processCode) {
+                    await (0, affiliateShared_1.createAffiliateWithCode)({
+                        affiliateId: latest.affiliateId,
+                        code: processCode,
+                        displayName: latest.displayName,
+                        email: latest.email || undefined,
+                        uid,
+                        status: latest.status,
+                        makePrimary: true,
+                    });
+                }
             }
             catch (syncError) {
                 if (syncError?.message !== "CODE_CONFLICT") {
                     console.warn("[affiliateDashboard] process code sync skipped", syncError);
                 }
             }
-        }
-        // Don't block dashboard reads — scheduled jobs also release holds.
+        })();
         void (0, affiliateShared_1.releaseDueAffiliateCommissions)().catch((releaseError) => {
             console.warn("[affiliateDashboard] releaseDue skipped", releaseError);
         });
-        const refreshed = await (0, affiliateShared_1.db)()
-            .collection("affiliates")
-            .doc(affiliate.affiliateId)
-            .get();
-        const data = refreshed.data() ?? {};
+        const data = affiliate;
         const stats = data.stats ?? {};
+        const hasActivity = Boolean(stats.linkViews ||
+            stats.storeClicks ||
+            stats.referredCount ||
+            stats.paywallCount ||
+            stats.paidCount ||
+            stats.lifetimeCents);
+        const extrasPromise = Promise.all([
+            (0, affiliateShared_1.db)()
+                .collection("affiliateCodes")
+                .where("affiliateId", "==", affiliate.affiliateId)
+                .limit(20)
+                .get(),
+            (0, affiliateShared_1.db)()
+                .collection("affiliateCommissions")
+                .where("affiliateId", "==", affiliate.affiliateId)
+                .limit(50)
+                .get(),
+            (0, affiliateShared_1.db)()
+                .collection("affiliatePayouts")
+                .where("affiliateId", "==", affiliate.affiliateId)
+                .limit(20)
+                .get(),
+            hasActivity
+                ? (0, affiliateFunnel_1.readAffiliateDailySeries)(affiliate.affiliateId, 30)
+                : Promise.resolve((0, affiliateAnalytics_1.emptyDailySeries)(30)),
+            (0, affiliateTikTok_1.listPublicTikTokAccounts)(affiliate.affiliateId).catch(() => []),
+        ]);
         let codes = [];
         let recentCommissions = [];
         let payouts = [];
+        let series = (0, affiliateAnalytics_1.emptyDailySeries)(30);
+        let tiktokAccounts = [];
         try {
-            const [codesSnap, recentSnap, payoutsSnap] = await Promise.all([
-                (0, affiliateShared_1.db)()
-                    .collection("affiliateCodes")
-                    .where("affiliateId", "==", affiliate.affiliateId)
-                    .limit(20)
-                    .get(),
-                (0, affiliateShared_1.db)()
-                    .collection("affiliateCommissions")
-                    .where("affiliateId", "==", affiliate.affiliateId)
-                    .limit(50)
-                    .get(),
-                (0, affiliateShared_1.db)()
-                    .collection("affiliatePayouts")
-                    .where("affiliateId", "==", affiliate.affiliateId)
-                    .limit(20)
-                    .get(),
-            ]);
+            const [codesSnap, recentSnap, payoutsSnap, dailySeries, tiktokSnap] = await extrasPromise;
+            series = dailySeries;
+            tiktokAccounts = tiktokSnap;
             codes = codesSnap.docs.map((doc) => ({
                 code: doc.id,
                 displayName: doc.data()?.displayName ?? doc.id,
@@ -403,7 +552,7 @@ exports.affiliateDashboard = (0, https_1.onRequest)({
                 status: data.status ?? "active",
             }));
         }
-        const primaryCode = (0, affiliateShared_1.pickPrimaryAffiliateCode)(codes.map((row) => row.code), data.primaryCode || affiliate.primaryCode, processCode);
+        const primaryCode = (0, affiliateShared_1.pickPrimaryAffiliateCode)(codes.map((row) => row.code), data.primaryCode || affiliate.primaryCode, null);
         if (primaryCode) {
             codes = [
                 ...codes.filter((row) => row.code === primaryCode),
@@ -428,15 +577,25 @@ exports.affiliateDashboard = (0, https_1.onRequest)({
             },
             codes,
             stats: {
+                linkViews: stats.linkViews ?? 0,
+                storeClicks: stats.storeClicks ?? 0,
                 referredCount: stats.referredCount ?? 0,
+                paywallCount: stats.paywallCount ?? 0,
+                paidCount: stats.paidCount ?? 0,
                 activeSubscribers: stats.activeSubscribers ?? 0,
                 pendingCents: stats.pendingCents ?? 0,
                 payableCents: stats.payableCents ?? 0,
                 paidCents: stats.paidCents ?? 0,
                 lifetimeCents: stats.lifetimeCents ?? 0,
             },
+            series,
             recentCommissions,
             payouts,
+            tiktok: {
+                apiReady: (0, affiliateTikTok_1.tiktokApiReady)(),
+                accounts: tiktokAccounts,
+                totals: (0, affiliateTikTok_1.tiktokTotals)(tiktokAccounts),
+            },
         });
     }
     catch (error) {

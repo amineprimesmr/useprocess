@@ -109,13 +109,56 @@
   line-height: 1.5;
 }
 
-.af-ob-hint {
-  margin: 0.75rem 0 0;
-  color: #111;
-  font-size: 1rem;
+.af-ob-brand {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.1rem;
+}
+
+.af-ob-form {
+  display: grid;
+  gap: 0.15rem;
+  margin-top: 1.5rem;
+  padding: 1.2rem 1.2rem 1.35rem;
+  background: #fff;
+  border: 1px solid #ececef;
+  border-radius: 1.4rem;
+}
+
+.af-ob-field {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.9rem;
+}
+
+.af-ob-field span {
+  font-size: 0.82rem;
   font-weight: 650;
   letter-spacing: -0.02em;
-  line-height: 1.4;
+  color: #3f3f46;
+}
+
+.af-ob-field .af-ob-input {
+  margin-top: 0;
+  background: #f7f7f8;
+}
+
+.af-ob-field:first-of-type {
+  margin-top: 0;
+}
+
+.af-ob-form > .af-ob-btn {
+  margin-top: 1.2rem;
+}
+
+.af-ob-switch {
+  margin: 1.1rem 0 0;
+  color: #71717a;
+  font-size: 0.9rem;
+}
+
+.af-ob-help.is-ok {
+  color: #15803d;
 }
 
 .af-ob-handles {
@@ -211,6 +254,15 @@
 .af-ob-choice.is-on {
   border-color: #111;
   box-shadow: 0 0 0 3px rgb(10 10 10 / 0.08);
+}
+
+.af-ob-form .af-ob-actions {
+  margin-top: 0.35rem;
+}
+
+.af-ob-form .af-ob-btn--primary {
+  width: 100%;
+  flex: none;
 }
 
 .af-ob-actions {

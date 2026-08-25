@@ -16,6 +16,8 @@ enum SubscriptionConfiguration {
     static let weeklyPackageID = "$rc_weekly"
     static let monthlyPackageID = "$rc_monthly"
     static let annualPackageID = "$rc_annual"
+    /// Package custom RevenueCat — annuel avec intro 3 jours.
+    static let annualTrialPackageID = "annual_trial"
 
     /// Product IDs App Store Connect (groupe Premium) — legacy.
     static let monthlyProductID = "com.useprocess.monthly"
@@ -26,18 +28,20 @@ enum SubscriptionConfiguration {
     static let annual3499ProductID = "com.useprocess.annual3499"
     static let monthly999ProductID = "com.useprocess.monthly999"
     static let annual4999ProductID = "com.useprocess.annual4999"
-    /// Annuel 34,99 € **avec** intro 3 jours — uniquement si code parrainage validé.
+    /// Annuel 34,99 € **avec** intro 3 jours — bras test A/B ou code parrainage.
     static let annual3499TrialProductID = "com.useprocess.annual3499trial"
 
-    /// SKUs chargés sur le paywall (mensuel + annuel ± essai parrainage).
+    /// SKUs chargés sur le paywall (mensuel + annuel ± essai).
     static var paywallCatalogProductIDs: [String] {
         [monthly999ProductID, annual3499ProductID, annual3499TrialProductID]
     }
 
-    /// Annuel à acheter : essai 3 j. seulement après un code validé.
+    /// Annuel à acheter : essai 3 j. si bras test **ou** code parrainage.
     @MainActor
     static var annualProductIDForCurrentTrialState: String {
-        ProcessReferralTrialEligibility.isUnlocked ? annual3499TrialProductID : annual3499ProductID
+        PaywallPricingExperiment.shared.grantsAnnualTrial
+            ? annual3499TrialProductID
+            : annual3499ProductID
     }
 
     /// Tous les product IDs premium (entitlements / restore).
@@ -91,11 +95,11 @@ enum SubscriptionConfiguration {
         return nil
     }
 
-    /// Essai 3 jours sur l’annuel **uniquement** si un code parrainage / créateur est validé.
+    /// Essai 3 jours sur l’annuel si bras test A/B **ou** code parrainage / créateur.
     @MainActor
     static func supportsFreeTrial(_ plan: SubscriptionBillingPlan) -> Bool {
         guard plan == .annual else { return false }
-        return ProcessReferralTrialEligibility.isUnlocked
+        return PaywallPricingExperiment.shared.grantsAnnualTrial
     }
 
     @MainActor

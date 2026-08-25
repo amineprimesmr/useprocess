@@ -686,11 +686,20 @@ export const FORMAT_LIBRARY = [
 ];
 
 export function libraryCollectionById(id) {
-  return FORMAT_LIBRARY.find((item) => item.id === id) || FORMAT_LIBRARY[0];
+  if (!id) return null;
+  return FORMAT_LIBRARY.find((item) => item.id === id) || null;
+}
+
+export function collectionCover(collection) {
+  return postsByViews(collection?.posts)[0]?.cover || "";
 }
 
 export function postsByViews(posts) {
   return [...(posts || [])].sort((a, b) => b.views - a.views || b.likes - a.likes);
+}
+
+export function collectionsByViews(collections = FORMAT_LIBRARY) {
+  return [...collections].sort((a, b) => collectionTotals(b).views - collectionTotals(a).views);
 }
 
 export function collectionTotals(collection) {

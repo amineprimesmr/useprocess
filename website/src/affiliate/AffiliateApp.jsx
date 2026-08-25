@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { appCopy, subscribeSiteLanguage, applySiteDocumentLanguage } from "../features/app-copy.js";
-import { dismissCrispChat } from "../features/crisp-chat.js";
 import { playSettingsChange } from "../features/process-sound.js";
 import {
   affiliateApi,
   getFirebaseAuth,
+  getFirebaseAuthModule,
   getAuthToken,
   isFirebaseConfigured,
   warmFirebaseAuth,
+  warmAffiliateFunctions,
 } from "../features/firebase-client.js";
 import {
   buildCreatorLandingUrl,
@@ -20,17 +21,21 @@ import {
   IconCoin,
   IconCursor,
   IconDollar,
+  IconDownload,
   IconFilter,
   IconGlobe,
-  IconGrid,
+  IconHelp,
   IconInfo,
   IconLogout,
   IconOverview,
+  IconPaywall,
   IconSettings,
   IconShield,
   IconSpark,
-  IconUsers,
+  IconTikTok,
+  IconTrophy,
   IconWallet,
+  IconWhatsApp,
   IconX,
   ProcessAppIcon,
 } from "./AffiliateIcons.jsx";
@@ -41,8 +46,11 @@ import {
   buildSocialMailBody,
   canonicalizeAffiliateRoute,
   COMMISSION_PERCENT,
+  VIEW_BONUS_FLAGSHIP_UNLOCK_EUR,
+  VIEW_BONUS_UNLOCK_EUR,
   formatApplyError,
   formatAuthError,
+  formatPercent,
   formatShortDate,
   money,
   navigateHash,
@@ -57,29 +65,50 @@ import {
 import {
   buildOptimisticDashboard,
   clearDashboardCache,
+  forgetAffiliateSession,
+  peekAffiliateSession,
+  rememberAffiliateUid,
   readDashboardCache,
   writeDashboardCache,
 } from "./affiliate-dashboard-cache.js";
-import { AffiliateLanding, AffiliateTopNav } from "./AffiliateLanding.jsx";
 import { AffiliateOnboarding } from "./AffiliateOnboarding.jsx";
-import { AffiliateMethodPage } from "./AffiliateMethod.jsx";
-import { AffiliateFormatsPage } from "./AffiliateFormats.jsx";
-import { AffiliateAutomationPage } from "./AffiliateAutomation.jsx";
-import { AffiliateUsPage } from "./AffiliateUs.jsx";
 import {
-  isOnboardingInProgress,
+  codeFromFirstName,
   isOnboardingUnlocked,
   markOnboardingUnlocked,
   readOnboardingDraft,
-  writeOnboardingDraft,
 } from "./affiliate-onboarding-state.js";
 import {
   completeAffiliateEmailLink,
   consumeApplyAfterLink,
+  peekApplyAfterLink,
+  hrefLooksLikeEmailLink,
   sendAffiliateEmailLink,
   ensureAnonymousAffiliateUser,
 } from "./affiliate-email-link.js";
 import "./affiliate.css";
+
+const AffiliateLanding = lazy(() =>
+  import("./AffiliateLanding.jsx").then((mod) => ({ default: mod.AffiliateLanding }))
+);
+const AffiliateFormatsPage = lazy(() =>
+  import("./AffiliateFormats.jsx").then((mod) => ({ default: mod.AffiliateFormatsPage }))
+);
+const AffiliateMethodPage = lazy(() =>
+  import("./AffiliateMethod.jsx").then((mod) => ({ default: mod.AffiliateMethodPage }))
+);
+const AffiliateAutomationPage = lazy(() =>
+  import("./AffiliateAutomation.jsx").then((mod) => ({ default: mod.AffiliateAutomationPage }))
+);
+const AffiliateUsPage = lazy(() =>
+  import("./AffiliateUs.jsx").then((mod) => ({ default: mod.AffiliateUsPage }))
+);
+const AffiliateUsefulPage = lazy(() =>
+  import("./AffiliateUseful.jsx").then((mod) => ({ default: mod.AffiliateUsefulPage }))
+);
+const AffiliateClippersPage = lazy(() =>
+  import("./AffiliateClippers.jsx").then((mod) => ({ default: mod.AffiliateClippersPage }))
+);
 
 const LANDING_HASHES = new Set(["", "program", "programme", "comment", "primes", "offre", "faq"]);
 
@@ -117,6 +146,14 @@ function getConsumedApplyPrefill() {
   return consumedApplyPrefillCache;
 }
 
+function usefulTopicFromRoute(path, query) {
+  const raw = String(path || "").trim();
+  if (raw === "shadowban") return "shadowban";
+  if (raw === "questions") return "questions";
+  if (raw === "aide" || raw === "help" || raw === "whatsapp") return "aide";
+  return String(query?.t || "").trim();
+}
+
 function useHashRoute() {
   const [route, setRoute] = useState(() => {
     const prefill = getConsumedApplyPrefill();
@@ -125,21 +162,33 @@ function useHashRoute() {
     if (hashRoute && hashRoute !== "program") return hashRoute;
     return "program";
   });
+  const [query, setQuery] = useState(() => readHashQuery());
 
   useEffect(() => {
     const onHash = () => {
       const raw = readHashRoute();
-      const canonical = canonicalizeAffiliateRoute(raw, readHashQuery());
+      const hashQuery = readHashQuery();
+      const canonical = canonicalizeAffiliateRoute(raw, hashQuery);
+      const topic = usefulTopicFromRoute(raw, hashQuery);
       if (raw !== canonical) {
-        navigateHash(canonical);
+        const params = new URLSearchParams(hashQuery);
+        if (topic) params.set("t", topic);
+        const qs = params.toString();
+        navigateHash(qs ? `${canonical}?${qs}` : canonical);
         return;
       }
       setRoute(canonical);
+      setQuery(hashQuery);
     };
     const raw = readHashRoute();
-    const canonical = canonicalizeAffiliateRoute(raw, readHashQuery());
+    const hashQuery = readHashQuery();
+    const canonical = canonicalizeAffiliateRoute(raw, hashQuery);
+    const topic = usefulTopicFromRoute(raw, hashQuery);
     if (raw !== canonical) {
-      navigateHash(canonical);
+      const params = new URLSearchParams(hashQuery);
+      if (topic) params.set("t", topic);
+      const qs = params.toString();
+      navigateHash(qs ? `${canonical}?${qs}` : canonical);
     }
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
@@ -147,23 +196,35 @@ function useHashRoute() {
 
   const go = useCallback((next) => {
     const raw = String(next || "").replace(/^#\/?/, "").trim() || "program";
-    const [path, query] = raw.split("?");
-    const canonical = canonicalizeAffiliateRoute(
-      (path || "program").trim(),
-      Object.fromEntries(new URLSearchParams(query || ""))
-    );
+    const [path, queryString] = raw.split("?");
+    const parsedQuery = Object.fromEntries(new URLSearchParams(queryString || ""));
+    const canonical = canonicalizeAffiliateRoute((path || "program").trim(), parsedQuery);
+    const topic = usefulTopicFromRoute(path, parsedQuery);
+    const nextQuery = topic ? `t=${encodeURIComponent(topic)}` : queryString;
     setRoute(canonical);
-    navigateHash(query && canonical === (path || "").trim() ? `${canonical}?${query}` : canonical);
+    setQuery(nextQuery ? Object.fromEntries(new URLSearchParams(nextQuery)) : {});
+    navigateHash(nextQuery ? `${canonical}?${nextQuery}` : canonical);
   }, []);
 
-  return [route, go];
+  return [route, go, query];
 }
 
-function DashboardSkeleton({ route, pageTitles }) {
+function DashboardSkeleton({ route }) {
+  const pageTitles = {
+    overview: appCopy("Overview", "Overview"),
+    tiktoks: appCopy("Tiktoks", "Tiktoks"),
+    methode: appCopy("Méthode lancement", "Launch method"),
+    clippers: appCopy("Clippers", "Clippers"),
+    automatisation: appCopy("Automatiser", "Automate"),
+    us: appCopy("Poster US", "Post in the US"),
+    utiles: appCopy("Outils", "Tools"),
+    payouts: appCopy("Paiements", "Payouts"),
+    settings: appCopy("Paramètres", "Settings"),
+  };
   return (
     <div className="af-app af-shell">
       <aside className="af-sidebar" aria-hidden="true">
-        <div className="af-sidebar-logo">process</div>
+        <div className="af-sidebar-logo">PROCE$$ CLIPPING</div>
         <div className="af-skeleton-line" style={{ width: "72%" }} />
         <div className="af-skeleton-line" style={{ width: "56%" }} />
         <div className="af-skeleton-line" style={{ width: "64%" }} />
@@ -182,14 +243,22 @@ function DashboardSkeleton({ route, pageTitles }) {
   );
 }
 
-function MiniChart({ color = "#ec4899", className = "", active = false }) {
+function MiniChart({ color = "#ec4899", className = "", values = [] }) {
   const id = useMemo(() => `grad-${Math.random().toString(36).slice(2, 8)}`, []);
-  const linePath = active
-    ? "M0,95 L60,88 L120,72 L180,78 L240,55 L320,48 L400,42"
-    : "M0,90 L80,90 L160,90 L240,90 L320,90 L400,90";
-  const areaPath = active
-    ? `${linePath} L400,120 L0,120 Z`
-    : "M0,90 L400,90 L400,120 L0,120 Z";
+  const series = values.length ? values.map((n) => Number(n) || 0) : Array(30).fill(0);
+  const max = Math.max(...series, 0);
+  const width = 400;
+  const height = 120;
+  const pad = 8;
+  const step = width / Math.max(series.length - 1, 1);
+  const coords = series.map((value, index) => {
+    const x = index * step;
+    const y = max > 0 ? height - pad - (value / max) * (height - pad * 2 - 8) : height - 22;
+    return [x, y];
+  });
+  const linePath = coords.map(([x, y], index) => `${index === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const last = coords[coords.length - 1] || [width, height];
+  const areaPath = `${linePath} L${last[0]},${height} L0,${height} Z`;
   return (
     <div className={`af-chart-wrap ${className}`.trim()}>
       <svg viewBox="0 0 400 120" preserveAspectRatio="none">
@@ -315,9 +384,283 @@ function isStripePayoutReady(dashboard) {
   return Boolean(stripe.accountId && stripe.payoutsEnabled);
 }
 
-function OverviewPage({ dashboard, isPending, primaryCode, linkUrl }) {
+function uniquePaidFromCommissions(rows) {
+  const ids = new Set();
+  for (const row of rows || []) {
+    if (row?.inviteeUid && String(row.eventType || "").includes("PURCHASE")) {
+      ids.add(row.inviteeUid);
+    }
+  }
+  return ids.size;
+}
+
+function InviteLinkCard({ dashboard, isPending, primaryCode, linkUrl, onSaveInvite }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(dashboard?.displayName || "");
+  const [code, setCode] = useState(primaryCode || "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (editing) return;
+    setName(dashboard?.displayName || "");
+    setCode(primaryCode || "");
+  }, [dashboard?.displayName, primaryCode, editing]);
+
+  const previewCode = parseAcquisitionCodeFromInput(code) || primaryCode || "";
+  const previewUrl = previewCode ? buildCreatorLandingUrl(previewCode) : linkUrl;
+  const previewName = name.trim() || dashboard?.displayName || "";
+
+  async function save() {
+    const nextName = name.trim();
+    const nextCode = parseAcquisitionCodeFromInput(code);
+    if (!nextName) {
+      setError(appCopy("Indique le prénom affiché sur l'invitation.", "Enter the first name shown on the invite."));
+      return;
+    }
+    if (!nextCode || nextCode.length < 3) {
+      setError(
+        appCopy(
+          "Choisis un code — minimum 3 caractères (lettres, chiffres ou tiret).",
+          "Pick a code — at least 3 characters (letters, numbers, or hyphen)."
+        )
+      );
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await onSaveInvite({ displayName: nextName, code: nextCode });
+      setEditing(false);
+    } catch (err) {
+      setError(formatApplyError(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="af-card af-link-card">
+      {isPending ? (
+        <div className="af-form-info" style={{ marginBottom: 0, borderBottom: "1px solid var(--af-border)" }}>
+          <p>
+            {appCopy(
+              "Ton lien est réservé — les commissions s'activent dès validation de ton compte.",
+              "Your link is reserved — commissions activate once your account is approved."
+            )}
+          </p>
+        </div>
+      ) : null}
+      <div className="af-link-card-top">
+        <div>
+          <div className="af-link-card-main">
+            <ProcessAppIcon size={28} />
+            <div>
+              <strong>{(previewUrl || linkUrl || "useprocess.xyz/join/…").replace("https://", "")}</strong>
+              <div className="af-link-dest">
+                {appCopy(
+                  `Nom sur l'invitation : ${previewName || "—"}`,
+                  `Name on the invite: ${previewName || "—"}`
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="af-link-card-actions">
+          {linkUrl ? <CopyButton text={linkUrl} /> : null}
+          {onSaveInvite ? (
+            <button
+              type="button"
+              className="af-btn af-btn-sm af-btn-secondary"
+              onClick={() => {
+                setEditing((open) => !open);
+                setError("");
+              }}
+            >
+              {editing
+                ? appCopy("Fermer", "Close")
+                : appCopy("Modifier le lien", "Edit link")}
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      {editing ? (
+        <div className="af-invite-edit">
+          <div className="af-invite-preview">
+            <span>{appCopy("Aperçu de l'invitation", "Invite preview")}</span>
+            <strong>
+              {appCopy(
+                `${previewName || "…"} t'invite sur Process`,
+                `${previewName || "…"} invites you to Process`
+              )}
+            </strong>
+            <em>
+              {appCopy(
+                `Ton code créateur : ${previewCode || "…"}`,
+                `Your creator code: ${previewCode || "…"}`
+              )}
+            </em>
+          </div>
+          <div className="af-invite-fields">
+            <div className="af-invite-field">
+              <label htmlFor="af-invite-name">{appCopy("Prénom sur la page", "Name on the page")}</label>
+              <input
+                id="af-invite-name"
+                className="af-input"
+                value={name}
+                maxLength={32}
+                onChange={(event) => setName(event.target.value)}
+                placeholder={appCopy("amine", "alex")}
+              />
+            </div>
+            <div className="af-invite-field">
+              <label htmlFor="af-invite-code">{appCopy("Ton code / lien", "Your code / link")}</label>
+              <input
+                id="af-invite-code"
+                className="af-input"
+                value={code}
+                maxLength={48}
+                autoCapitalize="characters"
+                spellCheck={false}
+                onChange={(event) => setCode(event.target.value.toUpperCase())}
+                placeholder="MANNY"
+              />
+            </div>
+          </div>
+          <p className="af-metric-hint" style={{ margin: 0 }}>
+            {appCopy(
+              "Le lien devient useprocess.xyz/join/TONCODE. L'ancien code continue de marcher.",
+              "Your link becomes useprocess.xyz/join/YOURCODE. The old code still works."
+            )}
+          </p>
+          {error ? <p className="af-invite-error">{error}</p> : null}
+          <div className="af-link-card-actions">
+            <button type="button" className="af-btn af-btn-sm af-btn-black" onClick={save} disabled={busy}>
+              {busy ? appCopy("Enregistrement…", "Saving…") : appCopy("Enregistrer", "Save")}
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function TikTokOverviewCard({ dashboard, onOpenStudio }) {
+  const tiktok = dashboard?.tiktok || {};
+  const accounts = Array.isArray(tiktok.accounts) ? tiktok.accounts : [];
+  const totals = tiktok.totals || {};
+  const metrics = [
+    { label: appCopy("Comptes", "Accounts"), value: totals.accounts || accounts.length },
+    { label: appCopy("Connectés", "Connected"), value: totals.connected || accounts.filter((row) => row.connected).length },
+    { label: appCopy("Abonnés", "Followers"), value: totals.followers || 0 },
+    { label: appCopy("Vues", "Views"), value: totals.views || 0 },
+    { label: appCopy("Likes", "Likes"), value: totals.likes || 0 },
+    { label: appCopy("Vidéos", "Videos"), value: totals.videoCount || 0 },
+  ];
+
+  return (
+    <div className="af-card af-card-pad af-tiktok-panel">
+      <div className="af-card-head">
+        <div>
+          <div className="af-card-muted">{appCopy("Comptes TikTok", "TikTok accounts")}</div>
+          <h2 style={{ margin: "4px 0 0", fontSize: 18 }}>
+            {tiktok.apiReady
+              ? appCopy("Stats live dès qu'un compte est connecté", "Live stats as soon as an account is connected")
+              : appCopy("Prêt — en attente de l'API TikTok", "Ready — waiting on the TikTok API")}
+          </h2>
+        </div>
+        <button type="button" className="af-btn af-btn-sm af-btn-black" onClick={onOpenStudio}>
+          {appCopy("Tout connecter", "Connect everything")}
+        </button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 14 }}>
+        {metrics.map((row) => (
+          <div key={row.label} className="af-metric-col" style={{ border: "1px solid var(--af-border)", borderRadius: 12 }}>
+            <div className="af-metric-head">{row.label}</div>
+            <div className="af-metric-val">{Number(row.value || 0).toLocaleString()}</div>
+          </div>
+        ))}
+      </div>
+      {accounts.length ? (
+        <div className="af-tiktok-accounts">
+          {accounts.map((row) => (
+            <article key={row.id}>
+              <span className={`af-tiktok-dot ${row.connected ? "is-on" : ""}`} />
+              <strong>@{row.handle || row.name}</strong>
+              <span>{Number(row.followers || 0).toLocaleString()} {appCopy("abonnés", "followers")}</span>
+              <span>{Number(row.views || 0).toLocaleString()} {appCopy("vues", "views")}</span>
+              <span>{Number(row.likes || 0).toLocaleString()} likes</span>
+              <span>{Number(row.videoCount || 0).toLocaleString()} {appCopy("vidéos", "videos")}</span>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="desc" style={{ margin: "14px 0 0" }}>
+          {appCopy(
+            "Aucun compte branché. Ouvre Automatiser → Connexions pour tout connecter (TikTok Direct Post).",
+            "No account connected. Open Automate → Connect to hook everything up (TikTok Direct Post)."
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function OverviewPage({ dashboard, isPending, primaryCode, linkUrl, onSaveInvite, onOpenStudio }) {
   const earnings = dashboard?.stats?.lifetimeCents ?? 0;
   const rows = dashboard?.recentCommissions ?? [];
+  const series = dashboard?.series || {};
+  const stats = dashboard?.stats || {};
+  const visits = Number(stats.linkViews || 0);
+  const storeClicks = Number(stats.storeClicks || 0);
+  const installs = Number(stats.referredCount || 0);
+  const paywalls = Number(stats.paywallCount || 0);
+  const sales = Math.max(
+    Number(stats.paidCount || 0),
+    Number(stats.activeSubscribers || 0),
+    uniquePaidFromCommissions(rows)
+  );
+  const axisStart = series.days?.[0]
+    ? formatShortDate(new Date(`${series.days[0]}T12:00:00Z`).getTime())
+    : formatShortDate(Date.now() - 30 * 86400000);
+  const axisEnd = formatShortDate(Date.now());
+  const metrics = [
+    {
+      label: appCopy("Visites", "Visits"),
+      hint: storeClicks
+        ? appCopy(`${storeClicks} vers l'App Store`, `${storeClicks} App Store taps`)
+        : appCopy("ouvertures de ton lien", "opens of your link"),
+      value: visits,
+      values: series.linkViews,
+      color: "#3b82f6",
+      icon: IconCursor,
+    },
+    {
+      label: appCopy("Installs", "Installs"),
+      hint: appCopy("app ouverte avec ton code", "app opened with your code"),
+      value: installs,
+      values: series.attributions,
+      color: "#8b5cf6",
+      icon: IconDownload,
+    },
+    {
+      label: appCopy("Paywall", "Paywall"),
+      hint: appCopy("ont vu l'offre", "reached the offer"),
+      value: paywalls,
+      values: series.paywalls,
+      color: "#f59e0b",
+      icon: IconPaywall,
+    },
+    {
+      label: appCopy("Ventes", "Sales"),
+      hint: appCopy("achats attribués", "attributed purchases"),
+      value: sales,
+      values: series.sales,
+      color: "#14b8a6",
+      icon: IconDollar,
+    },
+  ];
 
   return (
     <>
@@ -325,64 +668,51 @@ function OverviewPage({ dashboard, isPending, primaryCode, linkUrl }) {
         <PendingBanner displayName={dashboard?.displayName} />
       ) : null}
 
+      <InviteLinkCard
+        dashboard={dashboard}
+        isPending={isPending}
+        primaryCode={primaryCode}
+        linkUrl={linkUrl}
+        onSaveInvite={onSaveInvite}
+      />
+
+      <TikTokOverviewCard dashboard={dashboard} onOpenStudio={onOpenStudio} />
+
       {primaryCode ? (
-        <div className="af-card af-link-card">
-          {isPending ? (
-            <div className="af-form-info" style={{ marginBottom: 16 }}>
-              <p>
-                {appCopy(
-                  "Ton lien est réservé — les commissions s'activent dès validation de ton compte.",
-                  "Your link is reserved — commissions activate once your account is approved."
-                )}
-              </p>
-            </div>
-          ) : null}
-          <div className="af-link-card-top">
-            <div>
-              <div className="af-link-card-main">
-                <ProcessAppIcon size={28} />
-                <div>
-                  <strong>{linkUrl.replace("https://", "")}</strong>
-                  <div className="af-link-dest">↳ useprocess.xyz/app</div>
-                </div>
-              </div>
-              <CopyButton text={linkUrl} />
-            </div>
-          </div>
+        <div className="af-card af-link-card" style={{ marginTop: 16 }}>
           <div className="af-metrics-row">
-            {[
-              { label: appCopy("Clics", "Clicks"), value: 0, color: "#3b82f6", icon: IconCursor },
-              { label: appCopy("Leads", "Leads"), value: dashboard?.stats?.referredCount ?? 0, color: "#8b5cf6", icon: IconUsers },
-              { label: appCopy("Ventes", "Sales"), value: dashboard?.stats?.activeSubscribers ?? 0, color: "#14b8a6", icon: IconDollar },
-            ].map(({ label, value, color, icon: Icon }) => (
+            {metrics.map(({ label, hint, value, values, color, icon: Icon }) => (
               <div key={label} className="af-metric-col">
                 <div className="af-metric-head">
                   <Icon style={{ color }} />
                   {label}
                 </div>
                 <div className="af-metric-val">{value}</div>
-                <MiniChart color={color} className="af-mini-chart" active={value > 0} />
+                <div className="af-metric-hint">{hint}</div>
+                <MiniChart color={color} className="af-mini-chart" values={values} />
                 <div className="af-chart-axis">
-                  <span>{formatShortDate(Date.now() - 30 * 86400000)}</span>
-                  <span>{formatShortDate(Date.now())}</span>
+                  <span>{axisStart}</span>
+                  <span>{axisEnd}</span>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      ) : (
-        <div className="af-card af-empty">
-          <div className="af-empty-content">
-            <h2>{appCopy("Aucun lien", "No links yet")}</h2>
-            <p>
-              {appCopy(
-                "Ton lien apparaîtra ici dès que tu auras un code créateur.",
-                "Your link will show here once you have a creator code."
-              )}
-            </p>
+          <div className="af-funnel">
+            <div className="af-funnel-step">
+              <span>{appCopy("Visites → installs", "Visits → installs")}</span>
+              <strong>{formatPercent(installs, visits)}</strong>
+            </div>
+            <div className="af-funnel-step">
+              <span>{appCopy("Installs → paywall", "Installs → paywall")}</span>
+              <strong>{formatPercent(paywalls, installs)}</strong>
+            </div>
+            <div className="af-funnel-step">
+              <span>{appCopy("Paywall → ventes", "Paywall → sales")}</span>
+              <strong>{formatPercent(sales, paywalls)}</strong>
+            </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       <div className="af-card af-card-pad" style={{ marginTop: 16 }}>
         <div className="af-card-head">
@@ -391,10 +721,10 @@ function OverviewPage({ dashboard, isPending, primaryCode, linkUrl }) {
             <div className="af-stat-value">{money(earnings)}</div>
           </div>
         </div>
-        <MiniChart color="#10b981" active={earnings > 0} />
+        <MiniChart color="#10b981" values={series.earningsCents} />
         <div className="af-chart-axis">
-          <span>{formatShortDate(Date.now() - 30 * 86400000)}</span>
-          <span>{formatShortDate(Date.now())}</span>
+          <span>{axisStart}</span>
+          <span>{axisEnd}</span>
         </div>
       </div>
 
@@ -406,8 +736,8 @@ function OverviewPage({ dashboard, isPending, primaryCode, linkUrl }) {
               <h2>{appCopy("Aucune commission", "No commissions yet")}</h2>
               <p>
                 {appCopy(
-                  "Les commissions apparaîtront ici dès qu'un parrainage convertit.",
-                  "Commissions will appear here once a referral converts."
+                  "Les commissions apparaissent ici dès qu'un install via ton lien s'abonne.",
+                  "Commissions show up here as soon as an install from your link subscribes."
                 )}
               </p>
             </div>
@@ -474,7 +804,7 @@ function PayoutSidebarWidget({ dashboard, onConnect, onManage, busy }) {
       ) : (
         <button type="button" className="af-btn af-btn-sm af-btn-black af-payout-sidebar-cta" onClick={onConnect} disabled={busy}>
           {busy
-            ? appCopy("Connexion…", "Connecting…")
+            ? appCopy("Ouverture de Stripe…", "Opening Stripe…")
             : needsAction
               ? appCopy("Finaliser Stripe", "Finish Stripe setup")
               : appCopy("Connecter un compte", "Connect payout method")}
@@ -523,11 +853,11 @@ function CustomersPage({ dashboard }) {
           ))}
         </div>
         <div className="af-empty-content">
-          <h2>{appCopy("Aucun client", "No customers yet")}</h2>
+          <h2>{appCopy("Aucun install", "No installs yet")}</h2>
           <p>
             {appCopy(
-              "Aucun client enregistré pour l'instant. Dès que des utilisateurs convertissent via tes liens, ils apparaîtront ici.",
-              "No customers have been recorded for this program yet. Once customers start converting through your links, they'll appear here."
+              "Les installs attribués apparaîtront ici dès qu'un utilisateur ouvre l'app avec ton code.",
+              "Attributed installs will show here as soon as someone opens the app with your code."
             )}
           </p>
         </div>
@@ -537,7 +867,7 @@ function CustomersPage({ dashboard }) {
 
   return (
     <div className="af-card af-card-pad">
-      <p>{appCopy("Clients parrainés", "Referred customers")}: <strong>{count}</strong></p>
+      <p>{appCopy("Installs attribués", "Attributed installs")}: <strong>{count}</strong></p>
     </div>
   );
 }
@@ -577,6 +907,13 @@ function PayoutsPage({ dashboard, onConnectStripe, onManageStripe, stripeBusy })
         ))}
       </div>
 
+      <p className="af-payout-rules">
+        {appCopy(
+          `Commission : ${COMMISSION_PERCENT} % du net, après Apple / Google. Les primes vues se débloquent à ${VIEW_BONUS_UNLOCK_EUR} € de commission déjà générée (iPhone à ${VIEW_BONUS_FLAGSHIP_UNLOCK_EUR} €). Toutes les vidéos du compte comptent.`,
+          `Commission: ${COMMISSION_PERCENT}% of net, after Apple / Google. View bonuses unlock at ${VIEW_BONUS_UNLOCK_EUR} EUR of commission already earned (iPhone at ${VIEW_BONUS_FLAGSHIP_UNLOCK_EUR} EUR). Every video on the account counts.`
+        )}
+      </p>
+
       <div className="af-card af-card-pad af-stripe-panel" style={{ marginBottom: 16 }}>
         <div className="af-stripe-panel-head">
           <IconWallet style={{ width: 18, height: 18 }} />
@@ -610,7 +947,7 @@ function PayoutsPage({ dashboard, onConnectStripe, onManageStripe, stripeBusy })
           ) : (
             <button type="button" className="af-btn af-btn-sm af-btn-black" onClick={onConnectStripe} disabled={stripeBusy}>
               {stripeBusy
-                ? appCopy("Connexion…", "Connecting…")
+                ? appCopy("Ouverture de Stripe…", "Opening Stripe…")
                 : appCopy("Connecter un compte", "Connect payout method")}
             </button>
           )}
@@ -678,10 +1015,36 @@ function PayoutsPage({ dashboard, onConnectStripe, onManageStripe, stripeBusy })
   );
 }
 
-function SettingsPage({ user, dashboard, onConnectStripe, onManageStripe, stripeBusy, onSignOut }) {
+function SettingsPage({ user, dashboard, onConnectStripe, onManageStripe, stripeBusy, onSignOut, onSaveInvite }) {
   const [tab, setTab] = useState("general");
   const [displayName, setDisplayName] = useState(dashboard?.displayName || "");
+  const [code, setCode] = useState(dashboard?.primaryCode || dashboard?.codes?.[0]?.code || "");
+  const [saveBusy, setSaveBusy] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [saveOk, setSaveOk] = useState(false);
   const initials = (displayName || user?.email || "P").charAt(0).toUpperCase();
+
+  useEffect(() => {
+    setDisplayName(dashboard?.displayName || "");
+    setCode(dashboard?.primaryCode || dashboard?.codes?.[0]?.code || "");
+  }, [dashboard?.displayName, dashboard?.primaryCode, dashboard?.codes]);
+
+  async function saveInvite() {
+    setSaveBusy(true);
+    setSaveError("");
+    setSaveOk(false);
+    try {
+      await onSaveInvite({
+        displayName: displayName.trim(),
+        code: parseAcquisitionCodeFromInput(code),
+      });
+      setSaveOk(true);
+    } catch (err) {
+      setSaveError(formatApplyError(err));
+    } finally {
+      setSaveBusy(false);
+    }
+  }
 
   return (
     <div className="af-settings-layout">
@@ -730,8 +1093,8 @@ function SettingsPage({ user, dashboard, onConnectStripe, onManageStripe, stripe
                     <h3>{appCopy("Ton prénom", "Your first name")}</h3>
                     <p className="desc">
                       {appCopy(
-                        "C'est ton prénom affiché sur Process.",
-                        "This is your first name displayed on Process."
+                        "C'est le nom qui apparaît sur ta page d'invitation (« amine t'invite sur Process »).",
+                        "This is the name on your invite page (“alex invites you to Process”)."
                       )}
                     </p>
                     <input
@@ -740,13 +1103,39 @@ function SettingsPage({ user, dashboard, onConnectStripe, onManageStripe, stripe
                       onChange={(e) => setDisplayName(e.target.value)}
                       maxLength={32}
                     />
+                    <h3 style={{ marginTop: 18 }}>{appCopy("Ton code créateur", "Your creator code")}</h3>
+                    <p className="desc">
+                      {appCopy(
+                        "Ça choisit ton lien : useprocess.xyz/join/TONCODE. L'ancien code continue de marcher.",
+                        "This picks your link: useprocess.xyz/join/YOURCODE. The old code still works."
+                      )}
+                    </p>
+                    <input
+                      className="af-input"
+                      value={code}
+                      maxLength={48}
+                      autoCapitalize="characters"
+                      spellCheck={false}
+                      onChange={(e) => setCode(e.target.value.toUpperCase())}
+                    />
+                    {saveError ? <p className="af-invite-error" style={{ marginTop: 10 }}>{saveError}</p> : null}
+                    {saveOk ? (
+                      <p className="desc" style={{ marginTop: 10, color: "#047857" }}>
+                        {appCopy("Enregistré.", "Saved.")}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               </div>
               <div className="af-setting-footer">
-                <span>{appCopy("32 caractères max.", "Max 32 characters.")}</span>
-                <button type="button" className="af-btn af-btn-sm af-btn-secondary" disabled>
-                  {appCopy("Enregistrer", "Save Changes")}
+                <span>{appCopy("32 caractères max. pour le prénom.", "Max 32 characters for the name.")}</span>
+                <button
+                  type="button"
+                  className="af-btn af-btn-sm af-btn-black"
+                  onClick={saveInvite}
+                  disabled={saveBusy || !onSaveInvite}
+                >
+                  {saveBusy ? appCopy("Enregistrement…", "Saving…") : appCopy("Enregistrer", "Save Changes")}
                 </button>
               </div>
             </div>
@@ -810,7 +1199,9 @@ function SettingsPage({ user, dashboard, onConnectStripe, onManageStripe, stripe
                   </button>
                 ) : (
                   <button type="button" className="af-btn af-btn-sm af-btn-black" onClick={onConnectStripe} disabled={stripeBusy}>
-                    {appCopy("Connecter", "Connect")}
+                    {stripeBusy
+                      ? appCopy("Ouverture de Stripe…", "Opening Stripe…")
+                      : appCopy("Connecter", "Connect")}
                   </button>
                 )}
               </div>
@@ -894,6 +1285,7 @@ function SettingsPage({ user, dashboard, onConnectStripe, onManageStripe, stripe
 function DashboardShell({
   route,
   go,
+  query,
   user,
   dashboard,
   isPending,
@@ -903,49 +1295,67 @@ function DashboardShell({
   onManageStripe,
   stripeBusy,
   onSignOut,
+  onSaveInvite,
 }) {
   const pageTitles = {
     overview: appCopy("Overview", "Overview"),
-    formats: appCopy("Formats", "Formats"),
-    methode: appCopy("Méthodes", "Methods"),
-    automatisation: appCopy("Automatisation", "Automation"),
+    tiktoks: appCopy("Tiktoks", "Tiktoks"),
+    methode: appCopy("Méthode lancement", "Launch method"),
+    clippers: appCopy("Clippers", "Clippers"),
+    automatisation: appCopy("Automatiser", "Automate"),
     us: appCopy("Poster US", "Post in the US"),
+    utiles: appCopy("Outils", "Tools"),
     payouts: appCopy("Paiements", "Payouts"),
     settings: appCopy("Paramètres", "Settings"),
   };
 
   const navItems = [
     { id: "overview", label: appCopy("Overview", "Overview"), icon: IconOverview },
-    { id: "formats", label: appCopy("Formats", "Formats"), icon: IconGrid },
-    { id: "methode", label: appCopy("Méthodes", "Methods"), icon: IconCursor },
-    { id: "automatisation", label: appCopy("Automatisation", "Automation"), icon: IconSpark },
-    { id: "us", label: appCopy("Poster US", "Post in the US"), icon: IconGlobe },
+    { id: "methode", label: appCopy("Méthode lancement", "Launch method"), icon: IconCursor, sub: true },
+    { id: "tiktoks", label: appCopy("Tiktoks", "Tiktoks"), icon: IconTikTok },
+    { id: "clippers", label: appCopy("Clippers", "Clippers"), icon: IconTrophy },
+    { id: "automatisation", label: appCopy("Automatiser", "Automate"), icon: IconSpark },
   ];
+  const toolItems = [
+    { id: "us", label: appCopy("Poster US", "Post in the US"), icon: IconGlobe, href: "us" },
+    { id: "shadowban", label: appCopy("Shadowban", "Shadowban"), icon: IconShield, href: "utiles?t=shadowban" },
+    { id: "questions", label: appCopy("Questions", "Questions"), icon: IconHelp, href: "utiles?t=questions" },
+    { id: "aide", label: appCopy("Aide", "Help"), icon: IconWhatsApp, href: "utiles?t=aide" },
+  ];
+  const usefulTopic = route === "utiles" ? String(query?.t || "") : "";
 
   function renderPage() {
     switch (route) {
+      case "tiktoks":
       case "formats":
-        return <AffiliateFormatsPage />;
+        return <AffiliateFormatsPage user={user} />;
       case "methode":
         return (
           <AffiliateMethodPage
             linkUrl={linkUrl}
             primaryCode={primaryCode}
             onGoLinks={() => go("overview")}
-            onGoFormats={() => go("formats")}
+            onGoFormats={() => go("tiktoks")}
           />
         );
+      case "clippers":
+        return <AffiliateClippersPage user={user} dashboard={dashboard} />;
       case "automatisation":
-        return (
-          <AffiliateAutomationPage
-            primaryCode={primaryCode}
-            linkUrl={linkUrl}
-            onGoFormats={() => go("formats")}
-            onGoOverview={() => go("overview")}
-          />
-        );
+        return <AffiliateAutomationPage user={user} dashboard={dashboard} query={query} go={go} />;
       case "us":
         return <AffiliateUsPage />;
+      case "utiles":
+        return (
+          <AffiliateUsefulPage
+            topic={usefulTopic}
+            displayName={dashboard?.displayName}
+            email={user?.email}
+            onOpenTopic={(id) => go(`utiles?t=${id}`)}
+            onBack={() => go("utiles")}
+            onOpenUs={() => go("us")}
+            onOpenShadowbanMethod={() => go("methode?m=4")}
+          />
+        );
       case "customers":
         return <CustomersPage dashboard={dashboard} />;
       case "payouts":
@@ -966,6 +1376,7 @@ function DashboardShell({
             onManageStripe={onManageStripe}
             stripeBusy={stripeBusy}
             onSignOut={onSignOut}
+            onSaveInvite={onSaveInvite}
           />
         );
       default:
@@ -975,30 +1386,58 @@ function DashboardShell({
             isPending={isPending}
             primaryCode={primaryCode}
             linkUrl={linkUrl}
+            onSaveInvite={onSaveInvite}
+            onOpenStudio={() => go("automatisation?tab=connexions")}
           />
         );
     }
   }
 
-  const pageContent = renderPage();
+  const pageContent = (
+    <Suspense fallback={<div className="af-page-pending" aria-hidden="true" />}>{renderPage()}</Suspense>
+  );
 
   return (
     <div className="af-app af-shell">
       <aside className="af-sidebar">
-        <div className="af-sidebar-logo">process</div>
+        <div className="af-sidebar-logo">PROCE$$ CLIPPING</div>
 
         <nav className="af-nav" aria-label={appCopy("Navigation", "Navigation")}>
-          {navItems.map(({ id, label, icon: Icon }) => (
+          {navItems.map(({ id, label, icon: Icon, sub }) => (
             <button
               key={id}
               type="button"
-              className={`af-nav-item ${route === id ? "is-active" : ""}`}
+              className={`af-nav-item ${sub ? "is-sub" : ""} ${route === id ? "is-active" : ""}`}
               onClick={() => go(id)}
             >
               <Icon />
               {label}
             </button>
           ))}
+          <div className="af-nav-section">
+            <button
+              type="button"
+              className={`af-nav-label ${route === "utiles" && !usefulTopic ? "is-active" : ""}`}
+              onClick={() => go("utiles")}
+            >
+              {appCopy("Outils", "Tools")}
+            </button>
+            {toolItems.map(({ id, label, icon: Icon, href }) => (
+              <button
+                key={id}
+                type="button"
+                className={`af-nav-item is-sub ${
+                  (id === "us" && route === "us") || (id !== "us" && route === "utiles" && usefulTopic === id)
+                    ? "is-active"
+                    : ""
+                }`}
+                onClick={() => go(href)}
+              >
+                <Icon />
+                {label}
+              </button>
+            ))}
+          </div>
         </nav>
 
         <PayoutSidebarWidget
@@ -1030,7 +1469,7 @@ function DashboardShell({
       </aside>
 
       <main className="af-main">
-        {route !== "payouts" && route !== "settings" && route !== "methode" && route !== "formats" && route !== "automatisation" && route !== "us" ? (
+        {route !== "payouts" && route !== "settings" && route !== "methode" && route !== "tiktoks" && route !== "formats" && route !== "clippers" && route !== "automatisation" && route !== "us" && route !== "utiles" ? (
           <div className="af-page-head">
             <h1>
               {pageTitles[route] || pageTitles.overview}
@@ -1038,7 +1477,7 @@ function DashboardShell({
             </h1>
           </div>
         ) : null}
-        <div className="af-page-panel" key={route}>
+        <div className="af-page-panel" key={`${route}:${query?.t || ""}`}>
           {pageContent}
         </div>
       </main>
@@ -1047,18 +1486,20 @@ function DashboardShell({
 }
 
 export function AffiliateApp() {
+  const sessionRef = useRef(peekAffiliateSession());
   const [, setLangTick] = useState(0);
-  const [route, go] = useHashRoute();
+  const [route, go, query] = useHashRoute();
   const [user, setUser] = useState(null);
-  const [dashboard, setDashboard] = useState(null);
-  const [dashboardLookup, setDashboardLookup] = useState("pending");
-  const [bootstrapping, setBootstrapping] = useState(true);
+  const [dashboard, setDashboard] = useState(() => sessionRef.current?.dashboard || null);
+  const [dashboardLookup, setDashboardLookup] = useState(() =>
+    sessionRef.current?.dashboard ? "ready" : sessionRef.current?.uid ? "pending" : "missing"
+  );
+  const [bootstrapping, setBootstrapping] = useState(() => Boolean(sessionRef.current?.uid));
   const [busy, setBusy] = useState(false);
   const [stripeBusy, setStripeBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [email, setEmail] = useState(() => getConsumedApplyPrefill()?.email || "");
-  const [applyCodeError, setApplyCodeError] = useState("");
   const [applyAuthMode, setApplyAuthMode] = useState("signup");
   const [authNotice, setAuthNotice] = useState("");
   const [authNoticeTone, setAuthNoticeTone] = useState("info");
@@ -1070,7 +1511,6 @@ export function AffiliateApp() {
 
   useEffect(() => {
     warmFirebaseAuth();
-    dismissCrispChat();
     applySiteDocumentLanguage();
     return subscribeSiteLanguage(() => {
       applySiteDocumentLanguage();
@@ -1094,10 +1534,11 @@ export function AffiliateApp() {
     const job = (async () => {
       try {
         const token = await getAuthToken(nextUser, false);
-        const data = await affiliateApi("affiliateDashboard", { token });
+        const data = await affiliateApi("affiliateDashboard", { token, timeoutMs: 8000 });
         setDashboard(data);
         writeDashboardCache(nextUser.uid, data);
         setDashboardLookup("ready");
+        warmAffiliateFunctions();
         return data;
       } catch (err) {
         if (err.status === 404) {
@@ -1122,26 +1563,31 @@ export function AffiliateApp() {
 
   useEffect(() => {
     let cancelled = false;
+    let unsub = () => {};
     (async () => {
       if (!isFirebaseConfigured()) {
         setBootstrapping(false);
         return;
       }
       try {
-        const auth = await getFirebaseAuth();
-        try {
-          await completeAffiliateEmailLink();
-        } catch (linkErr) {
-          if (!cancelled) {
-            setError(linkErr?.message || "email_link_failed");
+        if (hrefLooksLikeEmailLink()) {
+          try {
+            await completeAffiliateEmailLink();
+          } catch (linkErr) {
+            if (!cancelled) {
+              setError(linkErr?.message || "email_link_failed");
+            }
           }
         }
-        const { onAuthStateChanged } = await import("firebase/auth");
-        onAuthStateChanged(auth, (nextUser) => {
+        const auth = await getFirebaseAuth();
+        const { onAuthStateChanged } = await getFirebaseAuthModule();
+        unsub = onAuthStateChanged(auth, (nextUser) => {
           if (cancelled) return;
           setUser(nextUser);
 
           if (!nextUser) {
+            forgetAffiliateSession(dashboardUserRef.current || sessionRef.current?.uid);
+            sessionRef.current = null;
             setDashboard(null);
             setDashboardLookup("missing");
             dashboardUserRef.current = null;
@@ -1150,7 +1596,10 @@ export function AffiliateApp() {
             return;
           }
 
-          const cached = readDashboardCache(nextUser.uid);
+          rememberAffiliateUid(nextUser.uid);
+          sessionRef.current = { uid: nextUser.uid, dashboard: readDashboardCache(nextUser.uid) };
+
+          const cached = sessionRef.current.dashboard;
           if (cached) {
             setDashboard(cached);
             setDashboardLookup("ready");
@@ -1186,6 +1635,7 @@ export function AffiliateApp() {
     })();
     return () => {
       cancelled = true;
+      unsub();
     };
   }, [loadDashboard]);
 
@@ -1194,15 +1644,12 @@ export function AffiliateApp() {
     if (!user && !LANDING_HASHES.has(route) && !["apply", "auth"].includes(route)) {
       go("program");
     }
-    if (user && dashboard && LANDING_HASHES.has(route)) {
-      if (isOnboardingInProgress() && !isOnboardingUnlocked(user.uid)) {
-        go("apply");
-      } else {
+    if (user && dashboard) {
+      if (!isOnboardingUnlocked(user.uid)) markOnboardingUnlocked(user.uid);
+      if (LANDING_HASHES.has(route) || route === "apply") {
         go("overview");
       }
-    }
-    if (user && dashboard && isOnboardingInProgress() && !isOnboardingUnlocked(user.uid) && route !== "apply") {
-      go("apply");
+      return;
     }
     if (
       user &&
@@ -1212,7 +1659,7 @@ export function AffiliateApp() {
       route !== "apply" &&
       route !== "auth"
     ) {
-      go(isOnboardingInProgress() ? "apply" : "program");
+      go("program");
     }
   }, [bootstrapping, user, dashboard, dashboardLookup, route, go]);
 
@@ -1241,7 +1688,7 @@ export function AffiliateApp() {
       setError("");
       try {
         const token = await getAuthToken(user, false);
-        await affiliateApi("affiliateStripeConnectSync", { token });
+        await affiliateApi("affiliateStripeConnectSync", { token, timeoutMs: 8000 });
         if (!cancelled) {
           await loadDashboard(user, { silent: true, force: true });
           if (query.stripe === "return") {
@@ -1255,13 +1702,7 @@ export function AffiliateApp() {
       } finally {
         if (!cancelled) {
           setStripeBusy(false);
-          if (isOnboardingInProgress() && !isOnboardingUnlocked(user.uid)) {
-            const draft = readOnboardingDraft();
-            writeOnboardingDraft({ ...draft, stripeDone: true, stripeStarted: true, step: "preview" });
-            navigateHash("apply");
-          } else {
-            navigateHash("payouts");
-          }
+          navigateHash("payouts");
         }
       }
     })();
@@ -1272,25 +1713,22 @@ export function AffiliateApp() {
   }, [user, bootstrapping, loadDashboard]);
 
   async function startStripeConnect() {
-    if (!user) return;
+    if (!user || stripeBusy) return;
     setStripeBusy(true);
     setError("");
+    const safety = window.setTimeout(() => setStripeBusy(false), 10000);
     try {
       const token = await getAuthToken(user, false);
-      const result = await Promise.race([
-        affiliateApi("affiliateStripeConnectStart", { token }),
-        new Promise((_, reject) =>
-          window.setTimeout(() => reject(new Error("STRIPE_TIMEOUT")), 12000)
-        ),
-      ]);
+      const result = await affiliateApi("affiliateStripeConnectStart", { token, timeoutMs: 8000 });
       if (result?.url) {
-        window.location.href = result.url;
+        window.location.assign(result.url);
         return;
       }
       throw new Error("STRIPE_NOT_CONFIGURED");
     } catch (err) {
+      window.clearTimeout(safety);
       setError(
-        err.message === "STRIPE_TIMEOUT"
+        err.message === "TIMEOUT" || err.message === "STRIPE_TIMEOUT"
           ? appCopy("Stripe met trop de temps. Réessaie.", "Stripe is taking too long. Try again.")
           : err.message || "stripe_connect_failed"
       );
@@ -1299,22 +1737,30 @@ export function AffiliateApp() {
   }
 
   async function openStripeDashboard() {
-    if (!user) return;
+    if (!user || stripeBusy) return;
     setStripeBusy(true);
     setError("");
+    const safety = window.setTimeout(() => setStripeBusy(false), 10000);
     try {
       const token = await getAuthToken(user, false);
-      const result = await affiliateApi("affiliateStripeConnectDashboard", { token });
+      const result = await affiliateApi("affiliateStripeConnectDashboard", { token, timeoutMs: 8000 });
       if (result?.url) {
         window.open(result.url, "_blank", "noopener,noreferrer");
       }
     } catch (err) {
       if (err.status === 404) {
+        window.clearTimeout(safety);
+        setStripeBusy(false);
         void startStripeConnect();
-      } else {
-        setError(err.message || "stripe_dashboard_failed");
+        return;
       }
+      setError(
+        err.message === "TIMEOUT"
+          ? appCopy("Stripe met trop de temps. Réessaie.", "Stripe is taking too long. Try again.")
+          : err.message || "stripe_dashboard_failed"
+      );
     } finally {
+      window.clearTimeout(safety);
       setStripeBusy(false);
     }
   }
@@ -1322,14 +1768,17 @@ export function AffiliateApp() {
   async function handleApply(form) {
     setBusy(true);
     setError("");
-    setApplyCodeError("");
-
-    const normalizedCode = form.code ? parseAcquisitionCodeFromInput(form.code) : "";
 
     if (dashboard?.affiliateId) {
+      if (user) markOnboardingUnlocked(user.uid);
       setBusy(false);
+      go("overview");
       return true;
     }
+
+    const suggestedCode = parseAcquisitionCodeFromInput(
+      `${codeFromFirstName(form.displayName)}${10 + Math.floor(Math.random() * 90)}`
+    );
 
     try {
       let currentUser = user;
@@ -1344,49 +1793,79 @@ export function AffiliateApp() {
       }
 
       const token = await getAuthToken(currentUser, false);
-      const applyResult = await Promise.race([
-        affiliateApi("affiliateApply", {
-          token,
-          body: {
-            displayName: form.displayName,
-            ...(normalizedCode ? { code: normalizedCode } : {}),
-            email: form.email || currentUser.email || undefined,
-            onboarding: form.onboarding || undefined,
-          },
-        }),
-        new Promise((_, reject) =>
-          window.setTimeout(() => reject(new Error("APPLY_TIMEOUT")), 12000)
-        ),
-      ]);
-
+      let applyResult = null;
+      let lastError = null;
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        const code =
+          attempt === 0
+            ? suggestedCode
+            : parseAcquisitionCodeFromInput(
+                `${codeFromFirstName(form.displayName)}${10 + Math.floor(Math.random() * 90)}`
+              );
+        try {
+          applyResult = await Promise.race([
+            affiliateApi("affiliateApply", {
+              token,
+              body: {
+                displayName: form.displayName,
+                code,
+                email: form.email || currentUser.email || undefined,
+                phone: form.phone || undefined,
+                onboarding: form.onboarding || undefined,
+              },
+            }),
+            new Promise((_, reject) =>
+              window.setTimeout(() => reject(new Error("APPLY_TIMEOUT")), 12000)
+            ),
+          ]);
+          lastError = null;
+          break;
+        } catch (err) {
+          lastError = err;
+          const message = err?.data?.error || err?.message || "";
+          if (message !== "CODE_CONFLICT") throw err;
+        }
+      }
       if (!applyResult?.affiliateId) {
-        throw new Error("APPLY_TIMEOUT");
+        throw lastError || new Error("APPLY_TIMEOUT");
       }
 
       const optimistic = buildOptimisticDashboard({
         affiliateId: applyResult.affiliateId,
         displayName: form.displayName,
-        code: applyResult.primaryCode || applyResult.code || normalizedCode,
+        code: applyResult.primaryCode || applyResult.code || suggestedCode,
         status: applyResult.status,
         codes: applyResult.codes,
       });
       setDashboard(optimistic);
       setDashboardLookup("ready");
       writeDashboardCache(currentUser.uid, optimistic);
-
-      const draft = readOnboardingDraft();
-      writeOnboardingDraft({
-        ...draft,
-        applied: true,
-        step: draft.step === "validated" ? "stripe" : draft.step,
-      });
+      markOnboardingUnlocked(currentUser.uid);
+      playSettingsChange();
       void loadDashboard(currentUser, { silent: true, force: true });
+      go("overview");
+
+      const recoveryEmail = String(form.email || currentUser.email || "").trim();
+      if (recoveryEmail && currentUser.isAnonymous) {
+        void sendAffiliateEmailLink(recoveryEmail, { nextHash: "overview", applyAfter: false })
+          .then(() => {
+            setSuccess(
+              appCopy(
+                "Lien créé. Vérifie tes emails pour retrouver ce compte.",
+                "Link created. Check your email to sign back in later."
+              )
+            );
+          })
+          .catch(() => {
+            setSuccess(appCopy("Lien affilié créé.", "Affiliate link created."));
+          });
+      } else {
+        setSuccess(appCopy("Lien affilié créé.", "Affiliate link created."));
+      }
+
       return true;
     } catch (err) {
-      const message = err?.data?.error || err?.message || "";
-      if (message === "CODE_CONFLICT" || message === "INVALID_CODE") {
-        setApplyCodeError(formatApplyError(err));
-      } else if (String(err?.code || "").startsWith("auth/")) {
+      if (String(err?.code || "").startsWith("auth/")) {
         setError(formatAuthError(err));
       } else {
         setError(formatApplyError(err));
@@ -1399,58 +1878,28 @@ export function AffiliateApp() {
 
   useEffect(() => {
     if (!user || bootstrapping) return;
-    if (!consumeApplyAfterLink()) return;
-    const draft = readOnboardingDraft();
-    go("apply");
-    const name = String(draft.answers.firstName || "").trim();
-    if (draft.applied) {
-      writeOnboardingDraft({ ...draft, step: "invite" });
+    if (dashboardLookup !== "ready" && dashboardLookup !== "missing") return;
+    if (!peekApplyAfterLink()) return;
+    consumeApplyAfterLink();
+    if (dashboard) {
+      markOnboardingUnlocked(user.uid);
+      go("overview");
+      return;
     }
-    if (!name) return;
+    const draft = readOnboardingDraft();
+    const name = String(draft.answers?.firstName || "").trim();
+    const phone = String(draft.answers?.phone || "").trim();
+    if (!name || !phone) {
+      go("apply");
+      return;
+    }
     void handleApply({
       displayName: name,
-      code: "",
       email: user.email,
-      onboarding: draft.answers,
-    }).then((ok) => {
-      if (ok === true) {
-        writeOnboardingDraft({ ...readOnboardingDraft(), applied: true, step: "invite" });
-      }
+      phone,
+      onboarding: { firstName: name, phone },
     });
-  }, [user, bootstrapping, go]);
-
-  async function handleClaimCode(form) {
-    if (!user) return false;
-    setBusy(true);
-    setError("");
-    setApplyCodeError("");
-    try {
-      const token = await getAuthToken(user, false);
-      await affiliateApi("affiliateApply", {
-        token,
-        body: {
-          displayName: form.displayName,
-          code: parseAcquisitionCodeFromInput(form.code),
-          email: form.email || user.email || undefined,
-          onboarding: form.onboarding || undefined,
-        },
-      });
-      markOnboardingUnlocked(user.uid);
-      playSettingsChange();
-      await loadDashboard(user, { silent: true, force: true });
-      return true;
-    } catch (err) {
-      const message = err?.data?.error || err?.message || "";
-      if (message === "CODE_CONFLICT" || message === "INVALID_CODE") {
-        setApplyCodeError(formatApplyError(err));
-      } else {
-        setError(formatApplyError(err));
-      }
-      return false;
-    } finally {
-      setBusy(false);
-    }
-  }
+  }, [user, bootstrapping, dashboard, dashboardLookup, go]);
 
   function switchApplyToLogin() {
     setApplyAuthMode("login");
@@ -1465,7 +1914,7 @@ export function AffiliateApp() {
     setAuthNotice("");
 
     try {
-      await sendAffiliateEmailLink(loginEmail, { nextHash: "apply", applyAfter: true });
+      await sendAffiliateEmailLink(loginEmail, { nextHash: "overview", applyAfter: true });
       setEmail(loginEmail.trim());
       setAuthNotice(
         appCopy(
@@ -1500,7 +1949,8 @@ export function AffiliateApp() {
     const auth = await getFirebaseAuth();
     const { signOut: firebaseSignOut } = await import("firebase/auth");
     await firebaseSignOut(auth);
-    clearDashboardCache(user?.uid);
+    forgetAffiliateSession(user?.uid);
+    sessionRef.current = null;
     setDashboard(null);
     setDashboardLookup("missing");
     dashboardUserRef.current = null;
@@ -1508,6 +1958,32 @@ export function AffiliateApp() {
     setAuthNotice("");
     go("program");
   }
+
+  const saveInviteProfile = useCallback(
+    async ({ displayName, code }) => {
+      if (!user) throw new Error("UNAUTHORIZED");
+      const token = await getAuthToken(user);
+      const data = await affiliateApi("affiliateSyncProfile", {
+        token,
+        body: { displayName, code },
+        timeoutMs: 12000,
+      });
+      setDashboard((prev) => {
+        if (!prev) return prev;
+        const next = {
+          ...prev,
+          displayName: data.displayName || displayName || prev.displayName,
+          primaryCode: data.primaryCode || code || prev.primaryCode,
+          codes: Array.isArray(data.codes) && data.codes.length ? data.codes : prev.codes,
+        };
+        writeDashboardCache(user.uid, next);
+        return next;
+      });
+      void loadDashboard(user, { silent: true, force: true });
+      return data;
+    },
+    [user, loadDashboard]
+  );
 
   const primaryCode = useMemo(
     () => dashboard?.primaryCode || dashboard?.codes?.[0]?.code || "",
@@ -1521,10 +1997,8 @@ export function AffiliateApp() {
   const wantsApply =
     route === "apply" || (!user && hasAffiliatePrefill(applyPrefill));
 
-  const unlocked = Boolean(user && isOnboardingUnlocked(user.uid));
-  const midApply = isOnboardingInProgress() && !unlocked;
   const hasAccount = Boolean(user && dashboard);
-  const showOnboarding = !unlocked && (wantsApply || midApply) && !(hasAccount && !midApply);
+  const showOnboarding = wantsApply && !hasAccount;
 
   const applyFlow = (
     <AffiliateOnboarding
@@ -1539,41 +2013,69 @@ export function AffiliateApp() {
       onSwitchToLogin={switchApplyToLogin}
       onSwitchToSignup={switchApplyToSignup}
       onLogin={handleApplyLogin}
-      onGoLogin={switchApplyToLogin}
       onLeave={() => go("program")}
       onSubmit={handleApply}
-      onClaimCode={handleClaimCode}
-      onConnectStripe={startStripeConnect}
-      stripeBusy={stripeBusy}
       email={email}
       setEmail={setEmail}
-      serverCodeError={applyCodeError}
-      onClearServerCodeError={() => setApplyCodeError("")}
       prefill={applyPrefill}
       onFinished={() => {
         if (user) markOnboardingUnlocked(user.uid);
-        go("methode");
+        go("overview");
       }}
-      dashboard={dashboard}
-      linkUrl={linkUrl}
-      stripeReady={isStripePayoutReady(dashboard)}
     />
   );
 
   const landing = (
     <AffiliatePageChrome>
-      <ProgramLanding
-        onApply={() => go("apply")}
-        onLogin={() => {
-          switchApplyToLogin();
-          go("apply");
-        }}
-      />
+      <Suspense
+        fallback={
+          <div className="af-app af-loading">
+            <div className="af-spinner" />
+          </div>
+        }
+      >
+        <ProgramLanding
+          onApply={() => go("apply")}
+          onLogin={() => {
+            switchApplyToLogin();
+            go("apply");
+          }}
+        />
+      </Suspense>
       {error ? <div className="af-toast error">{error}</div> : null}
     </AffiliatePageChrome>
   );
 
+  const workspace = (
+    <AffiliatePageChrome>
+      {dashboard ? (
+        <DashboardShell
+          route={AFFILIATE_DASHBOARD_ROUTES.has(route) ? route : "overview"}
+          go={go}
+          query={query}
+          user={user}
+          dashboard={dashboard}
+          isPending={isPending}
+          primaryCode={primaryCode}
+          linkUrl={linkUrl}
+          onConnectStripe={startStripeConnect}
+          onManageStripe={openStripeDashboard}
+          stripeBusy={stripeBusy}
+          onSignOut={signOut}
+          onSaveInvite={saveInviteProfile}
+        />
+      ) : (
+        <DashboardSkeleton route={AFFILIATE_DASHBOARD_ROUTES.has(route) ? route : "overview"} />
+      )}
+      {error ? <div className="af-toast error">{error}</div> : null}
+      {success ? <div className="af-toast success">{success}</div> : null}
+    </AffiliatePageChrome>
+  );
+
   if (!user && !wantsApply) {
+    if (dashboard || (bootstrapping && sessionRef.current?.uid)) {
+      return workspace;
+    }
     return landing;
   }
 
@@ -1581,7 +2083,6 @@ export function AffiliateApp() {
     return (
       <AffiliatePageChrome>
         <div className="af-app af-ob af-ld-apply">
-          <AffiliateTopNav compact onApply={() => go("apply")} onLogin={() => {}} />
           <div className="af-flow">
             <h1>{appCopy("Portail créateur", "Creator portal")}</h1>
             <p className="af-flow-lead">
@@ -1611,7 +2112,7 @@ export function AffiliateApp() {
     );
   }
 
-  if (showOnboarding || (wantsApply && !unlocked && !hasAccount)) {
+  if (showOnboarding) {
     return (
       <AffiliatePageChrome>
         {applyFlow}
@@ -1621,26 +2122,11 @@ export function AffiliateApp() {
   }
 
   if (!user || !dashboard) {
+    if (bootstrapping && sessionRef.current?.uid) {
+      return workspace;
+    }
     return landing;
   }
 
-  return (
-    <AffiliatePageChrome>
-      <DashboardShell
-        route={AFFILIATE_DASHBOARD_ROUTES.has(route) ? route : "overview"}
-        go={go}
-        user={user}
-        dashboard={dashboard}
-        isPending={isPending}
-        primaryCode={primaryCode}
-        linkUrl={linkUrl}
-        onConnectStripe={startStripeConnect}
-        onManageStripe={openStripeDashboard}
-        stripeBusy={stripeBusy}
-        onSignOut={signOut}
-      />
-      {error ? <div className="af-toast error">{error}</div> : null}
-      {success ? <div className="af-toast success">{success}</div> : null}
-    </AffiliatePageChrome>
-  );
+  return workspace;
 }
