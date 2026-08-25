@@ -14,37 +14,36 @@ import {
   parseAcquisitionCodeFromInput,
 } from "../features/acquisition-link.js";
 import {
-  IconCalendar,
   IconCheck,
   IconChevronDown,
   IconChevronLeft,
   IconCoin,
-  IconCopy,
   IconCursor,
   IconDollar,
-  IconExternal,
   IconFilter,
+  IconGlobe,
+  IconGrid,
   IconInfo,
-  IconLink,
-  IconLock,
   IconLogout,
   IconOverview,
   IconSettings,
   IconShield,
+  IconSpark,
   IconUsers,
   IconWallet,
   IconX,
   ProcessAppIcon,
 } from "./AffiliateIcons.jsx";
 import {
+  AFFILIATE_DASHBOARD_ROUTES,
   AFFILIATE_X_DM_URL,
   buildSupportBody,
   buildSocialMailBody,
+  canonicalizeAffiliateRoute,
   COMMISSION_PERCENT,
   formatApplyError,
   formatAuthError,
   formatShortDate,
-  HOLD_DAYS,
   money,
   navigateHash,
   readHashRoute,
@@ -64,7 +63,9 @@ import {
 import { AffiliateLanding, AffiliateTopNav } from "./AffiliateLanding.jsx";
 import { AffiliateOnboarding } from "./AffiliateOnboarding.jsx";
 import { AffiliateMethodPage } from "./AffiliateMethod.jsx";
-import { ViewBonusBoard, ViewBonusNote } from "./ViewBonusBoard.jsx";
+import { AffiliateFormatsPage } from "./AffiliateFormats.jsx";
+import { AffiliateAutomationPage } from "./AffiliateAutomation.jsx";
+import { AffiliateUsPage } from "./AffiliateUs.jsx";
 import {
   isOnboardingInProgress,
   isOnboardingUnlocked,
@@ -119,14 +120,27 @@ function getConsumedApplyPrefill() {
 function useHashRoute() {
   const [route, setRoute] = useState(() => {
     const prefill = getConsumedApplyPrefill();
-    const hashRoute = readHashRoute();
+    const hashRoute = canonicalizeAffiliateRoute(readHashRoute(), readHashQuery());
     if (hashRoute === "apply" || hasAffiliatePrefill(prefill)) return "apply";
     if (hashRoute && hashRoute !== "program") return hashRoute;
     return "program";
   });
 
   useEffect(() => {
-    const onHash = () => setRoute(readHashRoute());
+    const onHash = () => {
+      const raw = readHashRoute();
+      const canonical = canonicalizeAffiliateRoute(raw, readHashQuery());
+      if (raw !== canonical) {
+        navigateHash(canonical);
+        return;
+      }
+      setRoute(canonical);
+    };
+    const raw = readHashRoute();
+    const canonical = canonicalizeAffiliateRoute(raw, readHashQuery());
+    if (raw !== canonical) {
+      navigateHash(canonical);
+    }
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
@@ -134,9 +148,12 @@ function useHashRoute() {
   const go = useCallback((next) => {
     const raw = String(next || "").replace(/^#\/?/, "").trim() || "program";
     const [path, query] = raw.split("?");
-    const normalized = (path || "program").trim();
-    setRoute(normalized);
-    navigateHash(query ? `${normalized}?${query}` : normalized);
+    const canonical = canonicalizeAffiliateRoute(
+      (path || "program").trim(),
+      Object.fromEntries(new URLSearchParams(query || ""))
+    );
+    setRoute(canonical);
+    navigateHash(query && canonical === (path || "").trim() ? `${canonical}?${query}` : canonical);
   }, []);
 
   return [route, go];
@@ -298,52 +315,131 @@ function isStripePayoutReady(dashboard) {
   return Boolean(stripe.accountId && stripe.payoutsEnabled);
 }
 
-function RewardsLinkCard({ primaryCode, linkUrl, isPending }) {
+function OverviewPage({ dashboard, isPending, primaryCode, linkUrl }) {
+  const earnings = dashboard?.stats?.lifetimeCents ?? 0;
+  const rows = dashboard?.recentCommissions ?? [];
+
   return (
-    <div className="af-card af-card-pad af-rewards-card">
-      <div className="af-card-head">
-        <h2>{appCopy("Récompenses", "Rewards")}</h2>
-        <span className="af-card-muted">
-          {appCopy(`Période de retenue ${HOLD_DAYS} jours`, `${HOLD_DAYS}-day holding period`)}
-        </span>
-      </div>
+    <>
+      {isPending ? (
+        <PendingBanner displayName={dashboard?.displayName} />
+      ) : null}
 
       {primaryCode ? (
-        <div className="af-link-row">
-          <div className="af-link-row-text">
-            <ProcessAppIcon size={28} />
-            <span>{linkUrl.replace("https://", "")}</span>
-            {isPending ? (
-              <span className="af-link-pending-pill">
-                {appCopy("En attente", "Pending")}
-              </span>
-            ) : null}
+        <div className="af-card af-link-card">
+          {isPending ? (
+            <div className="af-form-info" style={{ marginBottom: 16 }}>
+              <p>
+                {appCopy(
+                  "Ton lien est réservé — les commissions s'activent dès validation de ton compte.",
+                  "Your link is reserved — commissions activate once your account is approved."
+                )}
+              </p>
+            </div>
+          ) : null}
+          <div className="af-link-card-top">
+            <div>
+              <div className="af-link-card-main">
+                <ProcessAppIcon size={28} />
+                <div>
+                  <strong>{linkUrl.replace("https://", "")}</strong>
+                  <div className="af-link-dest">↳ useprocess.xyz/app</div>
+                </div>
+              </div>
+              <CopyButton text={linkUrl} />
+            </div>
           </div>
-          <CopyButton text={linkUrl} />
+          <div className="af-metrics-row">
+            {[
+              { label: appCopy("Clics", "Clicks"), value: 0, color: "#3b82f6", icon: IconCursor },
+              { label: appCopy("Leads", "Leads"), value: dashboard?.stats?.referredCount ?? 0, color: "#8b5cf6", icon: IconUsers },
+              { label: appCopy("Ventes", "Sales"), value: dashboard?.stats?.activeSubscribers ?? 0, color: "#14b8a6", icon: IconDollar },
+            ].map(({ label, value, color, icon: Icon }) => (
+              <div key={label} className="af-metric-col">
+                <div className="af-metric-head">
+                  <Icon style={{ color }} />
+                  {label}
+                </div>
+                <div className="af-metric-val">{value}</div>
+                <MiniChart color={color} className="af-mini-chart" active={value > 0} />
+                <div className="af-chart-axis">
+                  <span>{formatShortDate(Date.now() - 30 * 86400000)}</span>
+                  <span>{formatShortDate(Date.now())}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
-        <div className="af-link-row">
-          <div className="af-locked-field">
-            <IconLock />
-            {appCopy(
-              "Choisis ton code lors de la candidature pour obtenir ton lien",
-              "Pick your code when applying to get your link"
-            )}
+        <div className="af-card af-empty">
+          <div className="af-empty-content">
+            <h2>{appCopy("Aucun lien", "No links yet")}</h2>
+            <p>
+              {appCopy(
+                "Ton lien apparaîtra ici dès que tu auras un code créateur.",
+                "Your link will show here once you have a creator code."
+              )}
+            </p>
           </div>
         </div>
       )}
 
-      <div className="af-commission-row">
-        <IconDollar />
-        {appCopy(
-          `${COMMISSION_PERCENT} % par vente, à vie pour chaque client`,
-          `${COMMISSION_PERCENT}% per sale for the customer's lifetime`
-        )}
+      <div className="af-card af-card-pad" style={{ marginTop: 16 }}>
+        <div className="af-card-head">
+          <div>
+            <div className="af-card-muted">{appCopy("Gains totaux", "Total earnings")}</div>
+            <div className="af-stat-value">{money(earnings)}</div>
+          </div>
+        </div>
+        <MiniChart color="#10b981" active={earnings > 0} />
+        <div className="af-chart-axis">
+          <span>{formatShortDate(Date.now() - 30 * 86400000)}</span>
+          <span>{formatShortDate(Date.now())}</span>
+        </div>
       </div>
 
-      <ViewBonusBoard variant="light" compact />
-      <ViewBonusNote />
-    </div>
+      <div className="af-card" style={{ marginTop: 16 }}>
+        {rows.length === 0 ? (
+          <div className="af-empty" style={{ minHeight: 200 }}>
+            <IconCoin style={{ width: 28, height: 28, color: "#d1d5db" }} />
+            <div className="af-empty-content">
+              <h2>{appCopy("Aucune commission", "No commissions yet")}</h2>
+              <p>
+                {appCopy(
+                  "Les commissions apparaîtront ici dès qu'un parrainage convertit.",
+                  "Commissions will appear here once a referral converts."
+                )}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="af-table-wrap">
+            <table className="af-table">
+              <thead>
+                <tr>
+                  <th>{appCopy("Type", "Type")}</th>
+                  <th>{appCopy("Statut", "Status")}</th>
+                  <th>{appCopy("Montant", "Amount")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.id}>
+                    <td>{row.eventType || "—"}</td>
+                    <td>
+                      <span className={`af-badge ${row.status?.includes("paid") ? "paid" : row.status?.includes("payable") ? "payable" : "pending"}`}>
+                        {row.status}
+                      </span>
+                    </td>
+                    <td>{money(row.commissionCents, row.currency)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -406,252 +502,6 @@ function PendingBanner({ displayName }) {
         <SocialChannelForm displayName={displayName} compact />
       </div>
     </div>
-  );
-}
-
-function OverviewPage({ dashboard, isPending, primaryCode, linkUrl, onConnectStripe, onManageStripe, stripeBusy }) {
-  const earnings = dashboard?.stats?.lifetimeCents ?? 0;
-  const payable = dashboard?.stats?.payableCents ?? 0;
-  const paid = dashboard?.stats?.paidCents ?? 0;
-  const payouts = dashboard?.payouts ?? [];
-  const stripeReady = isStripePayoutReady(dashboard);
-
-  return (
-    <>
-      {isPending ? (
-        <PendingBanner displayName={dashboard?.displayName} />
-      ) : null}
-
-      <RewardsLinkCard primaryCode={primaryCode} linkUrl={linkUrl} isPending={isPending} />
-
-      <div className="af-stats-grid">
-        <div className="af-card af-stat-card af-stat-card-lg">
-          <div className="af-card-head">
-            <h3>
-              {appCopy("Gains", "Earnings")}
-              <IconExternal style={{ width: 12, height: 12, marginLeft: 4, opacity: 0.4 }} />
-            </h3>
-            <button type="button" className="af-chip-btn">
-              <IconCalendar />
-              {appCopy("30 derniers jours", "Last 30 days")}
-              <IconChevronDown />
-            </button>
-          </div>
-          <div className="af-stat-value">{money(earnings)}</div>
-          <MiniChart color="#ec4899" active={earnings > 0} />
-          <div className="af-chart-axis">
-            <span>{formatShortDate(Date.now() - 30 * 86400000)}</span>
-            <span>{formatShortDate(Date.now())}</span>
-          </div>
-        </div>
-
-        <div className="af-card af-stat-card af-payouts-overview">
-          <div className="af-card-head">
-            <h3>{appCopy("Paiements", "Payouts")}</h3>
-          </div>
-          {payouts.length === 0 && payable === 0 && paid === 0 ? (
-            <div className="af-empty" style={{ minHeight: 160, padding: "20px 0" }}>
-              <IconWallet style={{ width: 32, height: 32, color: "#d1d5db", marginBottom: 8 }} />
-              <strong>{appCopy("Aucun paiement", "No payouts")}</strong>
-            </div>
-          ) : (
-            <div className="af-payouts-overview-body">
-              <div>
-                <span className="af-card-muted">{appCopy("À venir", "Upcoming")}</span>
-                <div className="af-stat-value" style={{ fontSize: 22 }}>{money(payable)}</div>
-              </div>
-              <div>
-                <span className="af-card-muted">{appCopy("Reçus", "Received")}</span>
-                <div className="af-stat-value" style={{ fontSize: 22 }}>{money(paid)}</div>
-              </div>
-            </div>
-          )}
-          {!stripeReady ? (
-            <button type="button" className="af-btn af-btn-sm af-btn-black" style={{ width: "100%", marginTop: 12 }} onClick={onConnectStripe} disabled={stripeBusy}>
-              {appCopy("Connecter un compte", "Connect payout method")}
-            </button>
-          ) : (
-            <button type="button" className="af-btn af-btn-sm af-btn-secondary" style={{ width: "100%", marginTop: 12 }} onClick={onManageStripe} disabled={stripeBusy}>
-              {appCopy("Voir Stripe", "View Stripe dashboard")}
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="af-stats-bottom">
-        {[
-          { label: appCopy("Clics", "Clicks"), value: 0, color: "#3b82f6" },
-          { label: appCopy("Leads", "Leads"), value: dashboard?.stats?.referredCount ?? 0, color: "#8b5cf6" },
-          { label: appCopy("Ventes", "Sales"), value: dashboard?.stats?.activeSubscribers ?? 0, color: "#14b8a6" },
-        ].map((item) => (
-          <div key={item.label} className="af-card af-stat-card">
-            <h3>{item.label}</h3>
-            <div className="af-stat-value">{item.value}</div>
-            <MiniChart color={item.color} className="af-mini-chart" active={item.value > 0} />
-            <div className="af-chart-axis">
-              <span>{formatShortDate(Date.now() - 30 * 86400000)}</span>
-              <span>{formatShortDate(Date.now())}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </>
-  );
-}
-
-function LinksPage({ dashboard, isPending, primaryCode, linkUrl }) {
-  if (!primaryCode) {
-    return (
-      <div className="af-card af-empty">
-        <div className="af-empty-content">
-          <h2>{appCopy("Aucun lien", "No links yet")}</h2>
-          <p>
-            {appCopy(
-              "Ton lien apparaîtra ici dès que tu auras un code créateur.",
-              "Your link will show here once you have a creator code."
-            )}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      {isPending ? (
-        <div className="af-form-info" style={{ marginBottom: 16 }}>
-          <p>
-            {appCopy(
-              "Ton lien est réservé — les commissions s'activent dès validation de ton compte.",
-              "Your link is reserved — commissions activate once your account is approved."
-            )}
-          </p>
-        </div>
-      ) : null}
-    <div className="af-card af-link-card">
-      <div className="af-link-card-top">
-        <div>
-          <div className="af-link-card-main">
-            <ProcessAppIcon size={28} />
-            <div>
-              <strong>{linkUrl.replace("https://", "")}</strong>
-              <div className="af-link-dest">↳ useprocess.xyz/app</div>
-            </div>
-          </div>
-          <CopyButton text={linkUrl} />
-        </div>
-      </div>
-      <div className="af-metrics-row">
-        {[
-          { label: appCopy("Clics", "Clicks"), value: 0, color: "#3b82f6", icon: IconCursor },
-          { label: appCopy("Leads", "Leads"), value: dashboard?.stats?.referredCount ?? 0, color: "#8b5cf6", icon: IconUsers },
-          { label: appCopy("Ventes", "Sales"), value: dashboard?.stats?.activeSubscribers ?? 0, color: "#14b8a6", icon: IconDollar },
-        ].map(({ label, value, color, icon: Icon }) => (
-          <div key={label} className="af-metric-col">
-            <div className="af-metric-head">
-              <Icon style={{ color }} />
-              {label}
-            </div>
-            <div className="af-metric-val">{value}</div>
-            <MiniChart color={color} className="af-mini-chart" />
-            <div className="af-chart-axis">
-              <span>{formatShortDate(Date.now() - 30 * 86400000)}</span>
-              <span>{formatShortDate(Date.now())}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-    </>
-  );
-}
-
-function EarningsPage({ dashboard }) {
-  const total = dashboard?.stats?.lifetimeCents ?? 0;
-  const rows = dashboard?.recentCommissions ?? [];
-
-  return (
-    <>
-      <div className="af-card af-card-pad af-view-bonus-card">
-        <div className="af-card-head">
-          <h2>{appCopy("Primes vues", "View bonuses")}</h2>
-          <span className="af-card-muted">
-            {appCopy(`En plus des ${COMMISSION_PERCENT} % à vie`, `On top of ${COMMISSION_PERCENT}% for life`)}
-          </span>
-        </div>
-        <ViewBonusBoard variant="light" />
-        <ViewBonusNote />
-      </div>
-
-      <div className="af-toolbar">
-        <button type="button" className="af-chip-btn">
-          <IconFilter />
-          {appCopy("Filtrer", "Filter")}
-          <IconChevronDown />
-        </button>
-        <button type="button" className="af-chip-btn">
-          <IconCalendar />
-          {appCopy("30 derniers jours", "Last 30 days")}
-          <IconChevronDown />
-        </button>
-      </div>
-
-      <div className="af-card af-card-pad">
-        <div className="af-card-head">
-          <div>
-            <div className="af-card-muted">{appCopy("Gains totaux", "Total Earnings")}</div>
-            <div className="af-stat-value">{money(total)}</div>
-          </div>
-        </div>
-        <MiniChart color="#10b981" />
-        <div className="af-chart-axis">
-          <span>{formatShortDate(Date.now() - 30 * 86400000)}</span>
-          <span>{formatShortDate(Date.now())}</span>
-        </div>
-      </div>
-
-      <div className="af-card" style={{ marginTop: 16 }}>
-        {rows.length === 0 ? (
-          <div className="af-empty" style={{ minHeight: 200 }}>
-            <IconCoin style={{ width: 28, height: 28, color: "#d1d5db" }} />
-            <div className="af-empty-content">
-              <h2>{appCopy("Aucune commission", "No commissions yet")}</h2>
-              <p>
-                {appCopy(
-                  "Les commissions apparaîtront ici dès qu'un parrainage convertit.",
-                  "Commissions will appear here once a referral converts."
-                )}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="af-table-wrap">
-            <table className="af-table">
-              <thead>
-                <tr>
-                  <th>{appCopy("Type", "Type")}</th>
-                  <th>{appCopy("Statut", "Status")}</th>
-                  <th>{appCopy("Montant", "Amount")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <tr key={row.id}>
-                    <td>{row.eventType || "—"}</td>
-                    <td>
-                      <span className={`af-badge ${row.status?.includes("paid") ? "paid" : row.status?.includes("payable") ? "payable" : "pending"}`}>
-                        {row.status}
-                      </span>
-                    </td>
-                    <td>{money(row.commissionCents, row.currency)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </>
   );
 }
 
@@ -1055,41 +905,47 @@ function DashboardShell({
   onSignOut,
 }) {
   const pageTitles = {
-    overview: appCopy("Vue d'ensemble", "Overview"),
-    methode: appCopy("Méthode TikTok", "TikTok method"),
-    links: appCopy("Liens", "Links"),
-    earnings: appCopy("Gains", "Earnings"),
-    analytics: appCopy("Analytique", "Analytics"),
-    events: appCopy("Événements", "Events"),
-    customers: appCopy("Clients", "Customers"),
-    bounties: appCopy("Bonus", "Bounties"),
-    resources: appCopy("Ressources", "Resources"),
+    overview: appCopy("Overview", "Overview"),
+    formats: appCopy("Formats", "Formats"),
+    methode: appCopy("Méthodes", "Methods"),
+    automatisation: appCopy("Automatisation", "Automation"),
+    us: appCopy("Poster US", "Post in the US"),
     payouts: appCopy("Paiements", "Payouts"),
     settings: appCopy("Paramètres", "Settings"),
   };
 
   const navItems = [
-    { id: "overview", label: appCopy("Vue d'ensemble", "Overview"), icon: IconOverview },
-    { id: "methode", label: appCopy("Méthode", "Method"), icon: IconCursor },
-    { id: "links", label: appCopy("Liens", "Links"), icon: IconLink },
-    { id: "earnings", label: appCopy("Gains", "Earnings"), icon: IconCoin },
-    { id: "payouts", label: appCopy("Paiements", "Payouts"), icon: IconWallet },
+    { id: "overview", label: appCopy("Overview", "Overview"), icon: IconOverview },
+    { id: "formats", label: appCopy("Formats", "Formats"), icon: IconGrid },
+    { id: "methode", label: appCopy("Méthodes", "Methods"), icon: IconCursor },
+    { id: "automatisation", label: appCopy("Automatisation", "Automation"), icon: IconSpark },
+    { id: "us", label: appCopy("Poster US", "Post in the US"), icon: IconGlobe },
   ];
 
   function renderPage() {
     switch (route) {
+      case "formats":
+        return <AffiliateFormatsPage />;
       case "methode":
         return (
           <AffiliateMethodPage
             linkUrl={linkUrl}
             primaryCode={primaryCode}
-            onGoLinks={() => go("links")}
+            onGoLinks={() => go("overview")}
+            onGoFormats={() => go("formats")}
           />
         );
-      case "links":
-        return <LinksPage dashboard={dashboard} isPending={isPending} primaryCode={primaryCode} linkUrl={linkUrl} />;
-      case "earnings":
-        return <EarningsPage dashboard={dashboard} />;
+      case "automatisation":
+        return (
+          <AffiliateAutomationPage
+            primaryCode={primaryCode}
+            linkUrl={linkUrl}
+            onGoFormats={() => go("formats")}
+            onGoOverview={() => go("overview")}
+          />
+        );
+      case "us":
+        return <AffiliateUsPage />;
       case "customers":
         return <CustomersPage dashboard={dashboard} />;
       case "payouts":
@@ -1112,18 +968,6 @@ function DashboardShell({
             onSignOut={onSignOut}
           />
         );
-      case "analytics":
-      case "events":
-      case "bounties":
-      case "resources":
-        return (
-          <div className="af-card af-empty">
-            <div className="af-empty-content">
-              <h2>{pageTitles[route]}</h2>
-              <p>{appCopy("Bientôt disponible.", "Coming soon.")}</p>
-            </div>
-          </div>
-        );
       default:
         return (
           <OverviewPage
@@ -1131,9 +975,6 @@ function DashboardShell({
             isPending={isPending}
             primaryCode={primaryCode}
             linkUrl={linkUrl}
-            onConnectStripe={onConnectStripe}
-            onManageStripe={onManageStripe}
-            stripeBusy={stripeBusy}
           />
         );
     }
@@ -1189,7 +1030,7 @@ function DashboardShell({
       </aside>
 
       <main className="af-main">
-        {route !== "payouts" && route !== "settings" && route !== "methode" ? (
+        {route !== "payouts" && route !== "settings" && route !== "methode" && route !== "formats" && route !== "automatisation" && route !== "us" ? (
           <div className="af-page-head">
             <h1>
               {pageTitles[route] || pageTitles.overview}
@@ -1786,7 +1627,7 @@ export function AffiliateApp() {
   return (
     <AffiliatePageChrome>
       <DashboardShell
-        route={["overview", "methode", "links", "earnings", "payouts", "settings"].includes(route) ? route : "overview"}
+        route={AFFILIATE_DASHBOARD_ROUTES.has(route) ? route : "overview"}
         go={go}
         user={user}
         dashboard={dashboard}

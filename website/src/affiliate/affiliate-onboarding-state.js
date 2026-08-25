@@ -104,11 +104,12 @@ export function readOnboardingDraft() {
 function persistMethodPace(answers) {
   const hoursPerDay = String(answers?.hoursPerDay || "").trim();
   const accountCount = answers?.accountCount || "";
-  if (!hoursPerDay && !accountCount) return;
+  const toolBudget = String(answers?.toolBudget || "").trim();
+  if (!hoursPerDay && !accountCount && !toolBudget) return;
   try {
     window.localStorage.setItem(
       METHOD_PACE_KEY,
-      JSON.stringify({ hoursPerDay, accountCount })
+      JSON.stringify({ hoursPerDay, accountCount, toolBudget })
     );
   } catch {
     /* private mode */
@@ -118,14 +119,15 @@ function persistMethodPace(answers) {
 export function readMethodPace() {
   try {
     const raw = window.localStorage.getItem(METHOD_PACE_KEY);
-    if (!raw) return { hoursPerDay: "", accountCount: "" };
+    if (!raw) return { hoursPerDay: "", accountCount: "", toolBudget: "" };
     const data = JSON.parse(raw);
     return {
       hoursPerDay: String(data?.hoursPerDay || "").trim(),
       accountCount: data?.accountCount || "",
+      toolBudget: String(data?.toolBudget || "").trim(),
     };
   } catch {
-    return { hoursPerDay: "", accountCount: "" };
+    return { hoursPerDay: "", accountCount: "", toolBudget: "" };
   }
 }
 

@@ -253,6 +253,37 @@ export function readHashQuery() {
   return Object.fromEntries(new URLSearchParams(query));
 }
 
+export const AFFILIATE_ROUTE_ALIASES = {
+  links: "overview",
+  earnings: "overview",
+  methodes: "methode",
+  methods: "methode",
+  automation: "automatisation",
+  usa: "us",
+  "poster-us": "us",
+  "tiktok-us": "us",
+};
+
+export const AFFILIATE_DASHBOARD_ROUTES = new Set([
+  "overview",
+  "formats",
+  "methode",
+  "automatisation",
+  "us",
+  "payouts",
+  "settings",
+]);
+
+export function canonicalizeAffiliateRoute(route, query = {}) {
+  const raw = String(route || "").trim();
+  const aliased = AFFILIATE_ROUTE_ALIASES[raw] || raw;
+  const moduleKey = String(query.m || "").trim();
+  if (aliased === "methode" && (moduleKey === "7" || moduleKey === "formats")) {
+    return "formats";
+  }
+  return aliased;
+}
+
 const AFFILIATE_PREFILL_STORAGE_KEY = "process.affiliate.applyPrefill";
 
 export function readAffiliatePrefillFromLocation() {

@@ -63,8 +63,8 @@ function SlideStrip({ slides }) {
   );
 }
 
-function FormatCard({ spec }) {
-  const [open, setOpen] = useState(false);
+function FormatCard({ spec, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <article className={`af-md-format${open ? " is-open" : ""}`}>
       <button type="button" className="af-md-format__head" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
@@ -116,7 +116,7 @@ function MethodLinks({ items, vars }) {
   );
 }
 
-function MethodBlock({ block, vars, pace, onGoLinks }) {
+function MethodBlock({ block, vars, pace, onGoLinks, onGoFormats }) {
   if (block.type === "lead") {
     return <p className="af-md-lead">{copyText(block.fr, block.en, vars)}</p>;
   }
@@ -223,7 +223,15 @@ function MethodBlock({ block, vars, pace, onGoLinks }) {
     return (
       <button type="button" className="af-md-inline-link" onClick={onGoLinks}>
         <IconLink />
-        {appCopy("Ouvrir mes liens", "Open my links")}
+        {appCopy("Voir mon lien et mes stats", "See my link and stats")}
+      </button>
+    );
+  }
+
+  if (block.type === "cta-formats" && onGoFormats) {
+    return (
+      <button type="button" className="af-md-inline-link" onClick={onGoFormats}>
+        {appCopy("Ouvrir Formats", "Open Formats")}
       </button>
     );
   }
@@ -231,7 +239,7 @@ function MethodBlock({ block, vars, pace, onGoLinks }) {
   return null;
 }
 
-export function AffiliateMethodPage({ linkUrl = "", primaryCode = "", onGoLinks }) {
+export function AffiliateMethodPage({ linkUrl = "", primaryCode = "", onGoLinks, onGoFormats }) {
   const [mod, setMod] = useState(() => currentModuleFromHash());
   const paceState = readMethodPace();
   const pace = paceFromHours(paceState.hoursPerDay);
@@ -290,7 +298,14 @@ export function AffiliateMethodPage({ linkUrl = "", primaryCode = "", onGoLinks 
         <p className="af-md-kicker">{copyPair(mod.kicker, vars)}</p>
         <h2>{copyPair(mod.title, vars)}</h2>
         {mod.blocks.map((block, i) => (
-          <MethodBlock key={`${mod.id}-${block.type}-${i}`} block={block} vars={vars} pace={pace} onGoLinks={onGoLinks} />
+          <MethodBlock
+            key={`${mod.id}-${block.type}-${i}`}
+            block={block}
+            vars={vars}
+            pace={pace}
+            onGoLinks={onGoLinks}
+            onGoFormats={onGoFormats}
+          />
         ))}
 
         <div className="af-md-pager">

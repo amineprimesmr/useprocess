@@ -197,12 +197,13 @@ export const METHOD_MODULES = [
       },
       {
         type: "callout",
-        fr: "Avant de poster : lis les 9 modules. Copie un format, pas une vidéo 1:1. Ton lien va dans la bio et le commentaire épinglé.",
-        en: "Before you post: read all 9 modules. Copy a format, not a 1:1 video. Your link goes in the bio and the pinned comment.",
+        fr: "Avant de poster : lis le playbook, ouvre Formats, copie une structure — pas une vidéo 1:1. Ton lien va dans la bio et le commentaire épinglé.",
+        en: "Before you post: read the playbook, open Formats, copy a structure — not a 1:1 video. Your link goes in the bio and the pinned comment.",
       },
       {
         type: "pace",
       },
+      { type: "cta-formats" },
       {
         type: "links",
         items: [
@@ -226,7 +227,6 @@ export const METHOD_MODULES = [
           },
         ],
       },
-      { type: "bonus" },
     ],
   },
   {
@@ -259,7 +259,6 @@ export const METHOD_MODULES = [
           ),
         ],
       },
-      { type: "bonus" },
       {
         type: "steps",
         title: { fr: "Obligatoire sur chaque post", en: "Required on every post" },
@@ -475,25 +474,10 @@ export const METHOD_MODULES = [
     ],
   },
   {
-    id: "formats",
-    index: 7,
-    title: { fr: "Les 5 formats à copier", en: "The 5 formats to copy" },
-    nav: { fr: "7. Formats", en: "7. Formats" },
-    kicker: { fr: MANNY_TIKTOK_HANDLE, en: MANNY_TIKTOK_HANDLE },
-    blocks: [
-      {
-        type: "lead",
-        fr: `Référence officielle : ${MANNY_TIKTOK_HANDLE}. Tu copies la structure, pas les fichiers. Même promesse, tes visuels.`,
-        en: `Official reference: ${MANNY_TIKTOK_HANDLE}. Copy the structure, not the files. Same promise, your visuals.`,
-      },
-      { type: "formats" },
-    ],
-  },
-  {
     id: "convertir",
     index: 8,
     title: { fr: "Convertir vers l’app", en: "Convert to the app" },
-    nav: { fr: "8. Convertir", en: "8. Convert" },
+    nav: { fr: "7. Convertir", en: "7. Convert" },
     kicker: { fr: "Process gagne à l’abo", en: "Process earns on the sub" },
     blocks: [
       {
@@ -558,18 +542,17 @@ export const METHOD_MODULES = [
       },
       {
         type: "callout",
-        fr: "Dashboard → Liens : clics, leads, ventes. Si les vues montent et les leads restent à 0, le pin n’est pas là.",
-        en: "Dashboard → Links: clicks, leads, sales. If views climb and leads stay at 0, the pin isn't there.",
+        fr: "Overview : clics, leads, ventes. Si les vues montent et les leads restent à 0, le pin n’est pas là.",
+        en: "Overview: clicks, leads, sales. If views climb and leads stay at 0, the pin isn't there.",
       },
       { type: "cta-links" },
-      { type: "bonus" },
     ],
   },
   {
     id: "primes",
     index: 9,
     title: { fr: "Primes et exemples", en: "Bonuses and examples" },
-    nav: { fr: "9. Primes", en: "9. Bonuses" },
+    nav: { fr: "8. Primes", en: "8. Bonuses" },
     kicker: { fr: "En plus des 40 %", en: "On top of 40%" },
     blocks: [
       {
