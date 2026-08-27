@@ -783,6 +783,7 @@ export const affiliateDashboard = onRequest(
           stats.storeClicks ||
           stats.referredCount ||
           stats.paywallCount ||
+          stats.trialCount ||
           stats.paidCount ||
           stats.lifetimeCents
       );
@@ -904,6 +905,8 @@ export const affiliateDashboard = onRequest(
           storeClicks: stats.storeClicks ?? 0,
           referredCount: stats.referredCount ?? 0,
           paywallCount: stats.paywallCount ?? 0,
+          trialCount: stats.trialCount ?? 0,
+          trialConversions: stats.trialConversions ?? 0,
           paidCount: stats.paidCount ?? 0,
           activeSubscribers: stats.activeSubscribers ?? 0,
           pendingCents: stats.pendingCents ?? 0,

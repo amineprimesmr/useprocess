@@ -30,3 +30,32 @@ test("lifetime purchases are excluded", () => {
   });
   assert.equal(result, null);
 });
+
+const { isTrialStartEvent } = require("../lib/revenueCat.js");
+
+test("a starting free trial is detected", () => {
+  assert.equal(
+    isTrialStartEvent({ type: "INITIAL_PURCHASE", period_type: "TRIAL", price: 0 }),
+    true
+  );
+});
+
+test("paid purchases and renewals are not trial starts", () => {
+  assert.equal(
+    isTrialStartEvent({ type: "INITIAL_PURCHASE", period_type: "NORMAL", price: 24.99 }),
+    false
+  );
+  assert.equal(isTrialStartEvent({ type: "RENEWAL", period_type: "NORMAL" }), false);
+  assert.equal(isTrialStartEvent({}), false);
+});
+
+test("a trial conversion is a payment, not a new trial", () => {
+  assert.equal(
+    isTrialStartEvent({
+      type: "INITIAL_PURCHASE",
+      period_type: "TRIAL",
+      is_trial_conversion: true,
+    }),
+    false
+  );
+});

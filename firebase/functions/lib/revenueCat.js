@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isAnnualProduct = isAnnualProduct;
 exports.isPaidPurchaseEvent = isPaidPurchaseEvent;
+exports.isTrialStartEvent = isTrialStartEvent;
 exports.fetchSubscriber = fetchSubscriber;
 exports.activePremiumProductId = activePremiumProductId;
 exports.hasActivePremium = hasActivePremium;
@@ -31,6 +32,17 @@ function isPaidPurchaseEvent(event) {
         return false;
     }
     return true;
+}
+/** A free trial starting: an INITIAL_PURCHASE whose period is the trial, not a payment. */
+function isTrialStartEvent(event) {
+    const eventType = String(event?.type ?? "").toUpperCase();
+    const periodType = String(event?.period_type ?? "").toLowerCase();
+    if (eventType !== "INITIAL_PURCHASE")
+        return false;
+    if (periodType !== "trial")
+        return false;
+    // A conversion is a payment, never a start, whatever the period says.
+    return event?.is_trial_conversion !== true;
 }
 async function fetchSubscriber(appUserId, secretKey) {
     const url = `${REVENUECAT_API}/subscribers/${encodeURIComponent(appUserId)}`;

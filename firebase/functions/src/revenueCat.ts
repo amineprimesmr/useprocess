@@ -39,6 +39,16 @@ export function isPaidPurchaseEvent(event: any): boolean {
   return true;
 }
 
+/** A free trial starting: an INITIAL_PURCHASE whose period is the trial, not a payment. */
+export function isTrialStartEvent(event: any): boolean {
+  const eventType = String(event?.type ?? "").toUpperCase();
+  const periodType = String(event?.period_type ?? "").toLowerCase();
+  if (eventType !== "INITIAL_PURCHASE") return false;
+  if (periodType !== "trial") return false;
+  // A conversion is a payment, never a start, whatever the period says.
+  return event?.is_trial_conversion !== true;
+}
+
 export async function fetchSubscriber(
   appUserId: string,
   secretKey: string

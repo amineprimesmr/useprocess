@@ -51,6 +51,8 @@ exports.EMPTY_DAILY_COUNTS = {
     storeClicks: 0,
     attributions: 0,
     paywalls: 0,
+    trials: 0,
+    trialConversions: 0,
     sales: 0,
     earningsCents: 0,
 };
@@ -63,6 +65,8 @@ function emptyDailySeries(days) {
         storeClicks: [...zeros],
         attributions: [...zeros],
         paywalls: [...zeros],
+        trials: [...zeros],
+        trialConversions: [...zeros],
         sales: [...zeros],
         earningsCents: [...zeros],
     };

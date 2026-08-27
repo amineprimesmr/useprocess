@@ -78,11 +78,13 @@ exports.affiliateRevenueCatWebhook = (0, https_1.onRequest)({
             res.status(200).json({ ok: true, status: eventType });
             return;
         }
+        // Trials pay nothing, so accrual ignores them — count them here instead.
+        const trial = await (0, affiliateShared_1.recordAffiliateTrialStart)({ inviteeUid: appUserId, event });
         const result = await (0, affiliateShared_1.accrueAffiliateCommission)({
             inviteeUid: appUserId,
             event,
         });
-        res.status(200).json({ ok: true, ...result });
+        res.status(200).json({ ok: true, trial, ...result });
     }
     catch (error) {
         const message = error?.message ?? "Unknown error";

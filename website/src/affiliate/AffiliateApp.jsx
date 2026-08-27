@@ -654,6 +654,8 @@ function OverviewPage({ dashboard, isPending, primaryCode, linkUrl, onSaveInvite
   const storeClicks = Number(stats.storeClicks || 0);
   const installs = Number(stats.referredCount || 0);
   const paywalls = Number(stats.paywallCount || 0);
+  const trials = Number(stats.trialCount || 0);
+  const trialConversions = Number(stats.trialConversions || 0);
   const sales = Math.max(
     Number(stats.paidCount || 0),
     Number(stats.activeSubscribers || 0),
@@ -689,6 +691,19 @@ function OverviewPage({ dashboard, isPending, primaryCode, linkUrl, onSaveInvite
       values: series.paywalls,
       color: "#f59e0b",
       icon: IconPaywall,
+    },
+    {
+      label: appCopy("Essais", "Trials"),
+      hint: trialConversions
+        ? appCopy(
+            `${trialConversions} déjà converti${trialConversions > 1 ? "s" : ""}`,
+            `${trialConversions} converted so far`
+          )
+        : appCopy("essais gratuits lancés", "free trials started"),
+      value: trials,
+      values: series.trials || [],
+      color: "#ec4899",
+      icon: IconSpark,
     },
     {
       label: appCopy("Ventes", "Sales"),
@@ -742,10 +757,23 @@ function OverviewPage({ dashboard, isPending, primaryCode, linkUrl, onSaveInvite
               <span>{appCopy("Installs → paywall", "Installs → paywall")}</span>
               <strong>{formatPercent(paywalls, installs)}</strong>
             </div>
-            <div className="af-funnel-step">
-              <span>{appCopy("Paywall → ventes", "Paywall → sales")}</span>
-              <strong>{formatPercent(sales, paywalls)}</strong>
-            </div>
+            {trials ? (
+              <>
+                <div className="af-funnel-step">
+                  <span>{appCopy("Paywall → essais", "Paywall → trials")}</span>
+                  <strong>{formatPercent(trials, paywalls)}</strong>
+                </div>
+                <div className="af-funnel-step">
+                  <span>{appCopy("Essais → ventes", "Trials → sales")}</span>
+                  <strong>{formatPercent(trialConversions || sales, trials)}</strong>
+                </div>
+              </>
+            ) : (
+              <div className="af-funnel-step">
+                <span>{appCopy("Paywall → ventes", "Paywall → sales")}</span>
+                <strong>{formatPercent(sales, paywalls)}</strong>
+              </div>
+            )}
           </div>
         </div>
       ) : null}

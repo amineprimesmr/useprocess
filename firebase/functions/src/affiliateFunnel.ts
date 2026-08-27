@@ -170,6 +170,8 @@ export async function readAffiliateDailySeries(
     series.storeClicks[index] = Number(row.storeClicks || 0);
     series.attributions[index] = Number(row.attributions || 0);
     series.paywalls[index] = Number(row.paywalls || 0);
+    series.trials[index] = Number(row.trials || 0);
+    series.trialConversions[index] = Number(row.trialConversions || 0);
     series.sales[index] = Number(row.sales || 0);
     series.earningsCents[index] = Number(row.earningsCents || 0);
   });

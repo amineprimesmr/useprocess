@@ -48,6 +48,7 @@ exports.bumpAffiliateDaily = bumpAffiliateDaily;
 exports.registerAffiliateAttribution = registerAffiliateAttribution;
 exports.getAffiliateAttributionForUser = getAffiliateAttributionForUser;
 exports.accrueAffiliateCommission = accrueAffiliateCommission;
+exports.recordAffiliateTrialStart = recordAffiliateTrialStart;
 exports.clawbackAffiliateCommission = clawbackAffiliateCommission;
 exports.markAffiliateAttributionChurned = markAffiliateAttributionChurned;
 exports.releaseDueAffiliateCommissions = releaseDueAffiliateCommissions;
@@ -367,6 +368,7 @@ async function accrueAffiliateCommission(params) {
         return { created: false, skipped: "NO_EVENT_ID" };
     const isRenewal = eventType === "RENEWAL" && (0, revenueCat_1.isPaidPurchaseEvent)(params.event);
     const isInitial = eventType === "INITIAL_PURCHASE" && (0, revenueCat_1.isPaidPurchaseEvent)(params.event);
+    const isTrialConversion = params.event?.is_trial_conversion === true;
     if (!isRenewal && !isInitial) {
         return { created: false, skipped: eventType || "UNSUPPORTED_EVENT" };
     }
@@ -405,14 +407,20 @@ async function accrueAffiliateCommission(params) {
     await db().runTransaction(async (transaction) => {
         const attrSnap = await transaction.get(attributionRef);
         const attrData = attrSnap.data() ?? {};
-        const isFirstPaid = isInitial && !attrData.firstPaidAt;
-        const needsActive = isInitial && attrData.countedAsActive !== true;
+        // A trial that converts arrives as a RENEWAL, never as an INITIAL_PURCHASE.
+        // Gating on isInitial hid every trial-first sale from the clipper's counters,
+        // even though the commission itself accrued correctly.
+        const isFirstPaid = !attrData.firstPaidAt;
+        const needsActive = attrData.countedAsActive !== true;
         transaction.set(commissionRef, commission);
         transaction.set(affiliateRef, {
             "stats.pendingCents": admin.firestore.FieldValue.increment(amounts.commissionCents),
             "stats.lifetimeCents": admin.firestore.FieldValue.increment(amounts.commissionCents),
             ...(isFirstPaid
                 ? { "stats.paidCount": admin.firestore.FieldValue.increment(1) }
+                : {}),
+            ...(isTrialConversion
+                ? { "stats.trialConversions": admin.firestore.FieldValue.increment(1) }
                 : {}),
             ...(needsActive
                 ? { "stats.activeSubscribers": admin.firestore.FieldValue.increment(1) }
@@ -428,9 +436,44 @@ async function accrueAffiliateCommission(params) {
         bumpAffiliateDaily(transaction, attribution.affiliateId, {
             earningsCents: amounts.commissionCents,
             ...(isFirstPaid ? { sales: 1 } : {}),
+            ...(isTrialConversion ? { trialConversions: 1 } : {}),
         }, now);
     });
     return { created: true, commissionId };
+}
+/**
+ * A free trial start pays nothing, but it is what the clipper actually produced —
+ * the money only follows days later, when the trial converts. Counted on its own so
+ * the dashboard reflects the work while the trials are still running.
+ */
+async function recordAffiliateTrialStart(params) {
+    if (!(0, revenueCat_1.isTrialStartEvent)(params.event)) {
+        return { recorded: false, skipped: "NOT_A_TRIAL_START" };
+    }
+    const attribution = await getAffiliateAttributionForUser(params.inviteeUid);
+    if (!attribution || attribution.status !== "active") {
+        return { recorded: false, skipped: "NOT_ATTRIBUTED" };
+    }
+    const affiliateRef = db().collection("affiliates").doc(attribution.affiliateId);
+    const attributionRef = affiliateRef.collection("attributions").doc(params.inviteeUid);
+    return db().runTransaction(async (transaction) => {
+        const snap = await transaction.get(attributionRef);
+        const attrData = snap.data() ?? {};
+        // RevenueCat retries webhooks, and both our endpoints receive the same event.
+        if (attrData.trialStartedAt)
+            return { recorded: false, skipped: "DUPLICATE" };
+        const now = admin.firestore.Timestamp.now();
+        transaction.set(attributionRef, {
+            trialStartedAt: now,
+            trialProductId: params.event?.product_id ?? null,
+        }, { merge: true });
+        transaction.set(affiliateRef, {
+            "stats.trialCount": admin.firestore.FieldValue.increment(1),
+            updatedAt: now,
+        }, { merge: true });
+        bumpAffiliateDaily(transaction, attribution.affiliateId, { trials: 1 }, now);
+        return { recorded: true };
+    });
 }
 async function clawbackAffiliateCommission(params) {
     const attribution = await getAffiliateAttributionForUser(params.inviteeUid);

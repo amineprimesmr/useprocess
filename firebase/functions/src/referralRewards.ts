@@ -4,6 +4,7 @@ import {
   accrueAffiliateCommission,
   clawbackAffiliateCommission,
   markAffiliateAttributionChurned,
+  recordAffiliateTrialStart,
 } from "./affiliateShared";
 import { isPaidPurchaseEvent } from "./revenueCat";
 import {
@@ -121,8 +122,12 @@ export const referralRevenueCatWebhook = onRequest(
         return;
       }
 
+      // A trial start is not a referral reward event, so it would exit below without
+      // ever being counted. Record it first — it is the clipper's actual output.
+      const trial = await recordAffiliateTrialStart({ inviteeUid: appUserId, event });
+
       if (!isReferralRewardEvent(eventType, event)) {
-        res.status(200).json({ ok: true, skipped: eventType || "UNKNOWN_EVENT" });
+        res.status(200).json({ ok: true, trial, skipped: eventType || "UNKNOWN_EVENT" });
         return;
       }
 
@@ -147,7 +152,7 @@ export const referralRevenueCatWebhook = onRequest(
         event,
       });
 
-      res.status(200).json({ ok: true, referral, affiliate });
+      res.status(200).json({ ok: true, trial, referral, affiliate });
     } catch (error: any) {
       const message = error?.message ?? "Unknown error";
       console.error("[referralRevenueCatWebhook]", message);

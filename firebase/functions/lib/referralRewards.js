@@ -92,8 +92,11 @@ exports.referralRevenueCatWebhook = (0, https_1.onRequest)({
             res.status(200).json({ ok: true, status: eventType });
             return;
         }
+        // A trial start is not a referral reward event, so it would exit below without
+        // ever being counted. Record it first — it is the clipper's actual output.
+        const trial = await (0, affiliateShared_1.recordAffiliateTrialStart)({ inviteeUid: appUserId, event });
         if (!isReferralRewardEvent(eventType, event)) {
-            res.status(200).json({ ok: true, skipped: eventType || "UNKNOWN_EVENT" });
+            res.status(200).json({ ok: true, trial, skipped: eventType || "UNKNOWN_EVENT" });
             return;
         }
         let referral = { skipped: "NOT_ATTEMPTED" };
@@ -117,7 +120,7 @@ exports.referralRevenueCatWebhook = (0, https_1.onRequest)({
             inviteeUid: appUserId,
             event,
         });
-        res.status(200).json({ ok: true, referral, affiliate });
+        res.status(200).json({ ok: true, trial, referral, affiliate });
     }
     catch (error) {
         const message = error?.message ?? "Unknown error";

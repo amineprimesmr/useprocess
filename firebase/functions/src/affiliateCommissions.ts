@@ -4,6 +4,7 @@ import {
   accrueAffiliateCommission,
   clawbackAffiliateCommission,
   markAffiliateAttributionChurned,
+  recordAffiliateTrialStart,
   verifyAffiliateAdmin,
 } from "./affiliateShared";
 import { setCors } from "./referralShared";
@@ -57,12 +58,15 @@ export const affiliateRevenueCatWebhook = onRequest(
         return;
       }
 
+      // Trials pay nothing, so accrual ignores them — count them here instead.
+      const trial = await recordAffiliateTrialStart({ inviteeUid: appUserId, event });
+
       const result = await accrueAffiliateCommission({
         inviteeUid: appUserId,
         event,
       });
 
-      res.status(200).json({ ok: true, ...result });
+      res.status(200).json({ ok: true, trial, ...result });
     } catch (error: any) {
       const message = error?.message ?? "Unknown error";
       console.error("[affiliateRevenueCatWebhook]", message);

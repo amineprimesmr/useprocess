@@ -49,6 +49,10 @@ export type AffiliateDailyCounts = {
   storeClicks: number;
   attributions: number;
   paywalls: number;
+  /** Free trials started — the clipper's work lands here days before any money does. */
+  trials: number;
+  /** Trials that turned into a paid subscription. */
+  trialConversions: number;
   sales: number;
   earningsCents: number;
 };
@@ -58,6 +62,8 @@ export const EMPTY_DAILY_COUNTS: AffiliateDailyCounts = {
   storeClicks: 0,
   attributions: 0,
   paywalls: 0,
+  trials: 0,
+  trialConversions: 0,
   sales: 0,
   earningsCents: 0,
 };
@@ -68,6 +74,8 @@ export function emptyDailySeries(days: number): {
   storeClicks: number[];
   attributions: number[];
   paywalls: number[];
+  trials: number[];
+  trialConversions: number[];
   sales: number[];
   earningsCents: number[];
 } {
@@ -79,6 +87,8 @@ export function emptyDailySeries(days: number): {
     storeClicks: [...zeros],
     attributions: [...zeros],
     paywalls: [...zeros],
+    trials: [...zeros],
+    trialConversions: [...zeros],
     sales: [...zeros],
     earningsCents: [...zeros],
   };
