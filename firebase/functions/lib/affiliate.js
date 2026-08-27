@@ -102,10 +102,6 @@ exports.affiliateValidateLoginEmail = (0, https_1.onRequest)({
             res.status(400).json({ error: "INVALID_EMAIL" });
             return;
         }
-        if ((0, affiliateShared_1.isAppleRelayEmail)(email)) {
-            res.status(409).json({ error: "APPLE_RELAY_EMAIL" });
-            return;
-        }
         const eligible = await (0, affiliateShared_1.affiliateEmailEligibleForLoginLink)(email);
         if (!eligible) {
             res.status(404).json({ error: "EMAIL_NOT_FOUND" });
@@ -140,11 +136,6 @@ exports.affiliateSendLoginEmail = (0, https_1.onRequest)({
         const continueUrl = String(req.body?.continueUrl ?? "").trim();
         if (!email || !email.includes("@")) {
             res.status(400).json({ error: "INVALID_EMAIL" });
-            return;
-        }
-        // Apple relay addresses bounce hours later — refuse now so the UI can react.
-        if ((0, affiliateShared_1.isAppleRelayEmail)(email)) {
-            res.status(409).json({ error: "APPLE_RELAY_EMAIL" });
             return;
         }
         const eligible = await (0, affiliateShared_1.affiliateEmailEligibleForLoginLink)(email);

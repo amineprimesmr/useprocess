@@ -169,8 +169,8 @@ export async function checkAffiliateCodeAvailability(raw, { uid } = {}) {
 
 export function appleRelayHelpMessage() {
   return appCopy(
-    "Ton compte utilise l'email masqué d'Apple, qui ne peut pas recevoir notre lien. Ouvre le portail depuis l'app Process (Réglages → Programme créateur), ou écris à leks sur WhatsApp.",
-    "Your account uses Apple's hidden email, which can't receive our link. Open the portal from the Process app (Settings → Creator program), or message leks on WhatsApp."
+    "Ton compte utilise l'email masqué d'Apple. Si le lien n'arrive pas, ouvre le portail depuis l'app Process (Réglages → Programme créateur), ou écris à leks sur WhatsApp.",
+    "Your account uses Apple's hidden email. If the link doesn't arrive, open the portal from the Process app (Settings → Creator program), or message leks on WhatsApp."
   );
 }
 
@@ -400,14 +400,8 @@ export function readAffiliatePrefillFromLocation() {
     from: String(hashQuery.from || search.from || "").trim(),
     name: String(hashQuery.name || search.name || "").trim(),
     code: parseAcquisitionCodeFromInput(hashQuery.code || search.code || ""),
-    // An Apple relay address would prefill a login form that can never receive the link.
-    email: readPrefillEmail(hashQuery.email || search.email || ""),
+    email: String(hashQuery.email || search.email || "").trim(),
   };
-}
-
-function readPrefillEmail(raw) {
-  const email = String(raw || "").trim();
-  return isAppleRelayEmail(email) ? "" : email;
 }
 
 export function hasAffiliatePrefill(prefill) {

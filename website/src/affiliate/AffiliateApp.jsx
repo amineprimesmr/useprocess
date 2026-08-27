@@ -1206,10 +1206,10 @@ function SettingsPage({ user, dashboard, onConnectStripe, onManageStripe, stripe
                       )}
                     </p>
                     {emailIsRelay ? (
-                      <p className="af-invite-error" style={{ marginTop: 0, marginBottom: 10 }}>
+                      <p className="desc" style={{ marginTop: 0, marginBottom: 10 }}>
                         {appCopy(
-                          "Ton compte utilise l'email masqué d'Apple — il ne peut pas recevoir nos liens de connexion. Mets un vrai email ici pour pouvoir te connecter depuis un ordinateur.",
-                          "Your account uses Apple's hidden email — it can't receive our sign-in links. Set a real email here so you can sign in from a computer."
+                          "Ton compte utilise l'email masqué d'Apple. Tu peux mettre ici un vrai email, plus fiable pour te reconnecter depuis un ordinateur.",
+                          "Your account uses Apple's hidden email. You can set a real address here — more reliable for signing in from a computer."
                         )}
                       </p>
                     ) : null}

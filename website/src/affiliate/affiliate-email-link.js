@@ -1,5 +1,5 @@
 import { affiliateApi, getFirebaseAuth, getFirebaseAuthModule } from "../features/firebase-client.js";
-import { CLIPPING_PORTAL_PATH, CLIPPING_PORTAL_URL, isAppleRelayEmail } from "./affiliate-utils.js";
+import { CLIPPING_PORTAL_PATH, CLIPPING_PORTAL_URL } from "./affiliate-utils.js";
 
 export const EMAIL_FOR_SIGN_IN_KEY = "process.affiliate.emailForSignIn";
 export const APPLY_AFTER_LINK_KEY = "process.affiliate.applyAfterLink";
@@ -62,11 +62,6 @@ export async function sendAffiliateEmailLink(
 ) {
   const normalized = String(email || "").trim().toLowerCase();
   if (!normalized) throw new Error("INVALID_EMAIL");
-  if (isAppleRelayEmail(normalized)) {
-    const relay = new Error("APPLE_RELAY_EMAIL");
-    relay.data = { error: "APPLE_RELAY_EMAIL" };
-    throw relay;
-  }
 
   const continueUrl = affiliateEmailLinkContinueUrl(nextHash, normalized);
 
@@ -75,7 +70,6 @@ export async function sendAffiliateEmailLink(
       body: { email: normalized, continueUrl },
     });
   } catch (err) {
-    if (err?.data?.error === "APPLE_RELAY_EMAIL") throw err;
     if (requireExistingAccount && (err?.status === 404 || err?.data?.error === "EMAIL_NOT_FOUND")) {
       const missing = new Error("EMAIL_NOT_FOUND");
       missing.code = "auth/user-not-found";

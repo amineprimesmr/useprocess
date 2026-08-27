@@ -1,8 +1,6 @@
 import * as admin from "firebase-admin";
 import nodemailer from "nodemailer";
 
-import { isAppleRelayEmail } from "./affiliateShared";
-
 export const AFFILIATE_LOGIN_FROM = "contact@useprocess.xyz";
 export const AFFILIATE_LOGIN_SMTP_HOST = "smtp.hostinger.com";
 export const AFFILIATE_LOGIN_SMTP_PORT = 465;
@@ -101,9 +99,6 @@ export async function sendAffiliateLoginEmail(params: {
   const smtpPassword = String(params.smtpPassword || "").trim();
 
   if (!email || !email.includes("@")) throw new Error("INVALID_EMAIL");
-  // Apple's relay rejects us at RCPT TO, minutes after this function already replied OK.
-  // Fail here instead, so the caller can tell the clipper what to do.
-  if (isAppleRelayEmail(email)) throw new Error("APPLE_RELAY_EMAIL");
   if (!smtpPassword) throw new Error("SMTP_NOT_CONFIGURED");
   if (!isAllowedContinueUrl(continueUrl)) throw new Error("INVALID_CONTINUE_URL");
 
