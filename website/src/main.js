@@ -2,6 +2,7 @@ import { initSiteLanguage, subscribeSiteLanguage } from "./features/app-copy.js"
 import { initRouting } from "./router/index.js";
 import { applyLandingFooterCopy, applyNotFoundCopy, applyGetAppChromeCopy } from "./features/site-chrome.js";
 import { mountCrispChat } from "./features/crisp-chat.js";
+import { redirectAffiliateEmailLinkIfNeeded } from "./affiliate/affiliate-email-link.js";
 
 window.addEventListener("popstate", () => {
   initRouting().catch((err) => console.error("Routing error:", err));
@@ -9,6 +10,7 @@ window.addEventListener("popstate", () => {
 
 async function bootstrap() {
   try {
+    if (redirectAffiliateEmailLinkIfNeeded()) return;
     initSiteLanguage();
     applyLandingFooterCopy();
     applyGetAppChromeCopy();

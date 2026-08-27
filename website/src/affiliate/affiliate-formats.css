@@ -706,10 +706,27 @@
   .af-lib-modal__panel {
     grid-template-columns: 1fr;
     max-height: 92vh;
+    width: min(100vw - 16px, 640px);
   }
 
   .af-lib-modal__shot {
     max-height: 42vh;
+  }
+
+  .af-lib-head h2 {
+    font-size: 1.32rem;
+  }
+
+  .af-lib-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .af-lib-add,
+  .af-lib-actions .af-btn {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
   }
 }
 

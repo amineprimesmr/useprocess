@@ -3,6 +3,7 @@ import { appCopy } from "../features/app-copy.js";
 import { affiliateApi, getAuthToken } from "../features/firebase-client.js";
 import { IconTrophy } from "./AffiliateIcons.jsx";
 import { formatViewCount, money } from "./affiliate-utils.js";
+import { isAffiliateLocalPreview, LOCAL_PREVIEW_CLIPPERS } from "./affiliate-local-preview.js";
 import "./affiliate-clippers.css";
 
 const SORTS = [
@@ -103,6 +104,12 @@ export function AffiliateClippersPage({ user, dashboard }) {
   const load = useCallback(async () => {
     if (!user) return;
     setError("");
+    if (isAffiliateLocalPreview()) {
+      setRows(LOCAL_PREVIEW_CLIPPERS);
+      setViewerStatus(dashboard?.status || "active");
+      setStatus("ready");
+      return;
+    }
     try {
       const token = await getAuthToken(user);
       const data = await affiliateApi("affiliateLeaderboard", {

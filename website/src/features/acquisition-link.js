@@ -1,4 +1,5 @@
 import { normalizeReferralCode } from "./referral-link.js";
+import { appCopy } from "./app-copy.js";
 
 const FUNCTIONS_BASE =
   import.meta.env.VITE_FUNCTIONS_BASE_URL ||
@@ -139,5 +140,8 @@ export function buildCreatorShareText(code, displayName = "") {
   if (!normalized) return "";
   const url = buildCreatorLandingUrl(normalized);
   const label = displayName ? `${displayName} (${normalized})` : normalized;
-  return `Download Process with my creator link:\n${url}\n\nCreator code: ${label}`;
+  return appCopy(
+    `Télécharge Process avec mon lien clipper :\n${url}\n\nCode clipper : ${label}`,
+    `Download Process with my clipper link:\n${url}\n\nClipper code: ${label}`
+  );
 }

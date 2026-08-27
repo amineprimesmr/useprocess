@@ -1018,14 +1018,6 @@ html.page-affiliate #affiliate-root {
   color: #71717a;
 }
 
-.af-ld ~ .af-x-fab {
-  background: #27272a;
-}
-
-.af-ld ~ .af-x-fab:hover {
-  background: #3f3f46;
-}
-
 .af-ld-apply {
   min-height: 100dvh;
 }
@@ -1057,6 +1049,45 @@ html.page-affiliate #affiliate-root {
   .af-ld-hero-lead {
     white-space: normal;
     font-size: 0.92rem;
+  }
+
+  .af-ld-hero {
+    padding: 1.15rem 0.85rem 2.2rem;
+  }
+
+  .af-ld-hero-title__line2 {
+    flex-wrap: wrap;
+    white-space: normal;
+    gap: 0.4rem;
+  }
+
+  .af-ld-hero-badge__inner {
+    white-space: normal;
+    text-align: center;
+    min-height: 0;
+    padding: 0.5rem 0.9rem;
+  }
+
+  .af-ld-topnav__inner {
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.28rem 0.3rem 0.28rem 0.75rem;
+  }
+
+  .af-ld-brand {
+    font-size: 0.92rem;
+  }
+
+  .af-ld-hero-cta,
+  .af-ld-ready__cta {
+    width: min(100%, 22rem);
+    max-width: none;
+    min-height: 48px;
+  }
+
+  .af-ld-sheet {
+    padding: 2.2rem 1rem 4.2rem;
+    border-radius: 1.6rem 1.6rem 0 0;
   }
 }
 

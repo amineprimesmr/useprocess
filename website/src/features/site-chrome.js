@@ -16,12 +16,12 @@ export function getAppPageCopy() {
       "Process — AI coach & debloat protocol. On iPhone."
     ),
     guestLabelReferral: appCopy("Invitation parrainage", "Referral invite"),
-    guestLabelCreator: appCopy("Invitation créateur", "Creator invite"),
+    guestLabelCreator: appCopy("Invitation clipper", "Clipper invite"),
     guestValue: appCopy("Coach IA & protocole debloat", "AI coach & debloat protocol"),
     friendInvitesTitle: appCopy("Un ami t'invite sur Process", "Your friend invites you to Process"),
     friendInvitesTitleNamed: (name) =>
       appCopy(`${name} t'invite sur Process`, `${name} invites you to Process`),
-    creatorInvitesTitle: appCopy("Un créateur t'invite sur Process", "A creator invites you to Process"),
+    creatorInvitesTitle: appCopy("Un clipper t'invite sur Process", "A clipper invites you to Process"),
     creatorInvitesTitleNamed: (name) =>
       appCopy(`${name} t'invite sur Process`, `${name} invites you to Process`),
     invitedSubtitle: appCopy(
@@ -29,22 +29,22 @@ export function getAppPageCopy() {
       "3 free days on yearly. Get the app and enter the code."
     ),
     creatorSubtitle: appCopy(
-      "3 jours d’essai offerts sur l’annuel avec ce code créateur.",
-      "3 free days on yearly with this creator code."
+      "3 jours d’essai offerts sur l’annuel avec ce code clipper.",
+      "3 free days on yearly with this clipper code."
     ),
     tapBanner: appCopy("Tapote la bannière pour commencer", "Tap the banner to start"),
     stepsHeading: appCopy("Comment commencer", "How to get started"),
     stepsFallbackHeading: appCopy("Tu ne vois pas la bannière ?", "Don't see the banner?"),
     stepQr: appCopy("Scanne le QR code avec ton iPhone", "Scan QR Code with your iPhone"),
     stepCodePrefix: appCopy("Ton code parrainage :", "Your referral code is"),
-    stepCreatorCodePrefix: appCopy("Ton code créateur :", "Your creator code is"),
+    stepCreatorCodePrefix: appCopy("Ton code clipper :", "Your clipper code is"),
     stepBenefitReferral: appCopy(
       "3 jours d’essai offerts sur l’annuel avec le code de ton ami",
       "3 free days on yearly with your friend's code"
     ),
     stepBenefitCreator: appCopy(
-      "3 jours d’essai offerts sur l’annuel avec ce code créateur",
-      "3 free days on yearly with this creator code"
+      "3 jours d’essai offerts sur l’annuel avec ce code clipper",
+      "3 free days on yearly with this clipper code"
     ),
     stepDownload: appCopy("Télécharge l'app", "Download the app"),
     iosEyebrow: appCopy("Télécharger sur", "Download on"),

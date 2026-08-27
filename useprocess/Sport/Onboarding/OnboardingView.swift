@@ -220,7 +220,13 @@ struct SportOnboardingView: View {
                 onSkip: {
                     viewModel.dismissOnboardingFaceScan()
                     if presentation.usesChatCallbacks {
-                        viewModel.onOnboardingFaceScanSkip?()
+                        if let skip = viewModel.onOnboardingFaceScanSkip {
+                            skip()
+                        } else {
+                            // Filet de sécurité : callback chat absent → on avance quand même.
+                            viewModel.skipDashboardFaceScanForLater()
+                            viewModel.onOnboardingFaceScanContinueFromDashboard?()
+                        }
                     } else {
                         viewModel.skipDashboardFaceScanForLater()
                         viewModel.onOnboardingFaceScanContinueFromDashboard?()

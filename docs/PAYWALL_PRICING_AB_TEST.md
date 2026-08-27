@@ -35,7 +35,7 @@ Scheme Xcode + `SubscriptionProducts.storekit`.
 1. Control, sans code → annuel 34,99, CTA sans essai, achat `annual3499`.
 2. Test, sans code → bandeau « 3 jours offerts », CTA essai, achat `annual3499trial`.
 3. Control **avec** code valide → même essai que le bras test (override parrainage).
-4. Rebuild Xcode / TestFlight — l’experiment est **running** depuis le 24 août 2026. L’app **1.09** (build 33) évalue `paywall-annual-trial-ab`. Le 1.08 en store ne le lit pas.
+4. Rebuild Xcode / TestFlight — l’experiment est **running** depuis le 24 août 2026. L’app **1.10** (build 36) évalue `paywall-annual-trial-ab`. Le 1.08 en store ne le lit pas.
 
 ---
 

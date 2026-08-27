@@ -12,6 +12,7 @@ enum CoachCheckInScheduler {
         let ids = pending.map(\.identifier).filter { $0.hasPrefix(prefix) }
         if !ids.isEmpty {
             center.removePendingNotificationRequests(withIdentifiers: ids)
+            center.removeDeliveredNotifications(withIdentifiers: ids)
         }
     }
 

@@ -27,21 +27,24 @@ import {
   IconHelp,
   IconInfo,
   IconLogout,
+  IconMenu,
+  IconClose,
   IconOverview,
   IconPaywall,
   IconSettings,
   IconShield,
+  IconSlides,
   IconSpark,
   IconTikTok,
   IconTrophy,
   IconWallet,
   IconWhatsApp,
-  IconX,
   ProcessAppIcon,
+  ProcessNavIcon,
 } from "./AffiliateIcons.jsx";
+import { SuccessActionButton, playConfirm } from "./action-feedback.jsx";
 import {
   AFFILIATE_DASHBOARD_ROUTES,
-  AFFILIATE_X_DM_URL,
   buildSupportBody,
   buildSocialMailBody,
   canonicalizeAffiliateRoute,
@@ -49,7 +52,9 @@ import {
   VIEW_BONUS_FLAGSHIP_UNLOCK_EUR,
   VIEW_BONUS_UNLOCK_EUR,
   formatApplyError,
+  appleRelayHelpMessage,
   formatAuthError,
+  isAppleRelayEmail,
   formatPercent,
   formatShortDate,
   money,
@@ -61,6 +66,8 @@ import {
   socialMailSubject,
   supportMailto,
   SUPPORT_EMAIL,
+  SUPPORT_WHATSAPP_DISPLAY,
+  SUPPORT_WHATSAPP_URL,
 } from "./affiliate-utils.js";
 import {
   buildOptimisticDashboard,
@@ -80,12 +87,19 @@ import {
 } from "./affiliate-onboarding-state.js";
 import {
   completeAffiliateEmailLink,
+  completePortalHandoff,
+  readPortalHandoffCode,
   consumeApplyAfterLink,
   peekApplyAfterLink,
   hrefLooksLikeEmailLink,
   sendAffiliateEmailLink,
   ensureAnonymousAffiliateUser,
 } from "./affiliate-email-link.js";
+import {
+  isAffiliateLocalPreview,
+  LOCAL_PREVIEW_DASHBOARD,
+  LOCAL_PREVIEW_USER,
+} from "./affiliate-local-preview.js";
 import "./affiliate.css";
 
 const AffiliateLanding = lazy(() =>
@@ -93,6 +107,12 @@ const AffiliateLanding = lazy(() =>
 );
 const AffiliateFormatsPage = lazy(() =>
   import("./AffiliateFormats.jsx").then((mod) => ({ default: mod.AffiliateFormatsPage }))
+);
+const AffiliateSlideshowLabPage = lazy(() =>
+  import("./AffiliateSlideshowLab.jsx").then((mod) => ({ default: mod.AffiliateSlideshowLabPage }))
+);
+const AffiliateProcessAssetsPage = lazy(() =>
+  import("./AffiliateProcessAssets.jsx").then((mod) => ({ default: mod.AffiliateProcessAssetsPage }))
 );
 const AffiliateMethodPage = lazy(() =>
   import("./AffiliateMethod.jsx").then((mod) => ({ default: mod.AffiliateMethodPage }))
@@ -112,18 +132,25 @@ const AffiliateClippersPage = lazy(() =>
 
 const LANDING_HASHES = new Set(["", "program", "programme", "comment", "primes", "offre", "faq"]);
 
-function AffiliateXSupportFab() {
-  const label = appCopy("Contacter leks sur X", "Message leks on X");
+function AffiliateWhatsAppSupportFab() {
+  const label = appCopy("Contacter leks sur WhatsApp", "Message leks on WhatsApp");
+  const hint = appCopy("Hésitez pas ?", "Don't hesitate?");
   return (
     <a
-      href={AFFILIATE_X_DM_URL}
-      className="af-x-fab"
+      href={SUPPORT_WHATSAPP_URL}
+      className="af-wa-fab-wrap"
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
       title={label}
     >
-      <IconX className="af-x-fab-icon" />
+      <span className="af-wa-fab-hint" aria-hidden="true">
+        <span className="af-wa-fab-pulse" />
+        <span className="af-wa-fab-hint-text">{hint}</span>
+      </span>
+      <span className="af-wa-fab">
+        <IconWhatsApp filled className="af-wa-fab-icon" />
+      </span>
     </a>
   );
 }
@@ -132,7 +159,7 @@ function AffiliatePageChrome({ children }) {
   return (
     <>
       {children}
-      <AffiliateXSupportFab />
+      <AffiliateWhatsAppSupportFab />
     </>
   );
 }
@@ -150,7 +177,7 @@ function usefulTopicFromRoute(path, query) {
   const raw = String(path || "").trim();
   if (raw === "shadowban") return "shadowban";
   if (raw === "questions") return "questions";
-  if (raw === "aide" || raw === "help" || raw === "whatsapp") return "aide";
+  if (raw === "aide" || raw === "help" || raw === "whatsapp") return "";
   return String(query?.t || "").trim();
 }
 
@@ -212,12 +239,15 @@ function useHashRoute() {
 function DashboardSkeleton({ route }) {
   const pageTitles = {
     overview: appCopy("Overview", "Overview"),
-    tiktoks: appCopy("Tiktoks", "Tiktoks"),
-    methode: appCopy("Méthode lancement", "Launch method"),
+    tiktoks: appCopy("Format", "Format"),
+    format: appCopy("Format", "Format"),
+    slideshowlab: "SlideshowLab",
+    assets: "Process Assets",
+    methode: appCopy("Démarrage", "Getting started"),
     clippers: appCopy("Clippers", "Clippers"),
     automatisation: appCopy("Automatiser", "Automate"),
     us: appCopy("Poster US", "Post in the US"),
-    utiles: appCopy("Outils", "Tools"),
+    utiles: appCopy("Utiles", "Useful"),
     payouts: appCopy("Paiements", "Payouts"),
     settings: appCopy("Paramètres", "Settings"),
   };
@@ -342,6 +372,7 @@ function CopyButton({ text }) {
   async function copy() {
     try {
       await navigator.clipboard.writeText(text);
+      playConfirm();
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -398,7 +429,6 @@ function InviteLinkCard({ dashboard, isPending, primaryCode, linkUrl, onSaveInvi
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(dashboard?.displayName || "");
   const [code, setCode] = useState(primaryCode || "");
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -411,12 +441,12 @@ function InviteLinkCard({ dashboard, isPending, primaryCode, linkUrl, onSaveInvi
   const previewUrl = previewCode ? buildCreatorLandingUrl(previewCode) : linkUrl;
   const previewName = name.trim() || dashboard?.displayName || "";
 
-  async function save() {
+  function validate() {
     const nextName = name.trim();
     const nextCode = parseAcquisitionCodeFromInput(code);
     if (!nextName) {
       setError(appCopy("Indique le prénom affiché sur l'invitation.", "Enter the first name shown on the invite."));
-      return;
+      return false;
     }
     if (!nextCode || nextCode.length < 3) {
       setError(
@@ -425,18 +455,10 @@ function InviteLinkCard({ dashboard, isPending, primaryCode, linkUrl, onSaveInvi
           "Pick a code — at least 3 characters (letters, numbers, or hyphen)."
         )
       );
-      return;
+      return false;
     }
-    setBusy(true);
     setError("");
-    try {
-      await onSaveInvite({ displayName: nextName, code: nextCode });
-      setEditing(false);
-    } catch (err) {
-      setError(formatApplyError(err));
-    } finally {
-      setBusy(false);
-    }
+    return true;
   }
 
   return (
@@ -497,8 +519,8 @@ function InviteLinkCard({ dashboard, isPending, primaryCode, linkUrl, onSaveInvi
             </strong>
             <em>
               {appCopy(
-                `Ton code créateur : ${previewCode || "…"}`,
-                `Your creator code: ${previewCode || "…"}`
+                `Ton code clipper : ${previewCode || "…"}`,
+                `Your clipper code: ${previewCode || "…"}`
               )}
             </em>
           </div>
@@ -536,9 +558,24 @@ function InviteLinkCard({ dashboard, isPending, primaryCode, linkUrl, onSaveInvi
           </p>
           {error ? <p className="af-invite-error">{error}</p> : null}
           <div className="af-link-card-actions">
-            <button type="button" className="af-btn af-btn-sm af-btn-black" onClick={save} disabled={busy}>
-              {busy ? appCopy("Enregistrement…", "Saving…") : appCopy("Enregistrer", "Save")}
-            </button>
+            <SuccessActionButton
+              idleLabel={appCopy("Enregistrer", "Save")}
+              validate={validate}
+              onAction={async () => {
+                try {
+                  await onSaveInvite({
+                    displayName: name.trim(),
+                    code: parseAcquisitionCodeFromInput(code),
+                  });
+                } catch (err) {
+                  setError(formatApplyError(err));
+                  throw err;
+                }
+              }}
+              onSuccess={() => {
+                window.setTimeout(() => setEditing(false), 900);
+              }}
+            />
           </div>
         </div>
       ) : null}
@@ -546,68 +583,69 @@ function InviteLinkCard({ dashboard, isPending, primaryCode, linkUrl, onSaveInvi
   );
 }
 
-function TikTokOverviewCard({ dashboard, onOpenStudio }) {
+function TikTokOverviewCard({ dashboard }) {
   const tiktok = dashboard?.tiktok || {};
   const accounts = Array.isArray(tiktok.accounts) ? tiktok.accounts : [];
   const totals = tiktok.totals || {};
   const metrics = [
-    { label: appCopy("Comptes", "Accounts"), value: totals.accounts || accounts.length },
-    { label: appCopy("Connectés", "Connected"), value: totals.connected || accounts.filter((row) => row.connected).length },
-    { label: appCopy("Abonnés", "Followers"), value: totals.followers || 0 },
-    { label: appCopy("Vues", "Views"), value: totals.views || 0 },
-    { label: appCopy("Likes", "Likes"), value: totals.likes || 0 },
-    { label: appCopy("Vidéos", "Videos"), value: totals.videoCount || 0 },
+    { label: appCopy("Comptes", "Accounts"), value: Number(totals.accounts || accounts.length) || 4 },
+    { label: appCopy("Connectés", "Connected"), value: Number(totals.connected) || 3 },
+    { label: appCopy("Abonnés", "Followers"), value: Number(totals.followers) || 128400 },
+    { label: appCopy("Vues", "Views"), value: Number(totals.views) || 2140000 },
+    { label: appCopy("Likes", "Likes"), value: Number(totals.likes) || 184000 },
+    { label: appCopy("Vidéos", "Videos"), value: Number(totals.videoCount) || 47 },
   ];
+  const previewAccounts = accounts.length
+    ? accounts.slice(0, 3)
+    : [
+        { id: "a", handle: "glowup_prime", followers: 48200, views: 910000, likes: 64000, videoCount: 18, connected: true },
+        { id: "b", handle: "debloat_man", followers: 31100, views: 740000, likes: 51200, videoCount: 15, connected: true },
+        { id: "c", handle: "new_looksmax", followers: 49100, views: 490000, likes: 68800, videoCount: 14, connected: false },
+      ];
 
   return (
-    <div className="af-card af-card-pad af-tiktok-panel">
+    <div className="af-card af-card-pad af-tiktok-soon">
       <div className="af-card-head">
-        <div>
-          <div className="af-card-muted">{appCopy("Comptes TikTok", "TikTok accounts")}</div>
-          <h2 style={{ margin: "4px 0 0", fontSize: 18 }}>
-            {tiktok.apiReady
-              ? appCopy("Stats live dès qu'un compte est connecté", "Live stats as soon as an account is connected")
-              : appCopy("Prêt — en attente de l'API TikTok", "Ready — waiting on the TikTok API")}
-          </h2>
-        </div>
-        <button type="button" className="af-btn af-btn-sm af-btn-black" onClick={onOpenStudio}>
-          {appCopy("Tout connecter", "Connect everything")}
-        </button>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 14 }}>
-        {metrics.map((row) => (
-          <div key={row.label} className="af-metric-col" style={{ border: "1px solid var(--af-border)", borderRadius: 12 }}>
-            <div className="af-metric-head">{row.label}</div>
-            <div className="af-metric-val">{Number(row.value || 0).toLocaleString()}</div>
+        <div className="af-tiktok-soon-brand">
+          <img src="/assets/logos/tiktok.png" alt="" width={28} height={28} />
+          <div>
+            <div className="af-card-muted">TikTok</div>
+            <h2>{appCopy("Stats TikTok", "TikTok stats")}</h2>
           </div>
-        ))}
-      </div>
-      {accounts.length ? (
-        <div className="af-tiktok-accounts">
-          {accounts.map((row) => (
-            <article key={row.id}>
-              <span className={`af-tiktok-dot ${row.connected ? "is-on" : ""}`} />
-              <strong>@{row.handle || row.name}</strong>
-              <span>{Number(row.followers || 0).toLocaleString()} {appCopy("abonnés", "followers")}</span>
-              <span>{Number(row.views || 0).toLocaleString()} {appCopy("vues", "views")}</span>
-              <span>{Number(row.likes || 0).toLocaleString()} likes</span>
-              <span>{Number(row.videoCount || 0).toLocaleString()} {appCopy("vidéos", "videos")}</span>
-            </article>
-          ))}
         </div>
-      ) : (
-        <p className="desc" style={{ margin: "14px 0 0" }}>
-          {appCopy(
-            "Aucun compte branché. Ouvre Automatiser → Connexions pour tout connecter (TikTok Direct Post).",
-            "No account connected. Open Automate → Connect to hook everything up (TikTok Direct Post)."
-          )}
-        </p>
-      )}
+      </div>
+      <div className="af-tiktok-soon-body">
+        <div className="af-tiktok-soon-blur" aria-hidden="true">
+          <div className="af-tiktok-soon-grid">
+            {metrics.map((row) => (
+              <div key={row.label} className="af-metric-col af-tiktok-soon-metric">
+                <div className="af-metric-head">{row.label}</div>
+                <div className="af-metric-val">{Number(row.value || 0).toLocaleString()}</div>
+              </div>
+            ))}
+          </div>
+          <div className="af-tiktok-accounts">
+            {previewAccounts.map((row) => (
+              <article key={row.id}>
+                <span className={`af-tiktok-dot ${row.connected ? "is-on" : ""}`} />
+                <strong>@{row.handle || row.name}</strong>
+                <span>{Number(row.followers || 0).toLocaleString()} {appCopy("abonnés", "followers")}</span>
+                <span>{Number(row.views || 0).toLocaleString()} {appCopy("vues", "views")}</span>
+                <span>{Number(row.likes || 0).toLocaleString()} likes</span>
+              </article>
+            ))}
+          </div>
+        </div>
+        <div className="af-tiktok-soon-overlay">
+          <span className="af-tiktok-soon-emoji" aria-hidden>🚧</span>
+          <strong>{appCopy("Disponible bientôt", "Coming soon")}</strong>
+        </div>
+      </div>
     </div>
   );
 }
 
-function OverviewPage({ dashboard, isPending, primaryCode, linkUrl, onSaveInvite, onOpenStudio }) {
+function OverviewPage({ dashboard, isPending, primaryCode, linkUrl, onSaveInvite }) {
   const earnings = dashboard?.stats?.lifetimeCents ?? 0;
   const rows = dashboard?.recentCommissions ?? [];
   const series = dashboard?.series || {};
@@ -676,8 +714,6 @@ function OverviewPage({ dashboard, isPending, primaryCode, linkUrl, onSaveInvite
         onSaveInvite={onSaveInvite}
       />
 
-      <TikTokOverviewCard dashboard={dashboard} onOpenStudio={onOpenStudio} />
-
       {primaryCode ? (
         <div className="af-card af-link-card" style={{ marginTop: 16 }}>
           <div className="af-metrics-row">
@@ -727,6 +763,8 @@ function OverviewPage({ dashboard, isPending, primaryCode, linkUrl, onSaveInvite
           <span>{axisEnd}</span>
         </div>
       </div>
+
+      <TikTokOverviewCard dashboard={dashboard} />
 
       <div className="af-card" style={{ marginTop: 16 }}>
         {rows.length === 0 ? (
@@ -825,8 +863,8 @@ function PendingBanner({ displayName }) {
         <h3>{appCopy("Candidature en cours de validation", "Application under review")}</h3>
         <p>
           {appCopy(
-            `Ton compte créateur (${displayName || "Process"}) est en attente. Envoie ton @ TikTok ou Instagram pour activer ton code à ${COMMISSION_PERCENT} %.`,
-            `Your creator account (${displayName || "Process"}) is pending. Send your TikTok or Instagram @ to activate your ${COMMISSION_PERCENT}% code.`
+            `Ton compte clipper (${displayName || "Process"}) est en attente. Envoie ton @ TikTok ou Instagram pour activer ton code à ${COMMISSION_PERCENT} %.`,
+            `Your clipper account (${displayName || "Process"}) is pending. Send your TikTok or Instagram @ to activate your ${COMMISSION_PERCENT}% code.`
           )}
         </p>
         <SocialChannelForm displayName={displayName} compact />
@@ -909,8 +947,8 @@ function PayoutsPage({ dashboard, onConnectStripe, onManageStripe, stripeBusy })
 
       <p className="af-payout-rules">
         {appCopy(
-          `Commission : ${COMMISSION_PERCENT} % du net, après Apple / Google. Les primes vues se débloquent à ${VIEW_BONUS_UNLOCK_EUR} € de commission déjà générée (iPhone à ${VIEW_BONUS_FLAGSHIP_UNLOCK_EUR} €). Toutes les vidéos du compte comptent.`,
-          `Commission: ${COMMISSION_PERCENT}% of net, after Apple / Google. View bonuses unlock at ${VIEW_BONUS_UNLOCK_EUR} EUR of commission already earned (iPhone at ${VIEW_BONUS_FLAGSHIP_UNLOCK_EUR} EUR). Every video on the account counts.`
+          `Commission : ${COMMISSION_PERCENT} % du net sur chaque vente. Les primes vues se débloquent à ${VIEW_BONUS_UNLOCK_EUR} € de commission déjà générée (iPhone à ${VIEW_BONUS_FLAGSHIP_UNLOCK_EUR} €). Toutes les vidéos du compte comptent.`,
+          `Commission: ${COMMISSION_PERCENT}% of the net on every sale. View bonuses unlock at ${VIEW_BONUS_UNLOCK_EUR} EUR of commission already earned (iPhone at ${VIEW_BONUS_FLAGSHIP_UNLOCK_EUR} EUR). Every video on the account counts.`
         )}
       </p>
 
@@ -1019,30 +1057,54 @@ function SettingsPage({ user, dashboard, onConnectStripe, onManageStripe, stripe
   const [tab, setTab] = useState("general");
   const [displayName, setDisplayName] = useState(dashboard?.displayName || "");
   const [code, setCode] = useState(dashboard?.primaryCode || dashboard?.codes?.[0]?.code || "");
-  const [saveBusy, setSaveBusy] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const [saveOk, setSaveOk] = useState(false);
-  const initials = (displayName || user?.email || "P").charAt(0).toUpperCase();
+  const accountEmail = String(dashboard?.email || user?.email || "").trim();
+  const initials = (displayName || accountEmail || "P").charAt(0).toUpperCase();
+  const emailIsRelay = isAppleRelayEmail(accountEmail);
+  const [loginEmail, setLoginEmail] = useState(emailIsRelay ? "" : accountEmail);
+  const [emailError, setEmailError] = useState("");
 
   useEffect(() => {
     setDisplayName(dashboard?.displayName || "");
     setCode(dashboard?.primaryCode || dashboard?.codes?.[0]?.code || "");
   }, [dashboard?.displayName, dashboard?.primaryCode, dashboard?.codes]);
 
+  useEffect(() => {
+    setLoginEmail(isAppleRelayEmail(accountEmail) ? "" : accountEmail);
+  }, [accountEmail]);
+
+  async function saveLoginEmail() {
+    setEmailError("");
+    const next = loginEmail.trim().toLowerCase();
+    if (!next || !next.includes("@")) {
+      setEmailError(appCopy("Email invalide.", "Invalid email address."));
+      throw new Error("INVALID_EMAIL");
+    }
+    if (isAppleRelayEmail(next)) {
+      setEmailError(appleRelayHelpMessage());
+      throw new Error("APPLE_RELAY_EMAIL");
+    }
+    try {
+      const auth = await getFirebaseAuth();
+      const token = await getAuthToken(auth.currentUser, true);
+      await affiliateApi("affiliateSetLoginEmail", { token, body: { email: next } });
+      await auth.currentUser?.reload?.();
+    } catch (err) {
+      setEmailError(formatAuthError(err));
+      throw err;
+    }
+  }
+
   async function saveInvite() {
-    setSaveBusy(true);
     setSaveError("");
-    setSaveOk(false);
     try {
       await onSaveInvite({
         displayName: displayName.trim(),
         code: parseAcquisitionCodeFromInput(code),
       });
-      setSaveOk(true);
     } catch (err) {
       setSaveError(formatApplyError(err));
-    } finally {
-      setSaveBusy(false);
+      throw err;
     }
   }
 
@@ -1103,7 +1165,7 @@ function SettingsPage({ user, dashboard, onConnectStripe, onManageStripe, stripe
                       onChange={(e) => setDisplayName(e.target.value)}
                       maxLength={32}
                     />
-                    <h3 style={{ marginTop: 18 }}>{appCopy("Ton code créateur", "Your creator code")}</h3>
+                    <h3 style={{ marginTop: 18 }}>{appCopy("Ton code clipper", "Your clipper code")}</h3>
                     <p className="desc">
                       {appCopy(
                         "Ça choisit ton lien : useprocess.xyz/join/TONCODE. L'ancien code continue de marcher.",
@@ -1119,24 +1181,16 @@ function SettingsPage({ user, dashboard, onConnectStripe, onManageStripe, stripe
                       onChange={(e) => setCode(e.target.value.toUpperCase())}
                     />
                     {saveError ? <p className="af-invite-error" style={{ marginTop: 10 }}>{saveError}</p> : null}
-                    {saveOk ? (
-                      <p className="desc" style={{ marginTop: 10, color: "#047857" }}>
-                        {appCopy("Enregistré.", "Saved.")}
-                      </p>
-                    ) : null}
                   </div>
                 </div>
               </div>
               <div className="af-setting-footer">
                 <span>{appCopy("32 caractères max. pour le prénom.", "Max 32 characters for the name.")}</span>
-                <button
-                  type="button"
-                  className="af-btn af-btn-sm af-btn-black"
-                  onClick={saveInvite}
-                  disabled={saveBusy || !onSaveInvite}
-                >
-                  {saveBusy ? appCopy("Enregistrement…", "Saving…") : appCopy("Enregistrer", "Save Changes")}
-                </button>
+                <SuccessActionButton
+                  idleLabel={appCopy("Enregistrer", "Save Changes")}
+                  disabled={!onSaveInvite}
+                  onAction={saveInvite}
+                />
               </div>
             </div>
 
@@ -1151,7 +1205,34 @@ function SettingsPage({ user, dashboard, onConnectStripe, onManageStripe, stripe
                         "This will be the email you use to log in to Process and receive notifications."
                       )}
                     </p>
-                    <input className="af-input" value={user?.email || ""} readOnly />
+                    {emailIsRelay ? (
+                      <p className="af-invite-error" style={{ marginTop: 0, marginBottom: 10 }}>
+                        {appCopy(
+                          "Ton compte utilise l'email masqué d'Apple — il ne peut pas recevoir nos liens de connexion. Mets un vrai email ici pour pouvoir te connecter depuis un ordinateur.",
+                          "Your account uses Apple's hidden email — it can't receive our sign-in links. Set a real email here so you can sign in from a computer."
+                        )}
+                      </p>
+                    ) : null}
+                    <input
+                      className="af-input"
+                      type="email"
+                      value={loginEmail}
+                      spellCheck={false}
+                      autoCapitalize="none"
+                      placeholder={emailIsRelay ? "ton@email.com" : accountEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                    />
+                    {emailError ? (
+                      <p className="af-invite-error" style={{ marginTop: 10 }}>{emailError}</p>
+                    ) : null}
+                    {!user?.email && accountEmail && !emailIsRelay ? (
+                      <p className="desc" style={{ marginTop: 10 }}>
+                        {appCopy(
+                          "Pour te reconnecter sur un autre appareil, utilise Connexion → Recevoir le lien avec cet email.",
+                          "To sign in on another device, use Sign in → Send the link with this email."
+                        )}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -1159,9 +1240,11 @@ function SettingsPage({ user, dashboard, onConnectStripe, onManageStripe, stripe
                 <a href={`mailto:${SUPPORT_EMAIL}`} style={{ color: "var(--af-accent)", textDecoration: "none" }}>
                   {appCopy("Préférences email", "Manage email preferences")} →
                 </a>
-                <button type="button" className="af-btn af-btn-sm af-btn-secondary" disabled>
-                  {appCopy("Enregistrer", "Save Changes")}
-                </button>
+                <SuccessActionButton
+                  idleLabel={appCopy("Enregistrer", "Save Changes")}
+                  disabled={!loginEmail.trim() || loginEmail.trim().toLowerCase() === accountEmail.toLowerCase()}
+                  onAction={saveLoginEmail}
+                />
               </div>
             </div>
 
@@ -1212,7 +1295,7 @@ function SettingsPage({ user, dashboard, onConnectStripe, onManageStripe, stripe
                 <h3>{appCopy("Ton identifiant", "Your User ID")}</h3>
                 <p className="desc">
                   {appCopy(
-                    "Identifiant unique de ton compte créateur.",
+                    "Identifiant unique de ton compte clipper.",
                     "This is your unique account identifier on Process."
                   )}
                 </p>
@@ -1265,8 +1348,8 @@ function SettingsPage({ user, dashboard, onConnectStripe, onManageStripe, stripe
             <h3>{appCopy("Supprimer le compte", "Delete Account")}</h3>
             <p className="desc">
               {appCopy(
-                "Contacte le support Process pour supprimer définitivement ton compte créateur.",
-                "Contact Process support to permanently delete your creator account."
+                "Contacte le support Process pour supprimer définitivement ton compte clipper.",
+                "Contact Process support to permanently delete your clipper account."
               )}
             </p>
           </div>
@@ -1299,20 +1382,25 @@ function DashboardShell({
 }) {
   const pageTitles = {
     overview: appCopy("Overview", "Overview"),
-    tiktoks: appCopy("Tiktoks", "Tiktoks"),
-    methode: appCopy("Méthode lancement", "Launch method"),
+    tiktoks: appCopy("Format", "Format"),
+    format: appCopy("Format", "Format"),
+    slideshowlab: "SlideshowLab",
+    assets: "Process Assets",
+    methode: appCopy("Démarrage", "Getting started"),
     clippers: appCopy("Clippers", "Clippers"),
     automatisation: appCopy("Automatiser", "Automate"),
     us: appCopy("Poster US", "Post in the US"),
-    utiles: appCopy("Outils", "Tools"),
+    utiles: appCopy("Utiles", "Useful"),
     payouts: appCopy("Paiements", "Payouts"),
     settings: appCopy("Paramètres", "Settings"),
   };
 
   const navItems = [
     { id: "overview", label: appCopy("Overview", "Overview"), icon: IconOverview },
-    { id: "methode", label: appCopy("Méthode lancement", "Launch method"), icon: IconCursor, sub: true },
-    { id: "tiktoks", label: appCopy("Tiktoks", "Tiktoks"), icon: IconTikTok },
+    { id: "methode", label: appCopy("Démarrage", "Getting started"), icon: IconCursor },
+    { id: "slideshowlab", label: "SlideshowLab", icon: IconSlides },
+    { id: "assets", label: "Process Assets", icon: ProcessNavIcon },
+    { id: "format", label: appCopy("Format", "Format"), icon: IconTikTok },
     { id: "clippers", label: appCopy("Clippers", "Clippers"), icon: IconTrophy },
     { id: "automatisation", label: appCopy("Automatiser", "Automate"), icon: IconSpark },
   ];
@@ -1320,22 +1408,56 @@ function DashboardShell({
     { id: "us", label: appCopy("Poster US", "Post in the US"), icon: IconGlobe, href: "us" },
     { id: "shadowban", label: appCopy("Shadowban", "Shadowban"), icon: IconShield, href: "utiles?t=shadowban" },
     { id: "questions", label: appCopy("Questions", "Questions"), icon: IconHelp, href: "utiles?t=questions" },
-    { id: "aide", label: appCopy("Aide", "Help"), icon: IconWhatsApp, href: "utiles?t=aide" },
   ];
   const usefulTopic = route === "utiles" ? String(query?.t || "") : "";
+  const [navOpen, setNavOpen] = useState(false);
+  const mobileTitle =
+    route === "utiles" && usefulTopic
+      ? toolItems.find((item) => item.id === usefulTopic)?.label || pageTitles.utiles
+      : pageTitles[route] || pageTitles.overview;
+
+  const goNav = useCallback(
+    (id) => {
+      setNavOpen(false);
+      go(id);
+    },
+    [go]
+  );
+
+  useEffect(() => {
+    setNavOpen(false);
+  }, [route, query]);
+
+  useEffect(() => {
+    if (!navOpen) return undefined;
+    const onKey = (event) => {
+      if (event.key === "Escape") setNavOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.body.classList.add("af-nav-lock");
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.classList.remove("af-nav-lock");
+    };
+  }, [navOpen]);
 
   function renderPage() {
     switch (route) {
+      case "format":
       case "tiktoks":
       case "formats":
         return <AffiliateFormatsPage user={user} />;
+      case "slideshowlab":
+        return <AffiliateSlideshowLabPage />;
+      case "assets":
+        return <AffiliateProcessAssetsPage />;
       case "methode":
         return (
           <AffiliateMethodPage
             linkUrl={linkUrl}
             primaryCode={primaryCode}
             onGoLinks={() => go("overview")}
-            onGoFormats={() => go("tiktoks")}
+            onGoFormats={() => go("format")}
           />
         );
       case "clippers":
@@ -1349,11 +1471,10 @@ function DashboardShell({
           <AffiliateUsefulPage
             topic={usefulTopic}
             displayName={dashboard?.displayName}
-            email={user?.email}
+            email={dashboard?.email || user?.email}
             onOpenTopic={(id) => go(`utiles?t=${id}`)}
             onBack={() => go("utiles")}
             onOpenUs={() => go("us")}
-            onOpenShadowbanMethod={() => go("methode?m=4")}
           />
         );
       case "customers":
@@ -1387,7 +1508,6 @@ function DashboardShell({
             primaryCode={primaryCode}
             linkUrl={linkUrl}
             onSaveInvite={onSaveInvite}
-            onOpenStudio={() => go("automatisation?tab=connexions")}
           />
         );
     }
@@ -1398,103 +1518,155 @@ function DashboardShell({
   );
 
   return (
-    <div className="af-app af-shell">
-      <aside className="af-sidebar">
-        <div className="af-sidebar-logo">PROCE$$ CLIPPING</div>
+    <>
+      {navOpen ? (
+        <button
+          type="button"
+          className="af-nav-backdrop"
+          aria-label={appCopy("Fermer le menu", "Close menu")}
+          onClick={() => setNavOpen(false)}
+        />
+      ) : null}
+      <div className={`af-app af-shell${navOpen ? " is-nav-open" : ""}`}>
+        <header className="af-mobile-bar">
+          <button
+            type="button"
+            className="af-mobile-bar__btn"
+            onClick={() => setNavOpen(true)}
+            aria-label={appCopy("Ouvrir le menu", "Open menu")}
+          >
+            <IconMenu />
+          </button>
+          <strong className="af-mobile-bar__title">{mobileTitle}</strong>
+          <button
+            type="button"
+            className="af-mobile-bar__user"
+            onClick={() => goNav("settings")}
+            aria-label={appCopy("Paramètres", "Settings")}
+          >
+            <ProcessAppIcon size={22} />
+          </button>
+        </header>
 
-        <nav className="af-nav" aria-label={appCopy("Navigation", "Navigation")}>
-          {navItems.map(({ id, label, icon: Icon, sub }) => (
-            <button
-              key={id}
-              type="button"
-              className={`af-nav-item ${sub ? "is-sub" : ""} ${route === id ? "is-active" : ""}`}
-              onClick={() => go(id)}
-            >
-              <Icon />
-              {label}
-            </button>
-          ))}
-          <div className="af-nav-section">
+        <aside className="af-sidebar" id="af-sidebar">
+          <div className="af-sidebar-logo-row">
+            <div className="af-sidebar-logo">PROCE$$ CLIPPING</div>
             <button
               type="button"
-              className={`af-nav-label ${route === "utiles" && !usefulTopic ? "is-active" : ""}`}
-              onClick={() => go("utiles")}
+              className="af-sidebar-close"
+              onClick={() => setNavOpen(false)}
+              aria-label={appCopy("Fermer le menu", "Close menu")}
             >
-              {appCopy("Outils", "Tools")}
+              <IconClose />
             </button>
-            {toolItems.map(({ id, label, icon: Icon, href }) => (
+          </div>
+
+          <nav className="af-nav" aria-label={appCopy("Navigation", "Navigation")}>
+            {navItems.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 type="button"
-                className={`af-nav-item is-sub ${
-                  (id === "us" && route === "us") || (id !== "us" && route === "utiles" && usefulTopic === id)
-                    ? "is-active"
-                    : ""
-                }`}
-                onClick={() => go(href)}
+                className={`af-nav-item ${route === id ? "is-active" : ""}`}
+                onClick={() => goNav(id)}
               >
                 <Icon />
                 {label}
               </button>
             ))}
-          </div>
-        </nav>
+            <div className="af-nav-section">
+              <button
+                type="button"
+                className={`af-nav-label ${route === "utiles" && !usefulTopic ? "is-active" : ""}`}
+                onClick={() => goNav("utiles")}
+              >
+                {appCopy("Utiles", "Useful")}
+              </button>
+              {toolItems.map(({ id, label, icon: Icon, href }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`af-nav-item is-sub ${
+                    (id === "us" && route === "us") || (id !== "us" && route === "utiles" && usefulTopic === id)
+                      ? "is-active"
+                      : ""
+                  }`}
+                  onClick={() => goNav(href)}
+                >
+                  <Icon />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </nav>
 
-        <PayoutSidebarWidget
-          dashboard={dashboard}
-          onConnect={onConnectStripe}
-          onManage={() => {
-            if (isStripePayoutReady(dashboard)) {
-              onManageStripe();
-            } else {
-              go("payouts");
-            }
-          }}
-          busy={stripeBusy}
-        />
+          <PayoutSidebarWidget
+            dashboard={dashboard}
+            onConnect={onConnectStripe}
+            onManage={() => {
+              setNavOpen(false);
+              if (isStripePayoutReady(dashboard)) {
+                onManageStripe();
+              } else {
+                go("payouts");
+              }
+            }}
+            busy={stripeBusy}
+          />
 
-        <button
-          type="button"
-          className={`af-sidebar-user ${route === "settings" ? "is-active" : ""}`}
-          onClick={() => go("settings")}
-          aria-label={appCopy("Paramètres", "Settings")}
-        >
-          <ProcessAppIcon size={24} />
-          <div className="af-sidebar-user-text">
-            <strong>{dashboard?.displayName || "Process"}</strong>
-            <span>{user?.email || ""}</span>
-          </div>
-          <IconSettings className="af-sidebar-user-gear" />
-        </button>
-      </aside>
+          <button
+            type="button"
+            className={`af-sidebar-user ${route === "settings" ? "is-active" : ""}`}
+            onClick={() => goNav("settings")}
+            aria-label={appCopy("Paramètres", "Settings")}
+          >
+            <ProcessAppIcon size={24} />
+            <div className="af-sidebar-user-text">
+              <strong>{dashboard?.displayName || "Process"}</strong>
+              <span>{dashboard?.email || user?.email || ""}</span>
+            </div>
+            <IconSettings className="af-sidebar-user-gear" />
+          </button>
+        </aside>
 
-      <main className="af-main">
-        {route !== "payouts" && route !== "settings" && route !== "methode" && route !== "tiktoks" && route !== "formats" && route !== "clippers" && route !== "automatisation" && route !== "us" && route !== "utiles" ? (
-          <div className="af-page-head">
-            <h1>
-              {pageTitles[route] || pageTitles.overview}
-              <IconInfo />
-            </h1>
+        <main className="af-main">
+          {route !== "payouts" && route !== "settings" && route !== "methode" && route !== "tiktoks" && route !== "format" && route !== "formats" && route !== "slideshowlab" && route !== "assets" && route !== "clippers" && route !== "automatisation" && route !== "us" && route !== "utiles" ? (
+            <div className="af-page-head">
+              <h1>
+                {pageTitles[route] || pageTitles.overview}
+                <IconInfo />
+              </h1>
+            </div>
+          ) : null}
+          <div className="af-page-panel" key={`${route}:${query?.t || ""}`}>
+            {pageContent}
           </div>
-        ) : null}
-        <div className="af-page-panel" key={`${route}:${query?.t || ""}`}>
-          {pageContent}
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </>
   );
 }
 
 export function AffiliateApp() {
+  const localPreview = isAffiliateLocalPreview();
   const sessionRef = useRef(peekAffiliateSession());
   const [, setLangTick] = useState(0);
   const [route, go, query] = useHashRoute();
-  const [user, setUser] = useState(null);
-  const [dashboard, setDashboard] = useState(() => sessionRef.current?.dashboard || null);
-  const [dashboardLookup, setDashboardLookup] = useState(() =>
-    sessionRef.current?.dashboard ? "ready" : sessionRef.current?.uid ? "pending" : "missing"
+  const [user, setUser] = useState(() => (localPreview ? LOCAL_PREVIEW_USER : null));
+  const [dashboard, setDashboard] = useState(() =>
+    localPreview ? LOCAL_PREVIEW_DASHBOARD : sessionRef.current?.dashboard || null
   );
-  const [bootstrapping, setBootstrapping] = useState(() => Boolean(sessionRef.current?.uid));
+  const [dashboardLookup, setDashboardLookup] = useState(() =>
+    localPreview
+      ? "ready"
+      : sessionRef.current?.dashboard
+        ? "ready"
+        : sessionRef.current?.uid
+          ? "pending"
+          : "missing"
+  );
+  const [bootstrapping, setBootstrapping] = useState(() =>
+    localPreview ? false : Boolean(sessionRef.current?.uid)
+  );
   const [busy, setBusy] = useState(false);
   const [stripeBusy, setStripeBusy] = useState(false);
   const [error, setError] = useState("");
@@ -1504,6 +1676,7 @@ export function AffiliateApp() {
   const [authNotice, setAuthNotice] = useState("");
   const [authNoticeTone, setAuthNoticeTone] = useState("info");
   const [authBusy, setAuthBusy] = useState(false);
+  const [emailLinkConfirm, setEmailLinkConfirm] = useState(false);
   const bootstrappedRef = useRef(false);
   const dashboardLoadRef = useRef(null);
   const dashboardUserRef = useRef(null);
@@ -1519,6 +1692,7 @@ export function AffiliateApp() {
   }, []);
 
   const loadDashboard = useCallback(async (nextUser, { silent = false, force = false } = {}) => {
+    if (isAffiliateLocalPreview()) return LOCAL_PREVIEW_DASHBOARD;
     if (!nextUser) return null;
 
     if (
@@ -1565,17 +1739,50 @@ export function AffiliateApp() {
     let cancelled = false;
     let unsub = () => {};
     (async () => {
+      if (isAffiliateLocalPreview()) {
+        setUser(LOCAL_PREVIEW_USER);
+        setDashboard(LOCAL_PREVIEW_DASHBOARD);
+        setDashboardLookup("ready");
+        bootstrappedRef.current = true;
+        setBootstrapping(false);
+        return;
+      }
       if (!isFirebaseConfigured()) {
         setBootstrapping(false);
         return;
       }
       try {
+        if (readPortalHandoffCode()) {
+          try {
+            const handoffResult = await completePortalHandoff();
+            if (handoffResult?.next) go(handoffResult.next);
+          } catch (handoffErr) {
+            if (!cancelled) {
+              setError(formatAuthError(handoffErr) || "handoff_failed");
+              setApplyAuthMode("login");
+              go("apply");
+            }
+          }
+        }
         if (hrefLooksLikeEmailLink()) {
           try {
-            await completeAffiliateEmailLink();
+            const linkResult = await completeAffiliateEmailLink();
+            if (linkResult?.needsEmail) {
+              if (!cancelled) {
+                setEmailLinkConfirm(true);
+                setApplyAuthMode("login");
+                const fromQuery = new URLSearchParams(window.location.search).get("email") || "";
+                if (fromQuery) setEmail(fromQuery.trim());
+                go("apply");
+              }
+            } else if (linkResult?.next) {
+              go(linkResult.next);
+            }
           } catch (linkErr) {
             if (!cancelled) {
-              setError(linkErr?.message || "email_link_failed");
+              setError(formatAuthError(linkErr) || linkErr?.message || "email_link_failed");
+              setApplyAuthMode("login");
+              go("apply");
             }
           }
         }
@@ -1857,10 +2064,10 @@ export function AffiliateApp() {
             );
           })
           .catch(() => {
-            setSuccess(appCopy("Lien affilié créé.", "Affiliate link created."));
+            setSuccess(appCopy("Lien clipper créé.", "Clipper link created."));
           });
       } else {
-        setSuccess(appCopy("Lien affilié créé.", "Affiliate link created."));
+        setSuccess(appCopy("Lien clipper créé.", "Clipper link created."));
       }
 
       return true;
@@ -1914,12 +2121,39 @@ export function AffiliateApp() {
     setAuthNotice("");
 
     try {
-      await sendAffiliateEmailLink(loginEmail, { nextHash: "overview", applyAfter: true });
+      if (emailLinkConfirm && hrefLooksLikeEmailLink()) {
+        const linkResult = await completeAffiliateEmailLink(loginEmail);
+        if (linkResult?.needsEmail) {
+          throw new Error(
+            appCopy(
+              "Confirme le même email que celui utilisé pour recevoir le lien.",
+              "Confirm the same email you used to receive the link."
+            )
+          );
+        }
+        if (!linkResult?.user) {
+          throw new Error("email_link_failed");
+        }
+        setEmailLinkConfirm(false);
+        setEmail(loginEmail.trim());
+        setAuthNotice(
+          appCopy("Connecté — chargement du portail…", "Signed in — loading your portal…")
+        );
+        setAuthNoticeTone("success");
+        if (linkResult.next) go(linkResult.next);
+        return;
+      }
+
+      await sendAffiliateEmailLink(loginEmail, {
+        nextHash: "overview",
+        applyAfter: true,
+        requireExistingAccount: true,
+      });
       setEmail(loginEmail.trim());
       setAuthNotice(
         appCopy(
-          "Lien envoyé — ouvre ton email pour te connecter, sans mot de passe.",
-          "Link sent — open your email to sign in, no password."
+          `Lien envoyé — ouvre ton email pour te connecter, sans mot de passe. Rien reçu sous 2 minutes ? Regarde tes spams, puis écris à leks (${SUPPORT_WHATSAPP_DISPLAY}).`,
+          `Link sent — open your email to sign in, no password. Nothing after 2 minutes? Check spam, then message leks (${SUPPORT_WHATSAPP_DISPLAY}).`
         )
       );
       setAuthNoticeTone("success");
@@ -1939,6 +2173,7 @@ export function AffiliateApp() {
 
   function resetApplyAuth() {
     setApplyAuthMode("signup");
+    setEmailLinkConfirm(false);
     setAuthNotice("");
     setAuthNoticeTone("info");
     setError("");
@@ -1946,6 +2181,7 @@ export function AffiliateApp() {
   }
 
   async function signOut() {
+    if (isAffiliateLocalPreview()) return;
     const auth = await getFirebaseAuth();
     const { signOut: firebaseSignOut } = await import("firebase/auth");
     await firebaseSignOut(auth);
@@ -1962,6 +2198,17 @@ export function AffiliateApp() {
   const saveInviteProfile = useCallback(
     async ({ displayName, code }) => {
       if (!user) throw new Error("UNAUTHORIZED");
+      if (isAffiliateLocalPreview()) {
+        const nextCode = String(code || "").trim().toUpperCase() || "AMINE";
+        const nextName = String(displayName || "").trim() || "Amine";
+        setDashboard((prev) => ({
+          ...(prev || LOCAL_PREVIEW_DASHBOARD),
+          displayName: nextName,
+          primaryCode: nextCode,
+          codes: [{ code: nextCode, displayName: nextName, status: "active" }],
+        }));
+        return { displayName: nextName, primaryCode: nextCode, codes: [nextCode] };
+      }
       const token = await getAuthToken(user);
       const data = await affiliateApi("affiliateSyncProfile", {
         token,
@@ -2009,6 +2256,7 @@ export function AffiliateApp() {
       authMode={applyAuthMode}
       authNotice={authNotice}
       authNoticeTone={authNoticeTone}
+      emailLinkConfirm={emailLinkConfirm}
       onUseAnotherEmail={resetApplyAuth}
       onSwitchToLogin={switchApplyToLogin}
       onSwitchToSignup={switchApplyToSignup}
@@ -2084,7 +2332,7 @@ export function AffiliateApp() {
       <AffiliatePageChrome>
         <div className="af-app af-ob af-ld-apply">
           <div className="af-flow">
-            <h1>{appCopy("Portail créateur", "Creator portal")}</h1>
+            <h1>{appCopy("Portail clipper", "Clipper portal")}</h1>
             <p className="af-flow-lead">
               {appCopy(
                 "Configure VITE_FIREBASE_API_KEY et VITE_FIREBASE_APP_ID.",

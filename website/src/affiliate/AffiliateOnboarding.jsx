@@ -24,6 +24,7 @@ export function AffiliateOnboarding({
   authMode,
   authNotice,
   authNoticeTone,
+  emailLinkConfirm = false,
   onUseAnotherEmail,
   onSwitchToLogin,
   onSwitchToSignup,
@@ -98,12 +99,21 @@ export function AffiliateOnboarding({
               <ProcessAppIcon size={36} />
             </div>
             <p className="af-ob-kicker">{appCopy("Compte", "Account")}</p>
-            <h1 className="af-ob-title">{appCopy("Reconnecte-toi", "Sign back in")}</h1>
+            <h1 className="af-ob-title">
+              {emailLinkConfirm
+                ? appCopy("Confirme ton email", "Confirm your email")
+                : appCopy("Reconnecte-toi", "Sign back in")}
+            </h1>
             <p className="af-ob-lead">
-              {appCopy(
-                "Entre ton email — on t’envoie un lien, sans mot de passe.",
-                "Enter your email — we’ll send a link, no password."
-              )}
+              {emailLinkConfirm
+                ? appCopy(
+                    "Tu viens du lien reçu par email — entre le même email pour te connecter.",
+                    "You opened the email link — enter the same email to sign in."
+                  )
+                : appCopy(
+                    "Tu t'es inscrit sur un autre appareil ? Entre le même email — on t'envoie un lien, sans mot de passe.",
+                    "Signed up on another device? Enter the same email — we'll send a link, no password."
+                  )}
             </p>
             <ApplyLoginInline
               email={email}
@@ -113,6 +123,7 @@ export function AffiliateOnboarding({
               error={error}
               authNotice={authNotice}
               authNoticeTone={authNoticeTone}
+              emailLinkConfirm={emailLinkConfirm}
               onLogin={onLogin}
               onSwitchToSignup={onSwitchToSignup}
               onUseAnotherEmail={onUseAnotherEmail}
@@ -136,11 +147,11 @@ export function AffiliateOnboarding({
             <ProcessAppIcon size={36} />
           </div>
           <p className="af-ob-kicker">{appCopy("Programme clipper", "Clipper program")}</p>
-          <h1 className="af-ob-title">{appCopy("Crée ton lien affilié", "Create your affiliate link")}</h1>
+          <h1 className="af-ob-title">{appCopy("Crée ton lien clipper", "Create your clipper link")}</h1>
           <p className="af-ob-lead">
             {appCopy(
-              "Prénom, email, téléphone. Ton lien affilié est créé tout de suite — pas besoin de l’app.",
-              "First name, email, phone. Your affiliate link is created right away — no app needed."
+              "Prénom, email, téléphone. Ton lien clipper est créé tout de suite — pas besoin de l’app.",
+              "First name, email, phone. Your clipper link is created right away — no app needed."
             )}
           </p>
 
@@ -228,6 +239,7 @@ function ApplyLoginInline({
   error,
   authNotice,
   authNoticeTone,
+  emailLinkConfirm = false,
   onLogin,
   onSwitchToSignup,
   onUseAnotherEmail,
@@ -263,7 +275,11 @@ function ApplyLoginInline({
         className="af-ob-btn af-ob-btn--primary"
         disabled={!emailOk || authBusy || busy}
       >
-        {authBusy ? appCopy("Envoi…", "Sending…") : appCopy("Recevoir le lien", "Send the link")}
+        {authBusy
+          ? appCopy("Connexion…", "Signing in…")
+          : emailLinkConfirm
+            ? appCopy("Se connecter", "Sign in")
+            : appCopy("Recevoir le lien", "Send the link")}
       </button>
       <p className="af-ob-switch">
         {appCopy("Pas encore de compte ?", "No account yet?")}{" "}

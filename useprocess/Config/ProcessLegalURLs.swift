@@ -33,7 +33,7 @@ enum ProcessLegalURLs {
     static let supportMail = URL(string: "mailto:support@useprocess.xyz")!
 
     static var affiliatePortal: URL {
-        URL(string: "https://useprocess.xyz/affiliate\(langQuery)")!
+        URL(string: "https://useprocess.xyz/clipping\(langQuery)")!
     }
 
     static let tiktok = URL(string: "https://www.tiktok.com/@useprocess")!

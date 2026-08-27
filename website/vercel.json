@@ -78,6 +78,21 @@
       "permanent": true
     },
     {
+      "source": "/affiliate",
+      "destination": "/clipping",
+      "permanent": true
+    },
+    {
+      "source": "/affiliate/",
+      "destination": "/clipping",
+      "permanent": true
+    },
+    {
+      "source": "/affiliate.html",
+      "destination": "/clipping",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [{ "type": "host", "value": "get.useprocess.xyz" }],
       "destination": "https://useprocess.xyz/app",
@@ -89,8 +104,8 @@
     { "source": "/api/mcp/", "destination": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateMcp" },
     { "source": "/app", "destination": "/app.html" },
     { "source": "/join/(.*)", "destination": "/index.html" },
-    { "source": "/affiliate", "destination": "/affiliate.html" },
-    { "source": "/affiliate/", "destination": "/affiliate.html" },
+    { "source": "/clipping", "destination": "/clipping.html" },
+    { "source": "/clipping/", "destination": "/clipping.html" },
     { "source": "/(.*)", "destination": "/index.html", "has": [{ "type": "host", "value": "join.useprocess.xyz" }] },
     { "source": "/((?!api|assets|cgu|confidentialite|mentions-legales|support|sources-sante|\\.well-known).*)", "destination": "/index.html" }
   ],
@@ -102,13 +117,13 @@
       ]
     },
     {
-      "source": "/affiliate",
+      "source": "/clipping",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
       ]
     },
     {
-      "source": "/affiliate.html",
+      "source": "/clipping.html",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
       ]

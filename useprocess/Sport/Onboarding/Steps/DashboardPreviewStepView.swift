@@ -75,8 +75,14 @@ struct DashboardPreviewStepView: View {
         ZStack {
             tourOrHiddenBackground
             resultsOverlay
+            if isScanPageInteractive, embeddedScanResult == nil {
+                interactiveScanOverlay
+                    .transition(.opacity)
+                    .zIndex(80)
+            }
         }
         .animation(OnboardingScanFlowMotion.animation, value: embeddedScanResult?.id)
+        .animation(.easeInOut(duration: 0.2), value: isScanPageInteractive)
         .environment(\.onboardingDashboardScanSession, dashboardFirstScanSession)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
@@ -95,11 +101,37 @@ struct DashboardPreviewStepView: View {
         .processRestoreOpaqueUIKitHostingBackground(OnboardingTheme.hostingBackgroundUIColor)
     }
 
+    /// Scan hors `scaleEffect` du carousel — sinon le bouton « plus tard » ne reçoit pas les taps.
+    @ViewBuilder
+    private var interactiveScanOverlay: some View {
+        DashboardPreviewEmbeddedFaceScanSession(
+            isTabActive: true,
+            isCaptureEnabled: true,
+            onCancel: {
+                dashboardFirstScanSession?.onCancel()
+            },
+            onSkipLater: {
+                dashboardFirstScanSession?.onSkipLater()
+            },
+            onResultReady: { result in
+                dashboardFirstScanSession?.onResult(result)
+            },
+            onContinueAfterResults: {
+                dashboardFirstScanSession?.onContinue()
+            }
+        )
+        .environmentObject(UnifiedProfileService.shared)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
+        .background(ProcessBackgroundPalette.base(for: colorScheme).ignoresSafeArea())
+    }
+
     @ViewBuilder
     private var tourOrHiddenBackground: some View {
         dashboardTourLayer
-            .opacity(embeddedScanResult == nil ? 1 : 0)
-            .allowsHitTesting(embeddedScanResult == nil)
+            // Pendant le scan interactif, l’overlay plein écran prend le relais (évite double caméra + taps morts).
+            .opacity(embeddedScanResult == nil && !isScanPageInteractive ? 1 : 0)
+            .allowsHitTesting(embeddedScanResult == nil && !isScanPageInteractive)
     }
 
     @ViewBuilder
@@ -334,7 +366,7 @@ struct DashboardPreviewStepView: View {
             revealsContent: revealsPreviewContent,
             showsSideCards: showsSideCards,
             expandProgress: scanExpandProgress,
-            isScanInteractive: isScanPageInteractive
+            isScanInteractive: false
         )
     }
 
@@ -410,44 +442,23 @@ struct DashboardPreviewStepView: View {
     }
 
     private func beginFirstScanLaunch() {
-        guard scanExpandProgress < 0.01,
-              !isScanPageInteractive else { return }
+        guard !isScanPageInteractive else { return }
 
         onBeginFirstScan?()
         firstScanLaunchTask?.cancel()
 
-        if reduceMotion {
-            var hideSides = Transaction()
-            hideSides.disablesAnimations = true
-            withTransaction(hideSides) {
-                showsSideCards = false
-            }
-            scanExpandProgress = 1
-            isScanPageInteractive = true
-            syncPersistedScanState()
-            firstScanLaunchTask = Task { @MainActor in
-                await requestFirstScanPermissionAndTrack()
-            }
-            return
-        }
-
+        // Plein écran direct — le scaleEffect du carousel cassait les taps sur « plus tard ».
         var hideSides = Transaction()
         hideSides.disablesAnimations = true
         withTransaction(hideSides) {
             showsSideCards = false
-        }
-        withAnimation(DashboardPreviewCarouselMotion.expandScan) {
             scanExpandProgress = 1
+            isScanPageInteractive = true
         }
         syncPersistedScanState()
 
         firstScanLaunchTask = Task { @MainActor in
-            async let permission: Void = requestFirstScanPermissionAndTrack()
-            try? await Task.sleep(for: .milliseconds(320))
-            _ = await permission
-            guard !Task.isCancelled else { return }
-            isScanPageInteractive = true
-            syncPersistedScanState()
+            await requestFirstScanPermissionAndTrack()
         }
     }
 
@@ -1058,8 +1069,8 @@ private struct DashboardPreviewEmbeddedFaceScanSession: View {
     }
 
     private var skipHandler: (() -> Void)? {
-        guard isCaptureEnabled else { return nil }
-        return {
+        // Toujours exposer le skip dès que la session existe — même pendant l’anim d’expand.
+        {
             ProcessAnalytics.trackMossAction(
                 page: ProcessAnalytics.MossPage.faceScanCapture,
                 action: "skipped_later"

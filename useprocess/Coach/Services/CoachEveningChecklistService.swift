@@ -11,7 +11,6 @@ enum CoachEveningChecklistService {
     @discardableResult
     static func deliverEveningMessageIfNeeded(force: Bool = false) async -> Bool {
         guard CoachIntelligenceSettingsStore.shared.isEnabled else { return false }
-        guard CoachDailyRhythmService.eveningReviewEnabled else { return false }
 
         let calendar = Calendar.current
         let hour = calendar.component(.hour, from: Date())

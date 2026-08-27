@@ -110,65 +110,6 @@ export const FORMAT_SPECS = [
       { fr: "Milieu / fin : phone + carte App Store", en: "Middle / end: phone + App Store card" },
     ],
   },
-  {
-    id: "04",
-    name: { fr: "04 — Hygin 2×2", en: "04 — Hygin 2×2" },
-    canvas: "1080×1440 (3:4)",
-    when: {
-      fr: "Looksmaxxing / cause → effet. Fort sur les saves.",
-      en: "Looksmaxxing / cause → effect. Strong on saves.",
-    },
-    hook: {
-      fr: "Comment être MIEUX dès aujourd'hui",
-      en: "How to look BETTER starting today",
-    },
-    caption: {
-      fr: "Comment être mieux dès aujourd'hui\n\n#debloat #retentiondeau #process #glowup #looksmaxxing",
-      en: "How to look better starting today\n\n#debloat #waterretention #process #glowup #looksmaxxing",
-    },
-    fatal: {
-      fr: "Canvas 3:4. Pas d’overlay App Store. Hook en noir & blanc.",
-      en: "3:4 canvas. No App Store overlay. Hook in black & white.",
-    },
-    slides: [
-      { src: `${ASSET}/format-04/hook.jpg`, fr: "Hook N&B", en: "B&W hook" },
-      { src: `${ASSET}/format-04/grid.jpg`, fr: "Grille 2×2", en: "2×2 grid" },
-    ],
-    structure: [
-      { fr: "1. Hook N&B, 2–3 lignes max", en: "1. B&W hook, 2–3 lines max" },
-      { fr: "2+. Bannière rouge + grille 2×2 (mauvais → gonflé / bon → net)", en: "2+. Red banner + 2×2 grid (bad → puffy / good → sharp)" },
-    ],
-  },
-  {
-    id: "05",
-    name: { fr: "05 — Colonnes", en: "05 — Columns" },
-    canvas: "1080×1440 (3:4)",
-    when: {
-      fr: "Comparaison méthode vs méthode. Le gagnant debloat = screen Process.",
-      en: "Method vs method. Debloat winner = Process screen.",
-    },
-    hook: {
-      fr: "Debloat > eau de coco",
-      en: "Debloat > coconut water",
-    },
-    caption: {
-      fr: "Debloat > eau de coco\n\n#debloat #retentiondeau #process #glowup #looksmaxxing",
-      en: "Debloat > coconut water\n\n#debloat #waterretention #process #glowup #looksmaxxing",
-    },
-    fatal: {
-      fr: "Pas d’overlay App Store. Gagnant debloat = screen Process, pas une photo food.",
-      en: "No App Store overlay. Debloat winner = Process screen, not a food photo.",
-    },
-    slides: [
-      { src: `${ASSET}/format-05/hook.jpg`, fr: "Colonnes", en: "Columns" },
-      { src: `${ASSET}/format-05/debloat.jpg`, fr: "Process gagne", en: "Process wins" },
-    ],
-    structure: [
-      { fr: "1 titre (CHEVEUX, MÂCHOIRE, DEBLOAT, PEAU)", en: "1 title (HAIR, JAW, DEBLOAT, SKIN)" },
-      { fr: "2 colonnes : méthode faible vs méthode qui gagne", en: "2 columns: weak method vs winning method" },
-      { fr: "Slide DEBLOAT : eau de coco vs Process app", en: "DEBLOAT slide: coconut water vs Process app" },
-    ],
-  },
 ];
 
 function step(fr, en) {
@@ -252,11 +193,12 @@ export const METHOD_MODULES = [
         type: "bullets",
         title: { fr: "Un bon clipper obtient :", en: "A good clipper gets:" },
         items: [
-          step("Entre 500 et 2 000 € par mois.", "€500–€2,000 a month."),
+          step("1 compte actif → autour de 500 $ / mois.", "1 active account → around $500 / month."),
+          step("5 comptes actifs → autour de 2 000 $ / mois.", "5 active accounts → around $2,000 / month."),
           step("Une compétence qui lui servira toute sa vie.", "A skill that lasts a lifetime."),
           step("La méthode complète pour distribuer ce qu’il veut.", "The full method to distribute whatever they want."),
           step("Des bonus de fou avec Process.", "Insane bonuses with Process."),
-          step("La liberté de vivre de l’affiliation.", "The freedom to live off affiliation."),
+          step("La liberté de vivre du clipping.", "The freedom to live off clipping."),
         ],
       },
       {
@@ -388,7 +330,7 @@ export const METHOD_MODULES = [
         items: [
           step("FR : #debloat #retentiondeau #process #glowup", "FR: #debloat #retentiondeau #process #glowup"),
           step("EN : #debloat #waterretention #process #glowup", "EN: #debloat #waterretention #process #glowup"),
-          step("Looksmaxxing (04 / 05) : ajoute #looksmaxxing", "Looksmaxxing (04 / 05): add #looksmaxxing"),
+          step("Looksmaxxing : ajoute #looksmaxxing", "Looksmaxxing: add #looksmaxxing"),
         ],
       },
     ],
@@ -406,7 +348,7 @@ export const METHOD_MODULES = [
         items: [
           step("TikTok → + → Photo (pas Vidéo).", "TikTok → + → Photo (not Video)."),
           step("Importer les JPG dans l’ordre slide_01, slide_02, …", "Import the JPGs in order: slide_01, slide_02, …"),
-          step("Recadrage : 9:16 pour 01–03, 3:4 pour 04–05. Ne pas zoomer le texte.", "Crop: 9:16 for 01–03, 3:4 for 04–05. Don't zoom into the text."),
+          step("Recadrage : 9:16. Ne pas zoomer le texte.", "Crop: 9:16. Don't zoom into the text."),
           step("Ne re-tape pas le texte. Il est déjà brûlé sur l’image.", "Don't retype the text. It's already burned into the image."),
           step("Caption = la ligne du hook + hashtags.", "Caption = the hook line + hashtags."),
           step("Son tendance, volume bas si le texte porte déjà le message.", "Trending sound, low volume if the text already carries the message."),
@@ -436,8 +378,8 @@ export const METHOD_MODULES = [
             "Never download your posts to repost them. TikTok recognizes the file → shadowban."
           ),
           step(
-            "Varier entre 4 formats différents minimum.",
-            "Rotate across 4 different formats minimum."
+            "Varier entre les 3 formats.",
+            "Rotate across the 3 formats."
           ),
           step(
             "Les sons sont très importants : démarre toujours un TikTok à partir d’un son qui a déjà percé sur un autre TikTok.",
@@ -464,6 +406,394 @@ export const METHOD_MODULES = [
     ],
   },
 ];
+
+const START_QUERY_ALIASES = {
+  devenir: "produit",
+  hub: "produit",
+  accueil: "produit",
+  home: "produit",
+  intro: "produit",
+  "0": "produit",
+  "1": "produit",
+  product: "produit",
+  primes: "paye",
+  pay: "paye",
+  paye: "paye",
+  "2": "paye",
+  "9": "paye",
+  slideshow: "slideshows",
+  viral: "slideshows",
+  poster: "slideshows",
+  carousel: "slideshows",
+  carousels: "slideshows",
+  clipper: "cent",
+  clipping: "cent",
+  vend: "cent",
+  sell: "cent",
+  original: "cent",
+  convertir: "cent",
+  "3": "cent",
+  "100": "cent",
+  cent: "cent",
+  compte: "comptes",
+  comptes: "comptes",
+  tiktok: "comptes",
+  accounts: "comptes",
+  iphone: "comptes",
+  "4": "comptes",
+  "8": "comptes",
+  warmup: "warmup",
+  warm: "warmup",
+  chauffe: "warmup",
+  "5": "warmup",
+  slideshows: "slideshows",
+  "6": "slideshows",
+  resultats: "resultats",
+  résultats: "resultats",
+  results: "resultats",
+  attendre: "resultats",
+};
+
+export const START_SECTIONS = [
+  {
+    id: "produit",
+    nav: { fr: "Le produit qu'on vend", en: "The product we sell" },
+    title: { fr: "Le produit qu'on vend", en: "The product we sell" },
+    blocks: [
+      {
+        type: "section",
+        fr: "Process est une app iOS (Android arrive bientôt). Elle scanne le visage, mesure la rétention d'eau, et construit un protocole pour dégonfler. Ce n'est pas une app skincare générique : c'est du looksmaxxing. Quiconque veut un visage plus net — joues, jawline, pommettes — est un client.",
+        en: "Process is an iOS app (Android is coming). It scans the face, measures water retention, and builds a protocol to depuff. This isn't a generic skincare app: it's looksmaxxing. Anyone who wants a sharper face — cheeks, jawline, cheekbones — is a customer.",
+      },
+      {
+        type: "bullets",
+        title: { fr: "Ce que l'app tracke", en: "What the app tracks" },
+        items: [
+          step("Le visage, via le scan", "The face, via the scan"),
+          step("L'alimentation", "Food"),
+          step("L'hydratation", "Hydration"),
+          step("L'effort du jour (Apple Santé)", "Daily effort (Apple Health)"),
+          step("L'évolution du bloating", "Bloating progress"),
+        ],
+      },
+      {
+        type: "section",
+        title: { fr: "Le résultat", en: "The result" },
+        fr: "Ça vide la rétention d'eau et la lymphe bloquée. On passe d'un visage puffy / bouffi à un visage plus défini. Le protocole est quotidien : glace, cardio, alim, sauna — cadencé par l'app, pas par un thread Twitter.",
+        en: "It clears water retention and blocked lymph. You go from a puffy / swollen face to a more defined one. The protocol is daily: ice, cardio, food, sauna — paced by the app, not a Twitter thread.",
+      },
+      {
+        type: "callout",
+        fr: "Tu ne vends pas « une app ». Tu vends un glow-up visage. Tes slideshows doivent parler de ça : debloat, looksmax, avant/après — pas de Process en pub.",
+        en: "You're not selling “an app”. You're selling a face glow-up. Your slideshows should talk about that: debloat, looksmax, before/after — not Process as an ad.",
+      },
+    ],
+  },
+  {
+    id: "paye",
+    nav: { fr: "Combien vous êtes payé", en: "How much you get paid" },
+    title: { fr: "Combien vous êtes payé", en: "How much you get paid" },
+    blocks: [
+      {
+        type: "section",
+        fr: "Tu es payé 40 % du net sur chaque vente, à vie, tant que l'abonnement reste actif. Pas de plafond. Les virements passent par Stripe, vers ton compte. Les commissions sont retenues 30 jours, puis disponibles au payout.",
+        en: "You get paid 40% of the net on every sale, for life, as long as the subscription stays active. No cap. Payouts go through Stripe, to your account. Commissions are held 30 days, then available to withdraw.",
+      },
+      {
+        type: "callout",
+        fr: "Chaque abo que tu génères te rapporte chaque semaine, automatiquement, tant qu'il ne se désabonne pas. Tu scales avec le volume — pas avec une seule vidéo.",
+        en: "Every sub you generate pays you every week, automatically, until they cancel. You scale with volume — not with one video.",
+      },
+      {
+        type: "ladder",
+        title: { fr: "En plus des 40 %", en: "On top of the 40%" },
+      },
+      {
+        type: "access",
+        title: { fr: "Ton lien", en: "Your link" },
+        fr: "{link}",
+        en: "{link}",
+      },
+    ],
+  },
+  {
+    id: "cent",
+    nav: { fr: "Comment on vend", en: "How we sell" },
+    title: { fr: "Comment on vend", en: "How we sell" },
+    blocks: [
+      {
+        type: "section",
+        title: { fr: "Clipping", en: "Clipping" },
+        fr: "La réponse, c'est le clipping. Ça consiste à automatiser des slideshows TikTok : tu copies une structure qui convertit — pas une vidéo 1:1 — tu postes en volume, ton lien clipper va dans la bio et le commentaire épinglé. Pas besoin de te filmer. Les slideshows se montent, se dupliquent, se postent.",
+        en: "The answer is clipping. That means automating TikTok slideshows: you copy a structure that converts — not a 1:1 video — you post in volume, your clipper link goes in the bio and the pinned comment. You don't need to film yourself. Slideshows get built, duplicated, posted.",
+      },
+      {
+        type: "callout",
+        fr: "SlideshowLab pour monter. Format pour copier les exemples qui marchent. C'est ça, vendre Process.",
+        en: "SlideshowLab to build. Format to copy the examples that work. That's how you sell Process.",
+      },
+      {
+        type: "cta-lab",
+      },
+      {
+        type: "bullets",
+        title: { fr: "Un bon clipper sait :", en: "A good clipper knows:" },
+        items: [
+          step("Ne pas être shadowban.", "How to stay off shadowban."),
+          step("Poster 4× / jour par compte.", "Post 4× / day per account."),
+          step("Être régulier sur le long terme.", "How to stay consistent long-term."),
+          step("Faire des slideshows viraux (pas des carousels de merde).", "How to make viral slideshows (not trash carousels)."),
+        ],
+      },
+      {
+        type: "bullets",
+        title: { fr: "Un bon clipper obtient :", en: "A good clipper gets:" },
+        items: [
+          step("1 compte actif → autour de 500 $ / mois.", "1 active account → around $500 / month."),
+          step("5 comptes actifs → autour de 2 000 $ / mois.", "5 active accounts → around $2,000 / month."),
+          step("Une compétence qui lui servira toute sa vie.", "A skill that lasts a lifetime."),
+          step("La méthode complète pour distribuer ce qu'il veut.", "The full method to distribute whatever they want."),
+          step("Des bonus de fou avec Process.", "Insane bonuses with Process."),
+          step("La liberté de vivre du clipping.", "The freedom to live off clipping."),
+        ],
+      },
+      {
+        type: "links",
+        title: { fr: "Exemples de bons clippers :", en: "Examples of good clippers:" },
+        items: [
+          {
+            id: "manny",
+            href: MANNY_TIKTOK_URL,
+            fr: MANNY_TIKTOK_HANDLE,
+            en: MANNY_TIKTOK_HANDLE,
+          },
+        ],
+      },
+      {
+        type: "steps",
+        title: { fr: "Le rythme", en: "The pace" },
+        items: [
+          step("Compte looksmax (glowup_man, debloat_prime…). Photo de profil avec un bord coloré. Bio : tu as découvert Process Debloat sur l'App Store et tu as glow up.", "Looksmax account (glowup_man, debloat_prime…). Profile photo with a colored border. Bio: you found Process Debloat on the App Store and you glow'd up."),
+          step("Chauffe 2 jours : cherche debloat / glow up / looksmax, like, commente, scrolle. 1 post / jour max la première semaine.", "Warm up 2 days: search debloat / glow up / looksmax, like, comment, scroll. 1 post / day max the first week."),
+          step("Ensuite : 4 posts / jour par compte. Varie entre les 3 formats (Guide 72h, Glow-up, Foods).", "Then: 4 posts / day per account. Rotate the 3 formats (72h guide, Glow-up, Foods)."),
+        ],
+      },
+      {
+        type: "steps",
+        title: { fr: "Ce qui convertit", en: "What converts" },
+        items: [
+          step("Sans pin + bio, tu fais des vues pour TikTok, pas pour Process.", "Without pin + bio, you're making views for TikTok, not Process."),
+          step("Commentaire épinglé : {link} · code {code}.", "Pinned comment: {link} · code {code}."),
+          step("5 min après le post, un autre compte commente « C'est quoi l'app ? » — tu réponds avec un screen App Store.", "5 min after posting, another account comments “what's the app?” — you reply with an App Store screenshot."),
+          step("Sondage en commentaire : « Tu vas télécharger Process ? » — OUI et OUI.", "Poll in the comments: “Are you going to download Process?” — YES and YES."),
+          step("Dès qu'un post passe 40k, tu le dupliques : même hook, nouvel angle, nouvelles photos.", "When a post clears 40k, duplicate it: same hook, new angle, new photos."),
+        ],
+      },
+      {
+        type: "dont",
+        title: { fr: "À ne pas faire", en: "Don't" },
+        items: [
+          step("Télécharger tes posts pour les reposter. TikTok reconnaît le fichier → shadowban.", "Download your posts to repost them. TikTok recognizes the file → shadowban."),
+          step("Slideshows full IA, ou contenu marqué « généré par IA ».", "Full-AI slideshows, or content labeled “AI generated”."),
+          step("Poster 20 slideshows le premier jour sans avoir chauffé.", "Post 20 slideshows on day one without a warmup."),
+          step("Pub payante. Les commissions ne seront pas versées.", "Paid ads. Commissions won't be paid."),
+        ],
+      },
+      {
+        type: "cta-formats",
+      },
+    ],
+  },
+  {
+    id: "comptes",
+    nav: { fr: "Créer ses comptes TikTok", en: "Create your TikTok accounts" },
+    title: { fr: "Créer ses comptes TikTok", en: "Create your TikTok accounts" },
+    blocks: [
+      {
+        type: "section",
+        fr: "Tu crées tes comptes toi-même. Pas tous le même jour : un compte trop proche de l'autre sur le même iPhone, TikTok les lie et les shadowban. Espace-les. 1 nouveau compte par semaine, avec quelques jours d'intervalle.",
+        en: "You create your own accounts. Not all on the same day: accounts opened too close together on the same iPhone get linked and shadowbanned. Space them out. 1 new account per week, a few days apart.",
+      },
+      {
+        type: "steps",
+        title: { fr: "Le rythme", en: "The pace" },
+        items: [
+          step("1 nouveau compte TikTok par semaine. Pas 3 le lundi.", "1 new TikTok account per week. Not 3 on Monday."),
+          step("Quelques jours d'intervalle entre chaque création — même si tu as le temps d'en faire plus.", "A few days between each creation — even if you have time to make more."),
+          step("Chauffe le nouveau compte avant d'en ouvrir un autre (scroll, like, 1 post / jour la première semaine).", "Warm up the new account before opening another (scroll, like, 1 post / day the first week)."),
+        ],
+      },
+      {
+        type: "callout",
+        fr: "Maximum 8 comptes TikTok par iPhone. Au-delà, TikTok shadowban — souvent plusieurs comptes d'un coup, pas juste le 9e.",
+        en: "8 TikTok accounts max per iPhone. Past that, TikTok shadowbans — often several accounts at once, not just the 9th.",
+      },
+      {
+        type: "section",
+        title: { fr: "Les comptes déjà créés comptent", en: "Accounts you already made count" },
+        fr: "Si tu as déjà créé des comptes TikTok sur cet iPhone — perso, tests, vieux @, comptes que tu n'utilises plus — ils rentrent dans les 8. Un compte créé sur cet iPhone = 1 slot. Tu n'as pas 8 slots Process en plus : tu as 8 moins ceux qui existent déjà.",
+        en: "If you already created TikTok accounts on this iPhone — personal, tests, old @s, accounts you don't use anymore — they count toward the 8. An account created on this iPhone = 1 slot. You don't get 8 extra Process slots: you get 8 minus the ones already there.",
+      },
+      {
+        type: "dont",
+        title: { fr: "À ne pas faire", en: "Don't" },
+        items: [
+          step("Créer 8 comptes d'un coup « pour être prêt ». Ils tombent ensemble.", "Create 8 accounts at once “to be ready”. They fall together."),
+          step("Oublier un vieux compte perso dans le décompte. TikTok, lui, ne l'oublie pas.", "Forget an old personal account in the count. TikTok doesn't."),
+          step("Passer 8 en se disant que « ça ira ». Ça shadowban les comptes.", "Go past 8 and tell yourself it'll be fine. It shadowbans the accounts."),
+        ],
+      },
+      {
+        type: "steps",
+        title: { fr: "Quand tu crées le compte", en: "When you create the account" },
+        items: [
+          step("Nom avec un mot-clé looksmax : glowup_man, debloat_prime, New_looksmax…", "Name with a looksmax keyword: glowup_man, debloat_prime, New_looksmax…"),
+          step("Photo de profil avec un bord coloré (rouge, bleu, vert).", "Profile photo with a colored border (red, blue, green)."),
+          step("Bio : tu as découvert Process Debloat sur l'App Store et tu as glow up.", "Bio: you found Process Debloat on the App Store and you glow'd up."),
+        ],
+      },
+    ],
+  },
+  {
+    id: "warmup",
+    nav: { fr: "Comment warm up", en: "How to warm up" },
+    title: { fr: "Comment warm up", en: "How to warm up" },
+    blocks: [
+      {
+        type: "section",
+        fr: "Un compte neuf que tu bombes de slideshows le premier jour se fait shadowban. Le warm up, c'est faire croire à TikTok que c'est un vrai compte looksmax : tu scrolles, tu likes, tu commentes — puis tu postes doucement.",
+        en: "A fresh account you flood with slideshows on day one gets shadowbanned. Warm up is making TikTok believe it's a real looksmax account: you scroll, like, comment — then you post slowly.",
+      },
+      {
+        type: "steps",
+        title: { fr: "Jour 1 et 2 — chauffer sans poster", en: "Day 1 and 2 — warm up without posting" },
+        items: [
+          step("Taper « debloat face », « glow up », « looksmax » dans la recherche.", "Search “debloat face”, “glow up”, “looksmax”."),
+          step("Regarder, liker et commenter 15 min.", "Watch, like, and comment for 15 min."),
+          step("Scroller le Pour toi plusieurs fois dans la journée.", "Scroll For You several times during the day."),
+          step("Mettre des slideshows dans les brouillons — tu ne les publies pas encore.", "Put slideshows in drafts — don't publish them yet."),
+        ],
+      },
+      {
+        type: "steps",
+        title: { fr: "Ensuite — monter le volume", en: "Then — ramp the volume" },
+        items: [
+          step("Semaine 1 : 1 post / jour MAX.", "Week 1: 1 post / day MAX."),
+          step("Semaine 2 : 2 posts / jour.", "Week 2: 2 posts / day."),
+          step("Ensuite : 4 posts / jour par compte.", "Then: 4 posts / day per account."),
+        ],
+      },
+      {
+        type: "callout",
+        fr: "Poster via API, ce n'est pas le problème. Le compte que tu ne vis jamais, lui, se fait griller. Chaque jour : rentre dans le compte, like, commente, sondage, scrolle.",
+        en: "Posting via API isn't the problem. An account you never live in gets burned. Every day: go into the account, like, comment, poll, scroll.",
+      },
+      {
+        type: "dont",
+        title: { fr: "À ne pas faire", en: "Don't" },
+        items: [
+          step("Poster 20 slideshows le premier jour.", "Post 20 slideshows on day one."),
+          step("Sauter le warm up parce que « le format est bon ».", "Skip warm up because “the format is good”."),
+          step("Créer un compte et le laisser mort 3 semaines, puis tout poster d'un coup.", "Create an account, leave it dead for 3 weeks, then dump everything at once."),
+        ],
+      },
+    ],
+  },
+  {
+    id: "slideshows",
+    nav: { fr: "Le format slideshow", en: "The slideshow format" },
+    title: { fr: "Le format slideshow", en: "The slideshow format" },
+    blocks: [
+      {
+        type: "section",
+        fr: "On ne se filme pas. On poste des slideshows TikTok (Photo Mode) : une suite de slides 9:16, un hook en 1 seconde, une promesse par post. Tu copies une structure qui convertit — pas une vidéo 1:1. SlideshowLab pour monter. Format pour voir les exemples qui marchent.",
+        en: "We don't film ourselves. We post TikTok slideshows (Photo Mode): a sequence of 9:16 slides, a 1-second hook, one promise per post. You copy a structure that converts — not a 1:1 video. SlideshowLab to build. Format to see the examples that work.",
+      },
+      {
+        type: "steps",
+        title: { fr: "Ce qui fait scroller", en: "What makes people swipe" },
+        items: [
+          step("Hook slide = 1 idée. Le viewer comprend en 1 seconde ce qu'il gagne.", "Hook slide = 1 idea. The viewer gets the payoff in one second."),
+          step("Une promesse par carousel. Pas un mélange glow-up + recette + POV.", "One promise per carousel. Don't mix glow-up + recipe + POV."),
+          step("Son tendance OK, collé à l'émotion — pas un son random.", "Trending sound is OK if it matches the emotion — not a random track."),
+          step("Caption = 1 ligne + hashtags. Le CTA est le lien, pas un script d'ads.", "Caption = 1 line + hashtags. The CTA is the link, not an ads script."),
+        ],
+      },
+      {
+        type: "section",
+        title: { fr: "Les 3 formats officiels", en: "The 3 official formats" },
+        fr: `Référence : ${MANNY_TIKTOK_HANDLE}. Tu copies la structure, pas les fichiers.`,
+        en: `Reference: ${MANNY_TIKTOK_HANDLE}. Copy the structure, not the files.`,
+      },
+      {
+        type: "formats",
+      },
+      {
+        type: "steps",
+        title: { fr: "Comment poster", en: "How to post" },
+        items: [
+          step("TikTok → + → Photo (pas Vidéo).", "TikTok → + → Photo (not Video)."),
+          step("Importer les JPG dans l'ordre slide_01, slide_02, … Recadrage 9:16, ne pas zoomer le texte.", "Import the JPGs in order slide_01, slide_02, … Crop 9:16, don't zoom into the text."),
+          step("Ne re-tape pas le texte. Il est déjà sur l'image.", "Don't retype the text. It's already on the image."),
+          step("Commentaire : {link} · code {code} — puis épingler. Sans pin + bio, tu fais des vues pour TikTok, pas pour Process.", "Comment: {link} · code {code} — then pin it. Without pin + bio, you're making views for TikTok, not Process."),
+        ],
+      },
+      {
+        type: "cta-lab",
+      },
+      {
+        type: "cta-formats",
+      },
+    ],
+  },
+  {
+    id: "resultats",
+    nav: { fr: "Les résultats à attendre", en: "Results to expect" },
+    title: { fr: "Les résultats à attendre", en: "Results to expect" },
+    blocks: [
+      {
+        type: "section",
+        fr: "Si ton compte est déjà chauffé, tes premières ventes peuvent arriver dès ce soir. Sinon, compte ~3 jours pour le warm up — puis tu postes. Ce qui suit, c'est du volume et un lien qui convertit.",
+        en: "If your account is already warmed up, your first sales can land tonight. If not, give it ~3 days to warm — then you post. After that, it's volume and a link that converts.",
+      },
+      {
+        type: "steps",
+        title: { fr: "Le déroulé", en: "How it plays out" },
+        items: [
+          step("Compte déjà chaud : tu postes aujourd'hui, premières ventes possibles dès ce soir.", "Account already warm: you post today — first sales possible tonight."),
+          step("Compte neuf : ~3 jours de warm up, puis tu montes le rythme.", "Fresh account: ~3 days of warm-up, then you ramp."),
+          step("Dès qu'un post passe 40k : tu le dupliques — même hook, nouvel angle, nouvelles photos.", "When a post clears 40k: you duplicate it — same hook, new angle, new photos."),
+        ],
+      },
+      {
+        type: "bullets",
+        title: { fr: "Ce que ça peut donner", en: "What it can look like" },
+        items: [
+          step("1 compte actif, bien tenu → autour de 500 $ / mois.", "1 active account, run well → around $500 / month."),
+          step("5 comptes actifs → autour de 2 000 $ / mois.", "5 active accounts → around $2,000 / month."),
+          step("Des primes en plus des 40 %, dès que les vues s'accumulent.", "Bonuses on top of the 40%, as views stack."),
+          step("Une compétence qui reste : poster des slideshows qui convertissent.", "A skill that stays: posting slideshows that convert."),
+        ],
+      },
+      {
+        type: "ladder",
+        title: { fr: "Les primes vues", en: "View bonuses" },
+      },
+      {
+        type: "callout",
+        fr: "Ce n'est pas une vidéo miracle — c'est un rythme. Tu construis compte par compte, et les abos qui restent te paient chaque semaine.",
+        en: "This isn't one miracle video — it's a rhythm. You build account by account, and the subs that stay pay you every week.",
+      },
+    ],
+  },
+];
+
+export function startSectionByQuery(raw) {
+  const incoming = String(raw || "").trim().toLowerCase();
+  const value = START_QUERY_ALIASES[incoming] || incoming;
+  if (!value) return START_SECTIONS[0];
+  return START_SECTIONS.find((section) => section.id === value) || START_SECTIONS[0];
+}
 
 export function moduleByQuery(raw) {
   const incoming = String(raw || "").trim().toLowerCase();

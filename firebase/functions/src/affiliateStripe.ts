@@ -2,15 +2,15 @@ import * as admin from "firebase-admin";
 import { onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import Stripe from "stripe";
-import { affiliateHttpStatus, db, getAffiliateForUid } from "./affiliateShared";
+import { affiliateHttpStatus, db, resolveAffiliateForAuthUser } from "./affiliateShared";
 import { setCors, verifyAppAttestation, verifyFirebaseUser } from "./referralShared";
 
 const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_CONNECT_WEBHOOK_SECRET");
 
-const AFFILIATE_PORTAL_BASE = "https://useprocess.xyz/affiliate";
+const AFFILIATE_PORTAL_BASE = "https://useprocess.xyz/clipping";
 const AFFILIATE_PRODUCT_DESCRIPTION =
-  "Independent creator in the Process affiliate program. Promotes the Process iOS app on social media and earns a commission on subscriptions.";
+  "Independent clipper in the Process clipping program. Promotes the Process iOS app on social media and earns a commission on subscriptions.";
 
 function creatorPublicUrl(data: admin.firestore.DocumentData): string {
   const fromList = Array.isArray(data.onboarding?.tiktokHandles)
@@ -195,7 +195,7 @@ export const affiliateStripeConnectStart = onRequest(
       const uid = await verifyFirebaseUser(req);
       await verifyAppAttestation(req);
 
-      const affiliate = await getAffiliateForUid(uid);
+      const affiliate = await resolveAffiliateForAuthUser(uid);
       if (!affiliate) {
         res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
         return;
@@ -255,7 +255,7 @@ export const affiliateStripeConnectSync = onRequest(
       const uid = await verifyFirebaseUser(req);
       await verifyAppAttestation(req);
 
-      const affiliate = await getAffiliateForUid(uid);
+      const affiliate = await resolveAffiliateForAuthUser(uid);
       if (!affiliate) {
         res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
         return;
@@ -304,7 +304,7 @@ export const affiliateStripeConnectDashboard = onRequest(
       const uid = await verifyFirebaseUser(req);
       await verifyAppAttestation(req);
 
-      const affiliate = await getAffiliateForUid(uid);
+      const affiliate = await resolveAffiliateForAuthUser(uid);
       if (!affiliate) {
         res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
         return;

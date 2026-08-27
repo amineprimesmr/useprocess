@@ -579,6 +579,11 @@ export {
 } from "./referralRewards";
 export {
   affiliatePreparePasswordless,
+  affiliateValidateLoginEmail,
+  affiliateSendLoginEmail,
+  affiliatePortalHandoff,
+  affiliatePortalHandoffRedeem,
+  affiliateSetLoginEmail,
   affiliateResolveCode,
   affiliateTrackLink,
   affiliateTrackFunnel,

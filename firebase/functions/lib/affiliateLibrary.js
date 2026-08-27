@@ -170,7 +170,7 @@ exports.affiliateLibrary = (0, https_1.onRequest)({
     try {
         const uid = await (0, referralShared_1.verifyFirebaseUser)(req);
         await (0, referralShared_1.verifyAppAttestation)(req);
-        const affiliate = await (0, affiliateShared_1.getAffiliateForUid)(uid);
+        const affiliate = await (0, affiliateShared_1.resolveAffiliateForAuthUser)(uid);
         if (!affiliate) {
             res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
             return;

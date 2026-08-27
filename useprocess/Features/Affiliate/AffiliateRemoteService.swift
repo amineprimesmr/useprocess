@@ -9,14 +9,14 @@ enum AffiliateRemoteError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notAuthenticated:
-            return AppCopy.tSync("Connecte-toi pour utiliser le programme créateur.", en: "Sign in to use the creator program.")
+            return AppCopy.tSync("Connecte-toi pour utiliser le programme clipper.", en: "Sign in to use the clipper program.")
         case .missingBaseURL:
-            return AppCopy.tSync("Service créateur indisponible.", en: "Creator service unavailable.")
+            return AppCopy.tSync("Service clipper indisponible.", en: "Clipper service unavailable.")
         case .httpError(let code, _):
             if code == 404 {
-                return AppCopy.tSync("Code créateur introuvable.", en: "Creator code not found.")
+                return AppCopy.tSync("Code clipper introuvable.", en: "Clipper code not found.")
             }
-            return AppCopy.tSync("Erreur créateur (\(code)).", en: "Creator error (\(code)).")
+            return AppCopy.tSync("Erreur clipper (\(code)).", en: "Clipper error (\(code)).")
         }
     }
 }
@@ -97,6 +97,15 @@ enum AffiliateRemoteService {
         var payload: [String: Any] = [:]
         if let displayName, !displayName.isEmpty { payload["displayName"] = displayName }
         _ = try await post(function: "affiliateSyncProfile", payload: payload)
+    }
+
+    /// One-time code that opens the web portal already signed in — no email round-trip.
+    static func portalHandoff() async throws -> String {
+        let json = try await post(function: "affiliatePortalHandoff", payload: [:])
+        guard let code = json["code"] as? String, !code.isEmpty else {
+            throw AffiliateRemoteError.httpError(-1, "missing_handoff_code")
+        }
+        return code
     }
 
     static func dashboard() async throws -> ProcessAffiliateDashboardResponse {

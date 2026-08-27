@@ -37,7 +37,14 @@ function spaFallback() {
           return;
         }
         if (path === "/affiliate" || path === "/affiliate.html") {
-          return sendHtml("affiliate.html", req, res, next);
+          res.statusCode = 308;
+          const query = req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
+          res.setHeader("Location", "/clipping" + query);
+          res.end();
+          return;
+        }
+        if (path === "/clipping" || path === "/clipping.html") {
+          return sendHtml("clipping.html", req, res, next);
         }
         return next();
       });
@@ -60,7 +67,14 @@ function spaFallback() {
             return;
           }
           if (path === "/affiliate" || path === "/affiliate.html") {
-            return sendHtml("affiliate.html", req, res, next);
+            res.statusCode = 308;
+            const query = req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
+            res.setHeader("Location", "/clipping" + query);
+            res.end();
+            return;
+          }
+          if (path === "/clipping" || path === "/clipping.html") {
+            return sendHtml("clipping.html", req, res, next);
           }
           return sendHtml("index.html", req, res, next);
         });
@@ -78,6 +92,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: join(__dirname, "index.html"),
+        clipping: join(__dirname, "clipping.html"),
         affiliate: join(__dirname, "affiliate.html"),
       },
     },

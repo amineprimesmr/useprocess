@@ -99,7 +99,10 @@ function seedFormats(seed) {
                 : [],
         };
     });
-    return { formats, specs };
+    return {
+        formats: formats.filter((row) => row.id !== "hygin" && row.id !== "columns" && row.specId !== "04" && row.specId !== "05"),
+        specs: specs.filter((spec) => spec.id !== "04" && spec.id !== "05"),
+    };
 }
 function seedPost(formatId, post) {
     return {
@@ -170,7 +173,10 @@ function mergeCatalog(params) {
             continue;
         format.posts.push(post);
     }
-    const formats = [...byId.values()].map((row) => ({
+    const hiddenFormatIds = new Set(["hygin", "columns"]);
+    const formats = [...byId.values()]
+        .filter((row) => !hiddenFormatIds.has(row.id) && row.specId !== "04" && row.specId !== "05")
+        .map((row) => ({
         ...row,
         posts: [...row.posts].sort((a, b) => b.views - a.views || b.likes - a.likes),
     }));
@@ -179,7 +185,10 @@ function mergeCatalog(params) {
         const bv = b.posts.reduce((sum, post) => sum + post.views, 0);
         return bv - av;
     });
-    return { formats, specs: params.seedSpecs };
+    return {
+        formats,
+        specs: params.seedSpecs.filter((spec) => spec.id !== "04" && spec.id !== "05"),
+    };
 }
 function formatPayload(format, specs) {
     const spec = specs.find((item) => item.id && item.id === format.specId) || null;

@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 import { onRequest } from "firebase-functions/v2/https";
-import { affiliateHttpStatus, db, getAffiliateForUid } from "./affiliateShared";
+import { affiliateHttpStatus, db, resolveAffiliateForAuthUser } from "./affiliateShared";
 import {
   formatPayload,
   liveFormatFromDoc,
@@ -164,7 +164,7 @@ export const affiliateLibrary = onRequest(
     try {
       const uid = await verifyFirebaseUser(req);
       await verifyAppAttestation(req);
-      const affiliate = await getAffiliateForUid(uid);
+      const affiliate = await resolveAffiliateForAuthUser(uid);
       if (!affiliate) {
         res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
         return;

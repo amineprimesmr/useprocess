@@ -47,8 +47,8 @@ const affiliateShared_1 = require("./affiliateShared");
 const referralShared_1 = require("./referralShared");
 const stripeSecretKey = (0, params_1.defineSecret)("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = (0, params_1.defineSecret)("STRIPE_CONNECT_WEBHOOK_SECRET");
-const AFFILIATE_PORTAL_BASE = "https://useprocess.xyz/affiliate";
-const AFFILIATE_PRODUCT_DESCRIPTION = "Independent creator in the Process affiliate program. Promotes the Process iOS app on social media and earns a commission on subscriptions.";
+const AFFILIATE_PORTAL_BASE = "https://useprocess.xyz/clipping";
+const AFFILIATE_PRODUCT_DESCRIPTION = "Independent clipper in the Process clipping program. Promotes the Process iOS app on social media and earns a commission on subscriptions.";
 function creatorPublicUrl(data) {
     const fromList = Array.isArray(data.onboarding?.tiktokHandles)
         ? data.onboarding.tiktokHandles
@@ -179,7 +179,7 @@ exports.affiliateStripeConnectStart = (0, https_1.onRequest)({
     try {
         const uid = await (0, referralShared_1.verifyFirebaseUser)(req);
         await (0, referralShared_1.verifyAppAttestation)(req);
-        const affiliate = await (0, affiliateShared_1.getAffiliateForUid)(uid);
+        const affiliate = await (0, affiliateShared_1.resolveAffiliateForAuthUser)(uid);
         if (!affiliate) {
             res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
             return;
@@ -230,7 +230,7 @@ exports.affiliateStripeConnectSync = (0, https_1.onRequest)({
     try {
         const uid = await (0, referralShared_1.verifyFirebaseUser)(req);
         await (0, referralShared_1.verifyAppAttestation)(req);
-        const affiliate = await (0, affiliateShared_1.getAffiliateForUid)(uid);
+        const affiliate = await (0, affiliateShared_1.resolveAffiliateForAuthUser)(uid);
         if (!affiliate) {
             res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
             return;
@@ -271,7 +271,7 @@ exports.affiliateStripeConnectDashboard = (0, https_1.onRequest)({
     try {
         const uid = await (0, referralShared_1.verifyFirebaseUser)(req);
         await (0, referralShared_1.verifyAppAttestation)(req);
-        const affiliate = await (0, affiliateShared_1.getAffiliateForUid)(uid);
+        const affiliate = await (0, affiliateShared_1.resolveAffiliateForAuthUser)(uid);
         if (!affiliate) {
             res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
             return;

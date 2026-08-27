@@ -174,9 +174,10 @@
   white-space: nowrap;
 }
 
-.af-us-prompt__bar button svg {
-  width: 13px;
-  height: 13px;
+.af-us-prompt__bar button.is-copied {
+  background: #059669;
+  color: #fff;
+  animation: af-success-pop 0.45s cubic-bezier(0.22, 1.15, 0.36, 1);
 }
 
 .af-us-prompt pre {
@@ -200,4 +201,15 @@
   color: #7f1d1d;
   font-size: 0.9rem;
   line-height: 1.45;
+}
+
+@media (max-width: 720px) {
+  .af-us-hero h2 {
+    font-size: 1.35rem;
+  }
+
+  .af-us .af-btn {
+    width: 100%;
+    min-height: 44px;
+  }
 }

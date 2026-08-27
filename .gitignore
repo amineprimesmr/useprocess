@@ -8,6 +8,7 @@
 .secrets/
 firebase/.referral-webhook-secret.local
 firebase/.affiliate-admin-secret.local
+firebase/.telegram-bot-token.local
 firebase/functions/node_modules/
 .DS_Store
 **/.DS_Store

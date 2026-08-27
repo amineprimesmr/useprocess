@@ -673,7 +673,8 @@ struct FaceScanCaptureScreen: View {
                 .frame(minHeight: 6, maxHeight: 12)
 
             cameraSection(viewportSize: viewportSize)
-                .allowsHitTesting(phase != .completed)
+                // La caméra n’a pas besoin des taps — sinon elle mange « Faire mon scan plus tard ».
+                .allowsHitTesting(false)
 
             if showsMediaImport, phase != .completed {
                 importMediaButton
@@ -693,7 +694,8 @@ struct FaceScanCaptureScreen: View {
             if showsDelayedScanLaterLink, onSkip != nil, phase != .completed {
                 delayedScanLaterLink
                     .padding(.top, 10)
-                    .zIndex(30)
+                    .zIndex(50)
+                    .allowsHitTesting(true)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
 
@@ -712,7 +714,8 @@ struct FaceScanCaptureScreen: View {
 
         return ZStack {
             cameraSection(viewportSize: viewportSize)
-                .allowsHitTesting(phase != .completed)
+                // La caméra n’a pas besoin des taps — sinon elle mange « Faire mon scan plus tard ».
+                .allowsHitTesting(false)
 
             if isDeviceSupported, phase != .completed {
                 VStack(spacing: 0) {
@@ -1699,10 +1702,11 @@ struct FaceScanCaptureScreen: View {
                     )
                     .padding(.vertical, 14)
                     .padding(.horizontal, 28)
-                    .frame(minHeight: 44)
+                    .frame(minWidth: 220, minHeight: 48)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.processPlain)
+            .buttonStyle(.borderless)
+            .zIndex(50)
             .accessibilityLabel(AppCopy.t("Faire mon scan plus tard", en: "Do my scan later"))
         }
     }

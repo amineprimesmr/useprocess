@@ -71,7 +71,6 @@ final class ProcessEveningCheckInStore {
         persist()
         applyAnswersToPlan(sanitized, for: date)
         ProcessDebloatTrajectoryStore.shared.recordCheckIn(answers: sanitized, for: date)
-        Task { await CoachDailyRhythmService.refreshEveningNotification() }
     }
 
     private func sanitizedAnswers(_ answers: [String: String]) -> [String: String] {

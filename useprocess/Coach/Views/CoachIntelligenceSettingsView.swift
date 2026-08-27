@@ -248,17 +248,6 @@ struct CoachIntelligenceSettingsView: View {
                         set: { CoachDailyRhythmService.morningOutlookEnabled = $0 }
                     )
                 )
-
-                settingsDivider
-
-                settingsToggleRow(
-                    title: AppCopy.t("Check du jour", en: "Daily check-in"),
-                    subtitle: AppCopy.t("Rappel pour valider ta journée.", en: "A reminder to complete your day."),
-                    isOn: Binding(
-                        get: { CoachDailyRhythmService.eveningReviewEnabled },
-                        set: { CoachDailyRhythmService.eveningReviewEnabled = $0 }
-                    )
-                )
             }
             .background(cardBackground)
         }

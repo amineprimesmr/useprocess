@@ -19,7 +19,12 @@ export function getRoute() {
   if (host === "join.useprocess.xyz" || host === "get.useprocess.xyz") {
     return { type: "get-app" };
   }
-  if (path === "/affiliate" || path === "/affiliate.html") {
+  if (
+    path === "/clipping" ||
+    path === "/clipping.html" ||
+    path === "/affiliate" ||
+    path === "/affiliate.html"
+  ) {
     return { type: "affiliate" };
   }
   if (

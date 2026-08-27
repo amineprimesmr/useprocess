@@ -206,7 +206,44 @@ Set Vercel env vars from Firebase console → Project settings → Your apps →
 - `VITE_FIREBASE_AUTH_DOMAIN` (optional, defaults to `useprocess-d4385.firebaseapp.com`)
 - `VITE_FUNCTIONS_BASE_URL` (optional, defaults to Cloud Functions URL)
 
+### Authorized domains (required for magic-link login)
+
+Passwordless email links on **https://useprocess.xyz/clipping** fail with `auth/unauthorized-continue-uri` until the production domain is allowlisted in Firebase Auth.
+
+Firebase console → **Authentication** → **Settings** → **Authorized domains** → add:
+
+- `useprocess.xyz`
+- `www.useprocess.xyz` (optional, if www is used)
+- `join.useprocess.xyz` (optional)
+
+Without this, clippers see *« Firebase: Domain not allowlisted by project »* when clicking **Recevoir le lien**.
+
 Clippers sign in with Firebase Auth (email/password accounts you create or they register via app).
+
+## Clipper login emails (`contact@useprocess.xyz`)
+
+Default Firebase auth emails come from `noreply@useprocess-d4385.firebaseapp.com` and often land in spam.
+
+**Production setup:** links are sent via **Hostinger SMTP** from `contact@useprocess.xyz` (Cloud Function `affiliateSendLoginEmail`).
+
+One-time setup:
+
+```bash
+export PROCESS_SMTP_PASSWORD='…'   # Hostinger → Emails → contact@useprocess.xyz → app password
+./firebase/scripts/setup-clipper-login-email.sh
+```
+
+SPF on `useprocess.xyz` already includes Hostinger (`include:_spf.mail.hostinger.com`) — no Firebase SPF needed when using SMTP.
+
+Optional fallback (Firebase custom domain instead of SMTP): Firebase Console → Authentication → Templates → customize domain `useprocess.xyz`, then add DNS on Hostinger:
+
+| Type | Host | Value |
+|------|------|-------|
+| TXT | `@` | `firebase=useprocess-d4385` |
+| TXT | `@` | `v=spf1 include:_spf.mail.hostinger.com include:_spf.firebasemail.com ~all` |
+| CNAME | `firebase._domainkey` | *(value shown in Firebase Console)* |
+
+Then **Apply Custom Domain** in Firebase Templates.
 
 ## Firestore indexes
 

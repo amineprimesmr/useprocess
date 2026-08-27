@@ -257,11 +257,11 @@ struct EditProfileView: View {
                 ProcessSettingsOpalRowDivider()
 
                 Button {
-                    inAppSafariURL = ProcessAffiliatePortalLink.urlForCurrentUser()
+                    Task { inAppSafariURL = await ProcessAffiliatePortalLink.portalURLForCurrentUser() }
                 } label: {
                     ProcessSettingsOpalRow(
                         icon: "sparkles",
-                        title: AppCopy.t("Programme créateurs", en: "Creator Program")
+                        title: AppCopy.t("Programme clipper", en: "Clipper program")
                     )
                 }
                 .processSettingsOpalRowButton()

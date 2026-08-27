@@ -7,8 +7,13 @@ import {
   allocateUniqueAffiliateCode,
   db,
   ensureAffiliateProfile,
+  affiliateEmailEligibleForLoginLink,
   ensureEmailPasswordSignInEnabled,
   getAffiliateForUid,
+  getAffiliateByEmail,
+  isAppleRelayEmail,
+  linkAffiliateUid,
+  resolveAffiliateForAuthUser,
   pickPrimaryAffiliateCode,
   readOwnedProcessReferralCode,
   updateAffiliateInviteProfile,
@@ -34,9 +39,22 @@ import {
 } from "./referralShared";
 import { createAffiliateStripeTransfer } from "./affiliateStripe";
 import { listPublicTikTokAccounts, tiktokApiReady, tiktokTotals } from "./affiliateTikTok";
+import { sendAffiliateLoginEmail } from "./affiliateLoginEmail";
+import { createPortalHandoff, redeemPortalHandoff } from "./affiliatePortalHandoff";
 
 const affiliateAdminSecret = defineSecret("AFFILIATE_ADMIN_SECRET");
 const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
+const processSmtpPassword = defineSecret("PROCESS_SMTP_PASSWORD");
+
+function readProcessSmtpPassword(): string {
+  try {
+    const fromSecret = String(processSmtpPassword.value() || "").trim();
+    if (fromSecret) return fromSecret;
+  } catch {
+    /* secret not bound yet */
+  }
+  return String(process.env.PROCESS_SMTP_PASSWORD || "").trim();
+}
 
 function readAffiliateOnboarding(raw: unknown) {
   if (!raw || typeof raw !== "object") return null;
@@ -60,6 +78,242 @@ function isValidAffiliatePhone(raw: string): boolean {
   const digits = String(raw || "").replace(/\D/g, "");
   return digits.length >= 8 && digits.length <= 15;
 }
+
+export const affiliateValidateLoginEmail = onRequest(
+  {
+    invoker: "public",
+    cors: true,
+    timeoutSeconds: 15,
+    memory: "256MiB",
+  },
+  async (req, res) => {
+    setCors(res);
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    try {
+      const email = String(req.body?.email ?? "").trim();
+      if (!email || !email.includes("@")) {
+        res.status(400).json({ error: "INVALID_EMAIL" });
+        return;
+      }
+      if (isAppleRelayEmail(email)) {
+        res.status(409).json({ error: "APPLE_RELAY_EMAIL" });
+        return;
+      }
+
+      const eligible = await affiliateEmailEligibleForLoginLink(email);
+      if (!eligible) {
+        res.status(404).json({ error: "EMAIL_NOT_FOUND" });
+        return;
+      }
+
+      res.status(200).json({ ok: true });
+    } catch (error: any) {
+      const message = error?.message ?? "Unknown error";
+      console.error("[affiliateValidateLoginEmail]", message);
+      res.status(500).json({ error: message });
+    }
+  }
+);
+
+export const affiliateSendLoginEmail = onRequest(
+  {
+    invoker: "public",
+    cors: true,
+    secrets: [processSmtpPassword],
+    timeoutSeconds: 30,
+    memory: "256MiB",
+  },
+  async (req, res) => {
+    setCors(res);
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    try {
+      const email = String(req.body?.email ?? "").trim();
+      const continueUrl = String(req.body?.continueUrl ?? "").trim();
+      if (!email || !email.includes("@")) {
+        res.status(400).json({ error: "INVALID_EMAIL" });
+        return;
+      }
+      // Apple relay addresses bounce hours later — refuse now so the UI can react.
+      if (isAppleRelayEmail(email)) {
+        res.status(409).json({ error: "APPLE_RELAY_EMAIL" });
+        return;
+      }
+
+      const eligible = await affiliateEmailEligibleForLoginLink(email);
+      if (!eligible) {
+        res.status(404).json({ error: "EMAIL_NOT_FOUND" });
+        return;
+      }
+
+      await ensureEmailPasswordSignInEnabled();
+      await sendAffiliateLoginEmail({
+        email,
+        continueUrl,
+        smtpPassword: readProcessSmtpPassword(),
+      });
+
+      res.status(200).json({ ok: true });
+    } catch (error: any) {
+      const message = error?.message ?? "Unknown error";
+      console.error("[affiliateSendLoginEmail]", message);
+      res.status(affiliateHttpStatus(message)).json({ error: message });
+    }
+  }
+);
+
+/**
+ * The app is already signed in — hand that session to the web portal directly.
+ * Removes email (and therefore Apple relay bounces and spam folders) from the
+ * critical path for every clipper who opens the portal from the app.
+ */
+export const affiliatePortalHandoff = onRequest(
+  {
+    invoker: "public",
+    cors: true,
+    timeoutSeconds: 15,
+    memory: "256MiB",
+  },
+  async (req, res) => {
+    setCors(res);
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    try {
+      const uid = await verifyFirebaseUser(req);
+      await verifyAppAttestation(req);
+
+      const { code, expiresAt } = await createPortalHandoff(uid);
+      res.status(200).json({ ok: true, code, expiresAt });
+    } catch (error: any) {
+      const message = error?.message ?? "Unknown error";
+      console.error("[affiliatePortalHandoff]", message);
+      res.status(affiliateHttpStatus(message)).json({ error: message });
+    }
+  }
+);
+
+/** Web side of the handoff: burns the one-time code, returns a custom token. */
+export const affiliatePortalHandoffRedeem = onRequest(
+  {
+    invoker: "public",
+    cors: true,
+    timeoutSeconds: 15,
+    memory: "256MiB",
+  },
+  async (req, res) => {
+    setCors(res);
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    try {
+      const code = String(req.body?.code ?? "").trim();
+      const token = await redeemPortalHandoff(code);
+      res.status(200).json({ ok: true, token });
+    } catch (error: any) {
+      const message = error?.message ?? "Unknown error";
+      console.error("[affiliatePortalHandoffRedeem]", message);
+      res.status(affiliateHttpStatus(message)).json({ error: message });
+    }
+  }
+);
+
+/**
+ * Lets a signed-in clipper attach a reachable email to their account — the escape
+ * hatch for anyone whose only address is an Apple relay one.
+ */
+export const affiliateSetLoginEmail = onRequest(
+  {
+    invoker: "public",
+    cors: true,
+    timeoutSeconds: 20,
+    memory: "256MiB",
+  },
+  async (req, res) => {
+    setCors(res);
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    try {
+      const uid = await verifyFirebaseUser(req);
+      await verifyAppAttestation(req);
+
+      const email = String(req.body?.email ?? "").trim().toLowerCase();
+      if (!email || !email.includes("@") || email.length > 254) {
+        res.status(400).json({ error: "INVALID_EMAIL" });
+        return;
+      }
+      if (isAppleRelayEmail(email)) {
+        res.status(409).json({ error: "APPLE_RELAY_EMAIL" });
+        return;
+      }
+
+      // Taken by somebody else → refuse rather than silently merging two clippers.
+      try {
+        const existing = await admin.auth().getUserByEmail(email);
+        if (existing.uid !== uid) {
+          res.status(409).json({ error: "EMAIL_IN_USE" });
+          return;
+        }
+      } catch (error: any) {
+        if (error?.code !== "auth/user-not-found") throw error;
+      }
+
+      await admin.auth().updateUser(uid, { email, emailVerified: false });
+      await ensureEmailPasswordSignInEnabled();
+
+      const affiliate = await getAffiliateForUid(uid);
+      if (affiliate) {
+        await db().collection("affiliates").doc(affiliate.affiliateId).set(
+          {
+            email,
+            emailUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+      }
+
+      res.status(200).json({ ok: true, email });
+    } catch (error: any) {
+      const message = error?.message ?? "Unknown error";
+      console.error("[affiliateSetLoginEmail]", message);
+      res.status(affiliateHttpStatus(message)).json({ error: message });
+    }
+  }
+);
 
 export const affiliatePreparePasswordless = onRequest(
   {
@@ -303,7 +557,17 @@ export const affiliateApply = onRequest(
         return;
       }
 
-      const existing = await getAffiliateForUid(uid);
+      let existing = await getAffiliateForUid(uid);
+      if (!existing && email) {
+        const byEmail = await getAffiliateByEmail(email);
+        if (byEmail) {
+          await linkAffiliateUid({ affiliateId: byEmail.affiliateId, uid, email });
+          existing = { ...byEmail, uid, email: byEmail.email || email };
+        }
+      }
+      if (!existing) {
+        existing = await resolveAffiliateForAuthUser(uid);
+      }
       const affiliateId = existing?.affiliateId || uid;
 
       if (!existing && !isValidAffiliatePhone(phone)) {
@@ -368,7 +632,7 @@ export const affiliateApply = onRequest(
           );
       }
 
-      const fresh = await getAffiliateForUid(uid);
+      const fresh = (await resolveAffiliateForAuthUser(uid)) || (await getAffiliateForUid(uid));
       const codes = fresh?.codes ?? [];
       const primaryCode = pickPrimaryAffiliateCode(
         codes,
@@ -417,7 +681,7 @@ export const affiliateSyncProfile = onRequest(
       const displayName = String(req.body?.displayName ?? "").trim();
       const code = String(req.body?.code ?? req.body?.affiliateCode ?? "").trim();
 
-      const affiliate = await getAffiliateForUid(uid);
+      const affiliate = await resolveAffiliateForAuthUser(uid);
       if (!affiliate) {
         res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
         return;
@@ -475,7 +739,7 @@ export const affiliateDashboard = onRequest(
       const uid = await verifyFirebaseUser(req);
       await verifyAppAttestation(req);
 
-      const affiliate = await getAffiliateForUid(uid);
+      const affiliate = await resolveAffiliateForAuthUser(uid);
       if (!affiliate) {
         res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
         return;
@@ -485,7 +749,7 @@ export const affiliateDashboard = onRequest(
         try {
           const processCode = await readOwnedProcessReferralCode(uid);
           if (!processCode) return;
-          const latest = (await getAffiliateForUid(uid)) || affiliate;
+          const latest = (await resolveAffiliateForAuthUser(uid)) || affiliate;
           const ownsProcess = Array.isArray(latest.codes) && latest.codes.includes(processCode);
           if (latest.customPrimaryCode) {
             if (!ownsProcess) {
@@ -632,6 +896,7 @@ export const affiliateDashboard = onRequest(
         ok: true,
         affiliateId: affiliate.affiliateId,
         displayName: data.displayName ?? affiliate.displayName,
+        email: data.email ?? affiliate.email ?? null,
         status: data.status ?? affiliate.status,
         primaryCode,
         payoutMethod: data.payoutMethod ?? null,

@@ -336,7 +336,31 @@
   }
 
   .af-clip-table th:nth-child(6),
-  .af-clip-table td:nth-child(6) {
+  .af-clip-table td:nth-child(6),
+  .af-clip-table th:nth-child(5),
+  .af-clip-table td:nth-child(5) {
     display: none;
+  }
+
+  .af-clip-hero h2 {
+    font-size: 1.32rem;
+  }
+
+  .af-clip-youbar {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .af-clip-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .af-clip-toolbar .af-toolbar {
+    width: 100%;
+  }
+
+  .af-clip-toolbar .af-chip-btn {
+    min-height: 40px;
   }
 }

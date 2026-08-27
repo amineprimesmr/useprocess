@@ -1,7 +1,7 @@
 import * as crypto from "crypto";
 import * as admin from "firebase-admin";
 import { onRequest } from "firebase-functions/v2/https";
-import { affiliateHttpStatus, db, getAffiliateForUid } from "./affiliateShared";
+import { affiliateHttpStatus, db, resolveAffiliateForAuthUser } from "./affiliateShared";
 import { setCors, verifyAppAttestation, verifyFirebaseUser } from "./referralShared";
 
 const AUTH_URL = "https://www.tiktok.com/v2/auth/authorize/";
@@ -11,7 +11,7 @@ const USER_INFO = "https://open.tiktokapis.com/v2/user/info/";
 const VIDEO_LIST = "https://open.tiktokapis.com/v2/video/list/";
 const CONTENT_INIT = "https://open.tiktokapis.com/v2/post/publish/content/init/";
 
-const SITE = "https://useprocess.xyz/affiliate";
+const SITE = "https://useprocess.xyz/clipping";
 const DEFAULT_REDIRECT =
   "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateTikTokOAuthCallback";
 
@@ -405,7 +405,7 @@ export const affiliateTikTokStudio = onRequest(
     try {
       const uid = await verifyFirebaseUser(req);
       await verifyAppAttestation(req);
-      const affiliate = await getAffiliateForUid(uid);
+      const affiliate = await resolveAffiliateForAuthUser(uid);
       if (!affiliate) {
         res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
         return;

@@ -201,7 +201,9 @@ final class OnboardingProfileChatViewModel {
             || currentQuestion?.id == "face_scan_offer"
             || currentQuestion?.id == "profile_summary"
             || currentQuestion?.kind == .profileSummary
-        guard !isSubmittingAnswer, isFaceScanStep else { return }
+            || onboardingViewModel?.presentedOnboardingFaceScan != nil
+        guard !isSubmittingAnswer else { return }
+        guard isFaceScanStep || !(onboardingViewModel?.isFaceAnalysisCompleted ?? false) else { return }
         isSubmittingAnswer = true
         onboardingViewModel?.isFaceAnalysisCompleted = true
         onboardingViewModel?.onboardingFaceMesh = nil
@@ -264,7 +266,21 @@ final class OnboardingProfileChatViewModel {
     }
 
     func faceScanDidSkip() {
-        Task { await submitFaceScanLater() }
+        Task { @MainActor in
+            // Ne jamais no-op silencieux : si le chat a changé d’étape, on force quand même le skip.
+            if isSubmittingAnswer {
+                isSubmittingAnswer = false
+            }
+            await submitFaceScanLater()
+            if !shouldFinish {
+                onboardingViewModel?.isFaceAnalysisCompleted = true
+                onboardingViewModel?.onboardingFaceMesh = nil
+                onboardingViewModel?.onboardingFaceMarkers = nil
+                markQuestionCompleted("profile_summary")
+                markQuestionCompleted("face_scan_offer")
+                shouldFinish = true
+            }
+        }
     }
 
     func finish(onComplete: () -> Void) {

@@ -267,7 +267,7 @@ struct OnboardingCreatorCodeStepView: View {
     private func resolvedLabel(kind: ProcessAffiliateCodeKind, name: String) -> String {
         switch kind {
         case .affiliate:
-            return AppCopy.t("Créateur : \(name)", en: "Creator: \(name)")
+            return AppCopy.t("Clipper : \(name)", en: "Clipper: \(name)")
         case .referral:
             return AppCopy.t("Parrainage : \(name)", en: "Referral: \(name)")
         }
@@ -322,6 +322,14 @@ struct OnboardingCreatorCodeStepView: View {
                     resolvedDisplayName = resolved.displayName ?? normalized
                     resolvedKind = resolved.type
                     showsLifetimePass = false
+                    clearCodeFeedback()
+                }
+                isVerified = true
+            } else if ProcessAffiliateLifetimePass.matches(normalized) {
+                withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+                    showsLifetimePass = true
+                    resolvedDisplayName = nil
+                    resolvedKind = nil
                     clearCodeFeedback()
                 }
                 isVerified = true

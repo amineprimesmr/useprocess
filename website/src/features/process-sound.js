@@ -1,6 +1,7 @@
 let settingsAudio = null;
 let playbackToken = 0;
 let sharedAudioCtx = null;
+let unlockClip = null;
 
 function unlockAudioContext() {
   try {
@@ -48,6 +49,57 @@ export function playDashboardOpen() {
   }
 }
 
+/** Unlock the confirmation clip from a click so it can play after an await. */
+export function armSettingsChange() {
+  try {
+    unlockAudioContext();
+    if (!unlockClip) {
+      unlockClip = new Audio("/assets/sounds/revolut_pay.mp3");
+      unlockClip.preload = "auto";
+    }
+    unlockClip.muted = true;
+    unlockClip.volume = 0;
+    const primed = unlockClip.play();
+    if (primed?.then) {
+      primed
+        .then(() => {
+          unlockClip.pause();
+          unlockClip.currentTime = 0;
+        })
+        .catch(() => {});
+    }
+
+    if (!settingsAudio) {
+      settingsAudio = new Audio("/assets/sounds/revolut_pay.mp3");
+      settingsAudio.preload = "auto";
+    }
+    const audio = settingsAudio;
+    const tokenAtArm = playbackToken;
+    audio.muted = true;
+    audio.volume = 0;
+    const unlock = audio.play();
+    if (unlock?.then) {
+      unlock
+        .then(() => {
+          if (playbackToken !== tokenAtArm) return;
+          audio.pause();
+          audio.currentTime = 0;
+          audio.muted = false;
+          audio.volume = 1;
+        })
+        .catch(() => {
+          audio.muted = false;
+          audio.volume = 1;
+        });
+    } else {
+      audio.muted = false;
+      audio.volume = 1;
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Same short confirmation clip as ProcessSoundPlayer.playSettingsChange() in the app. */
 export function playSettingsChange() {
   try {
@@ -62,6 +114,7 @@ export function playSettingsChange() {
     const audio = settingsAudio;
     audio.pause();
     audio.currentTime = 0;
+    audio.muted = false;
     audio.volume = 1;
 
     const playPromise = audio.play();

@@ -96,7 +96,7 @@ function HeroBadge() {
   return (
     <p className="af-ld-hero-badge">
       <span className="af-ld-hero-badge__inner">
-        {appCopy("Programme créateur", "Creator program")}
+        {appCopy("Programme clipper", "Clipper program")}
       </span>
     </p>
   );
@@ -108,7 +108,7 @@ function HeroCta({ onApply }) {
       <button type="button" className="af-ld-hero-cta" onClick={onApply}>
         <ProcessAppIcon size={28} className="af-ld-hero-cta__icon" />
         <span className="af-ld-hero-cta__label">
-          {appCopy("Devenir affilié", "Become an affiliate")}
+          {appCopy("Devenir clipper", "Become a clipper")}
         </span>
       </button>
     </div>
@@ -197,14 +197,14 @@ function RevenueSimulator() {
       <p className="af-ld-sim__title">{appCopy("Simulateur de revenu", "Revenue simulator")}</p>
       <p className="af-ld-sim__lead">
         {appCopy(
-          `${COMMISSION_PERCENT} % du net (après Apple / Google) + primes jusqu'à $${VIEW_BONUS_MAX_PER_VIDEO_USD}`,
-          `${COMMISSION_PERCENT}% of net (after Apple / Google) + bonuses up to $${VIEW_BONUS_MAX_PER_VIDEO_USD}`
+          `${COMMISSION_PERCENT} % du net sur chaque vente + primes jusqu'à $${VIEW_BONUS_MAX_PER_VIDEO_USD}`,
+          `${COMMISSION_PERCENT}% of the net on every sale + bonuses up to $${VIEW_BONUS_MAX_PER_VIDEO_USD}`
         )}
       </p>
 
       <SimSlider
         labelId={affiliatesId}
-        label={appCopy("Affiliés", "Affiliates")}
+        label={appCopy("Clippers", "Clippers")}
         min={SIM_MIN}
         max={SIM_MAX}
         step={1}
@@ -213,7 +213,7 @@ function RevenueSimulator() {
         bubble={count}
         startBound={SIM_MIN}
         endBound={SIM_MAX}
-        ariaLabel={appCopy("Nombre d'affiliés", "Number of affiliates")}
+        ariaLabel={appCopy("Nombre de clippers", "Number of clippers")}
       />
 
       <SimSlider
@@ -259,8 +259,8 @@ function RevenueSimulator() {
           </strong>
           <span className="af-ld-sim__hint">
             {count === 1
-              ? appCopy("1 affilié", "1 affiliate")
-              : appCopy(`${count} affiliés`, `${count} affiliates`)}
+              ? appCopy("1 clipper", "1 clipper")
+              : appCopy(`${count} clippers`, `${count} clippers`)}
           </span>
         </p>
         <p className="af-ld-sim__payout af-ld-sim__payout--bonus">
@@ -294,11 +294,11 @@ function StepsSection() {
     <section id="comment" className="af-ld-how" aria-labelledby="af-ld-how-heading">
       <header className="af-ld-how__header">
         <BracketKicker>{appCopy("COMMENT ÇA MARCHE", "HOW IT WORKS")}</BracketKicker>
-        <h2 id="af-ld-how-heading">{appCopy("Devenez affilié en 3 étapes", "Become an affiliate in 3 steps")}</h2>
+        <h2 id="af-ld-how-heading">{appCopy("Devenez clipper en 3 étapes", "Become a clipper in 3 steps")}</h2>
         <p>
           {appCopy(
-            `Configuré en moins de 2 minutes. Partagez votre lien. Gagnez ${COMMISSION_PERCENT} % du net (après Apple / Google) sur chaque abonnement généré, chaque mois, pour toujours.`,
-            `Set up in under 2 minutes. Share your link. Earn ${COMMISSION_PERCENT}% of net (after Apple / Google) on every subscription you generate, every month, forever.`
+            `Configuré en moins de 2 minutes. Partagez votre lien. Gagnez ${COMMISSION_PERCENT} % du net sur chaque abonnement généré, chaque mois, pour toujours.`,
+            `Set up in under 2 minutes. Share your link. Earn ${COMMISSION_PERCENT}% of the net on every subscription you generate, every month, forever.`
           )}
         </p>
       </header>
@@ -316,7 +316,7 @@ function StepsSection() {
           <div className="af-ld-step__copy">
             <IconPersonPlus />
             <div>
-              <h3>{appCopy("Créez votre compte affilié", "Create your affiliate account")}</h3>
+              <h3>{appCopy("Créez votre compte clipper", "Create your clipper account")}</h3>
               <p>
                 {appCopy(
                   "Moins de 2 minutes. Vous recevez instantanément un lien personnalisé et un code de tracking.",
@@ -348,8 +348,8 @@ function StepsSection() {
               <h3>{appCopy("Automatisez vos slideshow", "Automate your slideshows")}</h3>
               <p>
                 {appCopy(
-                  "Partagez votre lien affilié sur TikTok. Vos slideshow tournent, vos commissions aussi.",
-                  "Share your affiliate link on TikTok. Your slideshows run, your commissions too."
+                  "Partagez votre lien clipper sur TikTok. Vos slideshow tournent, vos commissions aussi.",
+                  "Share your clipper link on TikTok. Your slideshows run, your commissions too."
                 )}
               </p>
             </div>
@@ -377,8 +377,8 @@ function StepsSection() {
               <h3>{appCopy("Gagnez chaque mois", "Earn every month")}</h3>
               <p>
                 {appCopy(
-                  `Recevez ${COMMISSION_PERCENT} % du net (après Apple / Google) sur chaque abonnement généré, tant que votre filleul reste actif.`,
-                  `Receive ${COMMISSION_PERCENT}% of net (after Apple / Google) on every subscription generated, as long as your referral stays active.`
+                  `Recevez ${COMMISSION_PERCENT} % du net sur chaque abonnement généré, tant que votre filleul reste actif.`,
+                  `Receive ${COMMISSION_PERCENT}% of the net on every subscription generated, as long as your referral stays active.`
                 )}
               </p>
             </div>
@@ -423,8 +423,8 @@ function FaqSection() {
       id: "commission",
       q: appCopy(`Les ${COMMISSION_PERCENT} % c'est sur quoi ?`, `What is the ${COMMISSION_PERCENT}% based on?`),
       a: appCopy(
-        `Sur le net, après les frais Apple / Google. Tu gagnes ${COMMISSION_PERCENT} % de ce qui reste, à vie, tant que l'abonnement est actif.`,
-        `On net, after Apple / Google fees. You earn ${COMMISSION_PERCENT}% of what's left, for life, as long as the subscription stays active.`
+        `Sur le net de chaque vente. Tu gagnes ${COMMISSION_PERCENT} %, à vie, tant que l'abonnement est actif.`,
+        `On the net of every sale. You earn ${COMMISSION_PERCENT}%, for life, as long as the subscription stays active.`
       ),
     },
     {
@@ -447,24 +447,24 @@ function FaqSection() {
       id: "track",
       q: appCopy("Comment suivre les inscriptions que j'ai référées ?", "How do I track the signups I referred?"),
       a: appCopy(
-        "Connecte-toi à ton dashboard affilié. Si ton lien unique ou ton code a bien été utilisé, tes inscriptions, ventes et gains s'affichent en temps réel.",
-        "Sign in to your affiliate dashboard. If your unique link or code was used, your signups, sales, and earnings show up in real time."
+        "Connecte-toi à ton dashboard clipper. Si ton lien unique ou ton code a bien été utilisé, tes inscriptions, ventes et gains s'affichent en temps réel.",
+        "Sign in to your clipper dashboard. If your unique link or code was used, your signups, sales, and earnings show up in real time."
       ),
     },
     {
       id: "code",
       q: appCopy(
-        "Le code promo tracke-t-il les affiliés même s'ils n'utilisent pas le lien affilié ?",
-        "Does the promo code track affiliates even if they don't use the affiliate link?"
+        "Le code promo tracke-t-il les clippers même s'ils n'utilisent pas le lien clipper ?",
+        "Does the promo code track clippers even if they don't use the clipper link?"
       ),
       a: appCopy(
-        "Oui. Si quelqu'un s'abonne avec ton code créateur sans passer par ton lien, la vente est quand même créditée sur ton compte — comme s'il avait cliqué le lien.",
-        "Yes. If someone subscribes with your creator code without using your link, the sale is still credited to your account — as if they had clicked the link."
+        "Oui. Si quelqu'un s'abonne avec ton code clipper sans passer par ton lien, la vente est quand même créditée sur ton compte — comme s'il avait cliqué le lien.",
+        "Yes. If someone subscribes with your clipper code without using your link, the sale is still credited to your account — as if they had clicked the link."
       ),
     },
     {
       id: "ads",
-      q: appCopy("Est-ce que je peux faire de la pub avec mon lien affilié ?", "Can I run ads with my affiliate link?"),
+      q: appCopy("Est-ce que je peux faire de la pub avec mon lien clipper ?", "Can I run ads with my clipper link?"),
       a: appCopy(
         "La publicité payante n'est pas autorisée. Si tu utilises de la pub payante, tes commissions ne seront pas versées. On peut te demander une preuve des méthodes utilisées en cas de doute.",
         "Paid advertising is not allowed. If you run paid ads, commissions will not be paid. We may ask for proof of the methods used if anything looks off."
@@ -528,7 +528,7 @@ function ClosingSection({ onApply }) {
         {appCopy("Prêt à prendre 50-300$ de commission par jour ?", "Ready to take $50–300 in commission per day?")}
       </h2>
       <button type="button" className="af-ld-ready__cta" onClick={onApply}>
-        {appCopy("Devenir affilié", "Become an affiliate")}
+        {appCopy("Devenir clipper", "Become a clipper")}
         <span aria-hidden>›</span>
       </button>
     </section>
@@ -609,13 +609,13 @@ export function AffiliateLanding({ onApply, onLogin, loggedIn = false, onWorkspa
           <h1 id="af-ld-hero-title" className="af-ld-hero-title">
             {appCopy(
               `Gagnez ${COMMISSION_PERCENT} % du net à vie sur chaque abonnement généré`,
-              `Earn ${COMMISSION_PERCENT}% of net for life on every subscription you generate`
+              `Earn ${COMMISSION_PERCENT}% of the net for life on every subscription you generate`
             )}
           </h1>
           <p className="af-ld-hero-lead">
             {appCopy(
-              `Un lien et un code de réduction. ${COMMISSION_PERCENT} % du net, après Apple / Google. Sans limites.`,
-              `A link and a discount code. ${COMMISSION_PERCENT}% of net, after Apple / Google. No limits.`
+              `Un lien et un code. ${COMMISSION_PERCENT} % du net sur chaque vente. Sans limites.`,
+              `A link and a code. ${COMMISSION_PERCENT}% of the net on every sale. No limits.`
             )}
           </p>
           <HeroCta onApply={onApply} />

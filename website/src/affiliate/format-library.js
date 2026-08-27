@@ -663,26 +663,6 @@ export const FORMAT_LIBRARY = [
       },
     ],
   },
-  {
-    id: "hygin",
-    specId: "04",
-    name: { fr: "Cause → effet", en: "Cause → effect" },
-    formula: {
-      fr: "Hook : comment être mieux dès aujourd’hui.",
-      en: "Hook: how to look better starting today.",
-    },
-    posts: [],
-  },
-  {
-    id: "columns",
-    specId: "05",
-    name: { fr: "Colonnes", en: "Columns" },
-    formula: {
-      fr: "Hook : méthode faible vs méthode qui gagne.",
-      en: "Hook: weak method vs winning method.",
-    },
-    posts: [],
-  },
 ];
 
 export function libraryCollectionById(id) {

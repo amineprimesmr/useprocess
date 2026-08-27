@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { appCopy } from "../features/app-copy.js";
 import { IconCheck, IconCopy, IconExternal } from "./AffiliateIcons.jsx";
+import { playConfirm } from "./action-feedback.jsx";
 import { US_AFTER, US_AGENT_PROMPT, US_BEFORE, US_LINKS } from "./us-guide.js";
 import "./affiliate-us.css";
 
@@ -25,6 +26,7 @@ function CopyPrompt({ value }) {
   async function copy() {
     try {
       await navigator.clipboard.writeText(value);
+      playConfirm();
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
@@ -36,7 +38,7 @@ function CopyPrompt({ value }) {
     <div className="af-us-prompt">
       <div className="af-us-prompt__bar">
         <span>{appCopy("Prompt Cursor / Claude Code", "Cursor / Claude Code prompt")}</span>
-        <button type="button" onClick={copy}>
+        <button type="button" className={copied ? "is-copied" : ""} onClick={copy}>
           {copied ? <IconCheck /> : <IconCopy />}
           {copied ? appCopy("Copié", "Copied") : appCopy("Copier le prompt", "Copy prompt")}
         </button>

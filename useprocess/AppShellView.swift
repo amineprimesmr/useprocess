@@ -84,7 +84,7 @@ struct AppShellView: View {
                 if session.hasCompletedOnboarding {
                     Task { await subscriptionService.checkSubscriptionStatus() }
                 }
-                Task { await CoachDailyRhythmService.refreshEveningNotification() }
+                CoachDailyRhythmService.cancelEveningCheckNotification()
                 if let delegate = UIApplication.shared.delegate as? ProcessAppDelegate {
                     delegate.consumePendingLaunchShortcut()
                 }

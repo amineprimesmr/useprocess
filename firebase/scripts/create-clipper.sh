@@ -70,7 +70,7 @@ echo "$response" | python3 -m json.tool
 
 if [[ -n "$EMAIL" ]]; then
   echo ""
-  echo "Portal: https://useprocess.xyz/affiliate"
+  echo "Portal: https://useprocess.xyz/clipping"
   echo "Email:  $EMAIL"
   echo "Pass:   $PASSWORD"
 fi

@@ -1,5 +1,5 @@
 import { onRequest } from "firebase-functions/v2/https";
-import { affiliateHttpStatus, db, getAffiliateForUid } from "./affiliateShared";
+import { affiliateHttpStatus, db, resolveAffiliateForAuthUser } from "./affiliateShared";
 import {
   normalizeClipperSort,
   rankClippers,
@@ -31,7 +31,7 @@ export const affiliateLeaderboard = onRequest(
       const uid = await verifyFirebaseUser(req);
       await verifyAppAttestation(req);
 
-      const affiliate = await getAffiliateForUid(uid);
+      const affiliate = await resolveAffiliateForAuthUser(uid);
       if (!affiliate) {
         res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
         return;

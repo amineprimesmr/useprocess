@@ -4,6 +4,10 @@
   padding-bottom: 32px;
 }
 
+.af-useful-article--method {
+  max-width: 760px;
+}
+
 .af-useful-hero {
   margin: 4px 0 24px;
 }
@@ -228,4 +232,21 @@
 
 .af-useful-back:hover {
   color: #111;
+}
+
+@media (max-width: 720px) {
+  .af-useful-hero h2 {
+    font-size: 1.35rem;
+  }
+
+  .af-useful-form .af-btn,
+  .af-useful-whatsapp .af-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .af-useful-faq-q,
+  .af-useful-topic {
+    min-height: 48px;
+  }
 }

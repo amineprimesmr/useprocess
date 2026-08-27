@@ -19,7 +19,13 @@ enum ProcessAffiliateLifetimePass {
     }
 
     static func matches(_ raw: String) -> Bool {
-        ProcessReferralCode.normalize(raw) == code
+        let normalized = ProcessReferralCode.normalize(raw)
+        return normalized == code
+    }
+
+    /// Alias explicite — même logique que `matches`, pour les call sites paywall / resolve.
+    static func isLifetimePassCode(_ raw: String) -> Bool {
+        matches(raw)
     }
 
     /// Persiste l’accès et active le premium local. Idempotent.

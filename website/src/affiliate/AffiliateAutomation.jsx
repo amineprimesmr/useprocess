@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { appCopy } from "../features/app-copy.js";
-import { affiliateApi, getAuthToken } from "../features/firebase-client.js";
+import { SuccessActionButton, playConfirm } from "./action-feedback.jsx";
 import "./affiliate-automation.css";
 
 const LOGO = "/assets/affiliate/scrollshow-logo.png";
@@ -21,7 +21,6 @@ const PLATFORMS = [
 const TABS = [
   { id: "calendrier", fr: "Calendrier", en: "Calendar" },
   { id: "connexions", fr: "Connexions", en: "Connect" },
-  { id: "stats", fr: "Stats", en: "Analytics" },
   { id: "mcp", fr: "MCP", en: "MCP" },
 ];
 
@@ -58,6 +57,21 @@ function ymd(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+function previewPosts() {
+  const today = new Date();
+  const at = (offset) => {
+    const date = new Date(today);
+    date.setDate(date.getDate() + offset);
+    return ymd(date);
+  };
+  return [
+    { id: "soon-1", date: at(0), caption: "Guide 72h — avant / après", status: "scheduled" },
+    { id: "soon-2", date: at(1), caption: "Glow-up · 7 jours", status: "scheduled" },
+    { id: "soon-3", date: at(2), caption: "Foods qui bloat", status: "scheduled" },
+    { id: "soon-4", date: at(4), caption: "Scan visage Process", status: "draft" },
+  ];
+}
+
 function fmt(n) {
   return Number(n || 0).toLocaleString();
 }
@@ -87,7 +101,7 @@ function CopyField({ value, copied, onCopy }) {
     <div className="ss-mcp-copy">
       <div className="ss-mcp-copy__row">
         <input readOnly value={value} onFocus={(event) => event.currentTarget.select()} />
-        <button type="button" onClick={onCopy} aria-label={appCopy("Copier", "Copy")}>
+        <button type="button" className={copied ? "is-copied" : ""} onClick={onCopy} aria-label={appCopy("Copier", "Copy")}>
           {copied ? <CheckIcon /> : <CopyIcon />}
         </button>
       </div>
@@ -103,8 +117,8 @@ function ApiBanner({ apiReady, onConnect }) {
         <strong>{appCopy("API TikTok en revue", "TikTok API in review")}</strong>
         <p>
           {appCopy(
-            "Tout est déjà branché à 100 % : connexions, calendrier, stats, clés MCP. Dès que TikTok valide l'app, Connecter ouvre le vrai Login Kit.",
-            "Everything is already wired: connections, calendar, stats, MCP keys. When TikTok approves the app, Connect opens the real Login Kit."
+            "Tout est déjà branché à 100 % : connexions, calendrier, clés MCP. Dès que TikTok valide l'app, Connecter ouvre le vrai Login Kit.",
+            "Everything is already wired: connections, calendar, MCP keys. When TikTok approves the app, Connect opens the real Login Kit."
           )}
         </p>
       </div>
@@ -294,59 +308,6 @@ function ConnectionsPane({ studio, busy, onConnect, onDisconnect }) {
   );
 }
 
-function StatsPane({ studio, onConnect, onRefresh, busy }) {
-  const totals = studio.totals || {};
-  const cards = [
-    { label: appCopy("Comptes", "Accounts"), value: totals.accounts },
-    { label: appCopy("Connectés", "Connected"), value: totals.connected },
-    { label: appCopy("Abonnés", "Followers"), value: totals.followers },
-    { label: appCopy("Vues", "Views"), value: totals.views },
-    { label: appCopy("Likes", "Likes"), value: totals.likes },
-    { label: appCopy("Vidéos", "Videos"), value: totals.videoCount },
-  ];
-  if (!studio.accounts.length) {
-    return (
-      <div className="ss-empty">
-        <h2>{appCopy("Pas encore de stats", "No stats yet")}</h2>
-        <p>{appCopy("Connecte TikTok pour voir tes vues, likes et posts.", "Connect TikTok to see views, likes and posts.")}</p>
-        <button type="button" className="ss-btn-purple" onClick={onConnect}>
-          {appCopy("Connecter TikTok", "Connect TikTok")}
-        </button>
-      </div>
-    );
-  }
-  return (
-    <div>
-      <div className="ss-page-intro">
-        <p>{appCopy("Stats de tous tes comptes TikTok connectés.", "Stats across every connected TikTok account.")}</p>
-        <button type="button" className="ss-btn-ghost" disabled={busy} onClick={onRefresh}>
-          {busy ? appCopy("Sync…", "Sync…") : appCopy("Actualiser", "Refresh")}
-        </button>
-      </div>
-      <div className="ss-metrics">
-        {cards.map((card) => (
-          <div key={card.label} className="ss-metric">
-            <span>{card.label}</span>
-            <b>{fmt(card.value)}</b>
-          </div>
-        ))}
-      </div>
-      <div className="ss-account-table">
-        {studio.accounts.map((row) => (
-          <article key={row.id}>
-            <strong>@{row.handle || row.name}</strong>
-            <span>{row.connected ? appCopy("Connecté", "Connected") : appCopy("En attente", "Waiting")}</span>
-            <span>{fmt(row.followers)} {appCopy("abonnés", "followers")}</span>
-            <span>{fmt(row.views)} {appCopy("vues", "views")}</span>
-            <span>{fmt(row.likes)} likes</span>
-            <span>{fmt(row.videoCount)} {appCopy("vidéos", "videos")}</span>
-          </article>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function McpPane({ studio, user, onCreateKey, onRevoke, onOpenCalendar, busy, revealed }) {
   const [client, setClient] = useState("claude");
   const [copied, setCopied] = useState("");
@@ -366,6 +327,7 @@ function McpPane({ studio, user, onCreateKey, onRevoke, onOpenCalendar, busy, re
 
   async function copy(id, text) {
     await navigator.clipboard.writeText(text);
+    playConfirm();
     setCopied(id);
     window.setTimeout(() => setCopied((cur) => (cur === id ? "" : cur)), 1600);
   }
@@ -489,9 +451,14 @@ function McpPane({ studio, user, onCreateKey, onRevoke, onOpenCalendar, busy, re
           {revealed ? (
             <CopyField value={revealed} copied={copied === "key"} onCopy={() => void copy("key", revealed)} />
           ) : (
-            <button type="button" className="ss-btn-purple" disabled={busy} onClick={onCreateKey}>
-              {busy ? appCopy("Création…", "Creating…") : appCopy("Créer une clé", "Create a key")}
-            </button>
+            <SuccessActionButton
+              className="ss-btn-purple"
+              disabled={busy}
+              idleLabel={appCopy("Créer une clé", "Create a key")}
+              savingLabel={appCopy("Création…", "Creating…")}
+              successLabel={appCopy("Créée", "Created")}
+              onAction={onCreateKey}
+            />
           )}
         </div>
         {studio.keys?.length ? (
@@ -571,7 +538,7 @@ function PostModal({ open, post, accounts, onClose, onSave, onDelete, busy }) {
         ) : null}
         <div className="ss-dialog-actions">
           {post?.id ? (
-            <button type="button" className="ss-btn-ghost" onClick={() => onDelete(post.id)}>
+            <button type="button" className="ss-btn-ghost" disabled={busy} onClick={() => onDelete(post.id)}>
               {appCopy("Supprimer", "Delete")}
             </button>
           ) : (
@@ -580,172 +547,40 @@ function PostModal({ open, post, accounts, onClose, onSave, onDelete, busy }) {
           <button type="button" className="ss-btn-ghost" onClick={onClose}>
             {appCopy("Fermer", "Close")}
           </button>
-          <button
-            type="button"
+          <SuccessActionButton
             className="ss-btn-purple"
-            disabled={busy || !caption.trim()}
-            onClick={() => onSave({ id: post?.id, caption, date, time, status, channelIds })}
-          >
-            {busy ? appCopy("Enregistrement…", "Saving…") : appCopy("Enregistrer", "Save")}
-          </button>
+            disabled={!caption.trim()}
+            idleLabel={appCopy("Enregistrer", "Save")}
+            onAction={() => onSave({ id: post?.id, caption, date, time, status, channelIds })}
+            onSuccess={() => {
+              window.setTimeout(() => onClose(), 800);
+            }}
+          />
         </div>
       </div>
     </div>
   );
 }
 
-export function AffiliateAutomationPage({ user, dashboard, query, go }) {
-  const tab = String(query?.tab || "calendrier");
-  const [studio, setStudio] = useState(() => emptyStudio(dashboard));
-  const [busy, setBusy] = useState("");
-  const [error, setError] = useState("");
-  const [revealed, setRevealed] = useState("");
-  const [modal, setModal] = useState(null);
-
-  const call = useCallback(
-    async (body) => {
-      if (!user) throw new Error("UNAUTHORIZED");
-      const token = await getAuthToken(user);
-      return affiliateApi("affiliateTikTokStudio", { token, body, timeoutMs: 20000 });
-    },
-    [user]
-  );
-
-  const load = useCallback(async () => {
-    try {
-      const data = await call({ action: "list" });
-      setStudio({
-        apiReady: Boolean(data.apiReady),
-        accounts: data.accounts || [],
-        totals: data.totals || emptyStudio().totals,
-        posts: data.posts || [],
-        keys: data.keys || [],
-      });
-    } catch {
-      setStudio(emptyStudio(dashboard));
-    }
-  }, [call, dashboard]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  useEffect(() => {
-    if (query?.connected === "tiktok") void load();
-    if (query?.error) setError(String(query.error));
-  }, [query?.connected, query?.error, load]);
-
-  function setTab(id) {
-    go(`automatisation?tab=${id}`);
-  }
-
-  async function connect() {
-    setBusy("connect");
-    setError("");
-    try {
-      const data = await call({ action: "connectStart" });
-      if (data.url) {
-        window.location.href = data.url;
-        return;
-      }
-      setError(
-        appCopy(
-          "L'API TikTok n'est pas encore validée. Le bouton est déjà branché — ça s'ouvrira tout seul dès l'approbation.",
-          "The TikTok API is not approved yet. The button is already wired — it will open as soon as it's approved."
-        )
-      );
-    } catch (err) {
-      setError(err.message || "connect");
-    } finally {
-      setBusy("");
-    }
-  }
-
-  async function disconnect(accountId) {
-    setBusy(accountId);
-    try {
-      const data = await call({ action: "disconnect", accountId });
-      setStudio((prev) => ({ ...prev, ...data }));
-    } finally {
-      setBusy("");
-    }
-  }
-
-  async function savePost(payload) {
-    setBusy("post");
-    try {
-      const data = await call({ action: "savePost", ...payload });
-      setStudio((prev) => ({ ...prev, ...data }));
-      setModal(null);
-    } finally {
-      setBusy("");
-    }
-  }
-
-  async function deletePost(id) {
-    setBusy("post");
-    try {
-      const data = await call({ action: "deletePost", id });
-      setStudio((prev) => ({ ...prev, ...data }));
-      setModal(null);
-    } finally {
-      setBusy("");
-    }
-  }
-
-  async function createKey() {
-    setBusy("key");
-    try {
-      const data = await call({ action: "createKey", name: "Agent" });
-      setRevealed(data.token || "");
-      setStudio((prev) => ({ ...prev, ...data }));
-    } finally {
-      setBusy("");
-    }
-  }
-
+export function AffiliateAutomationPage() {
   return (
-    <div className="af-cook">
-      <nav className="ss-studio-tabs" aria-label={appCopy("Automatiser", "Automate")}>
-        {TABS.map((item) => (
-          <button key={item.id} type="button" className={tab === item.id ? "is-on" : ""} onClick={() => setTab(item.id)}>
-            {appCopy(item.fr, item.en)}
-          </button>
-        ))}
-      </nav>
-      <ApiBanner apiReady={studio.apiReady} onConnect={connect} />
-      {error ? <p className="ss-mcp-error">{error}</p> : null}
-
-      {tab === "calendrier" ? (
-        <CalendarPane posts={studio.posts} onCreate={() => setModal({})} onOpen={(post) => setModal(post)} />
-      ) : null}
-      {tab === "connexions" ? (
-        <ConnectionsPane studio={studio} busy={busy} onConnect={connect} onDisconnect={disconnect} />
-      ) : null}
-      {tab === "stats" ? (
-        <StatsPane studio={studio} onConnect={() => setTab("connexions")} onRefresh={() => call({ action: "refreshStats" }).then((data) => setStudio((prev) => ({ ...prev, ...data })))} busy={busy === "refresh"} />
-      ) : null}
-      {tab === "mcp" ? (
-        <McpPane
-          studio={studio}
-          user={user}
-          busy={busy === "key"}
-          revealed={revealed}
-          onCreateKey={createKey}
-          onRevoke={(id) => call({ action: "revokeKey", id }).then((data) => setStudio((prev) => ({ ...prev, ...data })))}
-          onOpenCalendar={() => setTab("calendrier")}
-        />
-      ) : null}
-
-      <PostModal
-        open={modal !== null}
-        post={modal}
-        accounts={studio.accounts}
-        busy={busy === "post"}
-        onClose={() => setModal(null)}
-        onSave={savePost}
-        onDelete={deletePost}
-      />
+    <div className="af-cook ss-soon-page">
+      <div className="ss-soon-blur" aria-hidden="true">
+        <nav className="ss-studio-tabs" aria-label={appCopy("Automatiser", "Automate")}>
+          {TABS.map((item) => (
+            <button key={item.id} type="button" className={item.id === "calendrier" ? "is-on" : ""}>
+              {appCopy(item.fr, item.en)}
+            </button>
+          ))}
+        </nav>
+        <CalendarPane posts={previewPosts()} onCreate={() => {}} onOpen={() => {}} />
+      </div>
+      <div className="af-tiktok-soon-overlay" role="status">
+        <span className="af-tiktok-soon-emoji" aria-hidden>
+          🚧
+        </span>
+        <strong>{appCopy("Disponible bientôt", "Coming soon")}</strong>
+      </div>
     </div>
   );
 }

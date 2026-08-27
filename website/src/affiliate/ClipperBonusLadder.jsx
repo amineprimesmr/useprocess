@@ -50,8 +50,8 @@ const CONDITIONS = [
     en: "Claim in a DM to leks, with the TikTok account link, as soon as a tier is hit.",
   },
   {
-    fr: `C’est en plus des ${COMMISSION_PERCENT} % du net (après Apple / Google) — pas à la place.`,
-    en: `This is on top of ${COMMISSION_PERCENT}% of net (after Apple / Google) — not instead of it.`,
+    fr: `C’est en plus des ${COMMISSION_PERCENT} % du net — pas à la place.`,
+    en: `This is on top of ${COMMISSION_PERCENT}% of the net — not instead of it.`,
   },
 ];
 
@@ -67,7 +67,7 @@ export function ClipperBonusLadder() {
             {appCopy("À vie", "For life")} <em>{COMMISSION_PERCENT}%</em>
           </p>
           <p className="af-md-ladder__life-sub">
-            {appCopy("du net, après Apple / Google", "of net, after Apple / Google")}
+            {appCopy("du net sur chaque vente", "of the net on every sale")}
           </p>
         </div>
       </div>

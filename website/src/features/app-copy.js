@@ -59,7 +59,14 @@ export function usesAutoSiteLanguage() {
   const hasReferral = Boolean(params.get("ref") || params.get("code"));
 
   if (host === "join.useprocess.xyz" || host === "get.useprocess.xyz") return true;
-  if (path === "/affiliate" || path === "/affiliate.html") return true;
+  if (
+    path === "/clipping" ||
+    path === "/clipping.html" ||
+    path === "/affiliate" ||
+    path === "/affiliate.html"
+  ) {
+    return true;
+  }
 
   return (
     path === "/app" ||

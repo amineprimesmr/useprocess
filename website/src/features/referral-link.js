@@ -21,7 +21,7 @@ export function normalizeReferralCode(raw) {
     .slice(0, REFERRAL_CODE_LENGTH);
 }
 
-/** Codes affiliés / join (plus longs que les codes parrainage à 5 caractères). */
+/** Codes clipper / join (plus longs que les codes parrainage à 5 caractères). */
 export function normalizeAcquisitionCodeFromUrl(raw) {
   return String(raw || "")
     .trim()

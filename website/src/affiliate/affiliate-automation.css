@@ -9,6 +9,24 @@
   letter-spacing: -0.02em;
 }
 
+.ss-soon-page {
+  position: relative;
+  overflow: hidden;
+  min-height: 560px;
+  border-radius: 18px;
+}
+
+.ss-soon-page .ss-soon-blur {
+  filter: blur(9px);
+  transform: scale(1.02);
+  user-select: none;
+  pointer-events: none;
+}
+
+.ss-soon-page .af-tiktok-soon-overlay {
+  border-radius: 18px;
+}
+
 .af-cook .ss-btn-purple,
 .af-cook .ss-btn-ghost {
   display: inline-flex;
@@ -269,14 +287,9 @@
   font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-.af-cook .ss-mcp-copy button {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  border: 0;
-  border-left: 1px solid var(--ss-line);
-  background: transparent;
-  color: var(--ss-muted);
+.af-cook .ss-mcp-copy button.is-copied {
+  color: #059669;
+  animation: af-success-pop 0.4s cubic-bezier(0.22, 1.15, 0.36, 1);
 }
 
 .af-cook .ss-mcp-foot {
@@ -365,6 +378,19 @@
   .af-cook .ss-mcp-orbit__item.is-core {
     width: 64px;
     height: 64px;
+  }
+
+  .af-cook .ss-btn-purple,
+  .af-cook .ss-btn-ghost,
+  .ss-studio-tabs button {
+    min-height: 44px;
+  }
+
+  .ss-studio-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
 }
 
@@ -601,49 +627,6 @@
   border: 1px solid var(--ss-line, #ececec);
   border-radius: 14px;
   background: #fff;
-}
-
-.ss-metrics {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.ss-metric {
-  padding: 16px;
-  border: 1px solid var(--ss-line, #ececec);
-  border-radius: 18px;
-  background: #fff;
-}
-
-.ss-metric span {
-  color: var(--ss-muted, #52525b);
-  font-size: 12px;
-  font-weight: 650;
-}
-
-.ss-metric b {
-  display: block;
-  margin-top: 10px;
-  font-size: 24px;
-  letter-spacing: -0.04em;
-}
-
-.ss-account-table {
-  display: grid;
-  gap: 8px;
-}
-
-.ss-account-table article {
-  display: grid;
-  grid-template-columns: 1.2fr repeat(5, 1fr);
-  gap: 8px;
-  padding: 12px 14px;
-  border: 1px solid var(--ss-line, #ececec);
-  border-radius: 14px;
-  background: #fff;
-  font-size: 13px;
 }
 
 .ss-empty {

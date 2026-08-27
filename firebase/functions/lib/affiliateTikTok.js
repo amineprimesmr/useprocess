@@ -50,7 +50,7 @@ const REVOKE_URL = "https://open.tiktokapis.com/v2/oauth/revoke/";
 const USER_INFO = "https://open.tiktokapis.com/v2/user/info/";
 const VIDEO_LIST = "https://open.tiktokapis.com/v2/video/list/";
 const CONTENT_INIT = "https://open.tiktokapis.com/v2/post/publish/content/init/";
-const SITE = "https://useprocess.xyz/affiliate";
+const SITE = "https://useprocess.xyz/clipping";
 const DEFAULT_REDIRECT = "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateTikTokOAuthCallback";
 const USER_INFO_FIELDS = [
     "open_id",
@@ -404,7 +404,7 @@ exports.affiliateTikTokStudio = (0, https_1.onRequest)({
     try {
         const uid = await (0, referralShared_1.verifyFirebaseUser)(req);
         await (0, referralShared_1.verifyAppAttestation)(req);
-        const affiliate = await (0, affiliateShared_1.getAffiliateForUid)(uid);
+        const affiliate = await (0, affiliateShared_1.resolveAffiliateForAuthUser)(uid);
         if (!affiliate) {
             res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
             return;

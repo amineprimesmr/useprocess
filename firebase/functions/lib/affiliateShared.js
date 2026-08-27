@@ -33,12 +33,14 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.commissionFromRevenueCatEvent = exports.LIFETIME_PRODUCT_ID = exports.AFFILIATE_NET_FACTOR = exports.AFFILIATE_HOLD_DAYS = exports.AFFILIATE_COMMISSION_RATE = void 0;
+exports.commissionFromRevenueCatEvent = exports.APPLE_PRIVATE_RELAY_DOMAIN = exports.LIFETIME_PRODUCT_ID = exports.AFFILIATE_NET_FACTOR = exports.AFFILIATE_HOLD_DAYS = exports.AFFILIATE_COMMISSION_RATE = void 0;
 exports.db = db;
 exports.normalizeAffiliateCode = normalizeAffiliateCode;
 exports.isReservedVanityAffiliateCode = isReservedVanityAffiliateCode;
 exports.allocateUniqueAffiliateCode = allocateUniqueAffiliateCode;
+exports.isAppleRelayEmail = isAppleRelayEmail;
 exports.affiliateHttpStatus = affiliateHttpStatus;
+exports.affiliateEmailEligibleForLoginLink = affiliateEmailEligibleForLoginLink;
 exports.resolveAffiliateByCode = resolveAffiliateByCode;
 exports.resolveCodeKind = resolveCodeKind;
 exports.commissionDocId = commissionDocId;
@@ -60,6 +62,9 @@ exports.provisionAffiliateAuthUser = provisionAffiliateAuthUser;
 exports.linkAffiliateAuthUser = linkAffiliateAuthUser;
 exports.verifyAffiliateAdmin = verifyAffiliateAdmin;
 exports.getAffiliateForUid = getAffiliateForUid;
+exports.getAffiliateByEmail = getAffiliateByEmail;
+exports.linkAffiliateUid = linkAffiliateUid;
+exports.resolveAffiliateForAuthUser = resolveAffiliateForAuthUser;
 exports.formatMoney = formatMoney;
 const admin = __importStar(require("firebase-admin"));
 const revenueCat_1 = require("./revenueCat");
@@ -135,6 +140,16 @@ async function allocateUniqueAffiliateCode(displayName) {
         return fallback;
     return normalizeAffiliateCode(`P${Math.random().toString(36).slice(2, 10).toUpperCase()}`);
 }
+exports.APPLE_PRIVATE_RELAY_DOMAIN = "privaterelay.appleid.com";
+/**
+ * Apple "Hide My Email" relay addresses only accept mail from senders registered in
+ * Apple Developer → Sign in with Apple for Email Communication. Anything else is
+ * rejected at RCPT TO with `550 5.1.1 unauthorized sender`, hours after we replied OK.
+ */
+function isAppleRelayEmail(rawEmail) {
+    const email = String(rawEmail || "").trim().toLowerCase();
+    return email.endsWith(`@${exports.APPLE_PRIVATE_RELAY_DOMAIN}`);
+}
 function affiliateHttpStatus(message) {
     if (message === "UNAUTHORIZED")
         return 401;
@@ -172,7 +187,51 @@ function affiliateHttpStatus(message) {
         return 400;
     if (message === "INVALID_PAYOUT")
         return 400;
+    if (message === "EMAIL_NOT_FOUND")
+        return 404;
+    if (message === "INVALID_EMAIL")
+        return 400;
+    if (message === "SMTP_NOT_CONFIGURED")
+        return 503;
+    if (message === "INVALID_CONTINUE_URL")
+        return 400;
+    if (message === "EMAIL_MISMATCH")
+        return 409;
+    if (message === "APPLE_RELAY_EMAIL")
+        return 409;
+    if (message === "EMAIL_IN_USE")
+        return 409;
+    if (message === "HANDOFF_INVALID")
+        return 404;
+    if (message === "HANDOFF_EXPIRED")
+        return 410;
     return 500;
+}
+/** True when this email can receive a clipper login link (Firebase Auth or affiliate profile). */
+async function affiliateEmailEligibleForLoginLink(rawEmail) {
+    const trimmed = String(rawEmail || "").trim();
+    const email = trimmed.toLowerCase();
+    if (!email || !email.includes("@"))
+        return false;
+    try {
+        const user = await admin.auth().getUserByEmail(email);
+        if (!user.disabled && user.email?.toLowerCase() === email)
+            return true;
+    }
+    catch (error) {
+        if (error?.code !== "auth/user-not-found")
+            throw error;
+    }
+    for (const candidate of [email, trimmed]) {
+        const snap = await db()
+            .collection("affiliates")
+            .where("email", "==", candidate)
+            .limit(1)
+            .get();
+        if (!snap.empty)
+            return true;
+    }
+    return false;
 }
 async function resolveAffiliateByCode(code) {
     const normalized = normalizeAffiliateCode(code);
@@ -804,10 +863,74 @@ async function getAffiliateForUid(uid) {
         .where("uid", "==", uid)
         .limit(1)
         .get();
-    if (snapshot.empty)
+    if (!snapshot.empty) {
+        const doc = snapshot.docs[0];
+        return { affiliateId: doc.id, ...doc.data() };
+    }
+    const byId = await db().collection("affiliates").doc(uid).get();
+    if (!byId.exists)
         return null;
-    const doc = snapshot.docs[0];
-    return { affiliateId: doc.id, ...doc.data() };
+    const data = byId.data();
+    return { affiliateId: byId.id, ...data };
+}
+async function getAffiliateByEmail(rawEmail) {
+    const trimmed = String(rawEmail || "").trim();
+    const email = trimmed.toLowerCase();
+    if (!email || !email.includes("@"))
+        return null;
+    for (const candidate of [email, trimmed]) {
+        const snapshot = await db()
+            .collection("affiliates")
+            .where("email", "==", candidate)
+            .limit(1)
+            .get();
+        if (!snapshot.empty) {
+            const doc = snapshot.docs[0];
+            return { affiliateId: doc.id, ...doc.data() };
+        }
+    }
+    return null;
+}
+/** Attach a Firebase Auth session (new device / email login) to an existing clipper profile. */
+async function linkAffiliateUid(params) {
+    const affiliateId = params.affiliateId.trim();
+    const uid = params.uid.trim();
+    if (!affiliateId || !uid)
+        throw new Error("NOT_FOUND");
+    const ref = db().collection("affiliates").doc(affiliateId);
+    const snap = await ref.get();
+    if (!snap.exists)
+        throw new Error("NOT_FOUND");
+    const row = snap.data();
+    const nextEmail = params.email?.trim().toLowerCase() || row.email || null;
+    if (nextEmail && row.email && row.email.toLowerCase() !== nextEmail) {
+        throw new Error("EMAIL_MISMATCH");
+    }
+    await ref.set({
+        uid,
+        ...(nextEmail ? { email: nextEmail.slice(0, 120) } : {}),
+        updatedAt: admin.firestore.Timestamp.now(),
+    }, { merge: true });
+}
+async function resolveAffiliateForAuthUser(uid) {
+    const byUid = await getAffiliateForUid(uid);
+    if (byUid)
+        return byUid;
+    let authEmail = "";
+    try {
+        const authUser = await admin.auth().getUser(uid);
+        authEmail = String(authUser.email || "").trim().toLowerCase();
+        if (!authEmail)
+            return null;
+    }
+    catch {
+        return null;
+    }
+    const byEmail = await getAffiliateByEmail(authEmail);
+    if (!byEmail)
+        return null;
+    await linkAffiliateUid({ affiliateId: byEmail.affiliateId, uid, email: authEmail });
+    return { ...byEmail, uid, email: byEmail.email || authEmail };
 }
 function formatMoney(cents, currency = "EUR") {
     const amount = cents / 100;

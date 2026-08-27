@@ -160,6 +160,18 @@ export async function allocateUniqueAffiliateCode(displayName: string): Promise<
   return normalizeAffiliateCode(`P${Math.random().toString(36).slice(2, 10).toUpperCase()}`);
 }
 
+export const APPLE_PRIVATE_RELAY_DOMAIN = "privaterelay.appleid.com";
+
+/**
+ * Apple "Hide My Email" relay addresses only accept mail from senders registered in
+ * Apple Developer → Sign in with Apple for Email Communication. Anything else is
+ * rejected at RCPT TO with `550 5.1.1 unauthorized sender`, hours after we replied OK.
+ */
+export function isAppleRelayEmail(rawEmail: string): boolean {
+  const email = String(rawEmail || "").trim().toLowerCase();
+  return email.endsWith(`@${APPLE_PRIVATE_RELAY_DOMAIN}`);
+}
+
 export function affiliateHttpStatus(message: string): number {
   if (message === "UNAUTHORIZED") return 401;
   if (message === "FORBIDDEN") return 403;
@@ -179,7 +191,41 @@ export function affiliateHttpStatus(message: string): number {
   if (message === "INVALID_TEXT") return 400;
   if (message === "INVALID_PHONE") return 400;
   if (message === "INVALID_PAYOUT") return 400;
+  if (message === "EMAIL_NOT_FOUND") return 404;
+  if (message === "INVALID_EMAIL") return 400;
+  if (message === "SMTP_NOT_CONFIGURED") return 503;
+  if (message === "INVALID_CONTINUE_URL") return 400;
+  if (message === "EMAIL_MISMATCH") return 409;
+  if (message === "APPLE_RELAY_EMAIL") return 409;
+  if (message === "EMAIL_IN_USE") return 409;
+  if (message === "HANDOFF_INVALID") return 404;
+  if (message === "HANDOFF_EXPIRED") return 410;
   return 500;
+}
+
+/** True when this email can receive a clipper login link (Firebase Auth or affiliate profile). */
+export async function affiliateEmailEligibleForLoginLink(rawEmail: string): Promise<boolean> {
+  const trimmed = String(rawEmail || "").trim();
+  const email = trimmed.toLowerCase();
+  if (!email || !email.includes("@")) return false;
+
+  try {
+    const user = await admin.auth().getUserByEmail(email);
+    if (!user.disabled && user.email?.toLowerCase() === email) return true;
+  } catch (error: any) {
+    if (error?.code !== "auth/user-not-found") throw error;
+  }
+
+  for (const candidate of [email, trimmed]) {
+    const snap = await db()
+      .collection("affiliates")
+      .where("email", "==", candidate)
+      .limit(1)
+      .get();
+    if (!snap.empty) return true;
+  }
+
+  return false;
 }
 
 export async function resolveAffiliateByCode(
@@ -1014,9 +1060,87 @@ export async function getAffiliateForUid(
     .limit(1)
     .get();
 
-  if (snapshot.empty) return null;
-  const doc = snapshot.docs[0];
-  return { affiliateId: doc.id, ...(doc.data() as AffiliateDoc) };
+  if (!snapshot.empty) {
+    const doc = snapshot.docs[0];
+    return { affiliateId: doc.id, ...(doc.data() as AffiliateDoc) };
+  }
+
+  const byId = await db().collection("affiliates").doc(uid).get();
+  if (!byId.exists) return null;
+  const data = byId.data() as AffiliateDoc;
+  return { affiliateId: byId.id, ...data };
+}
+
+export async function getAffiliateByEmail(
+  rawEmail: string
+): Promise<(AffiliateDoc & { affiliateId: string }) | null> {
+  const trimmed = String(rawEmail || "").trim();
+  const email = trimmed.toLowerCase();
+  if (!email || !email.includes("@")) return null;
+
+  for (const candidate of [email, trimmed]) {
+    const snapshot = await db()
+      .collection("affiliates")
+      .where("email", "==", candidate)
+      .limit(1)
+      .get();
+    if (!snapshot.empty) {
+      const doc = snapshot.docs[0];
+      return { affiliateId: doc.id, ...(doc.data() as AffiliateDoc) };
+    }
+  }
+
+  return null;
+}
+
+/** Attach a Firebase Auth session (new device / email login) to an existing clipper profile. */
+export async function linkAffiliateUid(params: {
+  affiliateId: string;
+  uid: string;
+  email?: string;
+}): Promise<void> {
+  const affiliateId = params.affiliateId.trim();
+  const uid = params.uid.trim();
+  if (!affiliateId || !uid) throw new Error("NOT_FOUND");
+
+  const ref = db().collection("affiliates").doc(affiliateId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new Error("NOT_FOUND");
+
+  const row = snap.data() as AffiliateDoc;
+  const nextEmail = params.email?.trim().toLowerCase() || row.email || null;
+  if (nextEmail && row.email && row.email.toLowerCase() !== nextEmail) {
+    throw new Error("EMAIL_MISMATCH");
+  }
+
+  await ref.set(
+    {
+      uid,
+      ...(nextEmail ? { email: nextEmail.slice(0, 120) } : {}),
+      updatedAt: admin.firestore.Timestamp.now(),
+    },
+    { merge: true }
+  );
+}
+
+export async function resolveAffiliateForAuthUser(uid: string): Promise<(AffiliateDoc & { affiliateId: string }) | null> {
+  const byUid = await getAffiliateForUid(uid);
+  if (byUid) return byUid;
+
+  let authEmail = "";
+  try {
+    const authUser = await admin.auth().getUser(uid);
+    authEmail = String(authUser.email || "").trim().toLowerCase();
+    if (!authEmail) return null;
+  } catch {
+    return null;
+  }
+
+  const byEmail = await getAffiliateByEmail(authEmail);
+  if (!byEmail) return null;
+
+  await linkAffiliateUid({ affiliateId: byEmail.affiliateId, uid, email: authEmail });
+  return { ...byEmail, uid, email: byEmail.email || authEmail };
 }
 
 export function formatMoney(cents: number, currency = "EUR"): string {

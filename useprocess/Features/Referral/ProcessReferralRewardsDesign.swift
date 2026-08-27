@@ -437,8 +437,8 @@ struct ProcessReferralGlassSocialShareRow: View {
 
         return VStack(spacing: 8) {
             Button {
-                openURL(ProcessAffiliatePortalLink.urlForCurrentUser())
                 HapticManager.shared.impact(.light)
+                Task { openURL(await ProcessAffiliatePortalLink.portalURLForCurrentUser()) }
             } label: {
                 Image("PlanHomeUpgradeDollar")
                     .resizable()

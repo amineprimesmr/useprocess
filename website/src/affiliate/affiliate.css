@@ -460,8 +460,93 @@ html.page-affiliate #affiliate-root:has(.af-shell) {
   background: #1f2937;
 }
 
-.af-btn-copied {
+.af-btn-copied,
+.af-btn.is-success,
+.ss-btn-purple.is-success,
+.af-lib-add.is-success,
+.af-copy-btn.is-copied {
   background: #059669 !important;
+  border-color: #059669 !important;
+  color: #fff !important;
+  animation: af-success-pop 0.48s cubic-bezier(0.22, 1.15, 0.36, 1);
+}
+
+.af-btn.is-saving:disabled,
+.af-btn.is-success:disabled,
+.ss-btn-purple.is-saving:disabled,
+.ss-btn-purple.is-success:disabled,
+.af-lib-add.is-saving:disabled,
+.af-lib-add.is-success:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.af-action-spin {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgb(255 255 255 / 0.28);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: af-action-spin 0.55s linear infinite;
+}
+
+.af-action-check {
+  display: grid;
+  width: 14px;
+  height: 14px;
+  animation: af-check-in 0.28s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+.af-action-check svg {
+  width: 14px;
+  height: 14px;
+}
+
+@keyframes af-success-pop {
+  0% {
+    transform: scale(0.96);
+    box-shadow: 0 0 0 0 rgb(5 150 105 / 0.45);
+  }
+  55% {
+    transform: scale(1.045);
+    box-shadow: 0 0 0 10px rgb(5 150 105 / 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgb(5 150 105 / 0);
+  }
+}
+
+@keyframes af-action-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes af-check-in {
+  from {
+    transform: scale(0.35);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .af-btn.is-success,
+  .ss-btn-purple.is-success,
+  .af-lib-add.is-success,
+  .af-copy-btn.is-copied,
+  .af-btn-copied,
+  .af-action-check {
+    animation: none;
+  }
+
+  .af-action-spin {
+    animation: af-action-spin 1.2s linear infinite;
+  }
 }
 
 /* ── Program landing ── */
@@ -638,14 +723,28 @@ html.page-affiliate #affiliate-root:has(.af-shell) {
   overflow-y: auto;
 }
 
+.af-sidebar-logo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
 .af-sidebar-logo {
   font-weight: 800;
   font-size: 15px;
   letter-spacing: -0.04em;
-  margin-bottom: 12px;
   padding-left: 6px;
   flex-shrink: 0;
   white-space: nowrap;
+}
+
+.af-sidebar-close,
+.af-mobile-bar,
+.af-nav-backdrop {
+  display: none;
 }
 
 .af-program-switch {
@@ -710,6 +809,14 @@ html.page-affiliate #affiliate-root:has(.af-shell) {
 .af-nav-item svg {
   width: 16px;
   height: 16px;
+  flex-shrink: 0;
+}
+
+.af-nav-item .af-nav-process-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  object-fit: cover;
   flex-shrink: 0;
 }
 
@@ -1757,9 +1864,20 @@ button.af-support-link {
 }
 
 @media (max-width: 960px) {
+  html.page-affiliate,
+  html.page-affiliate body {
+    overflow-x: hidden;
+  }
+
+  body.af-nav-lock {
+    overflow: hidden;
+    touch-action: none;
+  }
+
   .af-shell {
     grid-template-columns: 1fr;
     height: auto;
+    min-height: 100dvh;
     max-height: none;
     overflow: visible;
   }
@@ -1770,15 +1888,136 @@ button.af-support-link {
     overflow: visible;
   }
 
+  .af-mobile-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 1100;
+    min-height: 52px;
+    padding:
+      max(8px, env(safe-area-inset-top, 0px))
+      12px
+      8px
+      max(10px, env(safe-area-inset-left, 0px));
+    background: rgb(255 255 255 / 0.92);
+    border-bottom: 1px solid var(--af-border);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .af-mobile-bar__btn,
+  .af-mobile-bar__user,
+  .af-sidebar-close {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #111827;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .af-mobile-bar__btn svg,
+  .af-sidebar-close svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .af-mobile-bar__title {
+    flex: 1;
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .af-mobile-bar__user {
+    margin-right: max(4px, env(safe-area-inset-right, 0px));
+  }
+
+  .af-mobile-bar__user .af-app-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .af-nav-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 1240;
+    border: 0;
+    padding: 0;
+    background: rgb(15 23 42 / 0.42);
+    cursor: pointer;
+  }
+
   .af-sidebar {
-    display: none;
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1300;
+    width: min(86vw, 320px);
+    max-width: 320px;
+    height: 100dvh;
+    max-height: 100dvh;
+    transform: translateX(-105%);
+    transition: transform 0.22s ease;
+    padding-top: max(16px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+    box-shadow: 12px 0 40px rgb(0 0 0 / 0.12);
+  }
+
+  .af-shell.is-nav-open .af-sidebar {
+    transform: translateX(0);
+  }
+
+  .af-sidebar-close {
+    display: grid;
+  }
+
+  .af-nav-item,
+  .af-nav-label,
+  .af-sidebar-user {
+    min-height: 44px;
   }
 
   .af-main {
     height: auto;
     max-height: none;
     overflow: visible;
-    padding: 20px 16px 40px;
+    padding: 16px 14px calc(112px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .af-page-head {
+    display: none;
+  }
+
+  .af-link-row,
+  .af-link-card-top,
+  .af-link-card-actions,
+  .af-stripe-panel-head,
+  .af-stripe-panel-actions {
+    flex-wrap: wrap;
+  }
+
+  .af-link-row-text,
+  .af-link-card-actions .af-btn {
+    width: 100%;
+  }
+
+  .af-link-card-actions .af-btn {
+    min-height: 44px;
   }
 
   .af-program {
@@ -1789,7 +2028,8 @@ button.af-support-link {
   .af-stats-grid,
   .af-stats-bottom,
   .af-payout-cards,
-  .af-metrics-row {
+  .af-metrics-row,
+  .af-payouts-overview-body {
     grid-template-columns: 1fr;
   }
 
@@ -1806,8 +2046,48 @@ button.af-support-link {
     grid-template-columns: 1fr;
   }
 
+  .af-tiktok-soon-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .af-settings-layout {
     grid-template-columns: 1fr;
+  }
+
+  .af-wa-fab-wrap {
+    right: max(12px, env(safe-area-inset-right, 0px));
+    bottom: max(14px, env(safe-area-inset-bottom, 0px));
+    gap: 0.4rem;
+  }
+
+  .af-wa-fab {
+    width: 3.1rem;
+    height: 3.1rem;
+  }
+
+  .af-wa-fab-hint {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.65rem 0.4rem 0.5rem;
+    max-width: min(200px, calc(100vw - 5rem));
+  }
+
+  .af-card-pad {
+    padding: 14px 14px;
+  }
+}
+
+@media (max-width: 560px) {
+  .af-tiktok-soon-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .af-flow {
+    padding: 28px 16px 96px;
+  }
+
+  .af-btn,
+  .af-chip-btn {
+    min-height: 44px;
   }
 }
 
@@ -1936,37 +2216,193 @@ html.page-affiliate [class*="crisp-"] {
   pointer-events: none !important;
 }
 
-.af-x-fab {
+.af-wa-fab-wrap {
   position: fixed;
   right: max(1rem, env(safe-area-inset-right, 0px));
   bottom: max(1rem, env(safe-area-inset-bottom, 0px));
   z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.af-wa-fab-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.75rem 0.45rem 0.55rem;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 999px;
+  box-shadow: 0 4px 22px rgba(0, 0, 0, 0.14);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #0f172a;
+  max-width: min(240px, calc(100vw - 5.5rem));
+  opacity: 0;
+  transform: translateY(8px) scale(0.97);
+  animation: afWaFabHintIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.35s forwards;
+  pointer-events: none;
+}
+
+.af-wa-fab-hint-text {
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.af-wa-fab-pulse {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #25d366;
+  animation: afWaFabDotBlink 1.35s ease-in-out infinite;
+}
+
+@keyframes afWaFabHintIn {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes afWaFabDotBlink {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.55);
+  }
+  50% {
+    opacity: 0.28;
+    transform: scale(0.88);
+    box-shadow: 0 0 0 7px rgba(37, 211, 102, 0);
+  }
+}
+
+.af-wa-fab {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 3.25rem;
   height: 3.25rem;
   border-radius: 999px;
-  background: #000000;
+  background: #25d366;
   color: #ffffff;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
-  text-decoration: none;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 8px 28px rgba(37, 211, 102, 0.38);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
-.af-x-fab:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
+.af-wa-fab-wrap:hover .af-wa-fab {
+  background: #1ebe57;
+  transform: translateY(-1px) scale(1.04);
+  box-shadow: 0 12px 32px rgba(37, 211, 102, 0.45);
 }
 
-.af-x-fab:focus-visible {
-  outline: 2px solid #2563eb;
+.af-wa-fab-wrap:active .af-wa-fab {
+  transform: scale(0.97);
+}
+
+.af-wa-fab-wrap:focus-visible {
+  outline: none;
+}
+
+.af-wa-fab-wrap:focus-visible .af-wa-fab {
+  outline: 2px solid #128c7e;
   outline-offset: 3px;
 }
 
-.af-x-fab-icon {
-  width: 1.35rem;
-  height: 1.35rem;
+.af-wa-fab-icon {
+  width: 1.55rem;
+  height: 1.55rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .af-wa-fab-hint {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .af-wa-fab-pulse {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+.af-tiktok-soon {
+  margin-top: 16px;
+}
+
+.af-tiktok-soon-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.af-tiktok-soon-brand img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.af-tiktok-soon-brand h2 {
+  margin: 4px 0 0;
+  font-size: 18px;
+}
+
+.af-tiktok-soon-body {
+  position: relative;
+  margin-top: 14px;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.af-tiktok-soon-blur {
+  filter: blur(9px);
+  transform: scale(1.03);
+  user-select: none;
+  pointer-events: none;
+}
+
+.af-tiktok-soon-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.af-tiktok-soon-metric {
+  border: 1px solid var(--af-border);
+  border-radius: 12px;
+}
+
+.af-tiktok-soon-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  text-align: center;
+  padding: 16px;
+}
+
+.af-tiktok-soon-emoji {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.af-tiktok-soon-overlay strong {
+  font-size: 16px;
+  letter-spacing: -0.03em;
 }
 
 .af-tiktok-panel {

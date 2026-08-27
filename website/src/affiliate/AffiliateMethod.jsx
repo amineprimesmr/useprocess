@@ -9,10 +9,10 @@ import {
   FORMAT_SPECS,
   MANNY_TIKTOK_HANDLE,
   MANNY_TIKTOK_URL,
-  METHOD_MODULES,
+  START_SECTIONS,
   fillVars,
-  moduleByQuery,
   paceFromHours,
+  startSectionByQuery,
 } from "./method-catalog.js";
 import "./affiliate-method.css";
 
@@ -43,11 +43,11 @@ function persistModule(id) {
   }
 }
 
-function currentModuleFromHash() {
+function currentSectionFromHash() {
   const query = readHashQuery();
-  if (query.m) return moduleByQuery(query.m);
+  if (query.m) return startSectionByQuery(query.m);
   const stored = readStoredModule();
-  return stored ? moduleByQuery(stored) : METHOD_MODULES[0];
+  return stored ? startSectionByQuery(stored) : START_SECTIONS[0];
 }
 
 function SlideStrip({ slides }) {
@@ -117,7 +117,7 @@ function MethodLinks({ items, vars }) {
   );
 }
 
-function MethodBlock({ block, vars, pace, onGoLinks, onGoFormats }) {
+export function MethodBlock({ block, vars, pace, onGoLinks, onGoFormats }) {
   if (block.type === "lead") {
     return <p className="af-md-lead">{copyText(block.fr, block.en, vars)}</p>;
   }
@@ -302,10 +302,18 @@ function MethodBlock({ block, vars, pace, onGoLinks, onGoFormats }) {
     );
   }
 
+  if (block.type === "cta-lab") {
+    return (
+      <button type="button" className="af-md-inline-link" onClick={() => navigateHash("slideshowlab")}>
+        {appCopy("Ouvrir SlideshowLab", "Open SlideshowLab")}
+      </button>
+    );
+  }
+
   if (block.type === "cta-formats" && onGoFormats) {
     return (
       <button type="button" className="af-md-inline-link" onClick={onGoFormats}>
-        {appCopy("Ouvrir Tiktoks", "Open Tiktoks")}
+        {appCopy("Ouvrir Format", "Open Format")}
       </button>
     );
   }
@@ -314,7 +322,7 @@ function MethodBlock({ block, vars, pace, onGoLinks, onGoFormats }) {
 }
 
 export function AffiliateMethodPage({ linkUrl = "", primaryCode = "", onGoLinks, onGoFormats }) {
-  const [mod, setMod] = useState(() => currentModuleFromHash());
+  const [section, setSection] = useState(() => currentSectionFromHash());
   const paceState = readMethodPace();
   const pace = paceFromHours(paceState.hoursPerDay);
   const vars = useMemo(
@@ -328,52 +336,53 @@ export function AffiliateMethodPage({ linkUrl = "", primaryCode = "", onGoLinks,
     [linkUrl, primaryCode, pace.fr, pace.en, paceState.accountCount]
   );
 
-  const goModule = useCallback((next) => {
-    setMod(next);
-    persistModule(String(next.index));
-    const hash = next.index === 0 ? "methode" : `methode?m=${next.index}`;
+  const goSection = useCallback((next) => {
+    setSection(next);
+    persistModule(next.id);
+    const hash = next.id === START_SECTIONS[0].id ? "methode" : `methode?m=${next.id}`;
     navigateHash(hash);
   }, []);
 
   useEffect(() => {
-    const sync = () => setMod(currentModuleFromHash());
+    const sync = () => setSection(currentSectionFromHash());
     window.addEventListener("hashchange", sync);
     return () => window.removeEventListener("hashchange", sync);
   }, []);
 
   useEffect(() => {
-    persistModule(String(mod.index));
+    persistModule(section.id);
     const query = readHashQuery();
-    if (!query.m && mod.index > 0) {
-      navigateHash(`methode?m=${mod.index}`);
+    if (!query.m && section.id !== START_SECTIONS[0].id) {
+      navigateHash(`methode?m=${section.id}`);
     }
-  }, [mod.index]);
+  }, [section.id]);
 
-  const indexInList = METHOD_MODULES.findIndex((item) => item.id === mod.id);
-  const prev = METHOD_MODULES[indexInList - 1];
-  const next = METHOD_MODULES[indexInList + 1];
+  useEffect(() => {
+    const active = document.querySelector(".af-md-menu__item.is-on");
+    if (!active || typeof active.scrollIntoView !== "function") return;
+    active.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  }, [section.id]);
 
   return (
-    <div className="af-md">
-      <nav className="af-md-toc" aria-label={appCopy("Modules", "Modules")}>
-        {METHOD_MODULES.map((item) => (
+    <div className="af-md af-md-start">
+      <nav className="af-md-menu" aria-label={appCopy("Démarrage", "Getting started")}>
+        {START_SECTIONS.map((item) => (
           <button
             key={item.id}
             type="button"
-            className={`af-md-toc__item${item.id === mod.id ? " is-on" : ""}`}
-            onClick={() => goModule(item)}
+            className={`af-md-menu__item${item.id === section.id ? " is-on" : ""}`}
+            onClick={() => goSection(item)}
           >
             {copyPair(item.nav, vars)}
           </button>
         ))}
       </nav>
 
-      <article className={`af-md-page${mod.id === "devenir" ? " af-md-page--clipper" : ""}`} key={mod.id}>
-        {mod.kicker ? <p className="af-md-kicker">{copyPair(mod.kicker, vars)}</p> : null}
-        {mod.title ? <h2>{copyPair(mod.title, vars)}</h2> : null}
-        {mod.blocks.map((block, i) => (
+      <article className="af-md-page" key={section.id}>
+        <h2>{copyPair(section.title, vars)}</h2>
+        {section.blocks.map((block, i) => (
           <MethodBlock
-            key={`${mod.id}-${block.type}-${i}`}
+            key={`${section.id}-${block.type}-${i}`}
             block={block}
             vars={vars}
             pace={pace}
@@ -381,21 +390,6 @@ export function AffiliateMethodPage({ linkUrl = "", primaryCode = "", onGoLinks,
             onGoFormats={onGoFormats}
           />
         ))}
-
-        <div className="af-md-pager">
-          {prev ? (
-            <button type="button" className="af-md-pager__btn" onClick={() => goModule(prev)}>
-              ← {copyPair(prev.nav, vars)}
-            </button>
-          ) : (
-            <span />
-          )}
-          {next ? (
-            <button type="button" className="af-md-pager__btn is-next" onClick={() => goModule(next)}>
-              {copyPair(next.nav, vars)} →
-            </button>
-          ) : null}
-        </div>
       </article>
     </div>
   );

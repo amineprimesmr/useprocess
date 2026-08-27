@@ -6,8 +6,23 @@
     <script>
       document.documentElement.classList.add("app-booting");
       (function () {
+        try {
+          var u = new URL(location.href);
+          var looksLike =
+            u.searchParams.has("oobCode") ||
+            u.searchParams.get("mode") === "signIn" ||
+            u.searchParams.get("emailLink") === "1";
+          if (looksLike) {
+            var p = u.pathname.replace(/\/$/, "") || "/";
+            if (p !== "/clipping" && p !== "/clipping.html") {
+              u.pathname = "/clipping";
+              location.replace(u.toString());
+              return;
+            }
+          }
+        } catch (e) {}
         var path = location.pathname.replace(/\/$/, "");
-        if (path === "/affiliate" || path === "/affiliate.html") {
+        if (path === "/clipping" || path === "/clipping.html" || path === "/affiliate" || path === "/affiliate.html") {
           document.documentElement.classList.add("page-affiliate");
         }
       })();

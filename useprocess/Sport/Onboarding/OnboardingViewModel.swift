@@ -540,6 +540,10 @@ class OnboardingViewModel: ObservableObject {
             creatorCodeDraft = normalized
             referralCode = nil
             ProcessAffiliateLifetimePass.unlock()
+            Task { @MainActor in
+                await SubscriptionService.shared.checkSubscriptionStatus()
+                SubscriptionService.shared.activateAffiliateLifetimePass()
+            }
             saveProgress()
             return
         }

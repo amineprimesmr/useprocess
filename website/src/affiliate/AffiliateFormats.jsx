@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { appCopy } from "../features/app-copy.js";
 import { affiliateApi, getAuthToken } from "../features/firebase-client.js";
 import { IconCheck, IconChevronLeft, IconCopy, IconExternal, IconTikTok } from "./AffiliateIcons.jsx";
+import { SuccessActionButton, playConfirm } from "./action-feedback.jsx";
 import {
   formatShortDate,
   navigateHash,
@@ -19,6 +20,7 @@ import {
   libraryCollectionById,
   postsByViews,
 } from "./format-library.js";
+import { isAffiliateLocalPreview } from "./affiliate-local-preview.js";
 import { FORMAT_SPECS } from "./method-catalog.js";
 import "./affiliate-formats.css";
 
@@ -243,6 +245,7 @@ function CopyHandleButton({ handle }) {
   async function copy() {
     try {
       await navigator.clipboard.writeText(text);
+      playConfirm();
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
@@ -364,7 +367,6 @@ export function AffiliateFormatsPage({ user }) {
   const [collection, setCollection] = useState(() => currentCollectionFromHash(seedShelf));
   const [openId, setOpenId] = useState("");
   const [dialog, setDialog] = useState("");
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [tiktokUrl, setTiktokUrl] = useState("");
   const [tiktokFormat, setTiktokFormat] = useState("");
@@ -386,7 +388,7 @@ export function AffiliateFormatsPage({ user }) {
   }, []);
 
   const load = useCallback(async () => {
-    if (!user) return;
+    if (!user || isAffiliateLocalPreview()) return;
     try {
       const token = await getAuthToken(user);
       const data = await affiliateApi("affiliateLibrary", {
@@ -415,13 +417,13 @@ export function AffiliateFormatsPage({ user }) {
   const openCollection = useCallback((next) => {
     setCollection(next);
     setOpenId("");
-    navigateHash(`tiktoks?f=${next.id}`);
+    navigateHash(`format?f=${next.id}`);
   }, []);
 
   const goLibrary = useCallback(() => {
     setCollection(null);
     setOpenId("");
-    navigateHash("tiktoks");
+    navigateHash("format");
   }, []);
 
   useEffect(() => {
@@ -436,9 +438,7 @@ export function AffiliateFormatsPage({ user }) {
     return affiliateApi("affiliateLibrary", { token, body, timeoutMs: 20000 });
   }
 
-  async function onAddTikTok(event) {
-    event.preventDefault();
-    setBusy(true);
+  async function onAddTikTok() {
     setError("");
     try {
       const data = await callLibrary({
@@ -448,7 +448,6 @@ export function AffiliateFormatsPage({ user }) {
       });
       applyCatalog(data.formats, data.specs);
       setTiktokUrl("");
-      setDialog("");
     } catch (err) {
       setError(
         appCopy(
@@ -456,14 +455,11 @@ export function AffiliateFormatsPage({ user }) {
           "Couldn't add that TikTok. Check the public link."
         )
       );
-    } finally {
-      setBusy(false);
+      throw err;
     }
   }
 
-  async function onCreateFormat(event) {
-    event.preventDefault();
-    setBusy(true);
+  async function onCreateFormat() {
     setError("");
     try {
       const data = await callLibrary({
@@ -480,15 +476,13 @@ export function AffiliateFormatsPage({ user }) {
       setFormulaFr("");
       setFormulaEn("");
       setSpecId("");
-      setDialog("");
       if (data.id) {
         const created = (data.formats || []).map(toCollection).find((item) => item.id === data.id);
         if (created) openCollection(created);
       }
     } catch (err) {
       setError(appCopy("Impossible de créer ce format.", "Couldn't create that format."));
-    } finally {
-      setBusy(false);
+      throw err;
     }
   }
 
@@ -522,7 +516,7 @@ export function AffiliateFormatsPage({ user }) {
     <>
       {dialog === "tiktok" ? (
         <LibraryDialog title={appCopy("Ajouter un TikTok", "Add a TikTok")} onClose={() => setDialog("")}>
-          <form className="af-lib-form" onSubmit={onAddTikTok}>
+          <form className="af-lib-form" onSubmit={(event) => event.preventDefault()}>
             <label>
               {appCopy("Lien TikTok public", "Public TikTok link")}
               <input
@@ -553,16 +547,24 @@ export function AffiliateFormatsPage({ user }) {
               <button type="button" className="af-lib-add is-ghost" onClick={() => setDialog("")}>
                 {appCopy("Annuler", "Cancel")}
               </button>
-              <button type="submit" className="af-lib-add" disabled={busy}>
-                {busy ? appCopy("Ajout…", "Adding…") : appCopy("Ajouter", "Add")}
-              </button>
+              <SuccessActionButton
+                type="submit"
+                className="af-lib-add"
+                idleLabel={appCopy("Ajouter", "Add")}
+                savingLabel={appCopy("Ajout…", "Adding…")}
+                successLabel={appCopy("Ajouté", "Added")}
+                onAction={onAddTikTok}
+                onSuccess={() => {
+                  window.setTimeout(() => setDialog(""), 800);
+                }}
+              />
             </div>
           </form>
         </LibraryDialog>
       ) : null}
       {dialog === "format" ? (
         <LibraryDialog title={appCopy("Nouveau format", "New format")} onClose={() => setDialog("")}>
-          <form className="af-lib-form" onSubmit={onCreateFormat}>
+          <form className="af-lib-form" onSubmit={(event) => event.preventDefault()}>
             <label>
               {appCopy("Nom (FR)", "Name (FR)")}
               <input className="af-lib-input" value={nameFr} onChange={(event) => setNameFr(event.target.value)} required />
@@ -595,9 +597,17 @@ export function AffiliateFormatsPage({ user }) {
               <button type="button" className="af-lib-add is-ghost" onClick={() => setDialog("")}>
                 {appCopy("Annuler", "Cancel")}
               </button>
-              <button type="submit" className="af-lib-add" disabled={busy}>
-                {busy ? appCopy("Création…", "Creating…") : appCopy("Créer", "Create")}
-              </button>
+              <SuccessActionButton
+                type="submit"
+                className="af-lib-add"
+                idleLabel={appCopy("Créer", "Create")}
+                savingLabel={appCopy("Création…", "Creating…")}
+                successLabel={appCopy("Créé", "Created")}
+                onAction={onCreateFormat}
+                onSuccess={() => {
+                  window.setTimeout(() => setDialog(""), 800);
+                }}
+              />
             </div>
           </form>
         </LibraryDialog>
@@ -612,7 +622,7 @@ export function AffiliateFormatsPage({ user }) {
           <p className="af-lib-kicker">{appCopy("Bibliothèque", "Library")}</p>
           <h2>
             <IconTikTok />
-            {appCopy("Tiktoks", "Tiktoks")}
+            {appCopy("Format", "Format")}
           </h2>
           <p className="af-lib-lead">
             {appCopy(
@@ -643,7 +653,7 @@ export function AffiliateFormatsPage({ user }) {
     <div className="af-lib">
       <button type="button" className="af-lib-back" onClick={goLibrary}>
         <IconChevronLeft />
-        {appCopy("Tous les Tiktoks", "All Tiktoks")}
+        {appCopy("Tous les formats", "All formats")}
       </button>
 
       <header className="af-lib-head">

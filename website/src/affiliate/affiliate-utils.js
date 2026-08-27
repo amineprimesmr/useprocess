@@ -3,12 +3,23 @@ import { appCopy } from "../features/app-copy.js";
 import { normalizeAcquisitionCode, parseAcquisitionCodeFromInput } from "../features/acquisition-link.js";
 import { FUNCTIONS_BASE } from "../features/firebase-client.js";
 
+export const CLIPPING_PORTAL_PATH = "/clipping";
+export const CLIPPING_PORTAL_URL = "https://useprocess.xyz/clipping";
+
 export const SUPPORT_EMAIL = "support@useprocess.xyz";
 export const AFFILIATE_X_HANDLE = "leksoudblt";
 export const AFFILIATE_X_DM_URL = `https://x.com/messages/compose?screen_name=${AFFILIATE_X_HANDLE}`;
 export const SUPPORT_WHATSAPP_E164 = "33782637720";
 export const SUPPORT_WHATSAPP_DISPLAY = "07 82 63 77 20";
 export const SUPPORT_WHATSAPP_URL = `https://wa.me/${SUPPORT_WHATSAPP_E164}`;
+export const APPLE_PRIVATE_RELAY_DOMAIN = "privaterelay.appleid.com";
+
+/** Apple "Hide My Email" addresses can't receive our login link — Apple rejects the sender. */
+export function isAppleRelayEmail(rawEmail) {
+  const email = String(rawEmail || "").trim().toLowerCase();
+  return email.endsWith(`@${APPLE_PRIVATE_RELAY_DOMAIN}`);
+}
+
 export const COMMISSION_PERCENT = 40;
 export const HOLD_DAYS = 30;
 
@@ -156,10 +167,18 @@ export async function checkAffiliateCodeAvailability(raw, { uid } = {}) {
   return { ok: true, normalized: format.normalized, error: "" };
 }
 
+export function appleRelayHelpMessage() {
+  return appCopy(
+    "Ton compte utilise l'email masqué d'Apple, qui ne peut pas recevoir notre lien. Ouvre le portail depuis l'app Process (Réglages → Programme créateur), ou écris à leks sur WhatsApp.",
+    "Your account uses Apple's hidden email, which can't receive our link. Open the portal from the Process app (Settings → Creator program), or message leks on WhatsApp."
+  );
+}
+
 export function formatApplyError(error) {
   const code = error?.code || "";
   const message = error?.data?.error || error?.message || "";
 
+  if (message === "APPLE_RELAY_EMAIL") return appleRelayHelpMessage();
   if (code.startsWith("auth/")) return formatAuthError(error);
   if (message === "CODE_CONFLICT") {
     return appCopy(
@@ -185,6 +204,12 @@ export function formatApplyError(error) {
       "Invalid phone number."
     );
   }
+  if (message === "EMAIL_NOT_FOUND") {
+    return appCopy(
+      "Aucun compte clipper avec cet email. Crée ton lien d'abord.",
+      "No clipper account for this email. Create your link first."
+    );
+  }
   if (message === "INVALID_TEXT") {
     return appCopy("Indique un prénom.", "Enter a first name.");
   }
@@ -193,6 +218,28 @@ export function formatApplyError(error) {
 
 export function formatAuthError(error) {
   const code = error?.code || "";
+  const backendError = error?.data?.error || "";
+  if (backendError === "APPLE_RELAY_EMAIL" || error?.message === "APPLE_RELAY_EMAIL") {
+    return appleRelayHelpMessage();
+  }
+  if (backendError === "EMAIL_IN_USE") {
+    return appCopy(
+      "Cet email est déjà lié à un autre compte clipper.",
+      "This email is already linked to another clipper account."
+    );
+  }
+  if (backendError === "HANDOFF_EXPIRED") {
+    return appCopy(
+      "Ce lien d'accès a expiré. Rouvre le portail depuis l'app.",
+      "This access link expired. Reopen the portal from the app."
+    );
+  }
+  if (backendError === "HANDOFF_INVALID") {
+    return appCopy(
+      "Ce lien d'accès a déjà été utilisé. Rouvre le portail depuis l'app.",
+      "This access link was already used. Reopen the portal from the app."
+    );
+  }
   const map = {
     "auth/invalid-email": appCopy("Email invalide.", "Invalid email address."),
     "auth/user-disabled": appCopy("Compte désactivé.", "This account has been disabled."),
@@ -204,8 +251,20 @@ export function formatAuthError(error) {
     "auth/too-many-requests": appCopy("Trop de tentatives. Réessaie dans quelques minutes.", "Too many attempts. Try again in a few minutes."),
     "auth/network-request-failed": appCopy("Erreur réseau. Vérifie ta connexion.", "Network error. Check your connection."),
     "auth/operation-not-allowed": appCopy(
-      "Connexion email non activée côté Firebase.",
-      "Email sign-in is not enabled in Firebase."
+      "Connexion email indisponible pour le moment. Réessaie dans quelques minutes.",
+      "Email sign-in is temporarily unavailable. Try again in a few minutes."
+    ),
+    "auth/unauthorized-continue-uri": appCopy(
+      "Connexion indisponible sur ce domaine. Ouvre useprocess.xyz/clipping et réessaie.",
+      "Sign-in is unavailable on this domain. Open useprocess.xyz/clipping and try again."
+    ),
+    "auth/invalid-action-code": appCopy(
+      "Lien expiré ou déjà utilisé. Demande un nouveau lien.",
+      "Link expired or already used. Request a new link."
+    ),
+    "auth/expired-action-code": appCopy(
+      "Lien expiré. Demande un nouveau lien.",
+      "Link expired. Request a new link."
     ),
   };
   return map[code] || error?.message || appCopy("Erreur de connexion.", "Sign-in failed.");
@@ -284,10 +343,18 @@ export const AFFILIATE_ROUTE_ALIASES = {
   podium: "clippers",
   leaderboard: "clippers",
   classement: "clippers",
-  formats: "tiktoks",
-  format: "tiktoks",
-  library: "tiktoks",
-  tiktok: "tiktoks",
+  formats: "format",
+  format: "format",
+  library: "format",
+  tiktok: "format",
+  tiktoks: "format",
+  lab: "slideshowlab",
+  slideshowlab: "slideshowlab",
+  assets: "assets",
+  kit: "assets",
+  brand: "assets",
+  processassets: "assets",
+  "process-assets": "assets",
   useful: "utiles",
   utiles: "utiles",
   questions: "utiles",
@@ -299,9 +366,12 @@ export const AFFILIATE_ROUTE_ALIASES = {
 
 export const AFFILIATE_DASHBOARD_ROUTES = new Set([
   "overview",
+  "format",
   "formats",
   "methode",
   "tiktoks",
+  "slideshowlab",
+  "assets",
   "clippers",
   "automatisation",
   "us",
@@ -314,8 +384,8 @@ export function canonicalizeAffiliateRoute(route, query = {}) {
   const raw = String(route || "").trim();
   const aliased = AFFILIATE_ROUTE_ALIASES[raw] || raw;
   const moduleKey = String(query.m || "").trim();
-  if (aliased === "methode" && (moduleKey === "7" || moduleKey === "formats" || moduleKey === "tiktoks")) {
-    return "tiktoks";
+  if (aliased === "methode" && (moduleKey === "7" || moduleKey === "formats" || moduleKey === "tiktoks" || moduleKey === "format")) {
+    return "format";
   }
   return aliased;
 }
@@ -330,8 +400,14 @@ export function readAffiliatePrefillFromLocation() {
     from: String(hashQuery.from || search.from || "").trim(),
     name: String(hashQuery.name || search.name || "").trim(),
     code: parseAcquisitionCodeFromInput(hashQuery.code || search.code || ""),
-    email: String(hashQuery.email || search.email || "").trim(),
+    // An Apple relay address would prefill a login form that can never receive the link.
+    email: readPrefillEmail(hashQuery.email || search.email || ""),
   };
+}
+
+function readPrefillEmail(raw) {
+  const email = String(raw || "").trim();
+  return isAppleRelayEmail(email) ? "" : email;
 }
 
 export function hasAffiliatePrefill(prefill) {
@@ -434,12 +510,12 @@ export function buildSocialMailBody(displayName, handle) {
 }
 
 export function socialMailSubject() {
-  return appCopy("Profil TikTok/Instagram — Process créateur", "TikTok/Instagram profile — Process creator");
+  return appCopy("Profil TikTok/Instagram — Process clipper", "TikTok/Instagram profile — Process clipper");
 }
 
 export function buildSupportBody(displayName) {
   return appCopy(
-    `Bonjour,\n\nJe viens de candidater au programme créateur Process (${displayName || ""}).\nProfil TikTok / réseaux : \n\nMerci !`,
-    `Hi,\n\nI just applied to the Process creator program (${displayName || ""}).\nTikTok / social profile: \n\nThanks!`
+    `Bonjour,\n\nJe viens de candidater au programme clipper Process (${displayName || ""}).\nProfil TikTok / réseaux : \n\nMerci !`,
+    `Hi,\n\nI just applied to the Process clipper program (${displayName || ""}).\nTikTok / social profile: \n\nThanks!`
   );
 }

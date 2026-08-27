@@ -719,8 +719,8 @@ private struct PaywallReferralCodeSheet: View {
         NavigationStack {
             VStack(spacing: 0) {
                 Text(OnboardingCopy.t(
-                    "Un code créateur ou ami débloque 3 jours d’essai sur l’annuel.",
-                    en: "A creator or friend code unlocks a 3-day yearly trial."
+                    "Code clipper / ami = 3 jours d’essai. Code affilié Process = accès à vie.",
+                    en: "Clipper / friend code = 3-day trial. Process affiliate code = lifetime access."
                 ))
                 .font(.system(size: 15))
                 .foregroundStyle(OnboardingTheme.bodyText)
@@ -797,26 +797,28 @@ private struct PaywallReferralCodeSheet: View {
 
     @MainActor
     private func applyCode() async {
-        let normalized = normalizedCode
+        let normalized = ProcessReferralCode.normalize(draftCode)
         guard ProcessReferralCode.isValid(normalized) else { return }
+
+        // Lifetime affiliés — local only, never hit Firebase resolve.
+        if ProcessAffiliateLifetimePass.matches(normalized)
+            || normalized == ProcessAffiliateLifetimePass.code {
+            isSubmitting = true
+            defer { isSubmitting = false }
+            await applyAffiliateLifetimePassAndDismiss()
+            return
+        }
 
         isSubmitting = true
         defer { isSubmitting = false }
 
-        if ProcessAffiliateLifetimePass.matches(normalized) {
-            ProcessAffiliateLifetimePass.unlock()
-            await SubscriptionService.shared.checkSubscriptionStatus()
-            HapticManager.shared.notification(.success)
-            feedback = OnboardingCopy.t(
-                "Accès offert à vie. Bienvenue.",
-                en: "Lifetime access unlocked. Welcome."
-            )
-            try? await Task.sleep(for: .milliseconds(650))
-            dismiss()
+        let resolved = await AffiliateService.shared.resolveCode(normalized)
+        if ProcessAffiliateLifetimePass.matches(normalized)
+            || normalized == ProcessAffiliateLifetimePass.code {
+            await applyAffiliateLifetimePassAndDismiss()
             return
         }
 
-        let resolved = await AffiliateService.shared.resolveCode(normalized)
         let canUnlockWithoutNetwork = !FirebaseBootstrap.isConfigured
             || ClaudeConfiguration.functionsBaseURL == nil
 
@@ -858,9 +860,30 @@ private struct PaywallReferralCodeSheet: View {
         try? await Task.sleep(for: .milliseconds(650))
         dismiss()
     }
-}
 
-// MARK: - Pop rétention (double sortie)
+    @MainActor
+    private func applyAffiliateLifetimePassAndDismiss() async {
+        ProcessAffiliateLifetimePass.unlock()
+        await SubscriptionService.shared.checkSubscriptionStatus()
+        // Re-applique après le refresh RC — `applyCustomerInfo` peut repasser brièvement en notSubscribed.
+        SubscriptionService.shared.activateAffiliateLifetimePass()
+        guard SubscriptionService.shared.subscriptionStatus.isActive else {
+            feedback = OnboardingCopy.t(
+                "Impossible d’activer l’accès. Réessaie.",
+                en: "Couldn’t unlock access. Try again."
+            )
+            HapticManager.shared.notification(.error)
+            return
+        }
+        HapticManager.shared.notification(.success)
+        feedback = OnboardingCopy.t(
+            "Accès offert à vie. Bienvenue.",
+            en: "Lifetime access unlocked. Welcome."
+        )
+        try? await Task.sleep(for: .milliseconds(650))
+        dismiss()
+    }
+}
 
 private struct PaywallStayRetentionOverlay: View {
     @Environment(\.colorScheme) private var colorScheme

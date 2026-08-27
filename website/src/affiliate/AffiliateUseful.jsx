@@ -1,8 +1,13 @@
 import { useMemo, useState } from "react";
 import { appCopy } from "../features/app-copy.js";
-import { IconChevronDown, IconChevronLeft, IconGlobe, IconHelp, IconMail, IconShield, IconWhatsApp } from "./AffiliateIcons.jsx";
-import { SUPPORT_WHATSAPP_DISPLAY, SUPPORT_WHATSAPP_URL, supportMailto } from "./affiliate-utils.js";
+import { IconChevronDown, IconChevronLeft, IconGlobe, IconHelp, IconMail, IconShield } from "./AffiliateIcons.jsx";
+import { MethodBlock } from "./AffiliateMethod.jsx";
+import { supportMailto } from "./affiliate-utils.js";
+import { METHOD_MODULES } from "./method-catalog.js";
+import "./affiliate-method.css";
 import "./affiliate-useful.css";
+
+const SHADOWBAN_MODULE = METHOD_MODULES.find((mod) => mod.id === "original");
 
 export const USEFUL_TOPICS = [
   {
@@ -11,8 +16,8 @@ export const USEFUL_TOPICS = [
     title: () => appCopy("Shadowban", "Shadowban"),
     blurb: () =>
       appCopy(
-        "Comment le détecter, pourquoi ça arrive, et comment en sortir.",
-        "How to spot it, why it happens, and how to get out."
+        "Toute la méthode : le détecter, pourquoi ça arrive, et comment en sortir.",
+        "The full method: how to spot it, why it happens, and how to get out."
       ),
   },
   {
@@ -23,16 +28,6 @@ export const USEFUL_TOPICS = [
       appCopy(
         "Réponses déjà prêtes, et un formulaire pour poser la tienne.",
         "Answers we already have, plus a form to ask yours."
-      ),
-  },
-  {
-    id: "aide",
-    icon: IconWhatsApp,
-    title: () => appCopy("Aide", "Help"),
-    blurb: () =>
-      appCopy(
-        "Si besoin, WhatsApp — on répond plus vite.",
-        "If you need a hand, WhatsApp — we reply faster."
       ),
   },
 ];
@@ -77,103 +72,25 @@ function TopicBack({ onBack }) {
   return (
     <button type="button" className="af-useful-back" onClick={onBack}>
       <IconChevronLeft />
-      {appCopy("Toutes les sections", "All sections")}
+      {appCopy("Utiles", "Useful")}
     </button>
   );
 }
 
-function ShadowbanTopic({ onBack, onOpenMethod }) {
+function ShadowbanTopic({ onBack }) {
+  const blocks = SHADOWBAN_MODULE?.blocks || [];
   return (
-    <div className="af-useful-article">
+    <div className="af-useful-article af-useful-article--method">
       <TopicBack onBack={onBack} />
-      <UsefulHero
-        kicker={appCopy("Outils", "Tools")}
-        title={appCopy("Shadowban", "Shadowban")}
-        subtitle={appCopy(
-          "Moins de 50 vues, ou le message « pas éligible au Pour toi » : le compte est grillé. On ne poste plus, on relance le warm.",
-          "Under 50 views, or the “not eligible for For You” message: the account is burned. Stop posting and restart the warm-up."
-        )}
-      />
-
-      <section className="af-useful-card">
-        <h3>{appCopy("Tu es shadowban si", "You’re shadowbanned if")}</h3>
-        <ul>
-          <li>
-            {appCopy(
-              "TikTok dit que la vidéo n'est pas éligible à la recommandation Pour toi.",
-              "TikTok says the video isn’t eligible for For You recommendations."
-            )}
-          </li>
-          <li>
-            {appCopy(
-              "Tu restes sous 50 vues, même sans message.",
-              "You stay under 50 views, even with no message."
-            )}
-          </li>
-        </ul>
-      </section>
-
-      <section className="af-useful-card">
-        <h3>{appCopy("Pourquoi ça arrive", "Why it happens")}</h3>
-        <ul>
-          <li>{appCopy("Compte pas assez chauffé.", "Account wasn’t warmed up enough.")}</li>
-          <li>{appCopy("Slideshows full IA.", "Full-AI slideshows.")}</li>
-          <li>{appCopy("Trop de posts trop vite.", "Too many posts too fast.")}</li>
-        </ul>
-      </section>
-
-      <section className="af-useful-card">
-        <h3>{appCopy("Quoi faire", "What to do")}</h3>
-        <ul>
-          <li>{appCopy("Arrête de poster 2 jours.", "Stop posting for 2 days.")}</li>
-          <li>{appCopy("Scroll, like, Shop, panier, vérifs d'identité.", "Scroll, like, Shop, cart, identity checks.")}</li>
-          <li>{appCopy("Un seul slideshow au bout de 3 jours.", "One slideshow after 3 days.")}</li>
-        </ul>
-      </section>
-
-      <button type="button" className="af-btn af-btn-black" onClick={onOpenMethod}>
-        {appCopy("Ouvrir la méthode Shadowban", "Open the Shadowban method")}
-      </button>
-    </div>
-  );
-}
-
-function WhatsAppHelpCard() {
-  return (
-    <section className="af-useful-card af-useful-whatsapp">
-      <h3>{appCopy("WhatsApp", "WhatsApp")}</h3>
-      <p>
-        {appCopy(
-          "Si tu bloques, envoie un message. On répond plus vite que par mail.",
-          "If you’re stuck, send a message. We reply faster than email."
-        )}
-      </p>
-      <p className="af-useful-whatsapp__number">
-        <a href={SUPPORT_WHATSAPP_URL} target="_blank" rel="noreferrer">
-          {SUPPORT_WHATSAPP_DISPLAY}
-        </a>
-      </p>
-      <a className="af-btn af-btn-black" href={SUPPORT_WHATSAPP_URL} target="_blank" rel="noreferrer">
-        <IconWhatsApp style={{ width: 16, height: 16 }} />
-        {appCopy("Ouvrir WhatsApp", "Open WhatsApp")}
-      </a>
-    </section>
-  );
-}
-
-function HelpTopic({ onBack }) {
-  return (
-    <div className="af-useful-article">
-      <TopicBack onBack={onBack} />
-      <UsefulHero
-        kicker={appCopy("Outils", "Tools")}
-        title={appCopy("Aide", "Help")}
-        subtitle={appCopy(
-          "Si besoin, WhatsApp. Pour une question déjà vue, passe par Questions.",
-          "WhatsApp if you need a hand. For a recurring question, start with Questions."
-        )}
-      />
-      <WhatsAppHelpCard />
+      <div className="af-md af-md--solo">
+        <article className="af-md-page">
+          <p className="af-md-kicker">{appCopy("Utiles", "Useful")}</p>
+          <h2>{appCopy(SHADOWBAN_MODULE?.title?.fr || "Shadowban", SHADOWBAN_MODULE?.title?.en || "Shadowban")}</h2>
+          {blocks.map((block, i) => (
+            <MethodBlock key={`shadowban-${block.type}-${i}`} block={block} vars={{}} pace={{ fr: "", en: "" }} />
+          ))}
+        </article>
+      </div>
     </div>
   );
 }
@@ -200,7 +117,7 @@ function QuestionsTopic({ displayName, email, onBack }) {
     const text = question.trim();
     if (!text) return;
     window.location.href = supportMailto(
-      appCopy("Question créateur Process", "Process creator question"),
+      appCopy("Question clipper Process", "Process clipper question"),
       appCopy(
         `Prénom : ${displayName || ""}\nEmail : ${email || ""}\n\nQuestion :\n${text}\n`,
         `First name: ${displayName || ""}\nEmail: ${email || ""}\n\nQuestion:\n${text}\n`
@@ -213,7 +130,7 @@ function QuestionsTopic({ displayName, email, onBack }) {
     <div className="af-useful-article">
       <TopicBack onBack={onBack} />
       <UsefulHero
-        kicker={appCopy("Outils", "Tools")}
+        kicker={appCopy("Utiles", "Useful")}
         title={appCopy("Questions", "Questions")}
         subtitle={appCopy(
           "On répond d'abord aux questions qui reviennent. Si la tienne n'y est pas, envoie-la.",
@@ -261,7 +178,6 @@ function QuestionsTopic({ displayName, email, onBack }) {
           </form>
         )}
       </section>
-      <WhatsAppHelpCard />
     </div>
   );
 }
@@ -271,10 +187,10 @@ function UsefulHub({ onOpen, onOpenUs }) {
     <div className="af-useful-article">
       <UsefulHero
         kicker={appCopy("Menu", "Menu")}
-        title={appCopy("Outils", "Tools")}
+        title={appCopy("Utiles", "Useful")}
         subtitle={appCopy(
-          "Poster aux US, shadowban, questions, aide — tout ce qu'il faut pour clipper sans se griller.",
-          "Post in the US, shadowban, questions, help — everything you need to clip without getting burned."
+          "Poster aux US, shadowban, questions — tout ce qu'il faut pour clipper sans se griller.",
+          "Post in the US, shadowban, questions — everything you need to clip without getting burned."
         )}
       />
       <div className="af-useful-grid">
@@ -303,20 +219,17 @@ function UsefulHub({ onOpen, onOpenUs }) {
   );
 }
 
-export function AffiliateUsefulPage({ topic, displayName, email, onOpenTopic, onBack, onOpenUs, onOpenShadowbanMethod }) {
+export function AffiliateUsefulPage({ topic, displayName, email, onOpenTopic, onBack, onOpenUs }) {
   const current = useMemo(
     () => USEFUL_TOPICS.find((row) => row.id === topic) || null,
     [topic]
   );
 
   if (current?.id === "shadowban") {
-    return <ShadowbanTopic onBack={onBack} onOpenMethod={onOpenShadowbanMethod} />;
+    return <ShadowbanTopic onBack={onBack} />;
   }
   if (current?.id === "questions") {
     return <QuestionsTopic displayName={displayName} email={email} onBack={onBack} />;
-  }
-  if (current?.id === "aide") {
-    return <HelpTopic onBack={onBack} />;
   }
   return <UsefulHub onOpen={onOpenTopic} onOpenUs={onOpenUs} />;
 }
