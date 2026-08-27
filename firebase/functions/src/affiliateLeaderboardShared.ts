@@ -1,9 +1,12 @@
-export const CLIPPER_SORTS = ["earnings", "sales", "installs", "visits", "paywalls"] as const;
+export const CLIPPER_SORTS = ["earnings", "sales", "trials", "installs", "visits", "paywalls"] as const;
 export type ClipperSort = (typeof CLIPPER_SORTS)[number];
 
 export type ClipperStats = {
   lifetimeCents: number;
   paidCount: number;
+  /** Free trials started — visible work, days before it turns into money. */
+  trialCount: number;
+  trialConversions: number;
   referredCount: number;
   linkViews: number;
   paywallCount: number;
@@ -32,6 +35,8 @@ export function clipperMetric(stats: ClipperStats, sort: ClipperSort): number {
   switch (sort) {
     case "sales":
       return stats.paidCount;
+    case "trials":
+      return stats.trialCount;
     case "installs":
       return stats.referredCount;
     case "visits":
@@ -73,6 +78,8 @@ export function toPublicClipper(params: {
     stats: {
       lifetimeCents: num(statsRaw.lifetimeCents),
       paidCount: num(statsRaw.paidCount),
+      trialCount: num(statsRaw.trialCount),
+      trialConversions: num(statsRaw.trialConversions),
       referredCount: num(statsRaw.referredCount),
       linkViews: num(statsRaw.linkViews),
       paywallCount: num(statsRaw.paywallCount),
@@ -88,6 +95,8 @@ export function rankClippers(rows: PublicClipper[], sort: ClipperSort = "earning
     if (earnings) return earnings;
     const sales = b.stats.paidCount - a.stats.paidCount;
     if (sales) return sales;
+    const trials = b.stats.trialCount - a.stats.trialCount;
+    if (trials) return trials;
     const installs = b.stats.referredCount - a.stats.referredCount;
     if (installs) return installs;
     const visits = b.stats.linkViews - a.stats.linkViews;

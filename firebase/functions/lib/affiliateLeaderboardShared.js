@@ -5,7 +5,7 @@ exports.normalizeClipperSort = normalizeClipperSort;
 exports.clipperMetric = clipperMetric;
 exports.toPublicClipper = toPublicClipper;
 exports.rankClippers = rankClippers;
-exports.CLIPPER_SORTS = ["earnings", "sales", "installs", "visits", "paywalls"];
+exports.CLIPPER_SORTS = ["earnings", "sales", "trials", "installs", "visits", "paywalls"];
 function num(value) {
     const n = Number(value);
     return Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0;
@@ -18,6 +18,8 @@ function clipperMetric(stats, sort) {
     switch (sort) {
         case "sales":
             return stats.paidCount;
+        case "trials":
+            return stats.trialCount;
         case "installs":
             return stats.referredCount;
         case "visits":
@@ -48,6 +50,8 @@ function toPublicClipper(params) {
         stats: {
             lifetimeCents: num(statsRaw.lifetimeCents),
             paidCount: num(statsRaw.paidCount),
+            trialCount: num(statsRaw.trialCount),
+            trialConversions: num(statsRaw.trialConversions),
             referredCount: num(statsRaw.referredCount),
             linkViews: num(statsRaw.linkViews),
             paywallCount: num(statsRaw.paywallCount),
@@ -65,6 +69,9 @@ function rankClippers(rows, sort = "earnings") {
         const sales = b.stats.paidCount - a.stats.paidCount;
         if (sales)
             return sales;
+        const trials = b.stats.trialCount - a.stats.trialCount;
+        if (trials)
+            return trials;
         const installs = b.stats.referredCount - a.stats.referredCount;
         if (installs)
             return installs;

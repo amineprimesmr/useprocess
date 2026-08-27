@@ -9,6 +9,7 @@ import "./affiliate-clippers.css";
 const SORTS = [
   { id: "earnings", label: () => appCopy("Gains", "Earnings") },
   { id: "sales", label: () => appCopy("Ventes", "Sales") },
+  { id: "trials", label: () => appCopy("Essais", "Trials") },
   { id: "installs", label: () => appCopy("Installs", "Installs") },
   { id: "visits", label: () => appCopy("Visites", "Visits") },
 ];
@@ -16,6 +17,7 @@ const SORTS = [
 function metric(stats, sort) {
   const row = stats || {};
   if (sort === "sales") return Number(row.paidCount) || 0;
+  if (sort === "trials") return Number(row.trialCount) || 0;
   if (sort === "installs") return Number(row.referredCount) || 0;
   if (sort === "visits") return Number(row.linkViews) || 0;
   if (sort === "paywalls") return Number(row.paywallCount) || 0;
@@ -31,6 +33,8 @@ function rankRows(rows, sort) {
       if (earnings) return earnings;
       const sales = (b.stats?.paidCount || 0) - (a.stats?.paidCount || 0);
       if (sales) return sales;
+      const trials = (b.stats?.trialCount || 0) - (a.stats?.trialCount || 0);
+      if (trials) return trials;
       const installs = (b.stats?.referredCount || 0) - (a.stats?.referredCount || 0);
       if (installs) return installs;
       return String(a.displayName || "").localeCompare(String(b.displayName || ""), "en", {
@@ -86,6 +90,8 @@ function PodiumCard({ row, place }) {
       <div className="af-podium-earn">{money(row.stats?.lifetimeCents)}</div>
       <p className="af-podium-meta">
         {row.stats?.paidCount || 0} {appCopy("ventes", "sales")}
+        <span aria-hidden="true"> · </span>
+        {row.stats?.trialCount || 0} {appCopy("essais", "trials")}
         <span aria-hidden="true"> · </span>
         {row.stats?.referredCount || 0} {appCopy("installs", "installs")}
       </p>
@@ -162,8 +168,8 @@ export function AffiliateClippersPage({ user, dashboard }) {
         </h2>
         <p>
           {appCopy(
-            "Tous les clippers Process, classés par gains, ventes et installs. Le podium change selon le filtre.",
-            "Every Process clipper, ranked by earnings, sales, and installs. The podium follows the filter."
+            "Tous les clippers Process, classés par gains, ventes, essais et installs. Le podium change selon le filtre.",
+            "Every Process clipper, ranked by earnings, sales, trials, and installs. The podium follows the filter."
           )}
         </p>
       </header>
@@ -197,6 +203,8 @@ export function AffiliateClippersPage({ user, dashboard }) {
               {money(you.stats?.lifetimeCents)}
               <span aria-hidden="true"> · </span>
               {you.stats?.paidCount || 0} {appCopy("ventes", "sales")}
+              <span aria-hidden="true"> · </span>
+              {you.stats?.trialCount || 0} {appCopy("essais", "trials")}
               <span aria-hidden="true"> · </span>
               {you.stats?.referredCount || 0} {appCopy("installs", "installs")}
             </span>
@@ -289,6 +297,7 @@ export function AffiliateClippersPage({ user, dashboard }) {
                     <th>{appCopy("Clipper", "Clipper")}</th>
                     <th>{appCopy("Gains", "Earnings")}</th>
                     <th>{appCopy("Ventes", "Sales")}</th>
+                    <th>{appCopy("Essais", "Trials")}</th>
                     <th>{appCopy("Installs", "Installs")}</th>
                     <th>{appCopy("Visites", "Visits")}</th>
                   </tr>
@@ -313,6 +322,7 @@ export function AffiliateClippersPage({ user, dashboard }) {
                       </td>
                       <td>{money(row.stats?.lifetimeCents)}</td>
                       <td>{row.stats?.paidCount || 0}</td>
+                      <td>{row.stats?.trialCount || 0}</td>
                       <td>{row.stats?.referredCount || 0}</td>
                       <td>{formatViewCount(row.stats?.linkViews || 0)}</td>
                     </tr>
