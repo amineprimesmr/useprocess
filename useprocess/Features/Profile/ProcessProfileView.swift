@@ -40,8 +40,7 @@ struct ProcessProfileView: View {
     var body: some View {
         streakScroll
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.clear)
-        .processClearUIKitHostingBackground()
+        .processAppPageBackground()
         .fullScreenCover(item: $selectedAnalysisScan) { scan in
             FaceScanResultContent(
                 result: scan,
@@ -96,12 +95,6 @@ struct ProcessProfileView: View {
                         isOnboardingPreview: isOnboardingPreview,
                         showsSectionHeader: true
                     )
-
-                    Color.clear
-                        .frame(height: 0)
-                        .id(ProfileStatisticsAnchor.id)
-
-                    profileScrollContent
                 }
                 .frame(maxWidth: .infinity, alignment: .top)
                 .processReportsTabBarScrollOffset()
