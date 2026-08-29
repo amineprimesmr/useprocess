@@ -1,7 +1,7 @@
 import Foundation
 import StoreKit
 
-/// L’essai intro 3 jours : bras test A/B (`paywall-annual-trial-ab`) ou code parrainage.
+/// Hard paywall — plus aucun essai gratuit proposé.
 enum SubscriptionMarketPolicy {
     private(set) static var cachedStorefrontCountryCode: String?
 
@@ -9,11 +9,9 @@ enum SubscriptionMarketPolicy {
         cachedStorefrontCountryCode
     }
 
-    /// Vrai si le bras test est actif **ou** un code parrainage / créateur est validé.
+    /// Toujours faux — plus d'essai introductif.
     @MainActor
-    static var allowsIntroductoryFreeTrial: Bool {
-        PaywallPricingExperiment.shared.grantsAnnualTrial
-    }
+    static var allowsIntroductoryFreeTrial: Bool { false }
 
     @MainActor
     static func refreshStorefrontCountryCode() async {
@@ -25,8 +23,7 @@ enum SubscriptionMarketPolicy {
     @MainActor
     static var analyticsProperties: [String: String] {
         var props: [String: String] = [
-            "trial_market_allowed": allowsIntroductoryFreeTrial ? "true" : "false",
-            "referral_annual_trial": ProcessReferralTrialEligibility.isUnlocked ? "true" : "false",
+            "trial_market_allowed": allowsIntroductoryFreeTrial ? "true" : "false"
         ]
         if let code = resolvedStorefrontCountryCode {
             props["storefront_country"] = code

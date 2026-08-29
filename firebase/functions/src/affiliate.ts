@@ -79,45 +79,6 @@ function isValidAffiliatePhone(raw: string): boolean {
   return digits.length >= 8 && digits.length <= 15;
 }
 
-export const affiliateValidateLoginEmail = onRequest(
-  {
-    invoker: "public",
-    cors: true,
-    timeoutSeconds: 15,
-    memory: "256MiB",
-  },
-  async (req, res) => {
-    setCors(res);
-    if (req.method === "OPTIONS") {
-      res.status(204).send("");
-      return;
-    }
-    if (req.method !== "POST") {
-      res.status(405).json({ error: "Method not allowed" });
-      return;
-    }
-
-    try {
-      const email = String(req.body?.email ?? "").trim();
-      if (!email || !email.includes("@")) {
-        res.status(400).json({ error: "INVALID_EMAIL" });
-        return;
-      }
-      const eligible = await affiliateEmailEligibleForLoginLink(email);
-      if (!eligible) {
-        res.status(404).json({ error: "EMAIL_NOT_FOUND" });
-        return;
-      }
-
-      res.status(200).json({ ok: true });
-    } catch (error: any) {
-      const message = error?.message ?? "Unknown error";
-      console.error("[affiliateValidateLoginEmail]", message);
-      res.status(500).json({ error: message });
-    }
-  }
-);
-
 export const affiliateSendLoginEmail = onRequest(
   {
     invoker: "public",

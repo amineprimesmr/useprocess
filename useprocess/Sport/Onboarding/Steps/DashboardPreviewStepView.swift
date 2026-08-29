@@ -1008,7 +1008,7 @@ private struct DashboardPreviewAppPage: View {
                 isTabActive: effectiveTabActive,
                 isOnboardingPreview: true
             )
-        case .scan, .profile, .coach:
+        case .scan, .profile, .coach, .food:
             ProcessScreenBackground()
         }
     }
@@ -1137,9 +1137,18 @@ private struct DashboardPreviewEmbeddedFaceScanSession: View {
         .processClearUIKitHostingBackground()
         .background(sessionBackground)
         .animation(OnboardingScanFlowMotion.animation, value: captureInput?.payload.scanId)
+        .onAppear {
+            // `.onChange(of: isCaptureEnabled)` ne se déclenche jamais quand la vue
+            // apparaît déjà avec isCaptureEnabled == true (cas du plein écran lancé
+            // depuis le dashboard) : SwiftUI ne compare qu'aux changements après
+            // le premier rendu. Sans ce filet, l'event PostHog de l'écran de
+            // capture n'était jamais envoyé pour ce chemin — funnel_index 17
+            // disparaissait silencieusement des stats.
+            trackCapturePageIfEnabled()
+        }
         .onChange(of: isCaptureEnabled) { _, enabled in
-            if enabled, captureInput == nil, completedResult == nil {
-                ProcessAnalytics.trackMossPageViewed(ProcessAnalytics.MossPage.faceScanCapture)
+            if enabled {
+                trackCapturePageIfEnabled()
             }
         }
         .onChange(of: captureInput != nil) { _, hasCapture in
@@ -1152,6 +1161,11 @@ private struct DashboardPreviewEmbeddedFaceScanSession: View {
                 ProcessAnalytics.trackMossPageViewed(ProcessAnalytics.MossPage.faceScanResults)
             }
         }
+    }
+
+    private func trackCapturePageIfEnabled() {
+        guard isCaptureEnabled, captureInput == nil, completedResult == nil else { return }
+        ProcessAnalytics.trackMossPageViewed(ProcessAnalytics.MossPage.faceScanCapture)
     }
 }
 
@@ -1247,7 +1261,7 @@ private struct DashboardPreviewSlide: Identifiable, Hashable {
                     en: "Your daily routine, built around you"
                 )
             )
-        case .scan, .profile, .coach:
+        case .scan, .profile, .coach, .food:
             return DashboardPreviewTourCopy(
                 titlePrefix: OnboardingCopy.t("Découvre ", en: "Discover "),
                 titleAccent: OnboardingCopy.t("Process", en: "Process"),

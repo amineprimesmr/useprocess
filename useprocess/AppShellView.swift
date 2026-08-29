@@ -42,7 +42,7 @@ struct AppShellView: View {
 
             if session.hasCompletedOnboarding {
                 if !subscriptionService.hasResolvedInitialSubscriptionStatus {
-                    Color.clear
+                    ProgressView()
                         .task {
                             await subscriptionService.checkSubscriptionStatus()
                         }

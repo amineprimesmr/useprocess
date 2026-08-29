@@ -102,21 +102,6 @@ struct PaywallSpinWinbackView: View {
         OnboardingCopy.t(SubscriptionConfiguration.winbackJackpotTitle, en: "LIFETIME")
     }
 
-    private var isTrialRetentionOffer: Bool {
-        false
-    }
-
-    private var trialDays: Int {
-        if isTrialRetentionOffer {
-            return SubscriptionConfiguration.retentionQuickActionTrialDays
-        }
-        return subscriptionService.trialInfo(for: .annual).days
-    }
-
-    private var trialAnnualStrikethroughPrice: String {
-        subscriptionService.winbackCompareAtDisplayPrice
-    }
-
     private var lifetimeOfferPrice: String {
         subscriptionService.winbackLifetimeDisplayPrice
     }
@@ -318,36 +303,24 @@ struct PaywallSpinWinbackView: View {
     }
 
     private var rewardInlinePricing: some View {
-        Group {
-            if isTrialRetentionOffer {
-                Text(trialAnnualStrikethroughPrice)
-                    .font(PaywallBevelTheme.paywallHeroTitleFont(size: 26))
-                    .foregroundStyle(PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.72))
-                    .strikethrough(
-                        true,
-                        color: PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.55)
-                    )
-            } else {
-                VStack(spacing: 6) {
-                    Text(monthlyStrikethroughLabel)
-                        .font(PaywallBevelTheme.paywallHeroTitleFont(size: 34))
-                        .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
-                        .foregroundStyle(PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.62))
-                        .strikethrough(
-                            true,
-                            color: PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.5)
-                        )
+        VStack(spacing: 6) {
+            Text(monthlyStrikethroughLabel)
+                .font(PaywallBevelTheme.paywallHeroTitleFont(size: 34))
+                .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
+                .foregroundStyle(PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.62))
+                .strikethrough(
+                    true,
+                    color: PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.5)
+                )
 
-                    Text(
-                        OnboardingCopy.t(
-                            "\(lifetimeOfferPrice) à vie",
-                            en: "\(lifetimeOfferPrice) lifetime"
-                        )
-                    )
-                    .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 22))
-                    .foregroundStyle(PaywallBevelTheme.planPrimaryPrice(for: colorScheme))
-                }
-            }
+            Text(
+                OnboardingCopy.t(
+                    "\(lifetimeOfferPrice) à vie",
+                    en: "\(lifetimeOfferPrice) lifetime"
+                )
+            )
+            .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 22))
+            .foregroundStyle(PaywallBevelTheme.planPrimaryPrice(for: colorScheme))
         }
         .frame(maxWidth: .infinity, alignment: .center)
         .opacity(rewardHeroAppeared ? 1 : 0)
@@ -362,17 +335,10 @@ struct PaywallSpinWinbackView: View {
                 .font(.system(size: 14, weight: .regular))
                 .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
 
-            Text(
-                isTrialRetentionOffer
-                    ? OnboardingCopy.t(
-                        "Accès illimité au coach, aux scans et à ton plan pendant \(trialDays) jours.",
-                        en: "Unlimited coach, scans, and your plan for \(trialDays) days."
-                    )
-                    : OnboardingCopy.t(
-                        "Accès premium à vie — paiement unique, sans abonnement.",
-                        en: "Lifetime premium access — one payment, no subscription."
-                    )
-            )
+            Text(OnboardingCopy.t(
+                "Accès premium à vie — paiement unique, sans abonnement.",
+                en: "Lifetime premium access — one payment, no subscription."
+            ))
             .font(.system(size: 14, weight: .regular))
             .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
         }
@@ -387,11 +353,7 @@ struct PaywallSpinWinbackView: View {
             PaywallSpinOfferStars()
 
             VStack(spacing: 6) {
-                Text(
-                    isTrialRetentionOffer
-                        ? OnboardingCopy.t("\(trialDays) JOURS", en: "\(trialDays) DAYS")
-                        : OnboardingCopy.t("ACCÈS", en: "ACCESS")
-                )
+                Text(OnboardingCopy.t("ACCÈS", en: "ACCESS"))
                     .font(PaywallBevelTheme.paywallHeroTitleFont(size: 32))
                     .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
                     .foregroundStyle(PaywallBevelTheme.paywallTitleColor(for: colorScheme))
@@ -399,11 +361,7 @@ struct PaywallSpinWinbackView: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
 
-                Text(
-                    isTrialRetentionOffer
-                        ? OnboardingCopy.t("OFFERTS", en: "FREE")
-                        : winJackpotTitle
-                )
+                Text(winJackpotTitle)
                     .font(PaywallBevelTheme.paywallHeroTitleFont(size: 32))
                     .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
                     .foregroundStyle(PaywallBevelTheme.paywallTitleColor(for: colorScheme))
@@ -466,26 +424,15 @@ struct PaywallSpinWinbackView: View {
             PaywallBevelContinueButton(
                 title: rewardClaimButtonTitle,
                 isLoading: isPurchasing,
-                isEnabled: !isPurchasing && (
-                    isTrialRetentionOffer
-                        ? subscriptionService.hasLiveAnnualProduct
-                        : subscriptionService.hasLiveLifetimeProduct
-                )
+                isEnabled: !isPurchasing && subscriptionService.hasLiveLifetimeProduct
             ) {
                 Task { await claimOffer() }
             }
 
-            Text(
-                isTrialRetentionOffer
-                    ? OnboardingCopy.t(
-                        "Sans engagement, annulable à tout moment.",
-                        en: "No commitment — cancel anytime."
-                    )
-                    : OnboardingCopy.t(
-                        "Paiement unique — accès à vie, sans renouvellement.",
-                        en: "One-time payment — lifetime access, no renewal."
-                    )
-            )
+            Text(OnboardingCopy.t(
+                "Paiement unique — accès à vie, sans renouvellement.",
+                en: "One-time payment — lifetime access, no renewal."
+            ))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
                 .multilineTextAlignment(.center)
@@ -735,74 +682,37 @@ struct PaywallSpinWinbackView: View {
     }
 
     private var rewardClaimButtonTitle: String {
-        if isTrialRetentionOffer {
-            return subscriptionService.trialInfo(for: .annual).ctaTitle(
-                fallback: OnboardingCopy.t("Commencer mon essai", en: "Start my trial")
-            )
-        }
-        return OnboardingCopy.t("Réclamer mon offre", en: "Claim my offer")
+        OnboardingCopy.t("Réclamer mon offre", en: "Claim my offer")
     }
 
     private var offerCard: some View {
         let cardShape = RoundedRectangle(cornerRadius: 22, style: .continuous)
 
         return VStack(alignment: .leading, spacing: 10) {
-            if isTrialRetentionOffer {
-                Text(OnboardingCopy.t("ESSAI GRATUIT", en: "FREE TRIAL"))
-                    .font(.system(size: 12, weight: .bold))
-                    .tracking(0.9)
-                    .foregroundStyle(Self.discountHighlight)
+            Text(OnboardingCopy.t("-80% POUR TOUJOURS", en: "-80% FOREVER"))
+                .font(.system(size: 13, weight: .heavy))
+                .tracking(1.1)
+                .foregroundStyle(Self.discountHighlight)
 
-                HStack(alignment: .center, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(OnboardingCopy.t("Accès premium", en: "Premium access"))
-                            .font(.system(size: 17, weight: .bold))
-                            .foregroundStyle(PaywallBevelTheme.titleText(for: colorScheme))
-
-                        Text(trialAnnualStrikethroughPrice)
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
-                            .strikethrough(
-                                true,
-                                color: PaywallBevelTheme.subtitleText(for: colorScheme).opacity(0.7)
-                            )
-                    }
-
-                    Spacer(minLength: 8)
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(OnboardingCopy.t("Accès à vie", en: "Lifetime access"))
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(PaywallBevelTheme.titleText(for: colorScheme))
 
                     Text(OnboardingCopy.t(
-                        "\(trialDays) j. gratuits",
-                        en: "\(trialDays) free days"
+                        "Paiement unique · sans abonnement",
+                        en: "One payment · no subscription"
                     ))
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme).opacity(0.9))
+                }
+
+                Spacer(minLength: 8)
+
+                Text(lifetimeOfferPrice)
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
                     .foregroundStyle(PaywallBevelTheme.planPrimaryPrice(for: colorScheme))
-                }
-            } else {
-                Text(OnboardingCopy.t("-80% POUR TOUJOURS", en: "-80% FOREVER"))
-                    .font(.system(size: 13, weight: .heavy))
-                    .tracking(1.1)
-                    .foregroundStyle(Self.discountHighlight)
-
-                HStack(alignment: .center, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(OnboardingCopy.t("Accès à vie", en: "Lifetime access"))
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(PaywallBevelTheme.titleText(for: colorScheme))
-
-                        Text(OnboardingCopy.t(
-                            "Paiement unique · sans abonnement",
-                            en: "One payment · no subscription"
-                        ))
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme).opacity(0.9))
-                    }
-
-                    Spacer(minLength: 8)
-
-                    Text(lifetimeOfferPrice)
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundStyle(PaywallBevelTheme.planPrimaryPrice(for: colorScheme))
-                }
             }
         }
         .padding(.horizontal, 18)
@@ -1076,6 +986,7 @@ struct PaywallSpinWinbackView: View {
 
         ProcessAnalytics.trackSpinOfferCTATapped(source: source)
         ProcessAnalytics.trackPurchaseStarted(plan: plan, offer: offer, source: source)
+        let purchaseAttemptStartedAt = Date()
 
         do {
             if !subscriptionService.canPurchase {
@@ -1089,7 +1000,13 @@ struct PaywallSpinWinbackView: View {
                 onClaimed()
             }
         } catch SubscriptionError.userCancelled {
-            ProcessAnalytics.trackPurchaseCancelled(plan: plan, offer: offer, source: source)
+            ProcessAnalytics.trackPurchaseCancelled(
+                plan: plan,
+                offer: offer,
+                source: source,
+                priceDisplayed: subscriptionService.winbackLifetimeDisplayPrice,
+                secondsSinceStarted: Date().timeIntervalSince(purchaseAttemptStartedAt)
+            )
             return
         } catch {
             let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription

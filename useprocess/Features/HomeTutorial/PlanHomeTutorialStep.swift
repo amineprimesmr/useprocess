@@ -50,7 +50,7 @@ enum PlanHomeTutorialStep: String, CaseIterable, Identifiable {
 
     var mainTab: ProcessMainSection? {
         switch self {
-        case .streakTab: .statistics
+        case .streakTab: .profile
         default: .plan
         }
     }

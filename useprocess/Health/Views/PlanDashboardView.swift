@@ -18,6 +18,7 @@ struct PlanDashboardView: View {
     @State private var showCalendar = false
     @State private var selectedPlanDate = Calendar.current.startOfDay(for: Date())
     @State private var planHealthMetrics = PlanHomeHealthMetrics()
+    @State private var showStreakDetail = false
     @Namespace private var planCalendarZoomNamespace
 
     private var isPlanRuntimeActive: Bool {
@@ -30,6 +31,11 @@ struct PlanDashboardView: View {
         planDashboard
             .animation(.spring(response: 0.44, dampingFraction: 0.88), value: session.hasCompletedWelcomePlanChat)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .fullScreenCover(isPresented: $showStreakDetail) {
+                ProcessProfileView(selectedSection: $selectedSection, isTabActive: true)
+                    .environmentObject(profileService)
+                    .environmentObject(HealthManager.shared)
+            }
     }
 
     private var tutorialBottomPadding: CGFloat {
@@ -240,9 +246,7 @@ struct PlanDashboardView: View {
         ProcessStreakStore.shared.sync(from: planStore.plan)
 
         if ProcessEveningCheckInSchedule.isTodayStreakSettledForNavigation() {
-            withAnimation(ProcessGlass.spring) {
-                selectedSection = .statistics
-            }
+            showStreakDetail = true
             return
         }
 

@@ -78,7 +78,6 @@ enum CoachDailyRhythmService {
         FaceScanReminderService.cancelReminder()
         OriginPlanNotificationService.cancel()
         await CoachCheckInScheduler.cancelAll()
-        PaywallTrialNotificationService.shared.clearExitNotification()
     }
 
     // MARK: - Schedule

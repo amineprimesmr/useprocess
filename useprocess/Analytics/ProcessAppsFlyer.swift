@@ -64,15 +64,7 @@ final class ProcessAppsFlyer: NSObject {
 
     func logPurchase(plan: String, offer: String?, revenue: Double?, currency: String?, productID: String?) {
         let isLifetime = plan.lowercased().contains("lifetime")
-        let isTrial = offer?.lowercased().contains("trial") == true
-        let event: String
-        if isLifetime {
-            event = "af_purchase"
-        } else if isTrial {
-            event = "af_start_trial"
-        } else {
-            event = "af_subscribe"
-        }
+        let event = isLifetime ? "af_purchase" : "af_subscribe"
 
         var values: [String: Any] = [
             "af_content_type": isLifetime ? "lifetime" : "subscription",
@@ -83,9 +75,7 @@ final class ProcessAppsFlyer: NSObject {
         if let currency, !currency.isEmpty {
             values["af_currency"] = currency
         }
-        if isTrial {
-            values["af_revenue"] = 0
-        } else if let revenue {
+        if let revenue {
             values["af_revenue"] = revenue
         }
         logEvent(event, values: values)

@@ -110,6 +110,39 @@ export const FORMAT_SPECS = [
       { fr: "Milieu / fin : phone + carte App Store", en: "Middle / end: phone + App Store card" },
     ],
   },
+  {
+    id: "06",
+    name: { fr: "06 — Grille 2×2", en: "06 — 2×2 grid" },
+    canvas: "1080×1440",
+    when: {
+      fr: "Quand tu veux du volume sans tourner. 4 photos + une ligne, c'est tout.",
+      en: "When you want volume without filming. 4 photos + one line, that's it.",
+    },
+    hook: {
+      fr: "Glow up tips for men",
+      en: "Glow up tips for men",
+    },
+    caption: {
+      fr: "Glow up tips for men\n\n#glowup #glowuptips #selfimprovement #menglowup #fyp",
+      en: "Glow up tips for men\n\n#glowup #glowuptips #selfimprovement #menglowup #fyp",
+    },
+    fatal: {
+      fr: "Canvas 1080×1440, pas 1080×1920. Et AUCUNE bordure entre les 4 photos.",
+      en: "Canvas 1080×1440, not 1080×1920. And NO border between the 4 photos.",
+    },
+    slides: [
+      { src: `${ASSET}/format-06/hook.jpg`, fr: "Hook — grille + titre", en: "Hook — grid + title" },
+      { src: `${ASSET}/format-06/tip.jpg`, fr: "Tip sur la couture", en: "Tip on the seam" },
+      { src: `${ASSET}/format-06/grid.jpg`, fr: "Tip suivant", en: "Next tip" },
+    ],
+    structure: [
+      { fr: "1. Grille 2×2 seamless + le titre du carrousel sur la couture", en: "1. Seamless 2×2 grid + carousel title on the seam" },
+      { fr: "2–N. Un tip par slide, même grille, une seule ligne", en: "2–N. One tip per slide, same grid, a single line" },
+      { fr: "Texte : TikTok Sans SemiBold, blanc, contour noir fin", en: "Text: TikTok Sans SemiBold, white, thin black outline" },
+      { fr: "Filtre : sombre, chaud, désaturé (mesuré sur 51 slides)", en: "Filter: dark, warm, desaturated (measured across 51 slides)" },
+      { fr: "Générer : generate_format06_catalogue.py", en: "Generate: generate_format06_catalogue.py" },
+    ],
+  },
 ];
 
 function step(fr, en) {

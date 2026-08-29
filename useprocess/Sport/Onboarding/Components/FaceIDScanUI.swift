@@ -43,7 +43,7 @@ enum FaceScanViewportStyle: Equatable {
     case onboardingFaceOval
 }
 
-struct FaceMorphClipShape: InsettableShape {
+nonisolated struct FaceMorphClipShape: InsettableShape {
     var morph: CGFloat
     var style: FaceScanViewportStyle = .morphingRoundedSquare
     private var insetAmount: CGFloat = 0
@@ -89,7 +89,7 @@ struct FaceMorphClipShape: InsettableShape {
 }
 
 /// Masque visage onboarding — front large, menton plus étroit (pas une ellipse).
-struct FaceScanOnboardingOvalShape: Shape {
+nonisolated struct FaceScanOnboardingOvalShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let steps = 96

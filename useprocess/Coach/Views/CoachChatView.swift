@@ -157,7 +157,7 @@ struct CoachChatView: View {
             .onChange(of: CoachPlanNavigationBridge.shared.shouldOpenTracking) { _, should in
                 guard should else { return }
                 CoachPlanNavigationBridge.shared.shouldOpenTracking = false
-                selectedSection = .statistics
+                selectedSection = .plan
             }
             .onChange(of: session.hasCompletedWelcomePlanChat) { _, completed in
                 guard completed else { return }
@@ -686,7 +686,7 @@ struct CoachChatView: View {
             CoachPlanNavigationBridge.shared.requestHomeFaceScan()
         case .streak:
             CoachPlanNavigationBridge.shared.openProfileStatistics()
-            selectedSection = .statistics
+            selectedSection = .plan
         case .integration:
             break
         }

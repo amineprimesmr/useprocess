@@ -100,8 +100,8 @@ enum ProcessReferralRewardPromoContent {
     @MainActor
     static var headerSubtitle: String {
         AppCopy.t(
-            "Parraine tes amis — ils ont 3 jours d’essai, tu gagnes \(ProcessReferralProgramTerms.perFriendRewardLabel).",
-            en: "Refer friends — they get 3 free days, you earn \(ProcessReferralProgramTerms.perFriendRewardLabel)."
+            "Parraine tes amis — tu gagnes \(ProcessReferralProgramTerms.perFriendRewardLabel).",
+            en: "Refer friends — you earn \(ProcessReferralProgramTerms.perFriendRewardLabel)."
         )
     }
 

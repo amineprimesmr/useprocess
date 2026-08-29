@@ -138,12 +138,6 @@ struct DreamFaceCommitStepView: View {
             analyticsSource: "onboarding_dream_face_commit"
         )
 
-        if SubscriptionService.shared.isRetentionTrialOfferActive,
-           let days = SubscriptionConfiguration.retentionTrialDays(for: .annual),
-           days > 0 {
-            await PaywallTrialNotificationService.shared.scheduleTrialEndingReminder(days: days)
-        }
-
         try? await Task.sleep(for: .milliseconds(280))
         onComplete()
     }
@@ -308,6 +302,13 @@ private struct DreamFaceCommitSlider: View {
                 if progress >= commitThreshold {
                     complete()
                 } else {
+                    // Relâché avant le seuil : jusqu'ici totalement invisible côté
+                    // analytics — impossible de distinguer "jamais essayé" de
+                    // "a hésité et lâché à mi-parcours".
+                    ProcessAnalytics.capture("commitment_slider_released", properties: [
+                        "progress": (Double(progress) * 100).rounded() / 100,
+                        "source": "onboarding_dream_face_commit"
+                    ])
                     lastHapticBucket = -1
                     HapticManager.shared.rigidImpact()
                     withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {

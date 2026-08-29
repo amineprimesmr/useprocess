@@ -16,8 +16,6 @@ enum SubscriptionConfiguration {
     static let weeklyPackageID = "$rc_weekly"
     static let monthlyPackageID = "$rc_monthly"
     static let annualPackageID = "$rc_annual"
-    /// Package custom RevenueCat — annuel avec intro 3 jours.
-    static let annualTrialPackageID = "annual_trial"
 
     /// Product IDs App Store Connect (groupe Premium) — legacy.
     static let monthlyProductID = "com.useprocess.monthly"
@@ -28,20 +26,18 @@ enum SubscriptionConfiguration {
     static let annual3499ProductID = "com.useprocess.annual3499"
     static let monthly999ProductID = "com.useprocess.monthly999"
     static let annual4999ProductID = "com.useprocess.annual4999"
-    /// Annuel 34,99 € **avec** intro 3 jours — bras test A/B ou code parrainage.
+    /// Annuel 34,99 € avec intro 3 jours — legacy, plus vendu (abonnés déjà engagés uniquement).
     static let annual3499TrialProductID = "com.useprocess.annual3499trial"
 
-    /// SKUs chargés sur le paywall (mensuel + annuel ± essai).
+    /// SKUs chargés sur le paywall (mensuel + annuel).
     static var paywallCatalogProductIDs: [String] {
-        [monthly999ProductID, annual3499ProductID, annual3499TrialProductID]
+        [monthly999ProductID, annual3499ProductID]
     }
 
-    /// Annuel à acheter : essai 3 j. si bras test **ou** code parrainage.
+    /// Annuel à acheter — hard paywall, jamais d'essai.
     @MainActor
     static var annualProductIDForCurrentTrialState: String {
-        PaywallPricingExperiment.shared.grantsAnnualTrial
-            ? annual3499TrialProductID
-            : annual3499ProductID
+        annual3499ProductID
     }
 
     /// Tous les product IDs premium (entitlements / restore).
@@ -72,40 +68,22 @@ enum SubscriptionConfiguration {
         static let defaultTitleEN = "Keep your debloat plan going"
         static let defaultSubtitleEN =
             "Face scans, routine, and coach stay unlocked while you stay subscribed."
-
-        static let trialTitleFR = "Ton essai t’aide déjà à debloat"
-        static let trialSubtitleFR =
-            "Continue maintenant pour garder tes scans, ta routine et ton coach."
-        static let trialTitleEN = "Your trial is already helping you debloat"
-        static let trialSubtitleEN =
-            "Continue now to keep your scans, routine, and coach."
     }
 
     /// Quick action long-press icône : offre lifetime winback (pas d’essai gratuit).
     static let retentionQuickActionLifetimeOfferEnabled = true
 
-    /// Quick action = lifetime 19 € uniquement (pas d’essai annuel rétention).
-    static let retentionQuickActionTrialDays = 0
-
-    /// Durée de l’intro annuelle offerte avec un code (App Store Connect + StoreKit).
-    static let frenchMarketAnnualTrialDays = 3
-
-    static func retentionTrialDays(for plan: SubscriptionBillingPlan) -> Int? {
-        _ = plan
-        return nil
-    }
-
-    /// Essai 3 jours sur l’annuel si bras test A/B **ou** code parrainage / créateur.
+    /// Hard paywall — plus aucun essai gratuit proposé.
     @MainActor
     static func supportsFreeTrial(_ plan: SubscriptionBillingPlan) -> Bool {
-        guard plan == .annual else { return false }
-        return PaywallPricingExperiment.shared.grantsAnnualTrial
+        _ = plan
+        return false
     }
 
     @MainActor
     static func configuredFallbackTrialDays(for plan: SubscriptionBillingPlan) -> Int? {
-        guard supportsFreeTrial(plan) else { return nil }
-        return ProcessReferralTrialEligibility.trialDays
+        _ = plan
+        return nil
     }
 
     /// Prix affichés en secours tant que StoreKit n'a pas répondu (zone EUR).
@@ -277,13 +255,6 @@ struct SubscriptionProductDisplay: Equatable {
     let paywallStrikethroughAnnualTotal: String?
     let freeTrialDays: Int?
     let isIntroOfferEligible: Bool
-
-    var trialInfo: SubscriptionTrialInfo {
-        if isIntroOfferEligible, let freeTrialDays, freeTrialDays > 0 {
-            return SubscriptionTrialInfo(days: freeTrialDays, isEligible: true)
-        }
-        return SubscriptionTrialInfo(days: 0, isEligible: false)
-    }
 
     static func fallback(
         for plan: SubscriptionBillingPlan,

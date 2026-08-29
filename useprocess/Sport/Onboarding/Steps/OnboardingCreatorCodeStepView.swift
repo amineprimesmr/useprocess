@@ -302,6 +302,7 @@ struct OnboardingCreatorCodeStepView: View {
                     clearCodeFeedback()
                 }
                 isVerified = true
+                ProcessAnalytics.trackReferralCodeAttempted(codeLength: normalized.count, result: "resolved_lifetime_pass")
             }
             return
         }
@@ -325,6 +326,10 @@ struct OnboardingCreatorCodeStepView: View {
                     clearCodeFeedback()
                 }
                 isVerified = true
+                ProcessAnalytics.trackReferralCodeAttempted(
+                    codeLength: normalized.count,
+                    result: resolved.type == .affiliate ? "resolved_affiliate" : "resolved_referral"
+                )
             } else if ProcessAffiliateLifetimePass.matches(normalized) {
                 withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
                     showsLifetimePass = true
@@ -333,6 +338,7 @@ struct OnboardingCreatorCodeStepView: View {
                     clearCodeFeedback()
                 }
                 isVerified = true
+                ProcessAnalytics.trackReferralCodeAttempted(codeLength: normalized.count, result: "resolved_lifetime_pass")
             } else if canValidateCodeOnline {
                 isVerified = false
                 presentInvalidCodeFeedback()
@@ -374,6 +380,7 @@ struct OnboardingCreatorCodeStepView: View {
         guard !wasAlreadyIncomplete else { return }
         HapticManager.shared.warning()
         triggerCodeShake()
+        ProcessAnalytics.trackReferralCodeAttempted(codeLength: normalizedDraft.count, result: "incomplete")
     }
 
     private var canValidateCodeOnline: Bool {
@@ -400,6 +407,7 @@ struct OnboardingCreatorCodeStepView: View {
 
         HapticManager.shared.notification(.error)
         triggerCodeShake()
+        ProcessAnalytics.trackReferralCodeAttempted(codeLength: normalizedDraft.count, result: "invalid")
     }
 
     private func triggerCodeShake() {

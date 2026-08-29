@@ -561,7 +561,8 @@ private struct PlanFaceScanLiveCameraPanel: View {
                 BodyScanCameraPreview(
                     session: camera.session,
                     mirrorFrontCamera: true,
-                    isSessionRunning: camera.isRunning
+                    isSessionRunning: camera.isRunning,
+                    previewZoom: ProcessScanCamera.previewLayoutZoom(for: .facePortraitUltraWide)
                 )
                 .background(Color.black)
             case .denied, .restricted:
@@ -610,6 +611,6 @@ private struct PlanFaceScanLiveCameraPanel: View {
             guard await camera.requestAccess() else { return }
         }
         guard camera.authorizationStatus == .authorized else { return }
-        await camera.restartPreviewIfNeeded(preferredPosition: .front)
+        await camera.restartPreviewIfNeeded(preferredPosition: .front, profile: .facePortraitUltraWide)
     }
 }

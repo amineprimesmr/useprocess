@@ -4,6 +4,7 @@ import UIKit
 /// Profil caméra — visage serré vs corps entier (circuit lymphatique, scan 360°).
 enum ProcessScanCameraProfile: Sendable {
     case facePortrait
+    case facePortraitUltraWide
     case fullBody
 
     nonisolated var isFullBody: Bool {
@@ -66,6 +67,8 @@ enum ProcessScanCamera {
             switch profile {
             case .facePortrait:
                 return preferredFrontPortraitDevice()
+            case .facePortraitUltraWide:
+                return preferredFrontUltraWideDevice()
             case .fullBody:
                 return preferredFrontFullBodyDevice()
             }
@@ -77,6 +80,8 @@ enum ProcessScanCamera {
         switch profile {
         case .facePortrait:
             return frontPreviewLayoutZoom
+        case .facePortraitUltraWide:
+            return fullBodyPreviewLayoutZoom
         case .fullBody:
             return fullBodyPreviewLayoutZoom
         }
@@ -102,6 +107,14 @@ enum ProcessScanCamera {
             return standard
         }
         return discovery.devices.first
+    }
+
+    /// Ultra grand-angle front forcé — section "premier scan" de l'accueil.
+    nonisolated static func preferredFrontUltraWideDevice() -> AVCaptureDevice? {
+        if let ultraWide = AVCaptureDevice.default(.builtInUltraWideCamera, for: .video, position: .front) {
+            return ultraWide
+        }
+        return preferredFrontPortraitDevice()
     }
 
     /// Grand-angle front max — circuit lymphatique / tracking corps entier.
@@ -142,6 +155,8 @@ enum ProcessScanCamera {
         switch profile {
         case .facePortrait:
             lockFrontCameraOutOfUltraWide(device)
+        case .facePortraitUltraWide:
+            lockFrontCameraForFullBody(device)
         case .fullBody:
             lockFrontCameraForFullBody(device)
         }

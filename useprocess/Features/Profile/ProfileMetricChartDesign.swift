@@ -30,9 +30,6 @@ struct ProfileMetricChartSection: View, Equatable {
     let latestValue: Double?
     let deltaVsPrevious: Double?
     var presentation: ProfileMetricChartPresentation = .standalone
-    var isCalibrationLocked: Bool = false
-    var calibrationRemainingDays: Int = 0
-    var showsCalibrationOverlay: Bool = false
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.metric == rhs.metric
@@ -40,9 +37,6 @@ struct ProfileMetricChartSection: View, Equatable {
             && lhs.latestValue == rhs.latestValue
             && lhs.deltaVsPrevious == rhs.deltaVsPrevious
             && lhs.presentation == rhs.presentation
-            && lhs.isCalibrationLocked == rhs.isCalibrationLocked
-            && lhs.calibrationRemainingDays == rhs.calibrationRemainingDays
-            && lhs.showsCalibrationOverlay == rhs.showsCalibrationOverlay
     }
 
     var body: some View {
@@ -51,10 +45,7 @@ struct ProfileMetricChartSection: View, Equatable {
             points: points,
             latestValue: latestValue,
             deltaVsPrevious: deltaVsPrevious,
-            presentation: presentation,
-            isCalibrationLocked: isCalibrationLocked,
-            calibrationRemainingDays: calibrationRemainingDays,
-            showsCalibrationOverlay: showsCalibrationOverlay
+            presentation: presentation
         )
     }
 }
@@ -72,9 +63,6 @@ private struct ProfileMetricChartSectionContent: View {
     let latestValue: Double?
     let deltaVsPrevious: Double?
     var presentation: ProfileMetricChartPresentation = .standalone
-    var isCalibrationLocked: Bool = false
-    var calibrationRemainingDays: Int = 0
-    var showsCalibrationOverlay: Bool = false
 
     private var cardShape: RoundedRectangle {
         RoundedRectangle(cornerRadius: ProfileMetricChartLayout.cardRadius, style: .continuous)
@@ -134,12 +122,7 @@ private struct ProfileMetricChartSectionContent: View {
         .padding(.horizontal, ProfileMetricChartLayout.wellPaddingH)
         .padding(.vertical, ProfileMetricChartLayout.wellPaddingV)
         .background(chartWellBackground)
-        .processCalibrationLocked(
-            isCalibrationLocked,
-            remainingDays: calibrationRemainingDays,
-            surface: showsCalibrationOverlay ? .streakCharts : nil,
-            cornerRadius: ProfileMetricChartLayout.wellRadius
-        )
+        .clipShape(RoundedRectangle(cornerRadius: ProfileMetricChartLayout.wellRadius, style: .continuous))
     }
 
     private var scoreRow: some View {

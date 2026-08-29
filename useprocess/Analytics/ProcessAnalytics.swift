@@ -227,7 +227,18 @@ enum ProcessAnalytics {
         }
 
         if let funnelScreen = OnboardingFunnelScreen.from(step: step) {
-            trackFunnelScreen(funnelScreen)
+            // Depuis cet écran, la navigation bifurque : abonnement déjà actif
+            // (code affilié entré à l'étape précédente, restauration, achat déjà
+            // validé) => saut direct vers Connexion Apple, paywall jamais montré.
+            // Sans ce tag, cette branche libre était indiscernable d'un vrai
+            // abandon au paywall en aval.
+            if funnelScreen == .dreamFaceCommit {
+                trackFunnelScreen(funnelScreen, extra: [
+                    "skips_paywall": SubscriptionService.shared.subscriptionStatus.isActive
+                ])
+            } else {
+                trackFunnelScreen(funnelScreen)
+            }
         }
     }
 
@@ -252,6 +263,34 @@ enum ProcessAnalytics {
         }
         capture("onboarding_funnel_step", properties: props)
         screen("funnel_\(funnelScreen.id)")
+    }
+
+    /// Tap sur le bouton retour — invisible jusqu'ici : sans ça, un aller-retour
+    /// (avance jusqu'au paywall puis recule) se lisait comme "arrivé au paywall"
+    /// dans le funnel, indiscernable d'un vrai abandon en avant.
+    static func trackOnboardingBackTapped() {
+        var props: [String: Any] = [:]
+        if let lastFunnelScreenID,
+           let screen = OnboardingFunnelScreen(rawValue: lastFunnelScreenID) {
+            props["from_screen"] = screen.id
+            props["from_funnel_index"] = screen.funnelIndex
+            props["from_funnel_phase"] = screen.phase
+        }
+        if let lastMossPageName {
+            props["from_moss_page"] = lastMossPageName
+        }
+        capture("onboarding_back_tapped", properties: props)
+    }
+
+    /// `referral_code_captured` n'existait qu'au moment d'un succès en aval —
+    /// les tentatives ratées (code invalide, code incomplet envoyé) n'avaient
+    /// aucune trace, donc impossible de savoir si "personne n'a de code" ou
+    /// "les gens essaient et ça échoue silencieusement".
+    static func trackReferralCodeAttempted(codeLength: Int, result: String) {
+        capture("referral_code_attempted", properties: [
+            "code_length": codeLength,
+            "result": result
+        ])
     }
 
     static func trackOnboardingCompleted() {
@@ -603,14 +642,24 @@ enum ProcessAnalytics {
         )
     }
 
+    /// StoreKit ne remonte qu'un `.userCancelled` générique — aucune raison précise.
+    /// `priceDisplayed` et `secondsSinceStarted` sont les deux seuls signaux causaux
+    /// qu'on peut réellement capturer : un abandon à 2s (choc du prix) et un abandon
+    /// à 45s (hésitation réelle) sont deux problèmes différents à résoudre différemment.
     static func trackPurchaseCancelled(
         plan: String,
         offer: String? = nil,
-        source: String? = nil
+        source: String? = nil,
+        priceDisplayed: String? = nil,
+        secondsSinceStarted: Double? = nil
     ) {
         var props: [String: Any] = ["plan": plan]
         if let offer { props["offer"] = offer }
         if let source { props["source"] = source }
+        if let priceDisplayed { props["price_displayed"] = priceDisplayed }
+        if let secondsSinceStarted {
+            props["seconds_since_started"] = (secondsSinceStarted * 10).rounded() / 10
+        }
         capture("purchase_cancelled", properties: withPricingVariant(withAcquisition(props)))
     }
 
@@ -646,10 +695,6 @@ enum ProcessAnalytics {
 
     static func trackQuickActionOpened(kind: String) {
         capture("quick_action_opened", properties: ["kind": kind])
-    }
-
-    static func trackTrialRetentionDismissed(source: String) {
-        capture("trial_retention_dismissed", properties: ["source": source])
     }
 
     // MARK: - Marketing notifications (non-payers)

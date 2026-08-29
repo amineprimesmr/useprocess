@@ -1711,12 +1711,22 @@ struct FaceScanCaptureScreen: View {
         }
     }
 
+    /// Le lien n'apparaît qu'après ce délai, pour laisser une vraie chance au scan
+    /// avant de proposer l'esquive — sinon il est visible dès l'arrivée sur l'écran.
+    private static let scanLaterLinkAppearanceDelay: Duration = .seconds(8)
+
     private func scheduleDelayedScanLaterLinkIfNeeded() {
         delayedScanLaterTask?.cancel()
+        showsDelayedScanLaterLink = false
         guard onSkip != nil, usesOnboardingFaceOval else { return }
 
-        showsDelayedScanLaterLink = true
-        delayedScanLaterTask = nil
+        delayedScanLaterTask = Task { @MainActor in
+            try? await Task.sleep(for: Self.scanLaterLinkAppearanceDelay)
+            guard !Task.isCancelled, phase != .completed else { return }
+            withAnimation(.easeInOut(duration: 0.25)) {
+                showsDelayedScanLaterLink = true
+            }
+        }
     }
 
     private func cancelDelayedScanLaterLink() {

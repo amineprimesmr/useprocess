@@ -13,6 +13,7 @@ struct OnboardingBackButton: View {
     var body: some View {
         Button(action: {
             HapticManager.shared.impact(.light)
+            ProcessAnalytics.trackOnboardingBackTapped()
             action()
         }) {
             Image(systemName: "chevron.left")

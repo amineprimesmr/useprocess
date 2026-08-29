@@ -1,9 +1,7 @@
 import * as admin from "firebase-admin";
-import Anthropic from "@anthropic-ai/sdk";
 import { onRequest } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { defineSecret } from "firebase-functions/params";
-import { normalizeModel } from "./coachValidation";
 import {
   db,
   httpStatusForError,
@@ -33,10 +31,8 @@ const MIN_SEND_INTERVAL_MS = 1200;
 const crispIdentifier = defineSecret("CRISP_IDENTIFIER");
 const crispKey = defineSecret("CRISP_KEY");
 const crispWebhookSecret = defineSecret("CRISP_WEBHOOK_SECRET");
-const anthropicApiKey = defineSecret("ANTHROPIC_API_KEY");
 
 const CRISP_SECRETS = [crispIdentifier, crispKey, crispWebhookSecret];
-const SUPPORT_SEND_SECRETS = [...CRISP_SECRETS, anthropicApiKey];
 
 type SupportFrom = "user" | "operator";
 
@@ -175,21 +171,6 @@ async function sendCrispUserMessage(sessionId: string, text: string): Promise<nu
   return sendCrispMessage(sessionId, "user", "text", text);
 }
 
-async function sendCrispOperatorMessage(
-  sessionId: string,
-  text: string
-): Promise<number | null> {
-  return sendCrispMessage(sessionId, "operator", "text", text);
-}
-
-async function sendCrispNote(sessionId: string, text: string): Promise<void> {
-  try {
-    await sendCrispMessage(sessionId, "operator", "note", text);
-  } catch (error) {
-    console.warn("[Crisp] note failed", error);
-  }
-}
-
 async function sendCrispMessage(
   sessionId: string,
   from: "user" | "operator",
@@ -249,7 +230,7 @@ export const supportSendMessage = onRequest(
   {
     invoker: "public",
     cors: true,
-    secrets: SUPPORT_SEND_SECRETS,
+    secrets: CRISP_SECRETS,
     timeoutSeconds: 60,
     memory: "512MiB",
   },
@@ -342,17 +323,6 @@ export const supportSendMessage = onRequest(
         { merge: true }
       );
 
-      try {
-        await maybeAutoReplyWithClaude({
-          uid,
-          sessionId,
-          userText: text,
-          language: String(req.body?.language ?? "").trim(),
-        });
-      } catch (error) {
-        console.error("[supportSendMessage] auto-reply failed", error);
-      }
-
       res.status(200).json({ ok: true, messageId, sessionId });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Unknown error";
@@ -364,90 +334,6 @@ export const supportSendMessage = onRequest(
     }
   }
 );
-
-async function maybeAutoReplyWithClaude(params: {
-  uid: string;
-  sessionId: string;
-  userText: string;
-  language: string;
-}): Promise<void> {
-  const apiKey = anthropicApiKey.value();
-  if (!apiKey) return;
-
-  const historySnap = await supportMessages(params.uid)
-    .orderBy("createdAt", "desc")
-    .limit(12)
-    .get();
-  const history = historySnap.docs
-    .slice()
-    .reverse()
-    .map((doc) => {
-      const data = doc.data();
-      return {
-        from: String(data.from ?? "user"),
-        text: String(data.text ?? "").trim(),
-      };
-    })
-    .filter((item) => item.text);
-
-  const english = params.language.toLowerCase().startsWith("en");
-  const transcript = history
-    .map((item) => `${item.from === "operator" ? "Team" : "User"}: ${item.text}`)
-    .join("\n");
-
-  const system = english
-    ? `You are Process support (Process Debloat iOS app). Reply as the human team, never mention Claude, AI, or Crisp.
-Keep it short (2–5 sentences). Match the user's language.
-Help with: face/body scan redo (they can start a new face scan from the plan/home in the app), hydration, subscription, bugs, account.
-If they scanned their face wrong: tell them they can retake a face scan in the app; the latest scan replaces the previous one. Do not invent hidden menus.
-No medical diagnosis. If billing/refund/legal is unclear, say the team will check and keep it kind.
-No markdown headings. No emoji spam.`
-    : `Tu es le support Process (app iOS Process Debloat). Tu réponds comme l'équipe, jamais mentionner Claude, l'IA ou Crisp.
-Réponse courte (2–5 phrases). Même langue que l'utilisateur.
-Tu aides pour : refaire un scan visage/corps (nouveau scan visage depuis l'accueil / le plan), hydratation, abonnement, bugs, compte.
-Si le scan visage est raté : on peut le refaire dans l'app, le dernier scan remplace le précédent. N'invente pas de menus cachés.
-Pas de diagnostic médical. Si remboursement / légal / facturation est flou, dis que l'équipe va vérifier, reste cool.
-Pas de titres markdown. Pas d'emoji en masse.`;
-
-  const client = new Anthropic({ apiKey });
-  const model = normalizeModel("claude-haiku-4-5-20251001");
-  const response = await client.messages.create({
-    model,
-    max_tokens: 400,
-    system,
-    messages: [
-      {
-        role: "user",
-        content: english
-          ? `Latest user message:\n${params.userText}\n\nThread:\n${transcript || params.userText}`
-          : `Dernier message utilisateur :\n${params.userText}\n\nFil :\n${transcript || params.userText}`,
-      },
-    ],
-  });
-
-  const reply = response.content
-    .filter((block) => block.type === "text")
-    .map((block) => (block.type === "text" ? block.text : ""))
-    .join("\n")
-    .trim();
-  if (!reply) return;
-
-  const fingerprint = await sendCrispOperatorMessage(params.sessionId, reply);
-  await persistOperatorMessage({
-    sessionId: params.sessionId,
-    text: reply,
-    fingerprint,
-    timestampMs: Date.now(),
-    userId: params.uid,
-    origin: "claude",
-  });
-  await sendCrispNote(
-    params.sessionId,
-    english
-      ? "Auto-reply (Process Claude). Edit/send a follow-up from Crisp if this is off."
-      : "Réponse auto (Claude Process). Corrige ou complète depuis Crisp si ça ne va pas."
-  );
-}
 
 async function persistOperatorMessage(params: {
   sessionId: string;

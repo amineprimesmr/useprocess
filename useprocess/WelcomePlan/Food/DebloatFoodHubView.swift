@@ -5,6 +5,8 @@ struct DebloatFoodHubView: View {
     let plan: FaceOriginPlan
     let day: OriginProgramDay
     var isEditable: Bool
+    /// `true` quand la vue est montée en root d'onglet persistant plutôt qu'en présentation modale — masque le bouton de fermeture.
+    var isTabRoot: Bool = false
 
     @Environment(\.appTheme) private var theme
     @Environment(\.dismiss) private var dismiss
@@ -77,8 +79,10 @@ struct DebloatFoodHubView: View {
             .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(AppCopy.close) { dismiss() }
+                if !isTabRoot {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(AppCopy.close) { dismiss() }
+                    }
                 }
             }
             .sheet(item: $selectedFood) { food in

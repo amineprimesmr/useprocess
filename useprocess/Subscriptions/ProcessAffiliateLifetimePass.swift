@@ -1,9 +1,9 @@
 import Foundation
 
-/// Code **affiliés** : accès lifetime offert, hors essai 3 jours et hors commissions.
+/// Code **affiliés** : accès lifetime offert, hors commissions.
 ///
-/// Ne jamais passer ce code dans `ProcessReferralTrialEligibility`,
-/// `ProcessAcquisitionAttribution`, ni `AcquisitionCodeService`.
+/// Ne jamais passer ce code dans `ProcessAcquisitionAttribution`,
+/// ni `AcquisitionCodeService`.
 enum ProcessAffiliateLifetimePass {
     /// Code à donner aux affiliés. Alphabet parrainage (pas de I / O / 0 / 1).
     static let code = "CREW7"

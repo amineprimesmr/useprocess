@@ -41,7 +41,7 @@ struct PaywallView: View {
     @State private var showsCloseXButton = false
     @State private var closeXAttemptCount = 0
     @State private var lastCloseXTapAt: Date?
-    @State private var referralTrialUnlocked = false
+    @State private var purchaseAttemptStartedAt: Date?
     @Bindable private var appLanguage = ProcessAppLanguage.shared
     private let termsURL = ProcessLegalURLs.termsOfUse
     private let privacyURL = ProcessLegalURLs.privacyPolicy
@@ -144,9 +144,7 @@ struct PaywallView: View {
             PaywallReferralCodeSheet()
         }
         .task {
-            _ = await ProcessReferralTrialEligibility.refreshByResolvingAttributedCode()
             await subscriptionService.loadSubscriptions()
-            referralTrialUnlocked = PaywallPricingExperiment.shared.grantsAnnualTrial
             if !didSetInitialPlan {
                 if subscriptionService.hasLiveAnnualProduct {
                     selectedBillingPlan = .annual
@@ -158,12 +156,6 @@ struct PaywallView: View {
             await subscriptionService.checkSubscriptionStatus()
             if subscriptionService.subscriptionStatus.isActive {
                 completePaywallFlow()
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .processReferralAnnualTrialDidChange)) { _ in
-            referralTrialUnlocked = PaywallPricingExperiment.shared.grantsAnnualTrial
-            if ProcessReferralTrialEligibility.isUnlocked {
-                selectedBillingPlan = .annual
             }
         }
         .onAppear {
@@ -443,7 +435,7 @@ struct PaywallView: View {
                     .paywallAnnualStrikethroughComparePrice,
                 annualPrice: annualPrimaryPrice,
                 shortPlanPrice: shortPlanPrimaryPrice,
-                annualOfferBadge: annualTrialBadgeText
+                annualOfferBadge: nil
             )
 
             PaywallBevelContinueButton(
@@ -487,31 +479,12 @@ struct PaywallView: View {
         return display.paywallShortPlanPriceLabel(for: shortBillingPlan)
     }
 
-    private var annualTrialBadgeText: String? {
-        guard referralTrialUnlocked || selectedPlanTrialInfo.isActiveOffer else {
-            return nil
-        }
-        return OnboardingCopy.t("3 jours offerts", en: "3 days free")
-    }
-
-    private var selectedPlanTrialInfo: SubscriptionTrialInfo {
-        subscriptionService.trialInfo(for: selectedBillingPlan)
-    }
-
     private var paywallContinueButtonTitle: String {
-        selectedPlanTrialInfo.ctaTitle(
-            fallback: OnboardingCopy.t("Continuer, aucun engagement.", en: "Continue — no commitment.")
-        )
+        OnboardingCopy.t("Continuer, aucun engagement.", en: "Continue — no commitment.")
     }
 
     private var paywallContinueSubtitle: String {
-        if let trialSubtitle = selectedPlanTrialInfo.ctaSubtitle(
-            for: selectedBillingPlan,
-            displayPrice: subscriptionService.displayProduct(for: selectedBillingPlan).displayPrice
-        ) {
-            return trialSubtitle
-        }
-        return OnboardingCopy.t(
+        OnboardingCopy.t(
             "Sans engagement, annulable à tout moment.",
             en: "No commitment — cancel anytime."
         )
@@ -610,9 +583,10 @@ struct PaywallView: View {
         defer { isPurchasing = false }
 
         let plan = selectedBillingPlan.rawValue
-        let offer = selectedPlanTrialInfo.isActiveOffer ? "trial" : "standard"
+        let offer = "standard"
         ProcessAnalytics.trackPaywallCTATapped(plan: plan, source: "paywall")
         ProcessAnalytics.trackPurchaseStarted(plan: plan, offer: offer, source: "paywall")
+        purchaseAttemptStartedAt = Date()
 
         do {
             try await subscriptionService.purchase(plan: selectedBillingPlan)
@@ -623,7 +597,13 @@ struct PaywallView: View {
                 completePaywallFlow()
             }
         } catch SubscriptionError.userCancelled {
-            ProcessAnalytics.trackPurchaseCancelled(plan: plan, offer: offer, source: "paywall")
+            ProcessAnalytics.trackPurchaseCancelled(
+                plan: plan,
+                offer: offer,
+                source: "paywall",
+                priceDisplayed: subscriptionService.displayProduct(for: selectedBillingPlan).displayPrice,
+                secondsSinceStarted: purchaseAttemptStartedAt.map { Date().timeIntervalSince($0) }
+            )
             presentSpinWinbackIfNeeded()
             Task {
                 await ProcessMarketingNotificationService.shared.startAfterPaywallDropoff(
@@ -719,8 +699,8 @@ private struct PaywallReferralCodeSheet: View {
         NavigationStack {
             VStack(spacing: 0) {
                 Text(OnboardingCopy.t(
-                    "Code clipper / ami = 3 jours d’essai. Code affilié Process = accès à vie.",
-                    en: "Clipper / friend code = 3-day trial. Process affiliate code = lifetime access."
+                    "Code affilié Process = accès à vie.",
+                    en: "Process affiliate code = lifetime access."
                 ))
                 .font(.system(size: 15))
                 .foregroundStyle(OnboardingTheme.bodyText)
@@ -834,7 +814,6 @@ private struct PaywallReferralCodeSheet: View {
         ProcessAcquisitionAttribution.captureReferralCode(normalized, source: "paywall", medium: "referral")
         ProcessAcquisitionAttribution.captureAffiliateCode(normalized, source: "paywall", medium: "creator")
         ProcessReferralAttribution.rememberManualEntry(normalized)
-        ProcessReferralTrialEligibility.unlock(code: resolved?.code ?? normalized)
         ProcessAnalytics.trackReferralCodeApplied(source: "paywall_menu")
 
         let userId = UnifiedProfileService.shared.currentProfile?.userId
@@ -854,8 +833,8 @@ private struct PaywallReferralCodeSheet: View {
         HapticManager.shared.notification(.success)
         await SubscriptionService.shared.loadSubscriptions()
         feedback = OnboardingCopy.t(
-            "3 jours d’essai débloqués sur l’annuel.",
-            en: "3-day yearly trial unlocked."
+            "Code appliqué.",
+            en: "Code applied."
         )
         try? await Task.sleep(for: .milliseconds(650))
         dismiss()

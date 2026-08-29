@@ -5,6 +5,7 @@ struct BodyScanCameraPreview: UIViewRepresentable {
     let session: AVCaptureSession
     var mirrorFrontCamera: Bool = true
     var isSessionRunning: Bool = false
+    var previewZoom: CGFloat = ProcessScanCamera.frontPreviewLayoutZoom
 
     func makeCoordinator() -> Coordinator {
         Coordinator(mirrorFrontCamera: mirrorFrontCamera)
@@ -14,6 +15,7 @@ struct BodyScanCameraPreview: UIViewRepresentable {
         let view = PreviewView()
         view.previewLayer.session = session
         view.previewLayer.videoGravity = .resizeAspectFill
+        view.previewZoom = previewZoom
         view.configureConnection(mirror: mirrorFrontCamera)
         return view
     }
@@ -21,6 +23,7 @@ struct BodyScanCameraPreview: UIViewRepresentable {
     func updateUIView(_ uiView: PreviewView, context: Context) {
         context.coordinator.mirrorFrontCamera = mirrorFrontCamera
         uiView.previewLayer.session = session
+        uiView.previewZoom = previewZoom
         uiView.configureConnection(mirror: mirrorFrontCamera)
         if isSessionRunning {
             uiView.setNeedsLayout()
@@ -37,6 +40,9 @@ struct BodyScanCameraPreview: UIViewRepresentable {
 
     final class PreviewView: UIView {
         let previewLayer = AVCaptureVideoPreviewLayer()
+        var previewZoom: CGFloat = ProcessScanCamera.frontPreviewLayoutZoom {
+            didSet { setNeedsLayout() }
+        }
 
         override init(frame: CGRect) {
             super.init(frame: frame)
@@ -53,7 +59,7 @@ struct BodyScanCameraPreview: UIViewRepresentable {
             ProcessScanCamera.layoutPreviewLayer(
                 previewLayer,
                 in: bounds,
-                zoom: ProcessScanCamera.frontPreviewLayoutZoom
+                zoom: previewZoom
             )
         }
 

@@ -1,12 +1,9 @@
 import Foundation
 import PostHog
 
-/// A/B essai annuel 3 jours (PostHog experiment `paywall-annual-trial-ab`).
+/// Pricing config — hard paywall, plus d'A/B sur un essai gratuit.
 ///
-/// - **control** : 9,99 € / mois + 34,99 € / an, **sans** essai (`annual3499`)
-/// - **test** : mêmes prix, intro 3 jours sur l’annuel (`annual3499trial`)
-///
-/// Un code parrainage validé débloque l’essai **dans les deux bras**.
+/// **control** : 9,99 € / mois + 34,99 € / an, sans essai (`annual3499`).
 @MainActor
 @Observable
 final class PaywallPricingExperiment {
@@ -16,24 +13,20 @@ final class PaywallPricingExperiment {
     private static let persistenceKey = "process.paywall_annual_trial_variant"
 
     enum Variant: String, CaseIterable, Identifiable {
-        /// Pas d’essai (sauf code parrainage).
+        /// Pas d'essai.
         case control
-        /// Essai 3 jours sur l’annuel pour tout le monde.
-        case test
 
         var id: String { rawValue }
 
         var analyticsName: String {
             switch self {
             case .control: return "monthly_999_annual_3499"
-            case .test: return "monthly_999_annual_3499_trial"
             }
         }
 
         var displayLabel: String {
             switch self {
             case .control: return "9,99€/mois + 34,99€/an"
-            case .test: return "9,99€/mois + 34,99€/an · 3j essai"
             }
         }
 
@@ -43,11 +36,10 @@ final class PaywallPricingExperiment {
 
         var shortProductID: String { SubscriptionConfiguration.monthly999ProductID }
 
-        /// SKU annuel du bras, **sans** override parrainage.
+        /// SKU annuel du bras.
         var catalogAnnualProductID: String {
             switch self {
             case .control: return SubscriptionConfiguration.annual3499ProductID
-            case .test: return SubscriptionConfiguration.annual3499TrialProductID
             }
         }
 
@@ -70,39 +62,20 @@ final class PaywallPricingExperiment {
     private(set) var activeVariant: Variant = .control
     private(set) var didResolveFromPostHog = false
 
-    /// Essai annuel : bras test **ou** code parrainage.
-    var grantsAnnualTrial: Bool {
-        activeVariant == .test || ProcessReferralTrialEligibility.isUnlocked
-    }
-
     var analyticsProperties: [String: Any] {
         [
             "pricing_variant": activeVariant.analyticsName,
             "pricing_variant_key": activeVariant.rawValue,
-            "pricing_short_plan": activeVariant.shortPlan.rawValue,
-            "referral_annual_trial": ProcessReferralTrialEligibility.isUnlocked,
-            "annual_trial_offer": grantsAnnualTrial ? "trial" : "standard"
+            "pricing_short_plan": activeVariant.shortPlan.rawValue
         ]
     }
 
-    private init() {
-        if let stored = UserDefaults.standard.string(forKey: Self.persistenceKey),
-           let variant = Variant(rawValue: stored) {
-            activeVariant = variant
-            didResolveFromPostHog = true
-        }
-    }
+    private init() {}
 
-    /// Résout le flag PostHog (sticky). Appeler après `ProcessAnalytics.configure()`.
+    /// Résout le flag PostHog — conservé pour analytics, n'affecte plus le pricing (hard paywall).
     func resolve(forceRefresh: Bool = false) {
-        guard ProcessAnalytics.isReady else {
-            #if DEBUG
-            print("[PaywallAnnualTrial] PostHog not ready — using \(activeVariant.rawValue)")
-            #endif
-            return
-        }
-
-        applyFlagFromSDK(source: forceRefresh ? "reload" : "boot", forceRefresh: forceRefresh)
+        guard ProcessAnalytics.isReady else { return }
+        registerAnalytics(for: activeVariant)
     }
 
     /// Attend le reload des feature flags puis applique la variante (idéal avant le paywall).
@@ -115,7 +88,9 @@ final class PaywallPricingExperiment {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             PostHogSDK.shared.reloadFeatureFlags { [weak self] in
                 Task { @MainActor in
-                    self?.applyFlagFromSDK(source: "flags_ready", forceRefresh: false)
+                    if let self {
+                        self.registerAnalytics(for: self.activeVariant)
+                    }
                     continuation.resume()
                 }
             }
@@ -133,58 +108,14 @@ final class PaywallPricingExperiment {
         }
     }
 
-    private func applyFlagFromSDK(source: String, forceRefresh: Bool) {
-        // Sticky déjà connu : ne pas re-appeler getFeatureFlag (évite une exposure
-        // PostHog qui ne matcherait plus l’UI si le flag serveur a bougé).
-        if didResolveFromPostHog, !forceRefresh {
-            registerAnalytics(for: activeVariant)
-            return
-        }
-
-        let flagValue = PostHogSDK.shared.getFeatureFlag(Self.featureFlagKey)
-
-        let resolved: Variant?
-        if let string = flagValue as? String, let variant = Variant(rawValue: string) {
-            resolved = variant
-        } else if let bool = flagValue as? Bool {
-            resolved = bool ? .test : .control
-        } else {
-            resolved = nil
-        }
-
-        guard let resolved else {
-            #if DEBUG
-            print("[PaywallAnnualTrial] Flag \(Self.featureFlagKey) missing — keep \(activeVariant.rawValue)")
-            #endif
-            registerAnalytics(for: activeVariant)
-            return
-        }
-
-        let previous = activeVariant
-        activeVariant = resolved
-        didResolveFromPostHog = true
-        UserDefaults.standard.set(resolved.rawValue, forKey: Self.persistenceKey)
-        registerAnalytics(for: resolved)
-
-        ProcessAnalytics.capture("paywall_pricing_variant_assigned", properties: [
-            "variant": resolved.rawValue,
-            "variant_name": resolved.analyticsName,
-            "previous": previous.rawValue,
-            "source": source,
-            "flag_key": Self.featureFlagKey
-        ])
-    }
-
     private func registerAnalytics(for variant: Variant) {
         PostHogSDK.shared.register([
             "pricing_variant": variant.analyticsName,
-            "pricing_variant_key": variant.rawValue,
-            "annual_trial_offer": grantsAnnualTrial ? "trial" : "standard"
+            "pricing_variant_key": variant.rawValue
         ])
         ProcessAnalytics.setPersonProperties([
             "pricing_variant": variant.analyticsName,
-            "pricing_variant_key": variant.rawValue,
-            "annual_trial_offer": grantsAnnualTrial ? "trial" : "standard"
+            "pricing_variant_key": variant.rawValue
         ])
     }
 }

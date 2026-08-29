@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// Shell principal — tab bar (Accueil · Série · Routine · Progrès).
+/// Shell principal — tab bar (Accueil · Alimentation · Routine · Progrès).
 struct MainAppView: View {
     @State private var selectedSection: ProcessMainSection = .plan
     @State private var tabBeforeCoach: ProcessMainSection = .plan
@@ -46,6 +46,7 @@ struct MainAppView: View {
             syncCoachPresentationState()
             redirectFromDisabledCoachTabIfNeeded()
             redirectFromRemovedScanTabIfNeeded()
+            redirectFromRemovedStatisticsTabIfNeeded()
             ProcessHydrationTimerMonitor.shared.handleSceneBecameActive()
         }
         .onChange(of: selectedSection) { oldValue, newValue in
@@ -145,10 +146,10 @@ struct MainAppView: View {
                     .accessibilityHidden(selectedSection != .coach)
             }
 
-            statisticsTabRoot
-                .opacity(selectedSection == .statistics ? 1 : 0)
-                .allowsHitTesting(selectedSection == .statistics)
-                .accessibilityHidden(selectedSection != .statistics)
+            foodTabRoot
+                .opacity(selectedSection == .food ? 1 : 0)
+                .allowsHitTesting(selectedSection == .food)
+                .accessibilityHidden(selectedSection != .food)
 
             profileTabRoot
                 .opacity(selectedSection == .profile ? 1 : 0)
@@ -198,12 +199,16 @@ struct MainAppView: View {
             .background(Color.clear)
     }
 
-    private var statisticsTabRoot: some View {
-        ProcessProfileView(
-            selectedSection: $selectedSection,
-            isTabActive: selectedSection == .statistics
-        )
-        .background(Color.clear)
+    @ViewBuilder
+    private var foodTabRoot: some View {
+        if let plan = WelcomePlanStore.shared.plan,
+           let day = OriginPlanPresenter.programDay(in: plan, for: OriginPlanPresenter.preferredHomeDate(in: plan)) {
+            DebloatFoodHubView(plan: plan, day: day, isEditable: true, isTabRoot: true)
+                .environmentObject(UnifiedProfileService.shared)
+                .background(Color.clear)
+        } else {
+            Color.clear
+        }
     }
 
     // MARK: - Navigation
@@ -216,9 +221,6 @@ struct MainAppView: View {
             FaceScanScreenFlash.shared.deactivate(animated: false)
             ProcessEveningCheckInPresenter.shared.dismissImmediately()
             PlanHomeTutorialStore.shared.cancelScheduledPresentation()
-        }
-        if newValue == .statistics {
-            ProcessPerformanceTrace.beginProfileOpen()
         }
         if newValue == .coach {
             ProcessPerformanceTrace.beginCoachOpen()
@@ -312,6 +314,11 @@ struct MainAppView: View {
 
     private func redirectFromRemovedScanTabIfNeeded() {
         guard selectedSection == .scan else { return }
+        selectedSection = .plan
+    }
+
+    private func redirectFromRemovedStatisticsTabIfNeeded() {
+        guard selectedSection == .statistics else { return }
         selectedSection = .plan
     }
 
