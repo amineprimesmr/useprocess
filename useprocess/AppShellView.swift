@@ -17,6 +17,19 @@ struct AppShellView: View {
         AppTheme(appearance: session.appearance, colorScheme: colorScheme)
     }
 
+    /// Photographie de l'état d'affichage réel, une fois la 1re passe de layout
+    /// faite (avant, les traits UIKit ne sont pas encore stabilisés).
+    private func scheduleRenderDiagnostics() {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(1500))
+            guard !Task.isCancelled else { return }
+            ProcessRenderDiagnostics.captureAppOpenSnapshot(
+                colorScheme: colorScheme,
+                theme: theme
+            )
+        }
+    }
+
     private var mainAppBootstrapToken: String {
         guard session.hasCompletedOnboarding,
               subscriptionService.hasResolvedInitialSubscriptionStatus,
@@ -84,6 +97,7 @@ struct AppShellView: View {
                 if session.hasCompletedOnboarding {
                     Task { await subscriptionService.checkSubscriptionStatus() }
                 }
+                scheduleRenderDiagnostics()
                 CoachDailyRhythmService.cancelEveningCheckNotification()
                 if let delegate = UIApplication.shared.delegate as? ProcessAppDelegate {
                     delegate.consumePendingLaunchShortcut()
@@ -141,6 +155,7 @@ struct AppShellView: View {
             try? await Task.sleep(for: .milliseconds(900))
             guard !Task.isCancelled else { return }
             isHomeSwipeArmed = !session.hasCompletedOnboarding
+            scheduleRenderDiagnostics()
             ProcessHomeScreenQuickActions.syncForCurrentUser()
             if let delegate = UIApplication.shared.delegate as? ProcessAppDelegate {
                 delegate.consumePendingLaunchShortcut()
