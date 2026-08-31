@@ -120,9 +120,7 @@ struct PlanNutritionDaySection: View {
     var mealZoomNamespace: Namespace.ID
 
     @Environment(\.appTheme) private var theme
-    @EnvironmentObject private var profileService: UnifiedProfileService
 
-    @State private var showMealIdeasCatalog = false
     @Bindable private var tutorialStore = PlanHomeTutorialStore.shared
     @State private var mealEntries: [PlanDayMealEntry] = []
 
@@ -158,16 +156,6 @@ struct PlanNutritionDaySection: View {
         }
         .onChange(of: mealEntriesRefreshToken) { _, _ in
             reloadMealEntries()
-        }
-        .fullScreenCover(isPresented: $showMealIdeasCatalog) {
-            PlanMealIdeasCatalogSheet(
-                plan: livePlan,
-                day: day,
-                isEditable: isEditable,
-                mealZoomNamespace: mealZoomNamespace
-            )
-            .environmentObject(profileService)
-            .processZoomTransition(id: .mealCatalog, namespace: mealZoomNamespace)
         }
     }
 
@@ -228,7 +216,7 @@ struct PlanNutritionDaySection: View {
             zoomNamespace: mealZoomNamespace,
             onTap: {
                 HapticManager.shared.impact(.light)
-                showMealIdeasCatalog = true
+                CoachPlanNavigationBridge.shared.openFood()
             }
         )
     }

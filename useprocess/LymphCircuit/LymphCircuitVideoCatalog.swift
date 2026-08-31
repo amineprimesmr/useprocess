@@ -2,6 +2,13 @@ import Foundation
 
 /// Vidéos démo du circuit lymphatique (PiP) — `lymph_01`…`03`, `lymph_05`…`07`.
 enum LymphCircuitVideoCatalog {
+    /// Qualité originale (non compressée) hébergée sur Firebase Storage — cache disque local après 1er accès.
+    static func remoteDemoURL(for step: FaceMorningRoutineCatalog.Step) async -> URL? {
+        try? await RemoteMediaCache.shared.localURL(
+            forStoragePath: "media/lymph-circuit/\(step.demoVideoResourceName).mp4"
+        )
+    }
+
     static func demoURL(for step: FaceMorningRoutineCatalog.Step) -> URL? {
         url(for: step.demoVideoResourceName)
     }

@@ -17,7 +17,6 @@ extension View {
 private struct PlanHomeTutorialModifier: ViewModifier {
     @Bindable var store: PlanHomeTutorialStore
     @Bindable private var planStore = WelcomePlanStore.shared
-    @Bindable private var eveningPresenter = ProcessEveningCheckInPresenter.shared
     @Binding var selectedSection: ProcessMainSection
     @Environment(\.scenePhase) private var scenePhase
 
@@ -34,10 +33,6 @@ private struct PlanHomeTutorialModifier: ViewModifier {
                 bootstrapTutorial()
             }
             .onChange(of: planStore.plan?.id) { _, _ in
-                requestTutorial(preferImmediate: true)
-            }
-            .onChange(of: eveningPresenter.presentation) { _, presentation in
-                guard presentation == nil else { return }
                 requestTutorial(preferImmediate: true)
             }
             .onChange(of: scenePhase) { _, phase in
@@ -60,15 +55,19 @@ private struct PlanHomeTutorialModifier: ViewModifier {
                 }
             }
             .onChange(of: store.isActive) { _, active in
+                // Ne ramener sur Plan qu'au démarrage du tutoriel. Le forcer aussi
+                // à la sortie empêchait toute navigation manuelle.
                 if active, selectedSection != .plan {
                     withAnimation(ProcessGlass.spring) {
                         selectedSection = .plan
                     }
-                } else if !active, selectedSection != .plan {
-                    withAnimation(ProcessGlass.spring) {
-                        selectedSection = .plan
-                    }
                 }
+            }
+            .onChange(of: selectedSection) { _, section in
+                // L'utilisateur change d'onglet lui-même pendant le tutoriel :
+                // c'est un abandon volontaire, on le termine au lieu de le rejouer.
+                guard store.isActive, section != store.requestedMainSection else { return }
+                store.skip()
             }
     }
 
@@ -140,6 +139,11 @@ private struct PlanHomeTutorialTabStepControls: View {
                     )
             }
             .buttonStyle(.processPlain)
+
+            PlanHomeTutorialSkipButton {
+                store.skip()
+            }
+            .environment(\.colorScheme, .dark)
         }
     }
 }

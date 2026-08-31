@@ -20,6 +20,7 @@ struct PlanMealCatalogCarousel: View {
     let slot: MealTimeSlot
     let plan: FaceOriginPlan
     let day: OriginProgramDay
+    var tileSize: CGFloat = PlanMealCatalogLayout.tileSize
     var onOpen: (MealSuggestionContent) -> Void
 
     var body: some View {
@@ -31,6 +32,7 @@ struct PlanMealCatalogCarousel: View {
                         slot: slot,
                         plan: plan,
                         day: day,
+                        tileSize: tileSize,
                         onTap: { onOpen(meal) }
                     )
                     .scrollTransition(.interactive, axis: .horizontal) { content, phase in
@@ -56,6 +58,7 @@ struct PlanMealCatalogCard: View {
     let slot: MealTimeSlot
     let plan: FaceOriginPlan
     let day: OriginProgramDay
+    var tileSize: CGFloat = PlanMealCatalogLayout.tileSize
     var onTap: () -> Void
 
     @Environment(\.appTheme) private var theme
@@ -82,20 +85,20 @@ struct PlanMealCatalogCard: View {
             HapticManager.shared.impact(.light)
             onTap()
         } label: {
-            ZStack(alignment: .bottomLeading) {
+            ZStack(alignment: .bottom) {
                 mealImage
                     .frame(
-                        width: PlanMealCatalogLayout.tileSize,
-                        height: PlanMealCatalogLayout.tileSize
+                        width: tileSize,
+                        height: tileSize
                     )
                     .clipShape(tileShape)
 
                 MealDebloatScorePill(assessment: assessment)
-                    .padding(10)
+                    .padding(.bottom, 10)
             }
             .frame(
-                width: PlanMealCatalogLayout.tileSize,
-                height: PlanMealCatalogLayout.tileSize
+                width: tileSize,
+                height: tileSize
             )
             .contentShape(tileShape)
         }
@@ -118,8 +121,8 @@ struct PlanMealCatalogCard: View {
                 .resizable()
                 .scaledToFill()
                 .frame(
-                    width: PlanMealCatalogLayout.tileSize,
-                    height: PlanMealCatalogLayout.tileSize
+                    width: tileSize,
+                    height: tileSize
                 )
         } else {
             ZStack {

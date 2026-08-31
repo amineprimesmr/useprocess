@@ -139,6 +139,14 @@ extension SportOnboardingView {
                 },
                 onBack: previousStep
             )
+        case .postPaymentWelcome:
+            OnboardingPostPaymentWelcomeStepView(onComplete: nextStep)
+        case .explainerBodyFat:
+            OnboardingExplainerBodyFatStepView(onComplete: nextStep)
+        case .explainerWaterRetention:
+            OnboardingExplainerWaterRetentionStepView(onComplete: nextStep)
+        case .explainerLymphDrainage:
+            OnboardingExplainerLymphDrainageStepView(onComplete: nextStep)
         case .appleSignIn:
             OnboardingPostPaymentThankYouView(
                 viewModel: viewModel,

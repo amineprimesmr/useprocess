@@ -498,8 +498,7 @@ struct PlanProgramCalendarView: View {
         let programDay = OriginPlanPresenter.programDay(in: plan, for: dayStart)
         let dayKey = ProcessStreakStore.dayKey(for: dayStart, calendar: calendar)
         let record = trajectoryStore.allRecordsByDay[dayKey]
-        let isValidated = record?.checkInSubmitted == true
-            || ProcessEveningCheckInStore.shared.hasSubmitted(on: dayStart)
+        let isValidated = record?.hasScan == true
         let isToday = calendar.isDateInToday(dayStart)
         let isDebloatTarget = programDay.map { $0.globalDayIndex + 1 == progress.totalProgramDays } ?? false
 

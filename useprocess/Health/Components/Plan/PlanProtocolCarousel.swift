@@ -600,52 +600,6 @@ struct PlanProtocolItemDetailSheet: View {
     }
 }
 
-struct PlanContinuousHabitsInlineSection: View {
-    @Environment(\.appTheme) private var theme
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 6) {
-                Image(systemName: "infinity")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(theme.onboardingAccent)
-                Text(AppCopy.t("À faire 24/7", en: "Do all day"))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(theme.secondaryText)
-                    .textCase(.uppercase)
-            }
-
-            Text(AppCopy.t("Habitudes continues — pas des exercices à timer, mais à garder toute la journée.", en: "Ongoing habits — not timed exercises, but ones to keep all day."))
-                .font(.caption)
-                .foregroundStyle(theme.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
-
-            VStack(spacing: 8) {
-                ForEach(Array(ProcessContinuousHabits.all.enumerated()), id: \.offset) { _, habit in
-                    HStack(alignment: .top, spacing: 10) {
-                        Circle()
-                            .fill(theme.onboardingAccent.opacity(0.85))
-                            .frame(width: 6, height: 6)
-                            .padding(.top, 6)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(habit.title)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(theme.primaryText)
-                            Text(habit.detail)
-                                .font(.caption)
-                                .foregroundStyle(theme.secondaryText)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-            .padding(14)
-            .background(HealthHubDesign.softCard(theme: theme))
-        }
-    }
-}
 
 // MARK: - En-tête section
 

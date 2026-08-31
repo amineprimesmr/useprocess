@@ -1,5 +1,17 @@
 import Foundation
 
+/// Identifiants des leviers debloat suivis (ex-checklist bilan du soir) — utilisés pour scorer les records historiques.
+enum EveningCheckInQuestionID {
+    static let water = "water"
+    static let debloatMeal = "debloatMeal"
+    static let cardio = "cardio"
+    static let morningRoutine = "morningRoutine"
+    static let legacyPostureCircuit = "postureCircuit"
+
+    static let debloatLevers: [String] = [water, debloatMeal]
+    static let all: [String] = [morningRoutine] + debloatLevers
+}
+
 /// Calculs purs — score comportement, scan, verdict, streak, tendance.
 enum ProcessDebloatTrajectoryEngine {
 
@@ -70,34 +82,21 @@ enum ProcessDebloatTrajectoryEngine {
         now: Date = Date()
     ) -> DebloatDayVerdict {
         if isPaused { return .paused }
-        if !record.checkInSubmitted {
+        if !record.hasScan {
             return unsubmittedVerdict(for: record.dayKey, now: now)
         }
 
         let effectiveScan = scanScore ?? 0.5
-        let validated = countsAsValidatedDay(
-            record: record,
-            consecutiveCardioMissesBefore: consecutiveCardioMissesBefore
-        )
-
-        if !validated {
-            if record.water != true || record.debloatMeal != true {
-                return .regression
-            }
-            return .partial
-        }
-
-        if record.water == true, record.debloatMeal == true,
-           behaviorScore(from: record) >= 0.9, effectiveScan >= 0.55 {
+        if effectiveScan >= 0.55 {
             return .excellent
         }
-
         return .onTrack
     }
 
     static func unsubmittedVerdict(for dayKey: String, now: Date = Date()) -> DebloatDayVerdict {
         guard let date = date(from: dayKey) else { return .missed }
-        if ProcessEveningCheckInSchedule.isOverdue(for: date, now: now) {
+        let calendar = Calendar.current
+        if calendar.startOfDay(for: date) < calendar.startOfDay(for: now) {
             return .missed
         }
         return .pending
@@ -162,25 +161,6 @@ enum ProcessDebloatTrajectoryEngine {
         guard record.checkInSubmitted else { return previousMisses }
         if record.cardio == true { return 0 }
         return previousMisses + 1
-    }
-
-    static func currentStreak(
-        from records: [DebloatDayRecord],
-        today: Date,
-        calendar: Calendar = .current,
-        now: Date = Date()
-    ) -> Int {
-        _ = records
-        _ = today
-        return ProcessStreakMath.currentStreak(
-            submittedKeys: ProcessEveningCheckInStore.shared.submittedDayKeys,
-            isPaused: { key in
-                guard let date = date(from: key) else { return false }
-                return ProcessActivityStatusStore.shared.status(for: date) != .active
-            },
-            now: now,
-            calendar: calendar
-        )
     }
 
     // MARK: - Tendance

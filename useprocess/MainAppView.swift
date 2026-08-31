@@ -11,6 +11,7 @@ struct MainAppView: View {
     @State private var showMealPhotoScan = false
     @State private var showFaceScanSession = false
     @Bindable private var screenFlash = FaceScanScreenFlash.shared
+    @Bindable private var scanToastPresenter = ScanCompletionToastPresenter.shared
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.appTheme) private var theme
 
@@ -36,9 +37,10 @@ struct MainAppView: View {
                 .processClearUIKitHostingBackground()
         }
         .animation(.easeInOut(duration: 0.22), value: screenFlash.isActive)
-        .eveningCheckInIsland { submitted in
-            handleEveningCheckInDismiss(submitted: submitted)
-        }
+        .dynamicIslandToast(
+            isPresented: $scanToastPresenter.isPresented,
+            value: scanToastPresenter.message
+        )
         .planHomeTutorial(selectedSection: $selectedSection)
         .processStackedToasts()
         .onAppear {
@@ -62,6 +64,10 @@ struct MainAppView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase != .active {
                 FaceScanScreenFlash.shared.deactivate(animated: false)
+                // Le scan repas floute et assombrit TOUTE l'app et capte les taps :
+                // s'il restait coincé, l'app revenait inutilisable à chaque
+                // réouverture. La session caméra est de toute façon détruite ici.
+                showMealPhotoScan = false
             }
             guard phase == .active else { return }
             ProcessHydrationTimerMonitor.shared.handleSceneBecameActive()
@@ -85,6 +91,18 @@ struct MainAppView: View {
             }
             planBridge.shouldOpenPlan = false
         }
+        .onChange(of: planBridge.shouldOpenFood) { _, should in
+            guard should else { return }
+            withAnimation(ProcessGlass.spring) {
+                selectedSection = .food
+            }
+            planBridge.shouldOpenFood = false
+        }
+        .onChange(of: planBridge.shouldOpenMealScan) { _, should in
+            guard should else { return }
+            planBridge.shouldOpenMealScan = false
+            openMealPhotoScan()
+        }
         .onChange(of: planBridge.shouldOpenScanHub) { _, should in
             guard should else { return }
             planBridge.shouldOpenScanHub = false
@@ -100,17 +118,6 @@ struct MainAppView: View {
                 showFaceScanSession = false
             }
             .environmentObject(UnifiedProfileService.shared)
-        }
-        .onChange(of: planBridge.shouldOpenEveningCheckIn) { _, should in
-            guard should else { return }
-            planBridge.shouldOpenEveningCheckIn = false
-            withAnimation(ProcessGlass.spring) {
-                selectedSection = .plan
-            }
-            ProcessEveningCheckInPresenter.shared.present(
-                targetDate: ProcessEveningCheckInSchedule.preferredManualCheckInDate(),
-                isRequired: false
-            )
         }
     }
 
@@ -219,7 +226,6 @@ struct MainAppView: View {
 
         if newValue == .profile {
             FaceScanScreenFlash.shared.deactivate(animated: false)
-            ProcessEveningCheckInPresenter.shared.dismissImmediately()
             PlanHomeTutorialStore.shared.cancelScheduledPresentation()
         }
         if newValue == .coach {
@@ -288,13 +294,6 @@ struct MainAppView: View {
         }
     }
 
-    private func handleEveningCheckInDismiss(submitted: Bool) {
-        _ = submitted
-        PlanHomeTutorialStore.shared.schedulePresentationIfNeeded(
-            planAvailable: WelcomePlanStore.shared.plan != nil,
-            preferImmediate: true
-        )
-    }
 
     private func openMealPhotoScan() {
         resignFirstResponder()

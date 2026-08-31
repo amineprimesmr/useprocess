@@ -267,8 +267,6 @@ final class CoachNotificationCenterDelegate: NSObject, UNUserNotificationCenterD
             CoachPlanNavigationBridge.shared.openCoachWithCheckIn(
                 prompt: AppCopy.t("Donne-moi mon brief matin : sommeil, jour du plan personnalisé et 1 action prioritaire.", en: "Give me my morning brief: sleep, personalized plan day, and one priority action.")
             )
-        case "daily_review":
-            CoachPlanNavigationBridge.shared.openEveningCheckIn()
         case "hydration_sip":
             Task { @MainActor in
                 await ProcessHydrationTimerNotificationService.handleAction(

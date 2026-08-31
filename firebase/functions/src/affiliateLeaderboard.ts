@@ -1,6 +1,7 @@
 import { onRequest } from "firebase-functions/v2/https";
 import { affiliateHttpStatus, db, resolveAffiliateForAuthUser } from "./affiliateShared";
 import {
+  ClipperSort,
   normalizeClipperSort,
   rankClippers,
   toPublicClipper,
@@ -8,6 +9,26 @@ import {
 import { setCors, verifyAppAttestation, verifyFirebaseUser } from "./referralShared";
 
 const LEADERBOARD_LIMIT = 400;
+
+// Query-side counterpart to clipperMetric() in affiliateLeaderboardShared — without this,
+// the top-400 `limit()` returns an arbitrary (document-id-ordered) slice once there are
+// more than 400 active clippers, not the actual top performers for the requested sort.
+function clipperSortField(sort: ClipperSort): string {
+  switch (sort) {
+    case "sales":
+      return "stats.paidCount";
+    case "trials":
+      return "stats.trialCount";
+    case "installs":
+      return "stats.referredCount";
+    case "visits":
+      return "stats.linkViews";
+    case "paywalls":
+      return "stats.paywallCount";
+    default:
+      return "stats.lifetimeCents";
+  }
+}
 
 export const affiliateLeaderboard = onRequest(
   {
@@ -41,6 +62,7 @@ export const affiliateLeaderboard = onRequest(
       const snap = await db()
         .collection("affiliates")
         .where("status", "==", "active")
+        .orderBy(clipperSortField(sort), "desc")
         .limit(LEADERBOARD_LIMIT)
         .get();
 

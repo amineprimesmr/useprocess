@@ -22,25 +22,23 @@ enum ProcessBackgroundPalette {
 }
 
 /// Fond principal de l’app — plat (plus de dégradé rosé / violet en clair).
+///
+/// Source unique : `theme.isDark`, la même que `theme.primaryText`. Le fond
+/// suivait `\.colorScheme` pendant que le texte suivait les traits UIKit ; dès
+/// que les deux divergeaient, le texte devenait blanc sur fond clair ou noir sur
+/// fond sombre — invisible, alors que les images restaient normales.
 struct ProcessScreenBackground: View {
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.appTheme) private var theme
 
     var body: some View {
         Group {
-            if colorScheme == .dark {
+            if theme.isDark {
                 ProcessBackgroundPalette.darkBase
             } else {
                 ProcessBackgroundPalette.lightBase
             }
         }
         .ignoresSafeArea()
-    }
-}
-
-/// Alias historique — même fond que `ProcessScreenBackground`.
-struct BackgroundView: View {
-    var body: some View {
-        ProcessScreenBackground()
     }
 }
 

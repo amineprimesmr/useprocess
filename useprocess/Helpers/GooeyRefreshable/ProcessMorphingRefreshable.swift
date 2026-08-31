@@ -38,7 +38,11 @@ private struct ProcessMorphingRefreshableModifier: ViewModifier {
                 .allowsHitTesting(false)
             }
             .mask {
+                // Remplissage explicitement opaque : un `Rectangle()` nu hérite du
+                // `foregroundStyle` ambiant, et un style non opaque délavait toute
+                // la page (texte gris, boutons délavés, images ternes).
                 Rectangle()
+                    .fill(Color.black)
                     .ignoresSafeArea()
             }
             .refreshable {

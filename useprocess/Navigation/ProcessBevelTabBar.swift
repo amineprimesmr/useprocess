@@ -101,24 +101,6 @@ private enum ProcessCoachAccessoryCopy {
     static let inline = "Demandez à Process"
 }
 
-struct ProcessCoachTabAccessory: View {
-    var namespace: Namespace.ID
-    var isInlinePlacement: Bool = false
-    var onTap: () -> Void
-
-    private var prompt: String {
-        isInlinePlacement ? ProcessCoachAccessoryCopy.inline : ProcessCoachAccessoryCopy.expanded
-    }
-
-    var body: some View {
-        ProcessCoachTabAccessoryContent(
-            namespace: namespace,
-            prompt: prompt,
-            isInlinePlacement: isInlinePlacement,
-            onTap: onTap
-        )
-    }
-}
 
 private struct ProcessCoachTabAccessoryContent: View {
     let namespace: Namespace.ID

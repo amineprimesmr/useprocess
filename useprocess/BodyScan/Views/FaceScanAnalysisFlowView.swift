@@ -14,8 +14,6 @@ struct FaceScanAnalysisFlowView: View {
     var tracksOnboardingMossFunnel: Bool = false
     var onDismiss: () -> Void
     var onComplete: (FaceScanResult) -> Void
-    /// Mode dev / studio — revient à la capture visage sans enregistrer l’analyse.
-    var onRetryScan: (() -> Void)? = nil
 
     @State private var baseResult: FaceScanResult?
     @State private var qualityDraft: Double = 0.5
@@ -89,20 +87,7 @@ struct FaceScanAnalysisFlowView: View {
                                     progress: analysisProgress
                                 )
                                 .padding(.horizontal, 28)
-                                .padding(.top, 10)
-                            }
-
-                            if showsDevRescanButton {
-                                Button(action: retryScan) {
-                                    Text(AppCopy.t("DEV · Revenir au scan", en: "DEV · Back to scan"))
-                                        .font(.system(size: 13, weight: .semibold))
-                                        .foregroundStyle(FaceScanWhoopPalette.secondary)
-                                        .padding(.vertical, 10)
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.processPlain)
-                                .accessibilityLabel(AppCopy.t("Revenir au scan du visage", en: "Back to face scan"))
-                                .padding(.horizontal, 20)
+                                .padding(.top, 34)
                             }
 
                             Spacer()
@@ -157,14 +142,6 @@ struct FaceScanAnalysisFlowView: View {
     }
 
     @MainActor
-    private func retryScan() {
-        HapticManager.shared.impact(.light)
-        analysisTask?.cancel()
-        elapsedTask?.cancel()
-        onRetryScan?()
-    }
-
-    @MainActor
     private func complete(with result: FaceScanResult) {
         guard !didCompleteAnalysis else { return }
         didCompleteAnalysis = true
@@ -181,7 +158,15 @@ struct FaceScanAnalysisFlowView: View {
         }
         // Upsert systématique : import photo / studio doivent bien remplacer le latest.
         FaceScanHistoryStore.shared.upsert(final)
+        let streakBefore = ProcessStreakStore.shared.displayStreak
         ProcessDebloatTrajectoryStore.shared.recordScan(final)
+        let streakAfter = ProcessStreakStore.shared.displayStreak
+        // Toujours confirmer visuellement — même sans changement de série (re-scan du jour, etc.).
+        ScanCompletionToastPresenter.shared.presentScanCompleted(
+            streakBefore: streakBefore,
+            streakAfter: streakAfter,
+            nextMilestoneDays: ProcessStreakStore.shared.snapshot.nextMilestone?.days
+        )
 
         onComplete(final)
 
@@ -257,37 +242,10 @@ struct FaceScanAnalysisFlowView: View {
         FaceScanWhoopPalette.label
     }
 
-    private var showsDevRescanButton: Bool {
-        guard onRetryScan != nil else { return false }
-        #if DEBUG
-        return true
-        #else
-        return isCreatorUnlocked
-        #endif
-    }
-
     private var headerBar: some View {
         HStack {
-            if showsDevRescanButton, displayResult == nil {
-                Button(action: retryScan) {
-                    Text(AppCopy.t("DEV", en: "DEV"))
-                        .font(.system(size: 11, weight: .bold))
-                        .tracking(0.4)
-                        .foregroundStyle(headerForeground.opacity(0.72))
-                        .padding(.horizontal, 10)
-                        .frame(height: 28)
-                        .background {
-                            Capsule()
-                                .strokeBorder(headerForeground.opacity(0.22), lineWidth: 1)
-                        }
-                }
-                .buttonStyle(.processPlain)
-                .accessibilityLabel(AppCopy.t("Revenir au scan du visage", en: "Back to face scan"))
-                .frame(minWidth: 44, alignment: .leading)
-            } else {
-                Color.clear
-                    .frame(width: 44, height: 44)
-            }
+            Color.clear
+                .frame(width: 44, height: 44)
 
             Spacer(minLength: 0)
 
@@ -307,49 +265,30 @@ struct FaceScanAnalysisFlowView: View {
 
     @ViewBuilder
     private func studioResultsBody(result: FaceScanResult, base: FaceScanResult) -> some View {
-        let usesOnboardingDeep = showsCreatorControls
-            && creatorMode.scanResultsLayout == .onboardingDeep
-
-        if usesOnboardingDeep {
-            VStack(spacing: 0) {
-                FaceScanWhoopScoreRing(
-                    result: result,
-                    studioFraming: framingDraft,
-                    allowsStudioFraming: showsCreatorControls,
-                    onStudioFramingChange: { framing in
-                        framingDraft = framing.clamped()
-                    },
-                    showsGlobalScore: false
-                )
-                .padding(.bottom, 22)
-
-                OnboardingFaceDeepAnalysisView(
-                    result: result,
-                    ringScale: 1,
-                    showsScoreRing: false,
-                    showsUnlockTeaser: false
-                )
-                .padding(.horizontal, 16)
-
-                studioControlsAccessory
-            }
-        } else {
-            FaceScanWhoopInlineResults(
+        // Système unifié : mêmes indicateurs (carousel horizontal) que la page onboarding,
+        // pour tout le monde — plus de liste statique + graphiques d'évolution redondants
+        // avec la page Profil/Statistiques.
+        VStack(spacing: 0) {
+            FaceScanWhoopScoreRing(
                 result: result,
-                history: FaceScanHistoryStore.shared.history,
-                prefersPassedResult: showsCreatorControls,
-                evolutionAnchor: base,
-                animateRevealOnce: true,
-                allowsStudioFraming: showsCreatorControls,
-                studioQuality: showsCreatorControls ? qualityDraft : nil,
                 studioFraming: framingDraft,
+                allowsStudioFraming: showsCreatorControls,
                 onStudioFramingChange: { framing in
                     framingDraft = framing.clamped()
                 },
-                bottomAccessory: {
-                    studioControlsAccessory
-                }
+                showsGlobalScore: false
             )
+            .padding(.bottom, 22)
+
+            OnboardingFaceDeepAnalysisView(
+                result: result,
+                ringScale: 1,
+                showsScoreRing: false,
+                showsUnlockTeaser: false
+            )
+            .padding(.horizontal, 16)
+
+            studioControlsAccessory
         }
     }
 
@@ -466,6 +405,9 @@ struct FaceScanAnalysisFlowView: View {
                 await MainActor.run {
                     analysisProgress = eased
                     analysisDisplayedPercentage = Int((eased * 100).rounded())
+                    if stepIndex != analysisPhaseIndex {
+                        HapticManager.shared.impact(.light)
+                    }
                     analysisPhaseIndex = stepIndex
                     analysisPhaseLabel = steps[stepIndex].phaseLabel
                     trackMossAnalysisSubphaseIfNeeded(stepIndex: stepIndex)
@@ -625,7 +567,7 @@ struct FaceScanAnalysisHeroView: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(Color.black.opacity(0.35))
+                .fill(FaceScanWhoopPalette.secondary.opacity(0.14))
                 .frame(width: heroDiameter, height: heroDiameter)
                 .overlay {
                     mediaLayer
@@ -661,7 +603,7 @@ struct FaceScanAnalysisHeroView: View {
                 .scaledToFill()
         } else {
             Circle()
-                .fill(Color.white.opacity(0.06))
+                .fill(FaceScanWhoopPalette.secondary.opacity(0.10))
                 .overlay {
                     Image(systemName: "face.smiling")
                         .font(.system(size: 44, weight: .light))
@@ -671,12 +613,12 @@ struct FaceScanAnalysisHeroView: View {
     }
 
     private func resolveVideoWithRetry() async {
-        for _ in 0..<30 {
+        for _ in 0..<80 {
             if let url = FaceScanImageStore.resolvedVideoURL(forScanId: payload.scanId) {
                 resolvedVideoURL = url
                 return
             }
-            try? await Task.sleep(for: .milliseconds(180))
+            try? await Task.sleep(for: .milliseconds(60))
         }
     }
 }

@@ -339,46 +339,6 @@ struct ProcessReferralEngravedMetalCard: View {
 
 // MARK: - Code parrainage (tuiles Opal — réglages / legacy)
 
-struct ProcessReferralGlassCodeRow: View {
-    let code: String
-    var copyText: String = ""
-    var onCopy: (() -> Void)? = nil
-
-    private var normalizedCode: String {
-        ProcessReferralCode.normalize(code)
-    }
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Text(AppCopy.t("TON CODE DE PARRAINAGE", en: "YOUR REFERRAL CODE"))
-                .font(.system(size: 11, weight: .semibold))
-                .tracking(1.6)
-                .foregroundStyle(ProcessReferralTheme.textTertiary)
-                .frame(maxWidth: .infinity)
-
-            HStack(spacing: 8) {
-                ForEach(Array(normalizedCode.enumerated()), id: \.offset) { _, character in
-                    ProcessReferralOpalCodeTile(character: String(character)) {
-                        performCopy()
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .padding(.top, 28)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(AppCopy.t("Code parrainage \(normalizedCode)", en: "Referral code \(normalizedCode)"))
-    }
-
-    private func performCopy() {
-        guard !copyText.isEmpty else { return }
-
-        UIPasteboard.general.string = copyText
-        HapticManager.shared.notification(.success)
-        ProcessSoundPlayer.playSettingsChange()
-        onCopy?()
-    }
-}
 
 private struct ProcessReferralOpalCodeTile: View {
     let character: String

@@ -9,11 +9,11 @@ final class CoachPlanNavigationBridge {
     var pendingFocus: CoachPlanFocus?
     var pendingConversationId: UUID?
     var pendingCheckInPrompt: String?
-    var shouldOpenEveningCheckIn = false
     var shouldFocusProfileStatistics = false
-    var eveningChecklistRefreshNonce = 0
     var shouldOpenCoach = false
     var shouldOpenPlan = false
+    var shouldOpenFood = false
+    var shouldOpenMealScan = false
     var focusHydrationCarouselNonce = 0
     var shouldOpenFaceScan = false
     /// Ouvre la capture scan en plein écran (depuis l’accueil) avec auto-start si cadence OK.
@@ -32,6 +32,14 @@ final class CoachPlanNavigationBridge {
 
     func openPlan() {
         shouldOpenPlan = true
+    }
+
+    func openFood() {
+        shouldOpenFood = true
+    }
+
+    func openMealScan() {
+        shouldOpenMealScan = true
     }
 
     func focusHydrationOnHome() {
@@ -56,15 +64,6 @@ final class CoachPlanNavigationBridge {
         shouldOpenCoach = true
     }
 
-    func openCoachWithEveningChecklist() {
-        openEveningCheckIn()
-    }
-
-    func openEveningCheckIn() {
-        shouldFocusProfileStatistics = true
-        shouldOpenEveningCheckIn = true
-    }
-
     func openProfileStatistics() {
         shouldFocusProfileStatistics = true
     }
@@ -72,12 +71,6 @@ final class CoachPlanNavigationBridge {
     func consumeProfileStatisticsFocus() -> Bool {
         let pending = shouldFocusProfileStatistics
         shouldFocusProfileStatistics = false
-        return pending
-    }
-
-    func consumePendingEveningCheckIn() -> Bool {
-        let pending = shouldOpenEveningCheckIn
-        shouldOpenEveningCheckIn = false
         return pending
     }
 
@@ -117,10 +110,6 @@ final class CoachPlanNavigationBridge {
         let handoff = pendingMealHandoff
         pendingMealHandoff = nil
         return handoff
-    }
-
-    func bumpEveningChecklistRefresh() {
-        eveningChecklistRefreshNonce += 1
     }
 
     func openDeepLink(_ action: CoachDeepLinkAction) {

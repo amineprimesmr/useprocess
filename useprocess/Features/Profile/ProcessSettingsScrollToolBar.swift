@@ -191,26 +191,6 @@ struct ProcessSettingsToolbarBackButton: View {
     }
 }
 
-struct ProcessSettingsToolbarIconButton: View {
-    let systemName: String
-    let accessibilityLabel: String
-    let action: () -> Void
-    var foregroundColor: Color = .white
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: ProcessAppHeaderControlMetrics.iconSize, weight: .semibold))
-                .foregroundStyle(foregroundColor)
-                .frame(
-                    width: ProcessAppHeaderControlMetrics.size,
-                    height: ProcessAppHeaderControlMetrics.size
-                )
-        }
-        .processGlassIconButtonStyle()
-        .accessibilityLabel(accessibilityLabel)
-    }
-}
 
 // MARK: - Scroll section subtitle tracking
 
@@ -237,29 +217,3 @@ struct ProcessSettingsScrollSectionReporter: View {
 }
 
 /// Grand titre in-scroll — se replie dans la toolbar au scroll (hub Paramètres, Profil…).
-struct ProcessSettingsScrollPageTitle: View {
-    let title: String
-    var fontSize: CGFloat = 34
-    var foregroundColor: Color = .white
-    var horizontalPadding: CGFloat = ProcessSettingsOpalTheme.horizontalPadding + 4
-    let effectsActive: Bool
-    @Binding var collapsedTitle: String?
-
-    var body: some View {
-        Text(title)
-            .font(.system(size: fontSize, weight: .bold))
-            .foregroundStyle(foregroundColor)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, horizontalPadding)
-            .padding(.top, 4)
-            .padding(.bottom, 6)
-            .onGeometryChange(for: Bool.self) {
-                guard effectsActive else { return false }
-                let height = abs($0.size.height - 5)
-                let offset = $0.frame(in: .global).minY
-                return -offset > height
-            } action: { collapsed in
-                collapsedTitle = collapsed ? title : nil
-            }
-    }
-}

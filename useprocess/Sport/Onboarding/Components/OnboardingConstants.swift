@@ -95,7 +95,8 @@ enum OnboardingHeaderLayout {
     /// Étapes sans chrome global (pas de barre, drapeau ni retour overlay).
     static func usesDedicatedFullScreenChrome(currentStep: Int) -> Bool {
         switch OnboardingStep.resolved(from: currentStep) {
-        case .payment, .appleSignIn, .complete, .dashboardPreview, .dreamFaceCommit:
+        case .payment, .appleSignIn, .complete, .dashboardPreview, .dreamFaceCommit,
+             .postPaymentWelcome, .explainerBodyFat, .explainerWaterRetention, .explainerLymphDrainage:
             return true
         default:
             return false

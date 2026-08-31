@@ -26,6 +26,63 @@
       ]
     },
     {
+      "collectionGroup": "affiliates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "stats.lifetimeCents", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "affiliates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "stats.paidCount", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "affiliates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "stats.trialCount", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "affiliates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "stats.referredCount", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "affiliates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "stats.linkViews", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "affiliates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "stats.paywallCount", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "affiliateCommissions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "affiliateId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "commissionCents", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "affiliatePayouts",
       "queryScope": "COLLECTION",
       "fields": [

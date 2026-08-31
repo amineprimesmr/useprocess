@@ -18,12 +18,20 @@ struct AppTheme {
         ProcessColors.background
     }
 
+    /// Valeurs identiques au pixel près à `UIColor.label` / `.secondaryLabel`,
+    /// mais dérivées de l'apparence résolue par SwiftUI au lieu de la trait
+    /// collection UIKit. Les surfaces hôtes sont mutées à la main dans ce projet
+    /// (`processClearUIKitHostingBackground`) : un trait resté en sombre pendant
+    /// qu'une page est dessinée en clair rendait tout le texte blanc sur fond
+    /// clair — c'est ça, l'accueil « délavé ».
     var primaryText: Color {
-        Color(.label)
+        isDark ? .white : .black
     }
 
     var secondaryText: Color {
-        Color(.secondaryLabel)
+        isDark
+            ? Color(red: 235 / 255, green: 235 / 255, blue: 245 / 255).opacity(0.6)
+            : Color(red: 60 / 255, green: 60 / 255, blue: 67 / 255).opacity(0.6)
     }
 
     var glow: Color {
@@ -33,11 +41,11 @@ struct AppTheme {
     }
 
     var progressTrack: Color {
-        resolved == .light ? Color(.label).opacity(0.12) : Color(.label).opacity(0.22)
+        primaryText.opacity(isDark ? 0.22 : 0.12)
     }
 
     var progressFill: Color {
-        Color(.label)
+        primaryText
     }
 
     var cardStroke: Color {
@@ -98,9 +106,7 @@ struct AppTheme {
 
     /// Animation « bulle pensée » coach — blanc en sombre, noir en clair.
     var chatThinkingBlobColor: Color {
-        Color(UIColor { traits in
-            traits.userInterfaceStyle == .dark ? .white : .black
-        })
+        primaryText
     }
 }
 

@@ -2,41 +2,6 @@ import SwiftUI
 import UIKit
 import UIKit
 
-enum AccountConfirmation: Identifiable {
-    case logout
-    case deleteAccount
-
-    var id: Self { self }
-
-    @MainActor
-    var title: String {
-        switch self {
-        case .logout: return AppCopy.t("Se déconnecter ?", en: "Log Out?")
-        case .deleteAccount: return AppCopy.t("Supprimer le compte ?", en: "Delete Account?")
-        }
-    }
-
-    @MainActor
-    var message: String {
-        switch self {
-        case .logout:
-            return AppCopy.t("Tu pourras te reconnecter à tout moment.", en: "You can log back in at any time.")
-        case .deleteAccount:
-            return AppCopy.t(
-                "Cette action est définitive. Toutes tes données seront effacées, la liaison Se connecter avec Apple sera révoquée, et tu reviendras au début de Process. Ton abonnement App Store, s'il est actif, n'est pas annulé automatiquement.",
-                en: "This action is permanent. All your data will be erased, your Sign in with Apple link will be revoked, and you'll return to the beginning of Process. Your App Store subscription, if active, is not cancelled automatically."
-            )
-        }
-    }
-
-    @MainActor
-    var confirmTitle: String {
-        switch self {
-        case .logout: return AppCopy.t("Se déconnecter", en: "Log Out")
-        case .deleteAccount: return AppCopy.t("Supprimer le compte", en: "Delete Account")
-        }
-    }
-}
 
 enum ProfileEditTheme {
     static let background = ProcessColors.background
@@ -51,92 +16,8 @@ enum ProfileEditTheme {
     static let spring = Animation.spring(response: 0.34, dampingFraction: 0.86)
 }
 
-struct ProfileEditorHeader: View {
-    let title: String
-    var showsSave: Bool = false
-    var saveDisabled: Bool = false
-    let onDismiss: () -> Void
-    var onSave: (() -> Void)?
 
-    var body: some View {
-        ZStack {
-            Text(title)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Color.primary)
 
-            HStack {
-                ProcessGlassIconButton(systemName: "chevron.left", size: 40, iconSize: 16, action: onDismiss)
-
-                Spacer()
-
-                if showsSave, let onSave {
-                    Button(action: onSave) {
-                        Text(AppCopy.save)
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(saveDisabled ? Color(.tertiaryLabel) : Color.primary)
-                            .padding(.horizontal, 18)
-                            .padding(.vertical, 10)
-                    }
-                    .processGlassButton(in: Capsule())
-                    .disabled(saveDisabled)
-                    .opacity(saveDisabled ? 0.72 : 1)
-                } else {
-                    Color.clear.frame(width: 40, height: 40)
-                }
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 12)
-        .padding(.bottom, 12)
-    }
-}
-
-struct ProfileEditorHero: View {
-    let headline: String
-    let subtitle: String
-
-    var body: some View {
-        VStack(spacing: 14) {
-            Text(headline)
-                .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(Color.primary)
-                .multilineTextAlignment(.center)
-
-            Text(subtitle)
-                .font(.system(size: 15))
-                .foregroundStyle(ProfileEditTheme.textSecondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 20)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 28)
-    }
-}
-
-struct ProfileEditorBottomSaveButton: View {
-    let title: String
-    var disabled: Bool = false
-    let action: () -> Void
-
-    private let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(disabled ? Color(.tertiaryLabel) : Color.primary)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-        }
-        .processGlassButton(in: shape)
-        .disabled(disabled)
-        .opacity(disabled ? 0.72 : 1)
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-        .padding(.bottom, 10)
-        .background(ProfileEditTheme.background)
-    }
-}
 
 struct ProfileInterestChip: View {
     let interest: ProfileInterest
@@ -207,52 +88,6 @@ struct ProfileInterestFlowLayout: Layout {
     }
 }
 
-struct ProfileEditListRow: View {
-    let label: String
-    let value: String?
-    let placeholder: String
-    var showsAccentDot: Bool = false
-    var showsChevron: Bool = true
-    var valueIsMuted: Bool = false
-
-    var body: some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 6) {
-                if showsAccentDot {
-                    Circle()
-                        .fill(Color.red)
-                        .frame(width: 7, height: 7)
-                }
-                Text(label)
-                    .font(.system(size: 16))
-                    .foregroundStyle(Color.primary)
-            }
-
-            Spacer(minLength: 8)
-
-            Text(value?.isEmpty == false ? value! : placeholder)
-                .font(.system(size: 16))
-                .foregroundStyle(valueForeground)
-                .lineLimit(2)
-                .multilineTextAlignment(.trailing)
-
-            if showsChevron {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(ProfileEditTheme.textSecondary.opacity(0.55))
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 16)
-        .contentShape(Rectangle())
-    }
-
-    private var valueForeground: Color {
-        guard value?.isEmpty == false else { return ProfileEditTheme.placeholder }
-        if valueIsMuted { return ProfileEditTheme.textSecondary.opacity(0.85) }
-        return Color.primary
-    }
-}
 
 // MARK: - Account details (Détails du compte)
 
@@ -291,102 +126,10 @@ extension View {
     }
 }
 
-struct AccountDetailsGlassHeader: View {
-    var title: String? = nil
-    let onBack: () -> Void
-    var onSave: (() -> Void)? = nil
-    var saveDisabled: Bool = true
-    var showsSave: Bool = true
 
-    var body: some View {
-        ZStack {
-            if let title {
-                Text(title)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Color.primary)
-            }
 
-            HStack {
-                if showsSave {
-                    Color.clear.frame(width: 40, height: 40)
-                    Spacer()
-                    if let onSave {
-                        Button(action: onSave) {
-                            Text(AppCopy.save)
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(saveDisabled ? Color(.tertiaryLabel) : Color.primary)
-                                .padding(.horizontal, 18)
-                                .padding(.vertical, 10)
-                        }
-                        .processGlassButton(in: Capsule())
-                        .disabled(saveDisabled)
-                        .opacity(saveDisabled ? 0.72 : 1)
-                    }
-                } else {
-                    Color.clear.frame(width: 40, height: 40)
-                    Spacer()
-                    ProcessGlassIconButton(systemName: "xmark", size: 40, iconSize: 13, action: onBack)
-                        .accessibilityLabel(AppCopy.close)
-                }
-            }
-        }
-        .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
-        .padding(.top, 12)
-        .padding(.bottom, 8)
-    }
-}
 
-struct AccountDetailsCard<Content: View>: View {
-    @ViewBuilder let content: Content
 
-    var body: some View {
-        VStack(spacing: AccountDetailsTheme.rowSpacing) {
-            content
-        }
-    }
-}
-
-struct AccountDetailsGlassRow<Content: View>: View {
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        content
-            .accountDetailsGlassRelief()
-    }
-}
-
-struct AccountDetailsDivider: View {
-    var body: some View {
-        EmptyView()
-    }
-}
-
-struct AccountDetailsActionButton: View {
-    let title: String
-    var destructive: Bool = false
-    let action: () -> Void
-
-    private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: AccountDetailsTheme.actionCornerRadius, style: .continuous)
-    }
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(destructive ? Color.red : Color.primary)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .contentShape(shape)
-        }
-        .processGlassButton(in: shape)
-        .overlay {
-            if destructive {
-                shape.fill(Color.red.opacity(0.07))
-            }
-        }
-    }
-}
 
 private struct ProfileAccountDeletionHandlerKey: EnvironmentKey {
     static let defaultValue: (() -> Void)? = nil
@@ -498,40 +241,7 @@ private struct AccountDeleteConfirmationSheet: View {
     }
 }
 
-struct ProfileSummarySectionHeader: View {
-    let title: String
 
-    var body: some View {
-        Text(title.uppercased())
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(ProfileEditTheme.textSecondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.top, 22)
-            .padding(.bottom, 6)
-    }
-}
-
-struct ProfileSummaryInfoRow: View {
-    let item: ProfileSummaryItem
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Text(item.label)
-                .font(.system(size: 16))
-                .foregroundStyle(Color.primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            Text(item.displayValue)
-                .font(.system(size: 16))
-                .foregroundStyle(item.isPlaceholder ? ProfileEditTheme.placeholder : ProfileEditTheme.textSecondary)
-                .multilineTextAlignment(.trailing)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 16)
-    }
-}
 
 // MARK: - Opal-style Settings (Process)
 
@@ -706,48 +416,6 @@ extension View {
     }
 }
 
-struct ProcessSettingsOpalHeader: View {
-    let title: String
-    let onBack: () -> Void
-    var trailing: AnyView?
-
-    init(title: String, onBack: @escaping () -> Void, @ViewBuilder trailing: () -> some View = { EmptyView() }) {
-        self.title = title
-        self.onBack = onBack
-        self.trailing = AnyView(trailing())
-    }
-
-    var body: some View {
-        ZStack {
-            Text(title)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.white)
-
-            HStack {
-                ProcessSettingsOpalBackButton(action: onBack)
-
-                Spacer()
-
-                if let trailing {
-                    trailing
-                } else {
-                    Color.clear.frame(width: ProcessSettingsOpalTheme.headerControlSize, height: ProcessSettingsOpalTheme.headerControlSize)
-                }
-            }
-        }
-        .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
-        .padding(.vertical, ProcessSettingsOpalTheme.headerVerticalPadding)
-        .background {
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .overlay {
-                    Rectangle()
-                        .fill(Color.black.opacity(0.55))
-                }
-                .ignoresSafeArea(edges: .top)
-        }
-    }
-}
 
 /// Sous-page Réglages — header glass flottant, scroll derrière, tab bar visible.
 struct ProcessSettingsOpalScrollPage<Content: View>: View {
@@ -797,19 +465,6 @@ struct ProcessSettingsOpalBackButton: View {
     }
 }
 
-struct ProcessSettingsOpalCloseButton: View {
-    let action: () -> Void
-
-    var body: some View {
-        ProcessGlassIconButton(
-            systemName: "xmark",
-            size: ProcessSettingsOpalTheme.headerControlSize,
-            iconSize: 13,
-            action: action
-        )
-        .accessibilityLabel(AppCopy.close)
-    }
-}
 
 struct ProcessSettingsOpalSectionTitle: View {
     let title: String
@@ -1123,47 +778,6 @@ struct ProcessSettingsOpalAccountRow: View {
     }
 }
 
-struct ProcessSettingsOpalToggleRow: View {
-    let icon: String
-    let title: String
-    var subtitle: String?
-    @Binding var isOn: Bool
-    var showsDivider: Bool = false
-
-    var body: some View {
-        VStack(spacing: 0) {
-            if showsDivider { ProcessSettingsOpalRowDivider() }
-
-            HStack(alignment: subtitle == nil ? .center : .top, spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(ProcessSettingsOpalTheme.iconTint)
-                    .frame(width: ProcessSettingsOpalTheme.iconColumnWidth, alignment: .center)
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(title)
-                        .font(.system(size: 16, weight: .regular))
-                        .foregroundStyle(.white)
-
-                    if let subtitle, !subtitle.isEmpty {
-                        Text(subtitle)
-                            .font(.system(size: 13))
-                            .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                Toggle("", isOn: $isOn)
-                    .labelsHidden()
-            }
-            .frame(minHeight: ProcessSettingsOpalTheme.rowMinHeight, alignment: .center)
-            .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
-            .padding(.vertical, ProcessSettingsOpalTheme.rowVerticalPadding)
-            .animation(ProcessSettingsOpalTheme.spring, value: isOn)
-        }
-    }
-}
 
 struct ProcessSettingsOpalActionRow: View {
     let icon: String
@@ -1294,69 +908,6 @@ struct ProcessSettingsOpalField: View {
     }
 }
 
-struct ProcessSettingsOpalOTPInput: View {
-    @Binding var code: String
-    var length: Int = ProcessReferralCode.length
-    @FocusState.Binding var isFocused: Bool
-
-    var body: some View {
-        ZStack {
-            TextField("", text: $code)
-                .focused($isFocused)
-                .textInputAutocapitalization(.characters)
-                .autocorrectionDisabled()
-                .keyboardType(.asciiCapable)
-                .opacity(0.015)
-                .frame(width: 1, height: 1)
-
-            HStack(spacing: 14) {
-                ForEach(0..<length, id: \.self) { index in
-                    otpCircle(at: index)
-                }
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .contentShape(Rectangle())
-        .onTapGesture { isFocused = true }
-        .onChange(of: code) { _, newValue in
-            let filtered = newValue.uppercased().filter { $0.isLetter || $0.isNumber }
-            code = String(filtered.prefix(length))
-        }
-        .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
-    }
-
-    private func otpCircle(at index: Int) -> some View {
-        let character = character(at: index)
-        let isActive = isFocused && index == code.count
-
-        return ZStack {
-            Circle()
-                .fill(ProcessSettingsOpalTheme.fieldFillDark)
-                .overlay {
-                    Circle()
-                        .strokeBorder(
-                            isActive ? Color.white.opacity(0.45) : ProcessSettingsOpalTheme.fieldStrokeDark,
-                            lineWidth: isActive ? 1.5 : 1
-                        )
-                }
-                .frame(width: 52, height: 52)
-
-            if let character {
-                Text(String(character))
-                    .font(.system(size: 22, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
-            }
-        }
-        .animation(ProcessSettingsOpalTheme.spring, value: code)
-        .animation(ProcessSettingsOpalTheme.spring, value: isFocused)
-    }
-
-    private func character(at index: Int) -> Character? {
-        guard index < code.count else { return nil }
-        let stringIndex = code.index(code.startIndex, offsetBy: index)
-        return code[stringIndex]
-    }
-}
 
 struct ProcessSettingsOpalVersionFooter: View {
     var body: some View {

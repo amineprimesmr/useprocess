@@ -16,8 +16,14 @@ final class PlanHomeTutorialStore {
     private var presentationTask: Task<Void, Never>?
     /// Bloque le tutoriel pendant l’aperçu onboarding (plan éphémère).
     private var isPreviewSuppressed = false
+    /// Étapes dont le CTA « Continuer » est réellement monté à l’écran.
+    private var focusesShowingCTA: Set<PlanHomeTutorialFocus> = []
+    private var chromeWatchdogTask: Task<Void, Never>?
+    /// L'accueil Plan est-il monté dans la hiérarchie ?
+    private var isHomeSurfaceMounted = false
 
     private init() {
+        migrateLegacyCompletionIfNeeded()
         reload()
     }
 
@@ -26,12 +32,10 @@ final class PlanHomeTutorialStore {
     /// (sinon tabs masqués + pas de CTA Continuer = deadlock).
     var constrainsHomeLayout: Bool {
         guard isActive, !isPreviewSuppressed else { return false }
+        // Sans plan, l'accueil affiche `noPlanCard` : aucune carte ciblée, donc
+        // aucun CTA. Ne jamais amputer l'accueil dans ce cas.
+        guard WelcomePlanStore.shared.plan != nil else { return false }
         return !currentStep.isTabStep
-    }
-
-    /// Le bilan du soir passe après le tutoriel première visite.
-    var shouldDeferEveningCheckIn: Bool {
-        isActive || (!hasCompleted && !isPreviewSuppressed)
     }
 
     var steps: [PlanHomeTutorialStep] {
@@ -68,12 +72,75 @@ final class PlanHomeTutorialStore {
         return currentStep != .nutrition
     }
 
+    // MARK: - Persistance
+
+    /// Le flag est écrit **et** relu sur toutes les clés plausibles : l'uid Firebase
+    /// n'est pas encore restauré au cold start, et `UserScopedStorage.key` retombe
+    /// alors sur « anonymous » alors que le plan, lui, retombe sur « local-user ».
+    /// Lire une seule clé faisait repasser `hasCompleted` à false et reverrouillait
+    /// l'accueil à chaque lancement.
+    private var storageKeys: [String] {
+        var keys = [UserScopedStorage.globalKey(storageKeyBase)]
+        let primary = UserScopedStorage.currentUserId() ?? "local-user"
+        for uid in UserScopedStorage.likelyUserIds(primary: primary) {
+            keys.append(UserScopedStorage.key(storageKeyBase, userId: uid))
+        }
+        return keys
+    }
+
+    private func loadCompleted() -> Bool {
+        storageKeys.contains { UserDefaults.standard.bool(forKey: $0) }
+    }
+
+    private func persist() {
+        for key in storageKeys {
+            UserDefaults.standard.set(true, forKey: key)
+        }
+    }
+
+    /// Mise à jour depuis une version antérieure : le flag a pu être écrit sous
+    /// n'importe quel identifiant (« anonymous », « local-user », un uid Firebase
+    /// précédent). Un seul balayage, une seule fois, pour ne jamais rejouer le
+    /// tutoriel à quelqu'un qui l'a déjà fait.
+    private func migrateLegacyCompletionIfNeeded() {
+        let defaults = UserDefaults.standard
+        let migrationKey = UserScopedStorage.globalKey("plan.home.tutorial.completed.migrated.v1")
+        guard !defaults.bool(forKey: migrationKey) else { return }
+
+        let suffix = "." + storageKeyBase
+        let alreadyCompleted = defaults.dictionaryRepresentation().keys.contains {
+            $0.hasSuffix(suffix) && defaults.bool(forKey: $0)
+        }
+        if alreadyCompleted {
+            defaults.set(true, forKey: UserScopedStorage.globalKey(storageKeyBase))
+        }
+        defaults.set(true, forKey: migrationKey)
+    }
+
     func reload() {
-        let key = UserScopedStorage.key(storageKeyBase)
-        hasCompleted = UserDefaults.standard.bool(forKey: key)
+        // Jamais de retour arrière : une fois terminé, terminé.
+        guard !hasCompleted else {
+            isActive = false
+            cancelScheduledPresentation()
+            return
+        }
+        hasCompleted = loadCompleted()
         if hasCompleted {
             isActive = false
+            cancelScheduledPresentation()
         }
+    }
+
+    /// Suppression de compte : seul endroit qui a le droit de réarmer le tutoriel.
+    func resetForAccountWipe() {
+        cancelScheduledPresentation()
+        chromeWatchdogTask?.cancel()
+        chromeWatchdogTask = nil
+        focusesShowingCTA.removeAll()
+        hasCompleted = false
+        isActive = false
+        currentStepIndex = 0
+        requestedMainSection = .plan
     }
 
     func suppressPresentationForPreview(_ suppressed: Bool) {
@@ -83,7 +150,7 @@ final class PlanHomeTutorialStore {
         }
     }
 
-    /// Lance le tutoriel dès que le plan est prêt (après check-in du soir s'il bloque).
+    /// Lance le tutoriel dès que le plan est prêt.
     func schedulePresentationIfNeeded(planAvailable: Bool, preferImmediate: Bool = false) {
         presentationTask?.cancel()
         guard !isPreviewSuppressed, !hasCompleted, !isActive else { return }
@@ -93,7 +160,6 @@ final class PlanHomeTutorialStore {
             planReady = WelcomePlanStore.shared.plan != nil
         }
         guard planReady else { return }
-        guard ProcessEveningCheckInPresenter.shared.presentation == nil else { return }
 
         if preferImmediate {
             beginPresentationIfPossible(animated: false)
@@ -129,9 +195,9 @@ final class PlanHomeTutorialStore {
         guard !isPreviewSuppressed, !hasCompleted, !isActive else { return }
         ensureWelcomePlanIfNeeded()
         guard WelcomePlanStore.shared.plan != nil else { return }
-        guard ProcessEveningCheckInPresenter.shared.presentation == nil else { return }
 
         presentationTask = nil
+        focusesShowingCTA.removeAll()
         let apply = {
             self.currentStepIndex = 0
             self.isActive = true
@@ -151,6 +217,7 @@ final class PlanHomeTutorialStore {
         if currentStep.focusesHydrationCarousel {
             CoachPlanNavigationBridge.shared.focusHydrationOnHome()
         }
+        startChromeWatchdog()
     }
 
     func shouldDisplay(section: PlanHomeSectionKind) -> Bool {
@@ -184,6 +251,55 @@ final class PlanHomeTutorialStore {
         }
     }
 
+    // MARK: - Chien de garde
+
+    /// Le CTA « Continuer » vit **dans** la carte ciblée : si cette carte ne se monte
+    /// pas (plan absent, jour hors plan ou à venir, section masquée par l'utilisateur,
+    /// carousel vide), l'accueil restait sans tab bar et sans aucun bouton de sortie.
+    func noteFocusCTAVisible(_ focus: PlanHomeTutorialFocus) {
+        focusesShowingCTA.insert(focus)
+    }
+
+    func noteFocusCTAHidden(_ focus: PlanHomeTutorialFocus) {
+        focusesShowingCTA.remove(focus)
+        // Le CTA de l'étape en cours vient de disparaître (jour qui bascule,
+        // plan rechargé, section masquée) : on relance la surveillance.
+        guard isActive, currentStep.focus == focus else { return }
+        startChromeWatchdog()
+    }
+
+    /// L'accueil Plan est monté — sans ce signal, le chien de garde aurait tué le
+    /// tutoriel d'un nouvel utilisateur avant même que l'accueil s'affiche.
+    func noteHomeSurfaceMounted(_ mounted: Bool) {
+        isHomeSurfaceMounted = mounted
+    }
+
+    private func startChromeWatchdog() {
+        chromeWatchdogTask?.cancel()
+        chromeWatchdogTask = nil
+        guard isActive, let focus = currentStep.focus else { return }
+        let stepIndex = currentStepIndex
+        chromeWatchdogTask = Task { @MainActor in
+            // Jusqu'à ~30 s : on laisse le temps à l'accueil d'apparaître avant de conclure.
+            for _ in 0..<20 {
+                try? await Task.sleep(for: .milliseconds(1500))
+                guard !Task.isCancelled,
+                      self.isActive,
+                      self.currentStepIndex == stepIndex,
+                      self.currentStep.focus == focus else { return }
+                // Accueil pas encore à l'écran : on ne conclut rien.
+                guard self.isHomeSurfaceMounted else { continue }
+                // CTA bien présent : rien à faire (relancé si jamais il disparaît).
+                guard !self.focusesShowingCTA.contains(focus) else { return }
+                // Accueil monté mais aucun CTA pour cette étape : on libère l'app.
+                self.complete()
+                return
+            }
+        }
+    }
+
+    // MARK: - Navigation
+
     func advance() {
         guard isActive else { return }
         HapticManager.shared.impact(.medium)
@@ -201,6 +317,7 @@ final class PlanHomeTutorialStore {
         if currentStep.focusesHydrationCarousel {
             CoachPlanNavigationBridge.shared.focusHydrationOnHome()
         }
+        startChromeWatchdog()
     }
 
     func skip() {
@@ -209,23 +326,24 @@ final class PlanHomeTutorialStore {
     }
 
     func complete() {
-        guard !hasCompleted else {
-            isActive = false
-            return
-        }
+        cancelScheduledPresentation()
+        chromeWatchdogTask?.cancel()
+        chromeWatchdogTask = nil
+        focusesShowingCTA.removeAll()
+
+        let wasActive = isActive
         hasCompleted = true
         isActive = false
         requestedMainSection = .plan
+        // Toujours réécrire : la 1re écriture a pu partir sur une clé « anonymous »
+        // avant que l'uid soit restauré.
         persist()
-        HapticManager.shared.notification(.success)
+        if wasActive {
+            HapticManager.shared.notification(.success)
+        }
     }
 
     private func applyTab(for step: PlanHomeTutorialStep) {
         requestedMainSection = step.mainTab ?? .plan
-    }
-
-    private func persist() {
-        let key = UserScopedStorage.key(storageKeyBase)
-        UserDefaults.standard.set(true, forKey: key)
     }
 }

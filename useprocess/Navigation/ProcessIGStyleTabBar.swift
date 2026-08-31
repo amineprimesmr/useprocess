@@ -247,11 +247,13 @@ struct ProcessIGTabShell<Content: View>: View {
         1 - (progress * (1 - ProcessIGTabMetrics.minScale))
     }
 
+    /// La tab bar reste montée pendant le tutoriel : la masquer **et** couper son
+    /// hit testing enfermait l'utilisateur sur un accueil sans aucune sortie dès
+    /// qu'une étape n'affichait pas son CTA.
     private var showsTabChrome: Bool {
         selectedSection != .coach
             && !profileSubrouteActive
             && !hidesTabChrome
-            && !tutorialStore.constrainsHomeLayout
     }
 
     var body: some View {
@@ -305,7 +307,7 @@ struct ProcessIGTabShell<Content: View>: View {
             if let onMealScan {
                 ProcessIGMealScanButton(
                     action: onMealScan,
-                    isInteractionEnabled: !tutorialStore.isActive
+                    isInteractionEnabled: true
                 )
             }
         }
@@ -335,7 +337,6 @@ struct ProcessIGTabShell<Content: View>: View {
         }
         .contentShape(Capsule(style: .continuous))
         .modifier(ProcessIGTabBarGlassChrome(style: .capsule))
-        .allowsHitTesting(!tutorialStore.isActive)
     }
 
     private func expandIfNeeded() {

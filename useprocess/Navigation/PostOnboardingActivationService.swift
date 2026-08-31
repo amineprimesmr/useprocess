@@ -26,7 +26,6 @@ enum PostOnboardingActivationService {
             migrateUserDefaultsBlob(base: base, to: userId)
         }
         migrateOnboardingProgressData(to: userId)
-        ProcessEveningCheckInStore.shared.reload()
         ProcessHydrationLogStore.shared.reload()
         ProcessDebloatTrajectoryStore.shared.reload()
         ProcessStreakStore.shared.reload()

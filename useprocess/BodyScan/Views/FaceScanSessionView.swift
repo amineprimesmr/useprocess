@@ -48,11 +48,6 @@ struct FaceScanSessionView: View {
                             if skipResultSheet {
                                 onDismiss()
                             }
-                        },
-                        onRetryScan: {
-                            withAnimation(transitionAnimation) {
-                                captureInput = nil
-                            }
                         }
                     )
                     .transition(pageTransition)
@@ -92,7 +87,6 @@ struct FaceScanSessionView: View {
         .animation(transitionAnimation, value: captureInput?.payload.scanId)
         .onDisappear {
             FaceScanScreenFlash.shared.deactivate(animated: false)
-            ProcessEveningCheckInPresenter.shared.dismissImmediately()
         }
     }
 

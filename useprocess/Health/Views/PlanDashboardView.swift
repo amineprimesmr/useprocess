@@ -15,11 +15,9 @@ struct PlanDashboardView: View {
 
     @Bindable private var planStore = WelcomePlanStore.shared
     @State private var isRestoringPlan = false
-    @State private var showCalendar = false
     @State private var selectedPlanDate = Calendar.current.startOfDay(for: Date())
     @State private var planHealthMetrics = PlanHomeHealthMetrics()
     @State private var showStreakDetail = false
-    @Namespace private var planCalendarZoomNamespace
 
     private var isPlanRuntimeActive: Bool {
         isTabActive && scenePhase == .active
@@ -31,10 +29,12 @@ struct PlanDashboardView: View {
         planDashboard
             .animation(.spring(response: 0.44, dampingFraction: 0.88), value: session.hasCompletedWelcomePlanChat)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .fullScreenCover(isPresented: $showStreakDetail) {
-                ProcessProfileView(selectedSection: $selectedSection, isTabActive: true)
+            .sheet(isPresented: $showStreakDetail) {
+                ProcessProfileView(selectedSection: $selectedSection, isTabActive: true, showsCloseButton: false)
                     .environmentObject(profileService)
                     .environmentObject(HealthManager.shared)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.hidden)
             }
     }
 
@@ -42,9 +42,8 @@ struct PlanDashboardView: View {
         if isOnboardingPreview {
             return 12
         }
-        if tutorialStore.constrainsHomeLayout {
-            return UIApplication.safeAreaBottom + 28
-        }
+        // La tab bar reste affichée pendant le tutoriel : toujours réserver sa place,
+        // sinon le CTA « Continuer » passe dessous et devient intappable.
         return ProcessIGTabMetrics.tabBarOverlayClearance + 12
     }
 
@@ -60,9 +59,7 @@ struct PlanDashboardView: View {
                         PlanHomeTopChrome(
                             selectedSection: $selectedSection,
                             selectedDate: $selectedPlanDate,
-                            showCalendar: $showCalendar,
                             plan: livePlan,
-                            calendarZoomNamespace: planCalendarZoomNamespace,
                             onOpenStreak: presentDailyChecklist
                         )
 
@@ -100,11 +97,16 @@ struct PlanDashboardView: View {
                     await OnboardingProgressService.shared.savePendingDataIfNeeded(to: profileService)
                 }
                 guard !isOnboardingPreview else { return }
+                tutorialStore.noteHomeSurfaceMounted(true)
                 tutorialStore.reload()
                 tutorialStore.schedulePresentationIfNeeded(
                     planAvailable: livePlan != nil,
                     preferImmediate: true
                 )
+            }
+            .onDisappear {
+                guard !isOnboardingPreview else { return }
+                tutorialStore.noteHomeSurfaceMounted(false)
             }
             .onChange(of: livePlan?.id) { _, _ in
                 guard !isOnboardingPreview else { return }
@@ -244,16 +246,7 @@ struct PlanDashboardView: View {
     private func presentDailyChecklist() {
         HapticManager.shared.impact(.medium)
         ProcessStreakStore.shared.sync(from: planStore.plan)
-
-        if ProcessEveningCheckInSchedule.isTodayStreakSettledForNavigation() {
-            showStreakDetail = true
-            return
-        }
-
-        ProcessEveningCheckInPresenter.shared.present(
-            targetDate: ProcessEveningCheckInSchedule.preferredManualCheckInDate(),
-            isRequired: false
-        )
+        showStreakDetail = true
     }
 }
 

@@ -1,7 +1,7 @@
 import Foundation
 
 /// Cible précise du contour tutoriel — carte / carousel, jamais le titre de section.
-enum PlanHomeTutorialFocus: String, Equatable {
+enum PlanHomeTutorialFocus: String, Equatable, Hashable {
     case faceScan
     case hydration
     case meals

@@ -18,7 +18,7 @@ enum ProcessZoomTransitionID: Hashable {
     case planCalendar
 
     /// Spring partagé — ouverture/fermeture zoom (repas, calendrier, protocoles).
-    static let presentationSpring = Animation.spring(response: 0.44, dampingFraction: 0.88)
+    static let presentationSpring = Animation.spring(response: 0.32, dampingFraction: 0.9)
 
     var sourceID: String {
         switch self {
@@ -59,22 +59,6 @@ enum ProcessCoachZoomTransition {
 }
 
 /// Style bouton source — glass + matchedTransitionSource + haptique (pattern FluidZoom).
-struct ProcessFluidZoomButtonStyle<S: InsettableShape>: ButtonStyle {
-    let id: String
-    let namespace: Namespace.ID
-    let shape: S
-    var usesGlass: Bool = true
-
-    func makeBody(configuration: Configuration) -> some View {
-        ProcessFluidZoomButtonStyleBody(
-            id: id,
-            namespace: namespace,
-            shape: shape,
-            usesGlass: usesGlass,
-            configuration: configuration
-        )
-    }
-}
 
 private struct ProcessFluidZoomButtonStyleBody<S: InsettableShape>: View {
     let id: String

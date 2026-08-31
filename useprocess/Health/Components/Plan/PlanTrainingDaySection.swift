@@ -12,17 +12,15 @@ struct PlanTrainingDaySection: View {
     @Namespace private var trainingZoomNamespace
     @State private var selectedProtocolItem: PlanProtocolCarouselItem?
 
+    /// Uniquement le circuit posture — le cardio a son propre item, pas mélangé ici.
     private var carouselItems: [PlanProtocolCarouselItem] {
-        PlanProtocolCarouselBuilder.cardioAndCircuitItems(
-            plan: plan,
-            date: selectedDate
-        )
+        PlanProtocolCarouselBuilder.compactPostureItems(from: plan)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
             PlanProtocolSectionHeader(
-                title: PlanHomeSectionKind.training.title,
+                title: AppCopy.t("Circuit posture", en: "Posture circuit"),
                 trailing: nil
             )
 

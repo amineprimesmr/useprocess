@@ -382,9 +382,6 @@ async function accrueAffiliateCommission(params) {
     const commissionId = commissionDocId(attribution.affiliateId, rcEventId);
     const commissionRef = db().collection("affiliateCommissions").doc(commissionId);
     const affiliateRef = db().collection("affiliates").doc(attribution.affiliateId);
-    const existing = await commissionRef.get();
-    if (existing.exists)
-        return { created: false, skipped: "DUPLICATE" };
     const now = admin.firestore.Timestamp.now();
     const holdUntil = admin.firestore.Timestamp.fromMillis(now.toMillis() + exports.AFFILIATE_HOLD_DAYS * 86_400_000);
     const commission = {
@@ -404,7 +401,13 @@ async function accrueAffiliateCommission(params) {
         createdAt: now,
     };
     const attributionRef = affiliateRef.collection("attributions").doc(params.inviteeUid);
-    await db().runTransaction(async (transaction) => {
+    const result = await db().runTransaction(async (transaction) => {
+        // RevenueCat retries webhooks, and both our endpoints can receive the same event —
+        // this dedupe check must happen inside the transaction (like recordAffiliateTrialStart),
+        // otherwise two concurrent deliveries can both pass a pre-transaction check and both accrue.
+        const existingSnap = await transaction.get(commissionRef);
+        if (existingSnap.exists)
+            return { created: false, skipped: "DUPLICATE" };
         const attrSnap = await transaction.get(attributionRef);
         const attrData = attrSnap.data() ?? {};
         // A trial that converts arrives as a RENEWAL, never as an INITIAL_PURCHASE.
@@ -438,7 +441,10 @@ async function accrueAffiliateCommission(params) {
             ...(isFirstPaid ? { sales: 1 } : {}),
             ...(isTrialConversion ? { trialConversions: 1 } : {}),
         }, now);
+        return { created: true };
     });
+    if (!result.created)
+        return { created: false, skipped: result.skipped };
     return { created: true, commissionId };
 }
 /**

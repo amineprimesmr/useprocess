@@ -114,7 +114,15 @@ struct PlanHomeTutorialFocusChrome<Content: View>: View {
     let stepIndex: Int
     let stepCount: Int
     let onAdvance: () -> Void
+    let onSkip: () -> Void
     @ViewBuilder var content: () -> Content
+
+    /// Vrai quand le CTA « Continuer » de cette étape est réellement à l'écran.
+    /// Sans ce signal, une étape dont la carte ne se monte pas laissait l'accueil
+    /// sans tab bar et sans aucun bouton de sortie.
+    private var showsStepCTA: Bool {
+        isFocused && showsFooter && captionStep != nil
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
@@ -136,6 +144,7 @@ struct PlanHomeTutorialFocusChrome<Content: View>: View {
                 if showsFooter {
                     PlanHomeTutorialInlineFooter(
                         onAdvance: onAdvance,
+                        onSkip: onSkip,
                         stepIndex: stepIndex,
                         stepCount: stepCount
                     )
@@ -145,6 +154,21 @@ struct PlanHomeTutorialFocusChrome<Content: View>: View {
         }
         .animation(.spring(response: 0.52, dampingFraction: 0.88), value: isFocused)
         .id(focus.scrollAnchorID)
+        .onAppear { reportCTAVisibility(showsStepCTA) }
+        .onChange(of: showsStepCTA) { _, visible in
+            reportCTAVisibility(visible)
+        }
+        .onDisappear {
+            PlanHomeTutorialStore.shared.noteFocusCTAHidden(focus)
+        }
+    }
+
+    private func reportCTAVisibility(_ visible: Bool) {
+        if visible {
+            PlanHomeTutorialStore.shared.noteFocusCTAVisible(focus)
+        } else {
+            PlanHomeTutorialStore.shared.noteFocusCTAHidden(focus)
+        }
     }
 }
 
@@ -179,6 +203,7 @@ extension PlanHomeTutorialFocusChrome {
             stepIndex: store.currentStepIndex,
             stepCount: store.steps.count,
             onAdvance: { store.advance() },
+            onSkip: { store.skip() },
             content: content
         )
     }
@@ -241,6 +266,7 @@ struct PlanHomeTutorialInlineFooter: View {
     @Environment(\.colorScheme) private var colorScheme
 
     let onAdvance: () -> Void
+    let onSkip: () -> Void
     let stepIndex: Int
     let stepCount: Int
 
@@ -264,6 +290,8 @@ struct PlanHomeTutorialInlineFooter: View {
                     )
             }
             .buttonStyle(.processPlain)
+
+            PlanHomeTutorialSkipButton(onSkip: onSkip)
         }
         .padding(.top, 4)
         .padding(.bottom, 8)
@@ -288,5 +316,25 @@ struct PlanHomeTutorialInlineFooter: View {
         PlanHomeTutorialStep.allCases.enumerated().compactMap { index, step in
             step.isTabStep ? nil : index
         }
+    }
+}
+
+/// Sortie de secours du tutoriel — sans elle, une étape sans CTA verrouillait l'app.
+struct PlanHomeTutorialSkipButton: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    let onSkip: () -> Void
+
+    var body: some View {
+        Button(action: onSkip) {
+            Text(AppCopy.t("Passer", en: "Skip"))
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(PlanHomeTutorialChromeStyle.messageColor(for: colorScheme))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.processPlain)
+        .accessibilityLabel(AppCopy.t("Passer le tutoriel", en: "Skip the tutorial"))
     }
 }

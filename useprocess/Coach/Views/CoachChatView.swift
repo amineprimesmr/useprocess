@@ -134,9 +134,6 @@ struct CoachChatView: View {
                 guard isTabActive else { return }
                 viewModel.bind(profile: profileService.currentProfile)
                 await viewModel.loadThreadIfNeeded()
-                if !viewModel.messages.contains(where: FaceScanCoachInsightService.isCoachInsightMessage) {
-                    _ = await CoachEveningChecklistService.deliverEveningMessageIfNeeded()
-                }
             }
             .onChange(of: profileService.currentProfile?.userId) { _, _ in
                 viewModel.bind(profile: profileService.currentProfile)
@@ -620,11 +617,6 @@ struct CoachChatView: View {
                     lineSpacing: messageLineSpacing,
                     color: theme.primaryText
                 )
-
-                if CoachEveningChecklistService.isEveningMessage(message) {
-                    CoachEveningChecklistCard()
-                        .padding(.top, 10)
-                }
 
                 if let enrichment = viewModel.enrichment(for: message) {
                     CoachMessageEnrichmentView(

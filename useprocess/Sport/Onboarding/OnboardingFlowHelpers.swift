@@ -138,7 +138,8 @@ func buildOnboardingProgressFlowPath(
 func isAfterQuestionnairePhase(_ step: OnboardingStep) -> Bool {
     switch step {
     case .programCreation, .weightEstimation, .biometricAuth, .transformationPreview,
-         .dashboardPreview, .dreamFaceCommit, .payment, .appleSignIn, .complete:
+         .dashboardPreview, .dreamFaceCommit, .payment, .appleSignIn, .complete,
+         .postPaymentWelcome, .explainerBodyFat, .explainerWaterRetention, .explainerLymphDrainage:
         return true
     default:
         return false

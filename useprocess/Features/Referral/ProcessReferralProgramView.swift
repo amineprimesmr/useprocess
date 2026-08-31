@@ -9,12 +9,14 @@ struct ProcessReferralProgramView: View {
     @State private var showShareSheet = false
 
     var body: some View {
-        ProcessReferralProgramScreen(
-            store: store,
-            showsBackButton: true,
-            onBack: { dismiss() },
-            showShareSheet: $showShareSheet
-        )
+        NavigationStack {
+            ProcessReferralProgramScreen(
+                store: store,
+                showsBackButton: true,
+                onBack: { dismiss() },
+                showShareSheet: $showShareSheet
+            )
+        }
         .onAppear { reloadStore() }
     }
 
@@ -144,45 +146,6 @@ enum ProcessReferralTheme {
     static let textTertiary = Color(white: 0.45)
 }
 
-struct ProcessReferralStatusBadge: View {
-    let status: ProcessReferralEntryStatus
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(dotColor)
-                .frame(width: 7, height: 7)
-
-            Text(status.label)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(textColor)
-        }
-        .padding(.horizontal, 11)
-        .padding(.vertical, 7)
-        .background(backgroundColor, in: Capsule())
-    }
-
-    private var dotColor: Color {
-        status == .accepted ? Color(red: 0.2, green: 0.78, blue: 0.35) : Color.orange
-    }
-
-    private var textColor: Color {
-        status == .accepted ? Color(red: 0.55, green: 0.95, blue: 0.65) : Color.orange.opacity(0.95)
-    }
-
-    private var backgroundColor: Color {
-        status == .accepted
-            ? Color(red: 0.2, green: 0.78, blue: 0.35).opacity(0.16)
-            : Color.orange.opacity(0.14)
-    }
-}
 
 // MARK: - Legacy
 
-struct ProcessReferralStatusSection: View {
-    let entries: [ProcessReferralEntry]
-
-    var body: some View {
-        EmptyView()
-    }
-}

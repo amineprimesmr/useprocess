@@ -186,47 +186,6 @@ struct FaceScanPrivacyGateView: View {
 }
 
 /// Gate onboarding — même session que l’app (capture + analyse WHOOP + résultats).
-struct FaceScanCapturePrivacyGateView: View {
-    @EnvironmentObject private var profileService: UnifiedProfileService
-
-    var onDismiss: () -> Void
-    var onCancelCapture: () -> Void
-    var onSkip: () -> Void
-    var onComplete: (FaceScanResult) -> Void
-
-    @State private var consentStore = ProcessPrivacyConsentStore.shared
-    @State private var showScanner = false
-
-    var body: some View {
-        Group {
-            if showScanner || consentStore.canCaptureFaceScan {
-                FaceScanSessionView(
-                    onDismiss: onDismiss,
-                    onComplete: onComplete,
-                    onCancelCapture: onCancelCapture,
-                    onSkipCapture: onSkip,
-                    showsMediaImport: ProcessCreatorModeStore.shared.allowsPhotoImport,
-                    compactSkipAction: true,
-                    usesOnboardingPageTransitions: true
-                )
-            } else {
-                ProgressView()
-            }
-        }
-        .onAppear {
-            if consentStore.canCaptureFaceScan {
-                showScanner = true
-            } else {
-                acceptAndScan()
-            }
-        }
-    }
-
-    private func acceptAndScan() {
-        consentStore.acceptFaceScanCapture()
-        showScanner = true
-    }
-}
 
 // MARK: - Modifier consentement IA global
 

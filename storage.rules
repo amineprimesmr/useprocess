@@ -1,0 +1,16 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Médias statiques embarqués dans l'app (vidéos circuit, illustrations) —
+    // lecture ouverte aux utilisateurs authentifiés, écriture réservée au backend.
+    match /media/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

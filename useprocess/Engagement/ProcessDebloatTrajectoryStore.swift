@@ -18,9 +18,7 @@ final class ProcessDebloatTrajectoryStore {
 
     func reload() {
         state = loadState() ?? ProcessDebloatTrajectoryState()
-        migrateLegacyCheckInsIfNeeded()
         migrateFaceScansIfNeeded()
-        reconcileWithEveningCheckInStore()
         rebuildAllStreaks()
         refreshSnapshot()
     }
@@ -172,7 +170,6 @@ final class ProcessDebloatTrajectoryStore {
 
     func sync(from plan: FaceOriginPlan?) {
         migrateFaceScansIfNeeded()
-        reconcileWithEveningCheckInStore()
         purgeInvalidMissedRecords(plan: plan)
         reconcileMissedDays(plan: plan)
         rebuildAllStreaks()
@@ -299,7 +296,7 @@ final class ProcessDebloatTrajectoryStore {
     }
 
     private func submissionStreakKeys() -> Set<String> {
-        ProcessEveningCheckInStore.shared.submittedDayKeys
+        Set(state.recordsByDay.values.filter(\.hasScan).map(\.dayKey))
     }
 
     private func isPausedDayKey(_ key: String) -> Bool {
@@ -434,7 +431,8 @@ final class ProcessDebloatTrajectoryStore {
         let todayRecord = state.recordsByDay[todayKey]
 
         let chartPoints = chartPoints(dayCount: 30)
-        let submittedKeys = ProcessEveningCheckInStore.shared.submittedDayKeys
+        // Streak = jours avec un scan visage, plus de bilan du soir.
+        let submittedKeys = Set(state.recordsByDay.values.filter(\.hasScan).map(\.dayKey))
         let current = ProcessStreakMath.currentStreak(
             submittedKeys: submittedKeys,
             isPaused: { key in
@@ -453,8 +451,8 @@ final class ProcessDebloatTrajectoryStore {
         )
 
         let todayProgress: Double
-        if let record = todayRecord, record.checkInSubmitted {
-            todayProgress = record.behaviorScore
+        if let record = todayRecord, record.hasScan {
+            todayProgress = 1
         } else {
             todayProgress = 0
         }
@@ -501,92 +499,6 @@ final class ProcessDebloatTrajectoryStore {
     }
 
     // MARK: - Migration
-
-    private func reconcileWithEveningCheckInStore(now: Date = Date()) {
-        let evening = ProcessEveningCheckInStore.shared
-        var changed = false
-
-        for key in Array(state.recordsByDay.keys) {
-            guard var record = state.recordsByDay[key] else { continue }
-            let submitted = evening.submittedDayKeys.contains(key)
-
-            if submitted {
-                guard let date = ProcessDebloatTrajectoryEngine.date(from: key) else { continue }
-                let answers = evening.answers(for: date)
-                record.checkInSubmitted = true
-                record.water = ProcessDebloatTrajectoryEngine.boolAnswer(answers, key: EveningCheckInQuestionID.water)
-                record.debloatMeal = ProcessDebloatTrajectoryEngine.boolAnswer(answers, key: EveningCheckInQuestionID.debloatMeal)
-                record.cardio = ProcessDebloatTrajectoryEngine.boolAnswer(answers, key: EveningCheckInQuestionID.cardio)
-                record.behaviorScore = ProcessDebloatTrajectoryEngine.behaviorScore(from: answers)
-                state.recordsByDay[key] = record
-                changed = true
-            } else if record.checkInSubmitted {
-                record.checkInSubmitted = false
-                record.water = nil
-                record.debloatMeal = nil
-                record.cardio = nil
-                record.behaviorScore = 0
-                let isPaused = ProcessActivityStatusStore.shared.status(
-                    for: ProcessDebloatTrajectoryEngine.date(from: key) ?? now
-                ) != .active
-                record.verdict = isPaused
-                    ? .paused
-                    : ProcessDebloatTrajectoryEngine.unsubmittedVerdict(for: key, now: now)
-                record.graceUsed = false
-                record.streakAfterDay = 0
-                state.recordsByDay[key] = record
-                changed = true
-            }
-        }
-
-        if changed {
-            state.graceUsedDayKeys = []
-        }
-    }
-
-    private func migrateLegacyCheckInsIfNeeded() {
-        let evening = ProcessEveningCheckInStore.shared
-        guard !evening.submittedDayKeys.isEmpty else { return }
-
-        var changed = false
-        for dayKey in evening.submittedDayKeys {
-            guard state.recordsByDay[dayKey] == nil else { continue }
-            guard let date = ProcessDebloatTrajectoryEngine.date(from: dayKey) else { continue }
-
-            let answers = evening.answers(for: date)
-            let behavior = ProcessDebloatTrajectoryEngine.behaviorScore(from: answers)
-            let isPaused = ProcessActivityStatusStore.shared.status(for: date) != .active
-
-            var record = emptyRecord(dayKey: dayKey)
-            record.checkInSubmitted = true
-            record.water = ProcessDebloatTrajectoryEngine.boolAnswer(answers, key: EveningCheckInQuestionID.water)
-            record.debloatMeal = ProcessDebloatTrajectoryEngine.boolAnswer(answers, key: EveningCheckInQuestionID.debloatMeal)
-            record.cardio = ProcessDebloatTrajectoryEngine.boolAnswer(answers, key: EveningCheckInQuestionID.cardio)
-            record.behaviorScore = behavior
-            record.scanScore = ProcessDebloatTrajectoryEngine.rollingScanScore(
-                from: Array(state.recordsByDay.values),
-                before: dayKey
-            )
-            let cardioMissesBefore = ProcessDebloatValidation.consecutiveCardioMisses(
-                before: dayKey,
-                in: state.recordsByDay
-            )
-            record.verdict = ProcessDebloatTrajectoryEngine.verdict(
-                record: record,
-                consecutiveCardioMissesBefore: cardioMissesBefore,
-                scanScore: record.scanScore,
-                isPaused: isPaused
-            )
-            finalizeRecord(&record, dayKey: dayKey, recomputeStreak: false)
-            state.recordsByDay[dayKey] = record
-            changed = true
-        }
-
-        if changed {
-            rebuildAllStreaks()
-            persist()
-        }
-    }
 
     private func migrateFaceScansIfNeeded() {
         let scans = FaceScanHistoryStore.shared.history

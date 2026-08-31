@@ -6,21 +6,7 @@ enum ProcessMainChromeMetrics {
     static var scrollTopInset: CGFloat { 0 }
 }
 
-struct CoachSidebarOffsetKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
 
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
-
-struct CoachSidebarProgressKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
-    }
-}
 
 struct ProfileSubrouteActiveKey: PreferenceKey {
     static var defaultValue = false

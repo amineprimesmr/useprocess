@@ -26,7 +26,7 @@ struct ProcessRoutineHomeView: View {
     }
 
     private var routineTitle: String {
-        AppCopy.t("Routine", en: "Routine")
+        AppCopy.t("Zéro Lymphe", en: "Zero Lymph")
     }
 
     var body: some View {
@@ -57,6 +57,8 @@ struct ProcessRoutineHomeView: View {
             VStack(alignment: .leading, spacing: PlanHomeSectionDesign.sectionSpacing) {
                 header
 
+                PlanLymphCircuitStepsBar()
+
                 if let plan = livePlan, let day = programDay {
                     PlanFaceDaySection(plan: plan, day: day)
 
@@ -72,7 +74,7 @@ struct ProcessRoutineHomeView: View {
                 }
             }
             .padding()
-            .padding(.top, isOnboardingPreview ? 16 : 8)
+            .padding(.top, isOnboardingPreview ? 16 : 10)
             .padding(.bottom, isOnboardingPreview ? 12 : ProcessIGTabMetrics.tabBarOverlayClearance + 12)
         }
         .scrollIndicators(.hidden)
@@ -80,13 +82,7 @@ struct ProcessRoutineHomeView: View {
     }
 
     private var header: some View {
-        Text(routineTitle)
-            .font(.system(size: 34, weight: .bold))
-            .foregroundStyle(theme.primaryText)
-            .lineLimit(1)
-            .minimumScaleFactor(0.78)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, 8)
+        ProcessPageTitleHeader(title: routineTitle)
     }
 
     private var emptyState: some View {

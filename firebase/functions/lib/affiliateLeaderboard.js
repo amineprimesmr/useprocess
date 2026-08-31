@@ -6,6 +6,25 @@ const affiliateShared_1 = require("./affiliateShared");
 const affiliateLeaderboardShared_1 = require("./affiliateLeaderboardShared");
 const referralShared_1 = require("./referralShared");
 const LEADERBOARD_LIMIT = 400;
+// Query-side counterpart to clipperMetric() in affiliateLeaderboardShared — without this,
+// the top-400 `limit()` returns an arbitrary (document-id-ordered) slice once there are
+// more than 400 active clippers, not the actual top performers for the requested sort.
+function clipperSortField(sort) {
+    switch (sort) {
+        case "sales":
+            return "stats.paidCount";
+        case "trials":
+            return "stats.trialCount";
+        case "installs":
+            return "stats.referredCount";
+        case "visits":
+            return "stats.linkViews";
+        case "paywalls":
+            return "stats.paywallCount";
+        default:
+            return "stats.lifetimeCents";
+    }
+}
 exports.affiliateLeaderboard = (0, https_1.onRequest)({
     invoker: "public",
     cors: true,
@@ -33,6 +52,7 @@ exports.affiliateLeaderboard = (0, https_1.onRequest)({
         const snap = await (0, affiliateShared_1.db)()
             .collection("affiliates")
             .where("status", "==", "active")
+            .orderBy(clipperSortField(sort), "desc")
             .limit(LEADERBOARD_LIMIT)
             .get();
         const rows = snap.docs.map((doc) => {

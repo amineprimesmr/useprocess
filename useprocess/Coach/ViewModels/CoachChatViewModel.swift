@@ -53,7 +53,6 @@ final class CoachChatViewModel {
     private var hasThreadContent: Bool {
         messages.contains { message in
             message.role == .user
-                || CoachEveningChecklistService.isEveningMessage(message)
                 || FaceScanCoachInsightService.isCoachInsightMessage(message)
         }
     }

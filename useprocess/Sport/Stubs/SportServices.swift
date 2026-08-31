@@ -245,9 +245,6 @@ final class AuthenticationManager: NSObject, ObservableObject {
 
 // MARK: - Profile
 
-enum UnifiedProfileError: Error {
-    case notAuthenticated
-}
 
 @MainActor
 final class UnifiedProfileService: ObservableObject {

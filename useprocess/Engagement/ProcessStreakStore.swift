@@ -198,8 +198,7 @@ final class ProcessStreakStore {
             let dayStart = weekCalendar.startOfDay(for: date)
             let key = dayKey(for: dayStart, calendar: weekCalendar)
             let record = recordsByDay[key]
-            let isComplete = completedKeys.contains(key)
-                || record?.checkInSubmitted == true
+            let isComplete = completedKeys.contains(key) || record?.hasScan == true
             let isToday = weekCalendar.isDateInToday(dayStart)
             let isFuture = dayStart > today
             let isMissed: Bool = {

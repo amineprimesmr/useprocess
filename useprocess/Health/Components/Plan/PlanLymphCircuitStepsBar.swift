@@ -12,7 +12,7 @@ struct PlanLymphCircuitStepsBar: View {
         HStack(spacing: 12) {
             Image(systemName: "shoeprints.fill")
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Layout.accent)
+                .foregroundStyle(progressColor)
                 .frame(width: 20, height: 20)
                 .accessibilityHidden(true)
 
@@ -53,6 +53,11 @@ struct PlanLymphCircuitStepsBar: View {
         return min(100, max(0, Int((Double(steps) / Double(target) * 100).rounded(.down))))
     }
 
+    /// Rouge (nul) → orange (moyen) → jaune (bof) → vert (bien) — même échelle que les scores repas.
+    private var progressColor: Color {
+        MealDebloatScorePalette.tieredColor(for: percent)
+    }
+
     private var cardFill: Color {
         if theme.isDark {
             return Layout.cardDark
@@ -80,7 +85,8 @@ struct PlanLymphCircuitStepsBar: View {
     }
 
     private var ticks: some View {
-        GeometryReader { geo in
+        let fillColor = progressColor
+        return GeometryReader { geo in
             Canvas { context, size in
                 let tickWidth = Layout.tickWidth
                 let gap = Layout.tickGap
@@ -100,7 +106,7 @@ struct PlanLymphCircuitStepsBar: View {
                     )
                     context.fill(
                         path,
-                        with: .color(index < filled ? Layout.accent : inactiveTick)
+                        with: .color(index < filled ? fillColor : inactiveTick)
                     )
                 }
             }
@@ -120,7 +126,6 @@ struct PlanLymphCircuitStepsBar: View {
         static let tickHeight: CGFloat = 14
         static let tickWidth: CGFloat = 2.75
         static let tickGap: CGFloat = 2.75
-        static let accent = Color(red: 235 / 255, green: 79 / 255, blue: 39 / 255)
         static let cardDark = Color(red: 46 / 255, green: 48 / 255, blue: 55 / 255)
         static let tickIdleDark = Color(red: 59 / 255, green: 60 / 255, blue: 67 / 255)
     }

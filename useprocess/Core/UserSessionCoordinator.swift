@@ -42,7 +42,6 @@ final class UserSessionCoordinator {
             FaceScanHistoryStore.shared.reloadForUser(userId: userId)
             PostOnboardingActivationService.migrateOnboardingFaceScanData()
             PostOnboardingActivationService.migrateOnboardingEngagementData(to: userId)
-            ProcessEveningCheckInStore.shared.reload()
             ProcessHydrationLogStore.shared.reload()
             ProcessDebloatTrajectoryStore.shared.reload()
             ProcessStreakStore.shared.reload()

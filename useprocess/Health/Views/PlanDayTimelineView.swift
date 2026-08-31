@@ -108,30 +108,6 @@ struct PlanInfoLinkButton: View {
     }
 }
 
-struct PlanDebloatGuideSheet: View {
-    @Environment(\.appTheme) private var theme
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                HealthDebloatGuideView()
-                    .padding()
-            }
-            .processTransparentScrollSurface()
-            .navigationTitle(AppCopy.t("Comprendre le debloat", en: "Understand debloat"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(AppCopy.close) { dismiss() }
-                }
-            }
-        }
-        .processAppPageBackground()
-        .processAppPresentationBackground()
-        .presentationDetents([.large])
-    }
-}
 
 // MARK: - Ressources (hors timeline)
 
@@ -147,70 +123,4 @@ enum PlanResourceSheet: Identifiable, Hashable {
     }
 }
 
-struct PlanResourcesFooter: View {
-    @Binding var activeSheet: PlanResourceSheet?
-    var zoomNamespace: Namespace.ID? = nil
 
-    @Environment(\.appTheme) private var theme
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
-            PlanHomeSectionHeader(title: PlanHomeSectionKind.resources.title)
-
-            resourceLink(
-                sheet: .debloatGuide,
-                title: AppCopy.t("Guide debloat & habitudes 24/7", en: "Debloat guide & all-day habits"),
-                systemImage: "lightbulb.fill"
-            )
-        }
-    }
-
-    private func resourceLink(sheet: PlanResourceSheet, title: String, systemImage: String) -> some View {
-        PlanInfoLinkButton(title: title, systemImage: systemImage) {
-            activeSheet = sheet
-        }
-        .processZoomSource(id: .planResource(sheet), namespace: zoomNamespace)
-    }
-}
-
-struct PlanContinuousHabitsSheet: View {
-    @Environment(\.appTheme) private var theme
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(AppCopy.t("Ces habitudes ne se cochent pas — elles s'appliquent en continu, toute la journée.", en: "These habits aren't checked off — they apply continuously, all day."))
-                        .font(.subheadline)
-                        .foregroundStyle(theme.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    ForEach(Array(ProcessContinuousHabits.all.enumerated()), id: \.offset) { _, habit in
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(habit.title)
-                                .font(.subheadline.weight(.semibold))
-                            Text(habit.detail)
-                                .font(.caption)
-                                .foregroundStyle(theme.secondaryText)
-                        }
-                        .padding(14)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(HealthHubDesign.softCard(theme: theme))
-                    }
-                }
-                .padding()
-            }
-            .processTransparentScrollSurface()
-            .navigationTitle(AppCopy.t("Habitudes 24/7", en: "All-day habits"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(AppCopy.close) { dismiss() }
-                }
-            }
-        }
-        .processAppPageBackground()
-        .processAppPresentationBackground()
-    }
-}

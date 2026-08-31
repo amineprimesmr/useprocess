@@ -13,77 +13,52 @@ struct DebloatFoodHubView: View {
     @Bindable private var store = WelcomePlanStore.shared
     @Bindable private var prefs = DebloatFoodPreferenceStore.shared
 
-    @State private var mode: DebloatFoodHubMode = .recipes
-    @State private var tab: DebloatFoodHubTab = .prefer
     @State private var foodSearchQuery = ""
+    @State private var showsAllFoodsPage = false
+    @State private var selectedMealSlot: MealTimeSlot = .breakfast
     @State private var selectedFood: DebloatFoodItem?
     @State private var selectedCatalogMeal: CatalogMealSelection?
-    @State private var showGrocery = false
-    @State private var showGeneratedRecipes = false
-    @State private var groceryRequest = DebloatGroceryRequest()
-    @State private var groceryPlan: DebloatGroceryPlan?
-    @State private var recipeSeed = 0
+    @State private var cachedRecipeSections: [ProcessDebloatMealLibrary.CatalogSection] = ProcessDebloatMealLibrary.fullCatalogSections()
 
     private var livePlan: FaceOriginPlan { store.plan ?? plan }
 
     private var recipeSections: [ProcessDebloatMealLibrary.CatalogSection] {
-        ProcessDebloatMealLibrary.fullCatalogSections()
-    }
-
-    private var totalRecipeCount: Int {
-        ProcessDebloatMealLibrary.fullCatalogMealCount()
+        cachedRecipeSections
     }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                hubSummaryStrip
+                headerRow
                     .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                    .padding(.bottom, 10)
+                    .padding(.top, 10)
 
-                modePicker
+                foodSearchField
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 10)
-
-                if mode == .foods {
-                    foodTabPicker
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 10)
-
-                    if tab != .tastes {
-                        foodSearchField
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 10)
-                    }
-                }
+                    .padding(.top, 20)
+                    .padding(.bottom, 14)
 
                 ScrollView(showsIndicators: false) {
-                    Group {
-                        if mode == .foods {
-                            foodsContent
-                        } else {
-                            recipesCatalogContent
-                        }
+                    VStack(alignment: .leading, spacing: 38) {
+                        browseByTypeSection
+
+                        smartMealPicksSection
                     }
                     .padding(.horizontal, 20)
-                    .padding(.bottom, mode == .foods ? 120 : 40)
+                    .padding(.top, 12)
+                    .padding(.bottom, 40)
                 }
                 .processTransparentScrollSurface()
             }
-            .safeAreaInset(edge: .bottom) {
-                if mode == .foods {
-                    bottomCTA
-                }
-            }
-            .navigationTitle(navigationTitle)
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if !isTabRoot {
                     ToolbarItem(placement: .cancellationAction) {
                         Button(AppCopy.close) { dismiss() }
                     }
                 }
+            }
+            .navigationDestination(isPresented: $showsAllFoodsPage) {
+                DebloatFoodCatalogPageView(selectedFood: $selectedFood)
             }
             .sheet(item: $selectedFood) { food in
                 DebloatFoodDetailSheet(food: food)
@@ -99,14 +74,6 @@ struct DebloatFoodHubView: View {
                     onDismiss: { selectedCatalogMeal = nil }
                 )
             }
-            .sheet(isPresented: $showGrocery) {
-                grocerySheet
-            }
-            .sheet(isPresented: $showGeneratedRecipes) {
-                recipesSheet
-            }
-            .animation(.spring(response: 0.35, dampingFraction: 0.86), value: mode)
-            .animation(.spring(response: 0.35, dampingFraction: 0.86), value: tab)
         }
         .processAppPageBackground()
         .processAppPresentationBackground()
@@ -117,714 +84,432 @@ struct DebloatFoodHubView: View {
     // MARK: - Header
 
     private var navigationTitle: String {
-        switch mode {
-        case .recipes:
-            return AppCopy.t("Catalogue de recettes", en: "Recipe catalog")
-        case .foods:
-            return AppCopy.t("Aliments Debloat", en: "Debloat Foods")
-        }
+        AppCopy.t("Qu'est-ce qu'on mange\naujourd'hui ?", en: "What are you craving\ntoday?")
     }
 
-    private var hubSummaryStrip: some View {
-        HStack(spacing: 10) {
-            summaryChip(
-                value: "\(totalRecipeCount)",
-                label: AppCopy.t("recettes", en: "recipes"),
-                symbol: "fork.knife",
-                isActive: mode == .recipes
-            ) {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
-                    mode = .recipes
-                }
-            }
-
-            summaryChip(
-                value: "\(DebloatFoodCatalog.totalFoodCount)",
-                label: AppCopy.t("aliments", en: "foods"),
-                symbol: "leaf.fill",
-                isActive: mode == .foods
-            ) {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
-                    mode = .foods
-                }
-            }
-        }
+    private var latestScan: FaceScanResult? {
+        FaceScanHistoryStore.shared.history.first
     }
 
-    private func summaryChip(
-        value: String,
-        label: String,
-        symbol: String,
-        isActive: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Image(systemName: symbol)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(isActive ? (theme.isDark ? Color.black : Color.white) : theme.secondaryText)
-
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(value)
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(isActive ? (theme.isDark ? Color.black : Color.white) : theme.primaryText)
-                        .monospacedDigit()
-                    Text(label)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(isActive ? (theme.isDark ? Color.black.opacity(0.72) : Color.white.opacity(0.82)) : theme.secondaryText)
-                }
-
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 11)
-            .frame(maxWidth: .infinity)
-            .background {
-                if isActive {
-                    Capsule().fill(theme.primaryText)
-                } else {
-                    Capsule().fill(theme.primaryText.opacity(theme.isDark ? 0.08 : 0.05))
-                }
-            }
-        }
-        .buttonStyle(.processPlain)
-    }
-
-    private var modePicker: some View {
-        HStack(spacing: 8) {
-            ForEach(DebloatFoodHubMode.allCases) { item in
-                hubSegmentButton(
-                    title: item.title,
-                    symbol: item.symbolName,
-                    isSelected: mode == item
-                ) {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
-                        mode = item
+    private var headerRow: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center) {
+                Group {
+                    if let latestScan {
+                        FaceScanRecordingMediaView(result: latestScan, height: 48, displayMode: .thumbnail)
+                    } else {
+                        Circle()
+                            .fill(theme.primaryText.opacity(theme.isDark ? 0.08 : 0.05))
+                            .overlay {
+                                Image(systemName: "face.smiling")
+                                    .font(.system(size: 18, weight: .medium))
+                                    .foregroundStyle(theme.secondaryText)
+                            }
                     }
                 }
+                .frame(width: 48, height: 48)
+                .clipShape(Circle())
+
+                Spacer(minLength: 12)
+
+                Button {
+                    HapticManager.shared.impact(.light)
+                    CoachPlanNavigationBridge.shared.focusHydrationOnHome()
+                } label: {
+                    ProcessHydrationDropIcon.image(side: 22)
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.processPlain)
+                .processGlassEffect(in: Circle(), interactive: true)
+                .accessibilityLabel(AppCopy.t("Ouvrir l'hydratation", en: "Open hydration"))
+            }
+
+            Text(navigationTitle)
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(theme.primaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    // MARK: - Browse by type
+
+    /// Légumes / fruits / potassium / boissons drainantes d'abord — les vrais aliments Debloat,
+    /// pas les fruits à coque (score élevé mais anecdotiques dans le protocole).
+    private static let browseCategoryPriority: [DebloatFoodCategory: Int] = [
+        .legumes: 0,
+        .potassium: 1,
+        .fruits: 2,
+        .drinks: 3,
+        .herbs: 4,
+        .protein: 5,
+        .magnesium: 6
+    ]
+
+    /// D'abord les aliments avec une vraie icône 3D (les plus reconnaissables, aucune répétition
+    /// d'emoji), puis le reste trié par catégorie / score — jamais les obscurs (roquette, mâche…) en tête.
+    private var topRankedFoods: [DebloatFoodItem] {
+        let all = DebloatFoodCatalog.preferFoods
+        let illustrated = DebloatFoodIllustrationTable.byId.keys
+        let (withAsset, rest) = all.reduce(into: ([DebloatFoodItem](), [DebloatFoodItem]())) { acc, food in
+            if illustrated.contains(food.id) {
+                acc.0.append(food)
+            } else {
+                acc.1.append(food)
+            }
+        }
+        let orderedWithAsset = withAsset.sorted {
+            DebloatFoodIllustrationTable.displayOrder(for: $0.id) < DebloatFoodIllustrationTable.displayOrder(for: $1.id)
+        }
+        let orderedRest = rest.sorted { lhs, rhs in
+            let lhsRank = Self.browseCategoryPriority[lhs.category] ?? 9
+            let rhsRank = Self.browseCategoryPriority[rhs.category] ?? 9
+            if lhsRank != rhsRank { return lhsRank < rhsRank }
+            return lhs.debloatScore > rhs.debloatScore
+        }
+        return orderedWithAsset + orderedRest
+    }
+
+    private var browseByTypeSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Button {
+                HapticManager.shared.impact(.light)
+                showsAllFoodsPage = true
+            } label: {
+                HStack(spacing: 4) {
+                    Text(AppCopy.t("Aliments Debloat", en: "Debloat Foods"))
+                        .font(.system(size: PlanHomeSectionDesign.titleSize, weight: .semibold))
+                        .foregroundStyle(theme.primaryText)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(theme.secondaryText)
+                }
+            }
+            .buttonStyle(.processPlain)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 14) {
+                    ForEach(topRankedFoods) { food in
+                        Button {
+                            HapticManager.shared.selection()
+                            selectedFood = food
+                        } label: {
+                            VStack(spacing: 8) {
+                                Group {
+                                    if let assetName = food.illustrationAssetName {
+                                        Image(assetName)
+                                            .resizable()
+                                            .scaledToFit()
+                                            .padding(10)
+                                    } else {
+                                        Text(food.emoji)
+                                            .font(.system(size: 30))
+                                    }
+                                }
+                                .frame(width: 68, height: 68)
+                                .processGlassEffect(in: RoundedRectangle(cornerRadius: 20, style: .continuous), interactive: true)
+                                Text(food.localizedName)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(theme.secondaryText)
+                                    .lineLimit(1)
+                                    .frame(width: 72)
+                            }
+                        }
+                        .buttonStyle(.processPlain)
+                        .contentShape(Rectangle())
+                        .scrollTransition(.interactive, axis: .horizontal) { content, phase in
+                            content
+                                .scaleEffect(phase.isIdentity ? 1 : 0.92)
+                                .opacity(phase.isIdentity ? 1 : 0.7)
+                        }
+                    }
+
+                    Button {
+                        HapticManager.shared.impact(.light)
+                        showsAllFoodsPage = true
+                    } label: {
+                        VStack(spacing: 8) {
+                            Image(systemName: "square.grid.2x2.fill")
+                                .font(.system(size: 22, weight: .semibold))
+                                .foregroundStyle(theme.primaryText)
+                                .frame(width: 68, height: 68)
+                                .processGlassEffect(in: RoundedRectangle(cornerRadius: 20, style: .continuous), interactive: true)
+                            Text(AppCopy.t("Tous les\naliments", en: "All\nFoods"))
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(theme.secondaryText)
+                                .multilineTextAlignment(.center)
+                                .lineLimit(2)
+                                .frame(width: 72)
+                        }
+                    }
+                    .buttonStyle(.processPlain)
+                }
+                .scrollTargetLayout()
+                .padding(.trailing, 20)
+            }
+            .scrollTargetBehavior(.viewAligned)
+            .scrollClipDisabled()
+            .padding(.horizontal, -20)
+            .padding(.leading, 4)
+        }
+    }
+
+    // MARK: - Smart meal picks
+
+    private var smartMealPicksTileSize: CGFloat { PlanMealCatalogLayout.tileSize + 44 }
+
+    private var mealSlotOptions: [MealTimeSlot] {
+        livePlan.configuredMealSlots.isEmpty
+            ? [.breakfast, .lunch, .dinner]
+            : livePlan.configuredMealSlots
+    }
+
+    private var effectiveSelectedSlot: MealTimeSlot {
+        mealSlotOptions.contains(selectedMealSlot) ? selectedMealSlot : (mealSlotOptions.first ?? .lunch)
+    }
+
+    /// Titre remplacé par des onglets cliquables Petit déj / Déjeuner / Dîner.
+    private var mealSlotTabs: some View {
+        HStack(spacing: 18) {
+            ForEach(mealSlotOptions, id: \.self) { slot in
+                Button {
+                    HapticManager.shared.selection()
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
+                        selectedMealSlot = slot
+                    }
+                } label: {
+                    Text(slot.displayTitle)
+                        .font(.system(size: PlanHomeSectionDesign.titleSize, weight: .semibold))
+                        .foregroundStyle(effectiveSelectedSlot == slot ? theme.primaryText : theme.secondaryText.opacity(0.55))
+                }
+                .buttonStyle(.processPlain)
             }
         }
     }
 
-    private var foodTabPicker: some View {
-        HStack(spacing: 8) {
-            ForEach(DebloatFoodHubTab.allCases) { item in
-                hubSegmentButton(
-                    title: item.title,
-                    symbol: item.symbolName,
-                    isSelected: tab == item,
-                    compact: true
-                ) {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
-                        tab = item
+    @ViewBuilder
+    private var smartMealPicksSection: some View {
+        let slot = effectiveSelectedSlot
+        let todayEntry = PlanDayMealsProvider.entries(plan: livePlan, day: day, store: store)
+            .first { $0.slot == slot }
+        let sectionMeals = recipeSections.first { $0.slot == slot }?.meals ?? []
+
+        VStack(alignment: .leading, spacing: 14) {
+            mealSlotTabs
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: PlanMealCatalogLayout.spacing) {
+                    if let todayEntry {
+                        glassMealCard(
+                            meal: todayEntry.meal,
+                            slot: todayEntry.slot,
+                            onTap: { selectedCatalogMeal = CatalogMealSelection(entry: todayEntry) }
+                        )
+                    }
+
+                    ForEach(sectionMeals, id: \.name) { meal in
+                        glassMealCard(
+                            meal: meal,
+                            slot: slot,
+                            onTap: {
+                                selectedCatalogMeal = CatalogMealSelection(
+                                    entry: PlanDayMealEntry.catalog(meal: meal, slot: slot, plan: livePlan, day: day)
+                                )
+                            }
+                        )
                     }
                 }
+                .scrollTargetLayout()
+                .padding(.vertical, 4)
+                .padding(.trailing, 20)
             }
+            .scrollTargetBehavior(.viewAligned)
+            .scrollClipDisabled()
+            .padding(.horizontal, -20)
+            .padding(.leading, 4)
         }
+        .id(slot)
     }
 
-    private func hubSegmentButton(
-        title: String,
-        symbol: String,
-        isSelected: Bool,
-        compact: Bool = false,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: symbol)
-                    .font(.system(size: compact ? 12 : 13, weight: .semibold))
-                Text(title)
-                    .font(.system(size: compact ? 13 : 15, weight: .bold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
+    /// Carte repas — titre au-dessus, photo en dessous, cadre liquid glass (comme "Smart Meal Picks").
+    private func glassMealCard(meal: MealSuggestionContent, slot: MealTimeSlot, onTap: @escaping () -> Void) -> some View {
+        Button {
+            HapticManager.shared.impact(.light)
+            onTap()
+        } label: {
+            VStack(spacing: 10) {
+                Text(meal.localizedDisplayName)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(theme.primaryText)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .frame(width: smartMealPicksTileSize - 20, height: 38, alignment: .center)
+
+                PlanMealCatalogCard(
+                    meal: meal,
+                    slot: slot,
+                    plan: livePlan,
+                    day: day,
+                    tileSize: smartMealPicksTileSize - 20,
+                    onTap: onTap
+                )
+                .allowsHitTesting(false)
             }
-            .foregroundStyle(isSelected ? (theme.isDark ? Color.black : Color.white) : theme.secondaryText)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, compact ? 9 : 11)
-            .background {
-                if isSelected {
-                    Capsule().fill(theme.primaryText)
-                }
-            }
+            .padding(10)
+            .frame(width: smartMealPicksTileSize, height: smartMealPicksTileSize + 58)
         }
         .buttonStyle(.processPlain)
-        .overlay {
-            if !isSelected {
-                Capsule()
-                    .strokeBorder(theme.primaryText.opacity(theme.isDark ? 0.12 : 0.08), lineWidth: 0.5)
-            }
+        .processGlassEffect(in: RoundedRectangle(cornerRadius: 26, style: .continuous), interactive: true)
+        .scrollTransition(.interactive, axis: .horizontal) { content, phase in
+            content
+                .scaleEffect(phase.isIdentity ? 1 : 0.94)
+                .opacity(phase.isIdentity ? 1 : 0.82)
         }
     }
 
     private var foodSearchField: some View {
         HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(theme.secondaryText)
-            TextField(
-                AppCopy.t("Rechercher un aliment…", en: "Search a food…"),
-                text: $foodSearchQuery
-            )
-            .textInputAutocapitalization(.never)
-            .autocorrectionDisabled()
-
-            if !foodSearchQuery.isEmpty {
-                Button {
-                    foodSearchQuery = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(theme.secondaryText)
-                }
-                .buttonStyle(.processPlain)
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 11)
-        .processGlassEffect(in: RoundedRectangle(cornerRadius: 16, style: .continuous), interactive: false)
-    }
-
-    // MARK: - Contents
-
-    @ViewBuilder
-    private var foodsContent: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            if tab == .prefer {
-                protocolRulesCard
-            }
-
-            if tab == .tastes {
-                tastesContent
-            } else if tab == .avoid {
-                avoidFoodsContent
-            } else {
-                preferFoodsContent
-            }
-        }
-    }
-
-    private var preferFoodsContent: some View {
-        let sections = DebloatFoodCatalog.filteredSections(
-            DebloatFoodCatalog.preferSections(),
-            query: foodSearchQuery
-        )
-        return Group {
-            if sections.isEmpty {
-                emptyFoodSearch
-            } else {
-                ForEach(sections) { section in
-                    sectionBlock(section)
-                }
-            }
-        }
-    }
-
-    private var avoidFoodsContent: some View {
-        let avoidBlocks = DebloatFoodCatalog.filteredSections(
-            DebloatFoodCatalog.avoidSections(),
-            query: foodSearchQuery
-        )
-        let moderateBlocks = DebloatFoodCatalog.filteredSections(
-            DebloatFoodCatalog.moderateSections(),
-            query: foodSearchQuery
-        )
-
-        return Group {
-            if avoidBlocks.isEmpty && moderateBlocks.isEmpty {
-                emptyFoodSearch
-            } else {
-                if !avoidBlocks.isEmpty {
-                    tierIntroBlock(
-                        title: AppCopy.t("À éviter", en: "Avoid"),
-                        subtitle: AppCopy.t(
-                            "Sodium, rétention et inflammation — impact direct sur le visage.",
-                            en: "Sodium, retention, and inflammation — direct face impact."
-                        ),
-                        count: DebloatFoodCatalog.avoidFoodCount,
-                        tint: Color.red.opacity(0.85)
-                    )
-                    ForEach(avoidBlocks) { section in
-                        sectionBlock(section)
-                    }
-                }
-
-                if !moderateBlocks.isEmpty {
-                    tierIntroBlock(
-                        title: AppCopy.t("Avec modération", en: "In moderation"),
-                        subtitle: AppCopy.t(
-                            "OK parfois — pas en base quotidienne si tu vises un visage net.",
-                            en: "OK sometimes — not as a daily base if you want a sharper face."
-                        ),
-                        count: DebloatFoodCatalog.moderateFoodCount,
-                        tint: Color.orange
-                    )
-                    ForEach(moderateBlocks) { section in
-                        sectionBlock(section)
-                    }
-                }
-            }
-        }
-    }
-
-    private func tierIntroBlock(title: String, subtitle: String, count: Int, tint: Color) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(theme.primaryText)
-                Text("\(count)")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(tint)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(tint.opacity(0.14), in: Capsule())
-            }
-            Text(subtitle)
-                .font(.subheadline)
-                .foregroundStyle(theme.secondaryText)
-        }
-        .padding(.top, 4)
-    }
-
-    private var protocolRulesCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label(
-                AppCopy.t("Règles du protocole", en: "Protocol rules"),
-                systemImage: "checkmark.seal.fill"
-            )
-            .font(.headline)
-            .foregroundStyle(theme.primaryText)
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(Array(ProcessDebloatMealLibrary.rules.enumerated()), id: \.offset) { _, rule in
-                    HStack(alignment: .top, spacing: 8) {
-                        Circle()
-                            .fill(Color(red: 0.24, green: 0.70, blue: 0.46))
-                            .frame(width: 6, height: 6)
-                            .padding(.top, 6)
-                        Text(rule)
-                            .font(.subheadline)
-                            .foregroundStyle(theme.secondaryText)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .processInteractiveGlassSurface(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-    }
-
-    private var recipesCatalogContent: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            todayMealsCatalogSection
-
-            ForEach(recipeSections) { section in
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(alignment: .firstTextBaseline) {
-                        Text(localizedCatalogSectionTitle(section))
-                            .font(.system(size: PlanHomeSectionDesign.titleSize, weight: .semibold))
-                            .foregroundStyle(theme.primaryText)
-                        Text("\(section.meals.count)")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(theme.secondaryText)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(
-                                Capsule().fill(theme.primaryText.opacity(theme.isDark ? 0.10 : 0.06))
-                            )
-                    }
-
-                    PlanMealCatalogCarousel(
-                        meals: section.meals,
-                        slot: section.slot,
-                        plan: livePlan,
-                        day: day,
-                        onOpen: { meal in
-                            selectedCatalogMeal = CatalogMealSelection(
-                                entry: PlanDayMealEntry.catalog(
-                                    meal: meal,
-                                    slot: section.slot,
-                                    plan: livePlan,
-                                    day: day
-                                )
-                            )
-                        }
-                    )
-                    .padding(.horizontal, -20)
-                    .padding(.leading, 4)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var todayMealsCatalogSection: some View {
-        let todayEntries = PlanDayMealsProvider.entries(plan: livePlan, day: day, store: store)
-        if !todayEntries.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(AppCopy.t("Repas du jour", en: "Today's meals"))
-                    .font(.system(size: PlanHomeSectionDesign.titleSize, weight: .semibold))
-                    .foregroundStyle(theme.primaryText)
-
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: PlanMealCatalogLayout.spacing) {
-                        ForEach(todayEntries) { entry in
-                            PlanMealCatalogCard(
-                                meal: entry.meal,
-                                slot: entry.slot,
-                                plan: livePlan,
-                                day: day,
-                                onTap: {
-                                    selectedCatalogMeal = CatalogMealSelection(entry: entry)
-                                }
-                            )
-                            .scrollTransition(.interactive, axis: .horizontal) { content, phase in
-                                content
-                                    .scaleEffect(phase.isIdentity ? 1 : 0.9)
-                                    .opacity(phase.isIdentity ? 1 : 0.78)
-                            }
-                        }
-                    }
-                    .scrollTargetLayout()
-                    .padding(.vertical, 4)
-                    .padding(.trailing, 20)
-                }
-                .scrollTargetBehavior(.viewAligned)
-                .scrollClipDisabled()
-                .padding(.horizontal, -20)
-                .padding(.leading, 4)
-            }
-        }
-    }
-
-    // MARK: - Lists
-
-    private func sectionBlock(_ section: DebloatFoodCatalogSection) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(section.title)
-                .font(.headline)
-                .foregroundStyle(theme.primaryText)
-
-            VStack(spacing: 8) {
-                ForEach(section.items) { food in
-                    DebloatFoodRow(food: food) {
-                        selectedFood = food
-                    }
-                }
-            }
-        }
-    }
-
-    private var tastesContent: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            if prefs.likedFoods.isEmpty {
-                emptyTastes
-            } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(AppCopy.t("Tes likes", en: "Your likes"))
-                        .font(.headline)
-                        .foregroundStyle(theme.primaryText)
-                    ForEach(prefs.likedFoods) { food in
-                        DebloatFoodRow(food: food) { selectedFood = food }
-                    }
-                }
-            }
-
-            if !prefs.haveAtHomeFoods.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(AppCopy.t("Déjà chez toi", en: "Already at home"))
-                        .font(.headline)
-                        .foregroundStyle(theme.primaryText)
-                    ForEach(prefs.haveAtHomeFoods) { food in
-                        DebloatFoodRow(food: food) { selectedFood = food }
-                    }
-                }
-            }
-        }
-    }
-
-    private var emptyTastes: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(AppCopy.t("Aucun like pour l’instant", en: "No likes yet"))
-                .font(.headline)
-                .foregroundStyle(theme.primaryText)
-            Text(AppCopy.t(
-                "Like des aliments dans Privilégier pour générer courses et recettes visage dégonflé.",
-                en: "Like foods in Prefer to generate groceries and debloat face recipes."
-            ))
-                .font(.subheadline)
-                .foregroundStyle(theme.secondaryText)
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .processInteractiveGlassSurface(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-
-    private var emptyFoodSearch: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(AppCopy.t("Aucun résultat", en: "No results"))
-                .font(.headline)
-                .foregroundStyle(theme.primaryText)
-            Text(AppCopy.t(
-                "Essaie un autre mot — ex. concombre, saumon, charcuterie.",
-                en: "Try another word — e.g. cucumber, salmon, deli meat."
-            ))
-                .font(.subheadline)
-                .foregroundStyle(theme.secondaryText)
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .processInteractiveGlassSurface(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-
-    // MARK: - CTA
-
-    @ViewBuilder
-    private var bottomCTA: some View {
-        VStack(spacing: 10) {
-            Button {
-                switch tab {
-                case .prefer, .tastes:
-                    showGrocery = true
-                case .avoid:
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
-                        tab = .prefer
-                    }
-                }
-            } label: {
-                Text(
-                    tab == .avoid
-                        ? AppCopy.t("Voir les aliments à privilégier", en: "See foods to prefer")
-                        : AppCopy.t("Générer ma liste de courses", en: "Generate my grocery list")
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(theme.secondaryText)
+                TextField(
+                    AppCopy.t("Rechercher un aliment…", en: "Search a food…"),
+                    text: $foodSearchQuery
                 )
-                    .font(.system(size: 17, weight: .bold))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-            }
-            .processGlassButton(in: Capsule())
-            .processInvertedGlassEffect(in: Capsule())
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
 
-            if tab != .avoid {
-                Button(AppCopy.t("Créer des recettes avec mes likes", en: "Create recipes from my likes")) {
-                    showGeneratedRecipes = true
+                if !foodSearchQuery.isEmpty {
+                    Button {
+                        foodSearchQuery = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(theme.secondaryText)
+                    }
+                    .buttonStyle(.processPlain)
                 }
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(theme.secondaryText)
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 13)
+            .processGlassEffect(in: Capsule(), interactive: false)
+
+            Button {
+                HapticManager.shared.impact(.light)
+                CoachPlanNavigationBridge.shared.openMealScan()
+            } label: {
+                Image(systemName: "camera.viewfinder")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(theme.primaryText)
+                    .frame(width: 48, height: 48)
+            }
+            .buttonStyle(.processPlain)
+            .processGlassEffect(in: Circle(), interactive: true)
+            .accessibilityLabel(AppCopy.t("Scanner un aliment", en: "Scan a food"))
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 10)
-        .padding(.bottom, 12)
-        .background(.ultraThinMaterial)
     }
 
-    // MARK: - Grocery sheet
-
-    private var grocerySheet: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    Text(AppCopy.t("Budget", en: "Budget"))
-                        .font(.headline)
-                    Picker(AppCopy.t("Budget", en: "Budget"), selection: $groceryRequest.budget) {
-                        ForEach(DebloatGroceryBudget.allCases) { budget in
-                            Text(budget.title).tag(budget)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-
-                    Text(groceryRequest.budget.subtitle)
-                        .font(.caption)
-                        .foregroundStyle(theme.secondaryText)
-
-                    Stepper(
-                        AppCopy.t(
-                            "Durée : \(groceryRequest.dayCount) jours",
-                            en: "Duration: \(groceryRequest.dayCount) days"
-                        ),
-                        value: $groceryRequest.dayCount,
-                        in: 3...7
-                    )
-
-                    Toggle(
-                        AppCopy.t("Inclure boissons drainantes", en: "Include draining drinks"),
-                        isOn: $groceryRequest.includeDrinks
-                    )
-                    Toggle(
-                        AppCopy.t("Inclure herbes anti-sel", en: "Include anti-salt herbs"),
-                        isOn: $groceryRequest.includeHerbs
-                    )
-
-                    Button(AppCopy.t("Générer la liste visage dégonflé", en: "Generate debloat face list")) {
-                        groceryPlan = DebloatGroceryGenerator.generate(request: groceryRequest)
-                    }
-                    .processGlassButton(in: Capsule())
-                    .processInvertedGlassEffect(in: Capsule())
-
-                    if let groceryPlan {
-                        ForEach(groceryPlan.groupedByAisle, id: \.aisle.id) { group in
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(group.aisle.title)
-                                    .font(.subheadline.weight(.bold))
-                                ForEach(group.lines) { line in
-                                    HStack {
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(line.localizedName)
-                                                .font(.subheadline.weight(.semibold))
-                                            Text(line.localizedQuantity)
-                                                .font(.caption)
-                                                .foregroundStyle(theme.secondaryText)
-                                            if line.isAvoidWarning, let swap = line.localizedSuggestedSwapName {
-                                                Text(AppCopy.t(
-                                                    "Piège Na — préfère \(swap)",
-                                                    en: "Sodium trap — prefer \(swap)"
-                                                ))
-                                                    .font(.caption2.weight(.semibold))
-                                                    .foregroundStyle(Color.orange)
-                                            }
-                                        }
-                                        Spacer()
-                                    }
-                                    .padding(10)
-                                    .processInteractiveGlassSurface(
-                                        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    )
-                                }
-                            }
-                        }
-
-                        Button(AppCopy.t("Ajouter à ma liste de courses", en: "Add to my grocery list")) {
-                            store.mergeShoppingItems(DebloatGroceryGenerator.shoppingItems(from: groceryPlan))
-                            showToast("Liste ajoutée", en: "List added")
-                            showGrocery = false
-                        }
-                        .processGlassButton(in: Capsule())
-                        .processInvertedGlassEffect(in: Capsule())
-                    }
-                }
-                .padding(20)
-            }
-            .navigationTitle(AppCopy.t("Courses Debloat", en: "Debloat Groceries"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(AppCopy.close) { showGrocery = false }
-                }
-            }
-        }
-        .processAppPageBackground()
-    }
-
-    // MARK: - Recipes sheet
-
-    private var recipesSheet: some View {
-        let slots = livePlan.configuredMealSlots.isEmpty
-            ? [MealTimeSlot.lunch, .dinner]
-            : livePlan.configuredMealSlots
-        let meals = DebloatRecipeComposer.composeDay(
-            slots: slots,
-            likes: rotatedLikes(seed: recipeSeed)
-        )
-        let orderedSlots = slots
-
-        return NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text(AppCopy.t("Recettes à partir de tes likes", en: "Recipes from your likes"))
-                        .font(.title3.weight(.bold))
-                    Text(AppCopy.t(
-                        "Générateur offline — priorité potassium, zéro aliment à éviter.",
-                        en: "Offline generator — potassium first, zero avoid foods."
-                    ))
-                        .font(.subheadline)
-                        .foregroundStyle(theme.secondaryText)
-
-                    ForEach(orderedSlots, id: \.self) { slot in
-                        if let meal = meals[slot] {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(slot.displayTitle)
-                                    .font(.caption.weight(.bold))
-                                    .foregroundStyle(theme.secondaryText)
-                                Text(meal.localizedDisplayName)
-                                    .font(.headline)
-                                ForEach(meal.foodItems) { item in
-                                    Text("• \(item.ingredientDisplayLine)")
-                                        .font(.subheadline)
-                                        .foregroundStyle(theme.secondaryText)
-                                }
-                            }
-                            .padding(14)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .processInteractiveGlassSurface(
-                                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            )
-                        }
-                    }
-
-                    Button(AppCopy.t("Injecter dans mes repas du jour", en: "Add to today’s meals")) {
-                        guard isEditable else {
-                            showToast("Jour non modifiable", en: "Day can't be edited")
-                            return
-                        }
-                        for (slot, meal) in meals {
-                            store.saveDraftMeal(dayId: day.id, meal: meal, slot: slot)
-                        }
-                        showToast("Repas du jour mis à jour", en: "Today's meals updated")
-                        showGeneratedRecipes = false
-                    }
-                    .processGlassButton(in: Capsule())
-                    .processInvertedGlassEffect(in: Capsule())
-
-                    Button(AppCopy.t("Autre suggestion", en: "Another suggestion")) {
-                        recipeSeed += 1
-                    }
-                    .font(.subheadline.weight(.semibold))
-                }
-                .padding(20)
-            }
-            .navigationTitle(AppCopy.t("Recettes likes", en: "Liked recipes"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(AppCopy.close) { showGeneratedRecipes = false }
-                }
-            }
-            .id(recipeSeed)
-        }
-        .processAppPageBackground()
-    }
-
-    private func localizedCatalogSectionTitle(_ section: ProcessDebloatMealLibrary.CatalogSection) -> String {
-        if section.sectionKey == "omad" {
-            return AppCopy.t("Repas OMAD", en: "OMAD meal")
-        }
-        return section.slot.displayTitle
-    }
-
-    private func rotatedLikes(seed: Int) -> [DebloatFoodItem] {
-        let likes = prefs.likedFoods
-        guard !likes.isEmpty else { return likes }
-        let offset = abs(seed) % likes.count
-        return Array(likes[offset...]) + Array(likes[..<offset])
-    }
-
-    private func showToast(_ messageFR: String, en messageEN: String) {
-        ProcessToastCenter.shared.show(messageFR, en: messageEN, symbol: "checkmark.circle.fill")
-    }
 }
 
 // MARK: - Hub enums (symbols)
 
-private extension DebloatFoodHubMode {
-    var symbolName: String {
+extension DebloatFoodItem {
+    /// Emoji propre à chaque aliment (par id catalogue) — repli sur la catégorie si non couvert.
+    var emoji: String {
+        DebloatFoodEmojiTable.byId[id] ?? category.fallbackEmoji
+    }
+
+    /// Icône 3D réelle (asset catalogue) quand disponible — sinon nil, repli sur l'emoji.
+    var illustrationAssetName: String? {
+        DebloatFoodIllustrationTable.byId[id]
+    }
+}
+
+private enum DebloatFoodIllustrationTable {
+    static let byId: [String: String] = [
+        "epinards": "food_spinach",
+        "concombre": "food_cucumber",
+        "tomate": "food_tomato",
+        "carotte": "food_carrot",
+        "fraises": "food_strawberry",
+        "brocoli": "food_broccoli",
+        "kiwi": "food_kiwi",
+        "aubergine": "food_eggplant",
+        "pasteque": "food_watermelon",
+        "citron": "food_lemon",
+        "avocat": "food_avocado",
+        "banane": "food_banana"
+    ]
+
+    /// Ordre d'affichage — les plus évidents / reconnaissables d'abord.
+    private static let order: [String] = [
+        "banane", "avocat", "tomate", "concombre", "carotte", "epinards",
+        "brocoli", "fraises", "citron", "kiwi", "pasteque", "aubergine"
+    ]
+
+    static func displayOrder(for id: String) -> Int {
+        order.firstIndex(of: id) ?? order.count
+    }
+}
+
+private extension DebloatFoodCategory {
+    var fallbackEmoji: String {
         switch self {
-        case .foods: return "leaf.fill"
-        case .recipes: return "fork.knife"
+        case .legumes: return "🥦"
+        case .fruits: return "🍎"
+        case .potassium: return "🍌"
+        case .magnesium: return "🌰"
+        case .protein: return "🍳"
+        case .herbs: return "🌿"
+        case .drinks: return "🥤"
+        case .avoidSodium: return "🧂"
+        case .avoidOther: return "🍟"
         }
     }
 }
 
-private extension DebloatFoodHubTab {
+private enum DebloatFoodEmojiTable {
+    static let byId: [String: String] = [
+        // Légumes
+        "concombre": "🥒", "courgette": "🥒", "asperge": "🥦", "celeri": "🥬",
+        "fenouil": "🌿", "artichaut": "🥬", "poireau": "🥬", "epinards": "🥬",
+        "blettes": "🥬", "tomate": "🍅", "tomate-concentree": "🍅", "poivron": "🫑",
+        "radis-noir": "🥕", "aubergine": "🍆", "carotte": "🥕", "brocoli": "🥦",
+        "choux-bruxelles": "🥬", "haricots-verts": "🫛", "roquette": "🥬",
+        "mache": "🥬", "betterave": "🥕", "champignons": "🍄",
+        // Fruits
+        "pasteque": "🍉", "melon": "🍈", "ananas": "🍍", "citron": "🍋",
+        "orange": "🍊", "pamplemousse": "🍊", "citron-vert": "🍋", "kiwi": "🥝",
+        "fraises": "🍓", "framboises": "🍓", "myrtilles": "🫐", "mures": "🫐",
+        "banane": "🍌", "avocat": "🥑", "pomme": "🍎", "figue": "🍇",
+        "abricot": "🍑", "abricots-secs": "🍑", "peche": "🍑", "raisins-secs": "🍇",
+        // Potassium (féculents / légumineuses)
+        "dattes": "🌴", "patate-douce": "🍠", "pomme-de-terre": "🥔",
+        "lentilles": "🫘", "haricots-blancs": "🫘", "haricots-rouges": "🫘",
+        "pois-chiches": "🫘", "pois-casses": "🫘",
+        // Magnésium (noix / graines / céréales)
+        "amandes": "🌰", "pistaches": "🌰", "graines-courge": "🌱",
+        "noix-cajou": "🌰", "noix-bresil": "🌰", "chia": "🌱", "lin": "🌱",
+        "sesame": "🌱", "tournesol": "🌻", "chocolat-noir": "🍫", "cacao": "🍫",
+        "flocons-avoine": "🌾", "quinoa": "🌾", "sarrasin": "🌾", "noisettes": "🌰",
+        // Protéines
+        "poulet": "🍗", "dinde": "🦃", "oeufs": "🥚", "saumon": "🐟",
+        "sardines": "🐟", "maquereau": "🐟", "thon": "🐟", "poisson-blanc": "🐟",
+        "yaourt-nature": "🥛", "fromage-blanc": "🧀", "kefir": "🥛",
+        "tofu": "🍳", "tempeh": "🍳",
+        // Herbes / condiments
+        "persil": "🌿", "gingembre": "🫚", "cumin": "🌿", "ail": "🧄",
+        "oignon": "🧅", "basilic": "🌿", "thym": "🌿", "origan": "🌿",
+        "menthe": "🌿", "herbes-provence": "🌿", "vinaigre-cidre": "🍏",
+        // Boissons
+        "eau-plate": "💧", "hepar": "💧", "contrex": "💧", "rozana": "💧",
+        "courmayeur": "💧", "the-vert": "🍵", "tisane-ortie": "🍵",
+        "tisane-queues-cerise": "🍵", "tisane-pissenlit": "🍵", "tisane-prele": "🍵",
+        "tisane-bouleau": "🍵", "tisane-fenouil": "🍵", "tisane-hibiscus": "🍵",
+        "tisane-reine-pres": "🍵", "tisane-camomille": "🍵", "eau-citronnee": "🍋",
+        "eau-concombre-menthe": "🥒", "jus-ananas": "🍍", "eau-coco": "🥥"
+    ]
+}
+
+extension DebloatFoodHubTab {
     var symbolName: String {
         switch self {
         case .prefer: return "hand.thumbsup.fill"
@@ -842,7 +527,7 @@ private struct CatalogMealSelection: Identifiable {
 
 // MARK: - Row
 
-private struct DebloatFoodRow: View {
+struct DebloatFoodRow: View {
     @Environment(\.appTheme) private var theme
     @Bindable private var prefs = DebloatFoodPreferenceStore.shared
     let food: DebloatFoodItem

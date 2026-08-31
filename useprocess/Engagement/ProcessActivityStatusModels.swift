@@ -68,9 +68,3 @@ struct ProcessActivityStatusState: nonisolated Codable, Equatable, Sendable {
     var statusByDayKey: [String: String] = [:]
 }
 
-enum ProcessActivityStatusPalette {
-    static let rowBackgroundDark = Color.white.opacity(0.08)
-    static let rowBackgroundLight = Color.black.opacity(0.05)
-    static let rowStrokeDark = Color.white.opacity(0.10)
-    static let rowStrokeLight = Color.black.opacity(0.08)
-}

@@ -6,10 +6,14 @@ struct LymphCircuitDemoMediaView: View {
     var isPlaybackActive: Bool = true
     var isPip: Bool = true
 
+    /// Qualité originale (Firebase Storage) une fois téléchargée — sinon repli sur la version compressée du bundle.
+    @State private var remoteURL: URL?
+
     var body: some View {
         ZStack {
-            if let url = LymphCircuitVideoCatalog.demoURL(for: step) {
+            if let url = remoteURL ?? LymphCircuitVideoCatalog.demoURL(for: step) {
                 FaceScanSilentVideoLoopView(url: url, isPlaybackActive: isPlaybackActive)
+                    .id(url)
             } else if let assetName = step.assetName {
                 Image(assetName)
                     .resizable()
@@ -26,5 +30,8 @@ struct LymphCircuitDemoMediaView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipped()
         .accessibilityLabel(step.shortTitle)
+        .task(id: step.demoVideoResourceName) {
+            remoteURL = await LymphCircuitVideoCatalog.remoteDemoURL(for: step)
+        }
     }
 }

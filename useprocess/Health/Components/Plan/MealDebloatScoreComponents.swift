@@ -9,6 +9,16 @@ enum MealDebloatScorePalette {
         default: return Color(red: 0.96, green: 0.47, blue: 0.30)
         }
     }
+
+    /// Rouge (nul) → orange (moyen) → jaune (bof) → vert (bien).
+    static func tieredColor(for score: Int) -> Color {
+        switch score {
+        case 75...100: return Color(red: 0.30, green: 0.80, blue: 0.42) // vert
+        case 60..<75: return Color(red: 0.95, green: 0.80, blue: 0.20) // jaune
+        case 40..<60: return Color(red: 0.96, green: 0.58, blue: 0.20) // orange
+        default: return Color(red: 0.93, green: 0.30, blue: 0.28) // rouge
+        }
+    }
 }
 
 struct MealDebloatScorePill: View {
@@ -85,64 +95,6 @@ struct MealDebloatScoreGlassPill: View {
     }
 }
 
-struct MealDebloatScoreFooter: View {
-    let assessment: MealDebloatAssessment
-
-    var body: some View {
-        HStack(spacing: 10) {
-            ZStack {
-                Circle()
-                    .stroke(Color.white.opacity(0.28), lineWidth: 3)
-                Circle()
-                    .trim(from: 0, to: CGFloat(assessment.score) / 100)
-                    .stroke(
-                        Color.white,
-                        style: StrokeStyle(lineWidth: 3, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
-                Text(assessment.scoreText)
-                    .font(.caption2.weight(.heavy))
-                    .foregroundStyle(.white)
-                    .minimumScaleFactor(0.72)
-            }
-            .frame(width: 34, height: 34)
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(assessment.label)
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.76)
-
-                Text("K/Na \(assessment.balance.ratioLabel)")
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.72))
-                    .monospacedDigit()
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 12)
-        .frame(height: 52)
-        .background {
-            Capsule(style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            MealDebloatScorePalette.color(for: assessment.score),
-                            Color(red: 0.28, green: 0.56, blue: 0.88)
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .overlay {
-                    Capsule(style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.24), lineWidth: 0.5)
-                }
-        }
-    }
-}
 
 struct MealDebloatScoreBreakdownView: View {
     let assessment: MealDebloatAssessment
@@ -154,24 +106,23 @@ struct MealDebloatScoreBreakdownView: View {
         VStack(spacing: compact ? 8 : 11) {
             scoreBar(
                 title: AppCopy.t("Équilibre hydrique", en: "Fluid balance"),
-                value: assessment.electrolyteScore,
-                color: MealElectrolytePalette.potassium
+                value: assessment.electrolyteScore
             )
             scoreBar(
                 title: AppCopy.t("Confort digestif", en: "Digestive comfort"),
-                value: assessment.digestiveScore,
-                color: Color(red: 0.43, green: 0.70, blue: 0.96)
+                value: assessment.digestiveScore
             )
             scoreBar(
                 title: AppCopy.t("Qualité du repas", en: "Meal quality"),
-                value: assessment.foodQualityScore,
-                color: Color(red: 0.75, green: 0.58, blue: 0.96)
+                value: assessment.foodQualityScore
             )
         }
     }
 
-    private func scoreBar(title: String, value: Int, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
+    private func scoreBar(title: String, value: Int) -> some View {
+        let color = MealDebloatScorePalette.tieredColor(for: value)
+
+        return VStack(alignment: .leading, spacing: 5) {
             HStack {
                 Text(title)
                     .font(.caption2.weight(.semibold))
@@ -192,6 +143,7 @@ struct MealDebloatScoreBreakdownView: View {
                 }
             }
             .frame(height: compact ? 5 : 7)
+            .animation(.easeInOut(duration: 0.3), value: value)
         }
     }
 }

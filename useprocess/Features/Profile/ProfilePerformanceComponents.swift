@@ -34,69 +34,9 @@ enum ProfilePerformancePalette {
 
 // MARK: - Top bar
 
-struct ProfilePageTopBar: View {
-    @Environment(\.appTheme) private var theme
-    let onSettings: () -> Void
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Text(AppCopy.t("Profil", en: "Profile"))
-                .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(theme.primaryText)
-
-            Spacer(minLength: 0)
-
-            Button(action: onSettings) {
-                Image(systemName: "gearshape")
-                    .font(.system(size: ProcessAppHeaderControlMetrics.iconSize, weight: .semibold))
-                    .foregroundStyle(theme.primaryText)
-                    .frame(
-                        width: ProcessAppHeaderControlMetrics.size,
-                        height: ProcessAppHeaderControlMetrics.size
-                    )
-            }
-            .processGlassIconButtonStyle()
-            .accessibilityLabel(AppCopy.settings)
-        }
-        .padding(.horizontal, 20)
-    }
-}
 
 // MARK: - Identité
 
-struct ProfileIdentityHeader: View {
-    @Environment(\.appTheme) private var theme
-
-    let profile: SocialProfile
-    let image: UIImage?
-    let onPhotoTap: (CGPoint) -> Void
-
-    var body: some View {
-        HStack(spacing: 16) {
-            ProfileAvatarButton(image: image, onPhotoTap: onPhotoTap)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(profile.displayName)
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundStyle(theme.primaryText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
-
-                if !usernameTag.isEmpty {
-                    Text(usernameTag)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(theme.secondaryText)
-                }
-            }
-
-            Spacer(minLength: 0)
-        }
-    }
-
-    private var usernameTag: String {
-        ProcessUsernameTag.display(profile.username)
-    }
-}
 
 private struct ProfileAvatarButton: View {
     @Environment(\.appTheme) private var theme

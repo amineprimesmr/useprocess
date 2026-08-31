@@ -161,21 +161,6 @@ struct DebloatFoodCatalogSection: Identifiable, Hashable {
     var title: String { category.sectionTitle }
 }
 
-enum DebloatFoodHubMode: String, CaseIterable, Identifiable {
-    case foods
-    case recipes
-
-    var id: String { rawValue }
-
-    @MainActor
-    var title: String {
-        switch self {
-        case .foods: return AppCopy.t("Aliments", en: "Foods")
-        case .recipes: return AppCopy.t("Recettes", en: "Recipes")
-        }
-    }
-}
-
 enum DebloatFoodHubTab: String, CaseIterable, Identifiable {
     case prefer
     case avoid

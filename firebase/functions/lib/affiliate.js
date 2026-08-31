@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.affiliateAdminMarkPaid = exports.affiliateAdminListPending = exports.affiliateAdminApprove = exports.affiliateAdminProvisionAuth = exports.affiliateAdminCreate = exports.affiliateDashboard = exports.affiliateSyncProfile = exports.affiliateApply = exports.affiliateRegister = exports.affiliateTrackFunnel = exports.affiliateTrackLink = exports.affiliateResolveCode = exports.affiliatePreparePasswordless = exports.affiliateSetLoginEmail = exports.affiliatePortalHandoffRedeem = exports.affiliatePortalHandoff = exports.affiliateSendLoginEmail = exports.affiliateValidateLoginEmail = void 0;
+exports.affiliateAdminMarkPaid = exports.affiliateAdminListPending = exports.affiliateAdminApprove = exports.affiliateAdminProvisionAuth = exports.affiliateAdminCreate = exports.affiliateDashboard = exports.affiliateSyncProfile = exports.affiliateApply = exports.affiliateRegister = exports.affiliateTrackFunnel = exports.affiliateTrackLink = exports.affiliateResolveCode = exports.affiliatePreparePasswordless = exports.affiliateSetLoginEmail = exports.affiliatePortalHandoffRedeem = exports.affiliatePortalHandoff = exports.affiliateSendLoginEmail = void 0;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
@@ -81,40 +81,6 @@ function isValidAffiliatePhone(raw) {
     const digits = String(raw || "").replace(/\D/g, "");
     return digits.length >= 8 && digits.length <= 15;
 }
-exports.affiliateValidateLoginEmail = (0, https_1.onRequest)({
-    invoker: "public",
-    cors: true,
-    timeoutSeconds: 15,
-    memory: "256MiB",
-}, async (req, res) => {
-    (0, referralShared_1.setCors)(res);
-    if (req.method === "OPTIONS") {
-        res.status(204).send("");
-        return;
-    }
-    if (req.method !== "POST") {
-        res.status(405).json({ error: "Method not allowed" });
-        return;
-    }
-    try {
-        const email = String(req.body?.email ?? "").trim();
-        if (!email || !email.includes("@")) {
-            res.status(400).json({ error: "INVALID_EMAIL" });
-            return;
-        }
-        const eligible = await (0, affiliateShared_1.affiliateEmailEligibleForLoginLink)(email);
-        if (!eligible) {
-            res.status(404).json({ error: "EMAIL_NOT_FOUND" });
-            return;
-        }
-        res.status(200).json({ ok: true });
-    }
-    catch (error) {
-        const message = error?.message ?? "Unknown error";
-        console.error("[affiliateValidateLoginEmail]", message);
-        res.status(500).json({ error: message });
-    }
-});
 exports.affiliateSendLoginEmail = (0, https_1.onRequest)({
     invoker: "public",
     cors: true,
@@ -241,10 +207,6 @@ exports.affiliateSetLoginEmail = (0, https_1.onRequest)({
         const email = String(req.body?.email ?? "").trim().toLowerCase();
         if (!email || !email.includes("@") || email.length > 254) {
             res.status(400).json({ error: "INVALID_EMAIL" });
-            return;
-        }
-        if ((0, affiliateShared_1.isAppleRelayEmail)(email)) {
-            res.status(409).json({ error: "APPLE_RELAY_EMAIL" });
             return;
         }
         // Taken by somebody else → refuse rather than silently merging two clippers.
@@ -684,7 +646,9 @@ exports.affiliateDashboard = (0, https_1.onRequest)({
             }
         })();
         void (0, affiliateShared_1.releaseDueAffiliateCommissions)().catch((releaseError) => {
-            console.warn("[affiliateDashboard] releaseDue skipped", releaseError);
+            // This releases held commissions into payable balance — a silent failure here
+            // means clippers stop getting paid with no visible symptom, so log at error level.
+            console.error("[affiliateDashboard] releaseDue failed", releaseError);
         });
         const data = affiliate;
         const stats = data.stats ?? {};
@@ -1088,31 +1052,22 @@ exports.affiliateAdminMarkPaid = (0, https_1.onRequest)({
                 secret: stripeSecretKey.value(),
             });
         }
-        await (0, affiliateShared_1.db)().runTransaction(async (transaction) => {
-            transaction.set(payoutRef, {
-                affiliateId,
-                amountCents,
-                currency,
-                method,
-                note: note.slice(0, 240) || null,
-                status: "completed",
-                stripeTransferId,
-                createdAt: now,
-            });
-            transaction.set(affiliateRef, {
-                "stats.payableCents": admin.firestore.FieldValue.increment(-amountCents),
-                "stats.paidCents": admin.firestore.FieldValue.increment(amountCents),
-                updatedAt: now,
-            }, { merge: true });
-        });
+        // Pick the commissions this payout actually covers BEFORE touching stats, and book
+        // the stats decrement against their real sum (matchedCents) rather than amountCents.
+        // Greedy bin-packing over `amountCents` can leave a remainder unmatched (no subset of
+        // payable commissions sums exactly to amountCents); decrementing payableCents by the
+        // full amountCents in that case would silently understate the balance still owed,
+        // leaving orphaned commissions stuck at status "payable" forever.
         const payableSnap = await (0, affiliateShared_1.db)()
             .collection("affiliateCommissions")
             .where("affiliateId", "==", affiliateId)
             .where("status", "==", "payable")
+            .orderBy("commissionCents", "asc")
             .limit(500)
             .get();
         let remaining = amountCents;
-        const batch = (0, affiliateShared_1.db)().batch();
+        let matchedCents = 0;
+        const matchedRefs = [];
         for (const doc of payableSnap.docs) {
             if (remaining <= 0)
                 break;
@@ -1123,13 +1078,37 @@ exports.affiliateAdminMarkPaid = (0, https_1.onRequest)({
             if (commissionCents > remaining)
                 continue;
             remaining -= commissionCents;
-            batch.set(doc.ref, {
-                status: "paid",
-                paidAt: now,
-                payoutId: payoutRef.id,
-            }, { merge: true });
+            matchedCents += commissionCents;
+            matchedRefs.push(doc.ref);
         }
-        await batch.commit();
+        if (matchedCents !== amountCents) {
+            console.warn("[affiliateAdminMarkPaid] no exact commission match for payout amount", { affiliateId, amountCents, matchedCents });
+        }
+        await (0, affiliateShared_1.db)().runTransaction(async (transaction) => {
+            transaction.set(payoutRef, {
+                affiliateId,
+                amountCents,
+                matchedCommissionCents: matchedCents,
+                currency,
+                method,
+                note: note.slice(0, 240) || null,
+                status: "completed",
+                stripeTransferId,
+                createdAt: now,
+            });
+            transaction.set(affiliateRef, {
+                "stats.payableCents": admin.firestore.FieldValue.increment(-matchedCents),
+                "stats.paidCents": admin.firestore.FieldValue.increment(matchedCents),
+                updatedAt: now,
+            }, { merge: true });
+            for (const ref of matchedRefs) {
+                transaction.set(ref, {
+                    status: "paid",
+                    paidAt: now,
+                    payoutId: payoutRef.id,
+                }, { merge: true });
+            }
+        });
         res.status(200).json({
             ok: true,
             payoutId: payoutRef.id,

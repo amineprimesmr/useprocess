@@ -14,7 +14,6 @@ struct MealPhotoScanFlowView: View {
     @State private var panelDragOffset: CGFloat = 0
     @State private var isClosingCamera = false
     @State private var hasRequestedDismiss = false
-    @State private var dismissSessionToken = UUID()
     @State private var compositionEdit: MealScanCompositionEditTarget?
     /// Garde l’écran d’analyse jusqu’à la fin des barres, même si le résultat est déjà prêt.
     @State private var hasRevealedAnalysisResult = false
@@ -87,11 +86,19 @@ struct MealPhotoScanFlowView: View {
             .animation(MealPhotoScanCameraPresentation.spring, value: isCameraPanelRevealed)
             .animation(MealPhotoScanCameraPresentation.spring, value: panelDragOffset)
             .onAppear {
-                dismissSessionToken = UUID()
                 isClosingCamera = false
                 hasRequestedDismiss = false
                 isCameraPanelRevealed = false
                 panelDragOffset = 0
+                withAnimation(MealPhotoScanCameraPresentation.spring) {
+                    isCameraPanelRevealed = true
+                }
+            }
+            .task {
+                // Filet : panneau hors écran + app floutée = rien à toucher.
+                // Si la révélation ne s'est pas faite, on la force.
+                try? await Task.sleep(for: .milliseconds(1200))
+                guard !Task.isCancelled, !isClosingCamera, !isCameraPanelRevealed else { return }
                 withAnimation(MealPhotoScanCameraPresentation.spring) {
                     isCameraPanelRevealed = true
                 }
@@ -167,9 +174,13 @@ struct MealPhotoScanFlowView: View {
     }
 
     private func dismissCamera() {
-        guard viewModel.phase == .camera, !isClosingCamera else { return }
+        // Une fermeture déjà engagée qu'on retouche = l'animation s'est perdue :
+        // on sort immédiatement au lieu de rester bloqué derrière le garde.
+        guard !isClosingCamera else {
+            requestDismiss()
+            return
+        }
         isClosingCamera = true
-        let token = dismissSessionToken
 
         HapticManager.shared.impact(.light)
         withAnimation(MealPhotoScanCameraPresentation.spring) {
@@ -177,8 +188,9 @@ struct MealPhotoScanFlowView: View {
             panelDragOffset = 0
         }
 
+        // Plus de jeton : s'il changeait pendant ces 240 ms, la fermeture était
+        // avalée et l'app restait floutée, assombrie et intouchable pour de bon.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.24) {
-            guard token == dismissSessionToken else { return }
             requestDismiss()
         }
     }

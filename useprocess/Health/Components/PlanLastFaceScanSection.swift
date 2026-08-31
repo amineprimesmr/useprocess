@@ -230,12 +230,12 @@ struct PlanLastFaceScanSection: View {
     private var scanAvailableButton: some View {
         Button(action: beginInlineScan) {
             Label(AppCopy.t("Faire mon scan", en: "Start my scan"), systemImage: "camera.fill")
-                .font(.footnote.weight(.bold))
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(theme.primaryText)
                 .frame(maxWidth: .infinity)
-                .frame(height: 44)
+                .frame(height: 34)
         }
-        .processGlassButton(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .processGlassButton(in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .accessibilityLabel(AppCopy.t("Faire mon scan", en: "Start my scan"))
     }
 

@@ -7,11 +7,10 @@ alwaysApply: true
 
 Source: `/Users/amine/Desktop/process-tiktok`
 
-## Postiz — FR drafts only
+## Postiz — publish/schedule directly
 
-- **Never Direct Post** (`--now`) and **never schedule** auto-publish. Always create **drafts**.
-- **French only** on `@mannyprcs` (`--lang fr` / `--langs fr`). Do not generate or upload EN/DE/ES/PT.
-- You publish later from [Postiz](https://platform.postiz.com/launches).
+- Direct Post / scheduling via Postiz is allowed — no more draft-only restriction (lifted 2026-08-29).
+- Still confirm target account(s) and language before firing `--now` or `--when` on a batch.
 
 ## App Store card overlay
 

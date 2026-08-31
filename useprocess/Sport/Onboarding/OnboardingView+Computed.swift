@@ -283,7 +283,8 @@ var shouldAddTopPadding: Bool {
          .genderSelection, .ageSelection, .height, .weight,
          .firstNameInput, .faceLeverageIntro, .weightMotivation,
          .weightEstimation, .programCreation, .biometricAuth,
-         .transformationPreview, .referralCode, .dashboardPreview, .dreamFaceCommit:
+         .transformationPreview, .referralCode, .dashboardPreview, .dreamFaceCommit,
+         .postPaymentWelcome, .explainerBodyFat, .explainerWaterRetention, .explainerLymphDrainage:
         return false
     }
 }

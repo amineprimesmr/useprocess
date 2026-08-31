@@ -13,17 +13,13 @@ enum PlanHomeTopChromePlacement {
 struct PlanHomeTopChrome: View {
     @Binding var selectedSection: ProcessMainSection
     @Binding var selectedDate: Date
-    @Binding var showCalendar: Bool
     var plan: FaceOriginPlan? = nil
-    var calendarZoomNamespace: Namespace.ID? = nil
     var placement: PlanHomeTopChromePlacement = .embedded
     /// Titre compact affiché dans la toolbar quand la salutation scroll hors écran.
     @Binding var compactToolbarTitle: String?
     /// 0 = fond transparent · 1 = flou léger au scroll (barre sticky uniquement).
     var scrollBlurProgress: CGFloat = 0
     var onOpenStreak: () -> Void
-
-    @Namespace private var internalCalendarZoomNamespace
 
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Environment(\.appTheme) private var theme
@@ -37,27 +33,19 @@ struct PlanHomeTopChrome: View {
     init(
         selectedSection: Binding<ProcessMainSection>,
         selectedDate: Binding<Date>,
-        showCalendar: Binding<Bool>,
         plan: FaceOriginPlan? = nil,
         placement: PlanHomeTopChromePlacement = .embedded,
         compactToolbarTitle: Binding<String?> = .constant(nil),
-        calendarZoomNamespace: Namespace.ID? = nil,
         scrollBlurProgress: CGFloat = 0,
         onOpenStreak: @escaping () -> Void
     ) {
         _selectedSection = selectedSection
         _selectedDate = selectedDate
-        _showCalendar = showCalendar
         self.plan = plan
         self.placement = placement
         _compactToolbarTitle = compactToolbarTitle
-        self.calendarZoomNamespace = calendarZoomNamespace
         self.scrollBlurProgress = scrollBlurProgress
         self.onOpenStreak = onOpenStreak
-    }
-
-    private var resolvedCalendarZoomNamespace: Namespace.ID {
-        calendarZoomNamespace ?? internalCalendarZoomNamespace
     }
 
     var body: some View {
@@ -79,13 +67,6 @@ struct PlanHomeTopChrome: View {
         }
         .onChange(of: planStore.plan?.id) { _, _ in
             syncProgramProgress()
-        }
-        .fullScreenCover(isPresented: $showCalendar) {
-            PlanProgramCalendarView(
-                selectedDate: $selectedDate,
-                plan: plan ?? planStore.plan
-            )
-            .processZoomTransition(id: .planCalendar, namespace: resolvedCalendarZoomNamespace)
         }
     }
 
@@ -181,152 +162,59 @@ struct PlanHomeTopChrome: View {
 
     @ViewBuilder
     private var headerActionsCluster: some View {
-        PlanHomeToolbarActions(
-            showCalendar: $showCalendar,
-            calendarZoomNamespace: resolvedCalendarZoomNamespace,
-            onOpenStreak: onOpenStreak
-        )
+        PlanHomeToolbarActions(onOpenStreak: onOpenStreak)
     }
 }
 
-// MARK: - Actions toolbar (streak + calendrier)
+// MARK: - Actions toolbar (streak)
 
 struct PlanHomeToolbarActions: View {
-    @Binding var showCalendar: Bool
-    var calendarZoomNamespace: Namespace.ID
     var onOpenStreak: () -> Void
 
-    @Environment(\.appTheme) private var theme
-
     var body: some View {
-        if #available(iOS 26.0, *) {
-            GlassEffectContainer(spacing: ProcessAppHeaderControlMetrics.glassClusterSpacing) {
-                HStack(spacing: ProcessAppHeaderControlMetrics.glassClusterSpacing) {
-                    Button(action: openCalendar) {
-                        Image(systemName: "calendar")
-                            .font(.system(size: ProcessAppHeaderControlMetrics.iconSize, weight: .semibold))
-                            .foregroundStyle(theme.primaryText)
-                            .frame(
-                                width: ProcessAppHeaderControlMetrics.size,
-                                height: ProcessAppHeaderControlMetrics.size
-                            )
-                            .contentShape(Circle())
-                    }
-                    .processGlassButton(in: Circle())
-                    .offset(x: ProcessAppHeaderControlMetrics.glassClusterMergeOffset, y: 0)
-                    .zIndex(0)
-                    .processZoomSource(id: .planCalendar, namespace: calendarZoomNamespace)
-                    .accessibilityLabel(AppCopy.t(
-                        "Calendrier, choisir une date",
-                        en: "Calendar, choose a date"
-                    ))
-
-                    PlanHomeCheckInButton(action: openStreak)
-                        .zIndex(1)
-                }
-            }
-        } else {
-            HStack(spacing: 6) {
-                Button(action: openCalendar) {
-                    Image(systemName: "calendar")
-                        .font(.system(size: ProcessAppHeaderControlMetrics.iconSize, weight: .semibold))
-                        .foregroundStyle(theme.primaryText)
-                        .frame(
-                            width: ProcessAppHeaderControlMetrics.size,
-                            height: ProcessAppHeaderControlMetrics.size
-                        )
-                        .contentShape(Circle())
-                }
-                .processGlassButton(in: Circle())
-                .processZoomSource(id: .planCalendar, namespace: calendarZoomNamespace)
-                .accessibilityLabel(AppCopy.t(
-                    "Calendrier, choisir une date",
-                    en: "Calendar, choose a date"
-                ))
-
-                PlanHomeCheckInButton(action: openStreak)
-            }
-        }
-    }
-
-    private func openCalendar() {
-        HapticManager.shared.impact(.light)
-        withAnimation(ProcessZoomTransitionID.presentationSpring) {
-            showCalendar = true
-        }
-    }
-
-    private func openStreak() {
-        onOpenStreak()
+        PlanHomeStreakFlameButton(action: onOpenStreak)
     }
 }
 
-/// Bouton check du jour — pastille rouge à partir de 21h tant que le bilan n’est pas validé.
-struct PlanHomeCheckInButton: View {
+/// Bouton « ouvrir la page streak » — flamme animée nue, sans container liquid glass.
+struct PlanHomeStreakFlameButton: View {
     var action: () -> Void
 
     @Environment(\.appTheme) private var theme
+    @Bindable private var trajectoryStore = ProcessDebloatTrajectoryStore.shared
     @Bindable private var streakStore = ProcessStreakStore.shared
-    @Bindable private var eveningStore = ProcessEveningCheckInStore.shared
-
-    private enum Metrics {
-        static let tileSize = ProcessAppHeaderControlMetrics.size
-        static let iconSize = ProcessAppHeaderControlMetrics.streakIconSize
-        static let numberFontSize = ProcessAppHeaderControlMetrics.streakNumberFontSize
-        static let badgeSize = ProcessAppHeaderControlMetrics.attentionBadgeSize
-    }
-
-    private var flameColor: Color {
-        streakStore.displayStreak > 0 ? ProcessStreakPalette.flame : theme.secondaryText.opacity(0.65)
-    }
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 2) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: Metrics.iconSize, weight: .semibold))
-                    .foregroundStyle(flameColor)
+                ProfileMiniFlameIcon()
+                    .overlay(alignment: .topTrailing) {
+                        if !trajectoryStore.snapshot.isTodayComplete {
+                            attentionBadge
+                        }
+                    }
 
                 Text("\(streakStore.displayStreak)")
-                    .font(.system(size: Metrics.numberFontSize, weight: .bold))
+                    .font(.system(size: ProcessAppHeaderControlMetrics.streakNumberFontSize, weight: .bold))
                     .foregroundStyle(theme.primaryText)
                     .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .animation(.spring(response: 0.4, dampingFraction: 0.82), value: streakStore.displayStreak)
                     .lineLimit(1)
                     .minimumScaleFactor(0.55)
             }
-            .frame(width: Metrics.tileSize, height: Metrics.tileSize)
-            .contentShape(Circle())
-            .overlay(alignment: .topTrailing) {
-                TimelineView(.periodic(from: .now, by: 30)) { context in
-                    if !eveningStore.hasSubmittedToday,
-                       ProcessEveningCheckInSchedule.isBilanWindowOpen(now: context.date) {
-                        attentionBadge
-                    }
-                }
-            }
         }
-        .processGlassButton(in: Circle())
+        .buttonStyle(ProcessGlassPressStyle())
         .accessibilityLabel(AppCopy.t(
-            "Check du jour, série \(streakStore.displayStreak) jours",
-            en: "Daily check-in, \(streakStore.displayStreak)-day streak"
+            "Série, \(streakStore.displayStreak) jours",
+            en: "Streak, \(streakStore.displayStreak) days"
         ))
-        .accessibilityValue(checkInAccessibilityValue)
-    }
-
-    private var checkInAccessibilityValue: String {
-        if eveningStore.hasSubmittedToday {
-            return AppCopy.t("Check fait", en: "Check-in done")
-        }
-        if ProcessEveningCheckInSchedule.isBilanWindowOpen() {
-            return AppCopy.t("Bilan du soir à faire", en: "Evening check-in needed")
-        }
-        return AppCopy.t("Bilan du soir à partir de 21h", en: "Evening check-in opens at 9 PM")
     }
 
     private var attentionBadge: some View {
         Circle()
             .fill(Color.red)
-            .frame(width: Metrics.badgeSize, height: Metrics.badgeSize)
+            .frame(width: ProcessAppHeaderControlMetrics.attentionBadgeSize, height: ProcessAppHeaderControlMetrics.attentionBadgeSize)
             .padding(5)
             .accessibilityHidden(true)
     }
@@ -334,27 +222,6 @@ struct PlanHomeCheckInButton: View {
 
 // MARK: - Progression programme (scroll accueil)
 
-struct PlanHomeProgramProgressSection: View {
-    @Bindable private var planProgressStore = ProcessPlanProgressStore.shared
-    @Bindable private var planStore = WelcomePlanStore.shared
-
-    private var programProgress: PlanProgressSnapshot { planProgressStore.snapshot }
-
-    var body: some View {
-        Group {
-            if programProgress.hasPlan {
-                PlanHomeProgramProgressBar(progress: programProgress)
-            }
-        }
-        .onAppear { reloadProgress() }
-        .onChange(of: planStore.plan?.id) { _, _ in reloadProgress() }
-    }
-
-    private func reloadProgress() {
-        ProcessDebloatTrajectoryStore.shared.sync(from: planStore.plan)
-        planProgressStore.reload(plan: planStore.plan)
-    }
-}
 
 private struct PlanHomeProgramProgressBar: View {
     let progress: PlanProgressSnapshot

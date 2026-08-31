@@ -35,19 +35,7 @@ struct PlanFaceDaySection: View {
         VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
             headerRow
 
-            PlanLymphCircuitStepsBar()
-                .padding(.top, 8)
-
-            if items.isEmpty {
-                Text(AppCopy.t(
-                    "Aucune action quotidienne planifiée.",
-                    en: "No daily actions planned."
-                ))
-                .font(.subheadline)
-                .foregroundStyle(theme.secondaryText)
-            } else {
-                protocolCarouselBody(items: items)
-            }
+            protocolCarouselBody(items: items)
         }
         .animation(.spring(response: 0.52, dampingFraction: 0.88), value: tutorialStore.currentStepIndex)
         .fullScreenCover(item: $selectedProtocolItem, onDismiss: {
@@ -131,16 +119,33 @@ struct PlanFaceDaySection: View {
     @ViewBuilder
     private func protocolCarouselBody(items: [PlanProtocolCarouselItem]) -> some View {
         if tutorialStore.isFocused(.faceRoutine) {
+            // Le chrome enveloppe aussi l'état vide : sans carousel, l'étape
+            // n'avait aucun CTA et le tutoriel restait bloqué.
             PlanHomeTutorialFocusChrome(
                 focus: .faceRoutine,
-                cornerRadius: PlanProtocolCarouselLayout.cornerRadius
+                cornerRadius: items.isEmpty ? nil : PlanProtocolCarouselLayout.cornerRadius
             ) {
-                faceRoutineCarousel(items: items, highlightsItemStrip: false)
+                carouselOrEmptyState(items: items)
             }
             .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .top)))
         } else {
-            faceRoutineCarousel(items: items, highlightsItemStrip: false)
+            carouselOrEmptyState(items: items)
                 .opacity(tutorialStore.isRevealed(.faceRoutine) ? 0.88 : 1)
+        }
+    }
+
+    @ViewBuilder
+    private func carouselOrEmptyState(items: [PlanProtocolCarouselItem]) -> some View {
+        if items.isEmpty {
+            Text(AppCopy.t(
+                "Aucune action quotidienne planifiée.",
+                en: "No daily actions planned."
+            ))
+            .font(.subheadline)
+            .foregroundStyle(theme.secondaryText)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            faceRoutineCarousel(items: items, highlightsItemStrip: false)
         }
     }
 

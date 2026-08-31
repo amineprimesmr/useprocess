@@ -26,6 +26,10 @@ enum OnboardingStep: Int, CaseIterable {
     case dashboardPreview = 69
     case dreamFaceCommit = 70
     case faceLeverageIntro = 71
+    case postPaymentWelcome = 72
+    case explainerBodyFat = 73
+    case explainerWaterRetention = 74
+    case explainerLymphDrainage = 75
 
     /// Parcours réel (écrans visibles), dans l’ordre utilisateur.
     static let liveOrder: [OnboardingStep] = [
@@ -44,6 +48,10 @@ enum OnboardingStep: Int, CaseIterable {
         .referralCode,
         .dreamFaceCommit,
         .payment,
+        .postPaymentWelcome,
+        .explainerBodyFat,
+        .explainerWaterRetention,
+        .explainerLymphDrainage,
         .appleSignIn,
         .complete
     ]
@@ -56,7 +64,8 @@ enum OnboardingStep: Int, CaseIterable {
         switch self {
         case .weightMotivation, .biometricAuth, .transformationPreview,
              .dashboardPreview, .dreamFaceCommit, .programCreation,
-             .payment, .appleSignIn, .faceLeverageIntro:
+             .payment, .appleSignIn, .faceLeverageIntro,
+             .postPaymentWelcome, .explainerBodyFat, .explainerWaterRetention, .explainerLymphDrainage:
             return true
         default:
             return false
@@ -82,7 +91,8 @@ enum OnboardingStep: Int, CaseIterable {
     /// Reprise sans abonnement : on ne relance pas le paywall.
     var unpaidResumeStep: OnboardingStep {
         switch self {
-        case .payment, .appleSignIn, .dreamFaceCommit, .complete:
+        case .payment, .appleSignIn, .dreamFaceCommit, .complete,
+             .postPaymentWelcome, .explainerBodyFat, .explainerWaterRetention, .explainerLymphDrainage:
             return .dreamFaceCommit
         default:
             return self

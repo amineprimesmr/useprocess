@@ -34,7 +34,7 @@ func advanceFromPaymentToPostPaymentWelcome() {
         return
     }
 
-    let targetStep = OnboardingStep.appleSignIn.rawValue
+    let targetStep = OnboardingStep.postPaymentWelcome.rawValue
 
     HapticManager.shared.notification(.success)
     ProcessAnalytics.trackOnboardingAnswer(step: .payment, viewModel: viewModel)
@@ -91,7 +91,7 @@ func reconcilePostPaymentStepIfNeeded() {
 
     guard shouldSkipToThankYou else { return }
 
-    let targetStep = OnboardingStep.appleSignIn.rawValue
+    let targetStep = OnboardingStep.postPaymentWelcome.rawValue
     guard viewModel.currentStep != targetStep else { return }
 
     viewModel.currentStep = targetStep

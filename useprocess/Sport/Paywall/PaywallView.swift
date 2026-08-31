@@ -96,9 +96,9 @@ struct PaywallView: View {
                     .padding(.top, 8)
                     .padding(.bottom, 16)
                     .frame(maxHeight: .infinity)
-                    .layoutPriority(1)
 
                     bottomSection
+                        .layoutPriority(1)
                 }
                 .allowsHitTesting(!showsStayPopup)
             }

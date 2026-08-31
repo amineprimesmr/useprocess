@@ -13,68 +13,6 @@ import SwiftUI
 // MARK: - Personalized Plan Config
 
 /// Configuration complète du plan personnalisé
-struct PersonalizedPlanConfig: Codable, Identifiable {
-    let id: String
-    let userId: String
-    let createdAt: Date
-    var lastUpdated: Date
-    let basedOnDays: Int              // Nombre de jours d'apprentissage
-    var confidence: Double            // Confiance globale du plan
-
-    // SPORT & OBJECTIFS
-    var primarySport: SportDetail
-    var secondarySports: [SportDetail]
-    var userGoals: UserGoals                  // Objectifs multi-dimensionnels
-    var specificGoals: [SpecificGoal]         // Objectifs chiffrés précis
-
-    // NIVEAU & HISTORIQUE
-    var currentLevel: ExperienceLevel
-    var yearsOfExperience: Int
-    var personalRecords: [PersonalRecord]
-
-    // CONTRAINTES
-    var constraints: TrainingConstraints
-    var injuries: [InjuryHistory]
-    var availableEquipment: [PlanEquipment]
-
-    // PRÉFÉRENCES
-    var preferences: UserTrainingPreferences
-
-    // BASELINES FINALES
-    var baselines: FinalBaselines
-
-    // PATTERNS CONFIRMÉS
-    var confirmedPatterns: [UserPattern]
-
-    // MOTIVATION & PSYCHOLOGIE
-    var motivationProfile: MotivationProfile
-
-    // POTENTIEL SPORTIF
-    var sportPotential: SportPotentialLevel?
-
-    init(userId: String, basedOnDays: Int) {
-        self.id = UUID().uuidString
-        self.userId = userId
-        self.createdAt = Date()
-        self.lastUpdated = Date()
-        self.basedOnDays = basedOnDays
-        self.confidence = 0.0
-        self.primarySport = SportDetail(sportName: "Course à pied", sportCategory: "Cardio")
-        self.secondarySports = []
-        self.userGoals = UserGoals()  // Objectifs adaptatifs par défaut
-        self.specificGoals = []
-        self.currentLevel = .intermediaire
-        self.yearsOfExperience = 0
-        self.personalRecords = []
-        self.constraints = TrainingConstraints()
-        self.injuries = []
-        self.availableEquipment = []
-        self.preferences = UserTrainingPreferences()
-        self.baselines = FinalBaselines()
-        self.confirmedPatterns = []
-        self.motivationProfile = MotivationProfile()
-    }
-}
 
 // MARK: - Sport Detail
 

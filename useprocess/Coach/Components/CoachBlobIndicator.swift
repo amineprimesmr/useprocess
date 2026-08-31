@@ -308,21 +308,6 @@ private struct CoachBlobMorphShape: Shape {
 
 // MARK: - Ligne « coach réfléchit / machine à écrire »
 
-struct CoachChatThinkingBlobRow: View {
-    var start: Date
-
-    var body: some View {
-        ZStack(alignment: .topLeading) {
-            CoachEdgeBlobOverlay(mode: .thinking(start: start))
-                .offset(y: CoachBlobLayout.responseLineOffset - CoachBlobLayout.canvasHeight / 2)
-
-            Color.clear
-                .frame(height: 56)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityLabel(AppCopy.t("Réponse en cours", en: "Response in progress"))
-    }
-}
 
 // MARK: - Courbes
 
@@ -382,13 +367,6 @@ enum CoachBlobLayout {
     }
 }
 
-struct CoachThinkingBlobPlaceholder: View {
-    var body: some View {
-        Color.clear
-            .frame(height: 56)
-            .accessibilityHidden(true)
-    }
-}
 
 // MARK: - Ancrage vertical (legacy — streaming)
 

@@ -284,7 +284,7 @@ struct PaywallSpinWinbackView: View {
                     PaywallSpinConfetti()
                 }
             }
-            .ignoresSafeArea()
+            .ignoresSafeArea(edges: .bottom)
             .allowsHitTesting(false)
         }
         .onAppear {

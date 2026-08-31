@@ -35,6 +35,8 @@ struct ProfileStreakAchievementsSection: View {
     var isOnboardingPreview: Bool = false
     /// Titre + check-in inline (aperçu onboarding). Masqué quand la page fournit la top bar.
     var showsSectionHeader: Bool = true
+    /// Bouton croix — fermeture de la page streak (présentée en fullScreenCover).
+    var onClose: (() -> Void)?
 
     @Environment(\.appTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
@@ -43,7 +45,6 @@ struct ProfileStreakAchievementsSection: View {
     @Bindable private var planStore = WelcomePlanStore.shared
     @Bindable private var planProgressStore = ProcessPlanProgressStore.shared
     @Bindable private var trajectoryStore = ProcessDebloatTrajectoryStore.shared
-    @Bindable private var eveningStore = ProcessEveningCheckInStore.shared
     @ObservedObject private var creatorMode = ProcessCreatorModeStore.shared
 
     @State private var heroAppeared = false
@@ -56,16 +57,12 @@ struct ProfileStreakAchievementsSection: View {
         isPlaybackActive && scenePhase == .active
     }
 
-    private var hasSubmittedToday: Bool {
-        eveningStore.hasSubmittedToday
-    }
-
     private var programDays: [ProfileProgramStreakDay] {
         ProcessStreakStore.buildProgramStreakWindow(
             plan: planStore.plan,
             progress: progress,
             recordsByDay: trajectoryStore.allRecordsByDay,
-            completedKeys: eveningStore.submittedDayKeys,
+            completedKeys: Set(trajectoryStore.allRecordsByDay.values.filter(\.hasScan).map(\.dayKey)),
             now: creatorMode.effectiveNow
         )
     }
@@ -132,31 +129,33 @@ struct ProfileStreakAchievementsSection: View {
 
     private var sectionHeader: some View {
         HStack(spacing: 12) {
-            Color.clear
-                .frame(
-                    width: ProcessAppHeaderControlMetrics.size,
-                    height: ProcessAppHeaderControlMetrics.size
+            if let onClose {
+                ProcessGlassIconButton(
+                    systemName: "xmark",
+                    size: ProcessAppHeaderControlMetrics.size,
+                    iconSize: ProcessAppHeaderControlMetrics.iconSize,
+                    action: onClose
                 )
+                .accessibilityLabel(AppCopy.t("Fermer", en: "Close"))
+            } else {
+                Color.clear
+                    .frame(
+                        width: ProcessAppHeaderControlMetrics.size,
+                        height: ProcessAppHeaderControlMetrics.size
+                    )
+            }
 
             Text(AppCopy.t("Série", en: "Streak"))
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(theme.primaryText)
                 .frame(maxWidth: .infinity)
 
-            PlanHomeCheckInButton {
-                openDailyCheckIn()
-            }
+            Color.clear
+                .frame(
+                    width: ProcessAppHeaderControlMetrics.size,
+                    height: ProcessAppHeaderControlMetrics.size
+                )
         }
-    }
-
-    private func openDailyCheckIn() {
-        HapticManager.shared.impact(.medium)
-        streakStore.sync(from: planStore.plan)
-        guard !ProcessEveningCheckInSchedule.isTodayStreakSettledForNavigation() else { return }
-        ProcessEveningCheckInPresenter.shared.present(
-            targetDate: ProcessEveningCheckInSchedule.preferredManualCheckInDate(),
-            isRequired: false
-        )
     }
 
     // MARK: - Hero flamme
@@ -225,11 +224,7 @@ struct ProfileStreakAchievementsSection: View {
     }
 
     private var showsCountdownBadge: Bool {
-        if snapshot.isTodayComplete && streakStore.displayStreak == 0 { return false }
-        if !snapshot.isTodayComplete, !hasSubmittedToday {
-            return ProcessEveningCheckInSchedule.isBilanWindowOpen()
-        }
-        return streakStore.displayStreak == 0
+        streakStore.displayStreak == 0 && !snapshot.isTodayComplete
     }
 
     private var consistencyBadge: some View {
@@ -258,7 +253,7 @@ struct ProfileStreakAchievementsSection: View {
 
     private var consistencyEmoji: String {
         if snapshot.isTodayComplete && streakStore.displayStreak == 0 { return "✅" }
-        if !snapshot.isTodayComplete, !hasSubmittedToday {
+        if !snapshot.isTodayComplete {
             return streakStore.displayStreak > 0 ? "🔥" : "💪"
         }
         switch streakStore.displayStreak {
@@ -274,8 +269,8 @@ struct ProfileStreakAchievementsSection: View {
         if snapshot.isTodayComplete && streakStore.displayStreak == 0 {
             return AppCopy.t("Premier jour validé !", en: "First day completed!")
         }
-        if !snapshot.isTodayComplete, !hasSubmittedToday {
-            return ProcessEveningCheckInSchedule.streakLaunchMessage(from: date)
+        if !snapshot.isTodayComplete {
+            return AppCopy.t("Fais ton scan pour valider aujourd'hui", en: "Do your scan to complete today")
         }
         switch streakStore.displayStreak {
         case 1...2:
@@ -565,9 +560,36 @@ private struct ProfileStreakHeroGlow: View {
     }
 }
 
+// MARK: - Flamme miniature (bouton header accueil)
+
+/// Même flamme animée que la page streak, réduite pour servir d’icône de bouton.
+struct ProfileMiniFlameIcon: View {
+    var size: CGFloat = ProcessAppHeaderControlMetrics.size
+
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
+
+    private let sourceHeight: CGFloat = 248
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: scenePhase != .active)) { timeline in
+            ProfileAnimatedFlameView(
+                time: timeline.date.timeIntervalSinceReferenceDate,
+                isActive: scenePhase == .active,
+                colorScheme: colorScheme
+            )
+        }
+        .frame(height: sourceHeight)
+        .scaleEffect(size / sourceHeight)
+        .frame(width: size, height: size)
+        .contentShape(Circle())
+        .accessibilityHidden(true)
+    }
+}
+
 // MARK: - Flamme animée
 
-private struct ProfileAnimatedFlameView: View {
+struct ProfileAnimatedFlameView: View {
     let time: TimeInterval
     var isActive: Bool = true
     var colorScheme: ColorScheme

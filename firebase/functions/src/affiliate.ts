@@ -11,7 +11,6 @@ import {
   ensureEmailPasswordSignInEnabled,
   getAffiliateForUid,
   getAffiliateByEmail,
-  isAppleRelayEmail,
   linkAffiliateUid,
   resolveAffiliateForAuthUser,
   pickPrimaryAffiliateCode,
@@ -224,10 +223,6 @@ export const affiliateSetLoginEmail = onRequest(
       const email = String(req.body?.email ?? "").trim().toLowerCase();
       if (!email || !email.includes("@") || email.length > 254) {
         res.status(400).json({ error: "INVALID_EMAIL" });
-        return;
-      }
-      if (isAppleRelayEmail(email)) {
-        res.status(409).json({ error: "APPLE_RELAY_EMAIL" });
         return;
       }
 
@@ -734,7 +729,9 @@ export const affiliateDashboard = onRequest(
       })();
 
       void releaseDueAffiliateCommissions().catch((releaseError) => {
-        console.warn("[affiliateDashboard] releaseDue skipped", releaseError);
+        // This releases held commissions into payable balance — a silent failure here
+        // means clippers stop getting paid with no visible symptom, so log at error level.
+        console.error("[affiliateDashboard] releaseDue failed", releaseError);
       });
 
       const data = affiliate as Record<string, any>;
@@ -1206,10 +1203,46 @@ export const affiliateAdminMarkPaid = onRequest(
         });
       }
 
+      // Pick the commissions this payout actually covers BEFORE touching stats, and book
+      // the stats decrement against their real sum (matchedCents) rather than amountCents.
+      // Greedy bin-packing over `amountCents` can leave a remainder unmatched (no subset of
+      // payable commissions sums exactly to amountCents); decrementing payableCents by the
+      // full amountCents in that case would silently understate the balance still owed,
+      // leaving orphaned commissions stuck at status "payable" forever.
+      const payableSnap = await db()
+        .collection("affiliateCommissions")
+        .where("affiliateId", "==", affiliateId)
+        .where("status", "==", "payable")
+        .orderBy("commissionCents", "asc")
+        .limit(500)
+        .get();
+
+      let remaining = amountCents;
+      let matchedCents = 0;
+      const matchedRefs: FirebaseFirestore.DocumentReference[] = [];
+      for (const doc of payableSnap.docs) {
+        if (remaining <= 0) break;
+        const row = doc.data();
+        const commissionCents = Number(row.commissionCents ?? 0);
+        if (commissionCents <= 0) continue;
+        if (commissionCents > remaining) continue;
+        remaining -= commissionCents;
+        matchedCents += commissionCents;
+        matchedRefs.push(doc.ref);
+      }
+
+      if (matchedCents !== amountCents) {
+        console.warn(
+          "[affiliateAdminMarkPaid] no exact commission match for payout amount",
+          { affiliateId, amountCents, matchedCents }
+        );
+      }
+
       await db().runTransaction(async (transaction) => {
         transaction.set(payoutRef, {
           affiliateId,
           amountCents,
+          matchedCommissionCents: matchedCents,
           currency,
           method,
           note: note.slice(0, 240) || null,
@@ -1221,41 +1254,25 @@ export const affiliateAdminMarkPaid = onRequest(
         transaction.set(
           affiliateRef,
           {
-            "stats.payableCents": admin.firestore.FieldValue.increment(-amountCents),
-            "stats.paidCents": admin.firestore.FieldValue.increment(amountCents),
+            "stats.payableCents": admin.firestore.FieldValue.increment(-matchedCents),
+            "stats.paidCents": admin.firestore.FieldValue.increment(matchedCents),
             updatedAt: now,
           },
           { merge: true }
         );
+
+        for (const ref of matchedRefs) {
+          transaction.set(
+            ref,
+            {
+              status: "paid",
+              paidAt: now,
+              payoutId: payoutRef.id,
+            },
+            { merge: true }
+          );
+        }
       });
-
-      const payableSnap = await db()
-        .collection("affiliateCommissions")
-        .where("affiliateId", "==", affiliateId)
-        .where("status", "==", "payable")
-        .limit(500)
-        .get();
-
-      let remaining = amountCents;
-      const batch = db().batch();
-      for (const doc of payableSnap.docs) {
-        if (remaining <= 0) break;
-        const row = doc.data();
-        const commissionCents = Number(row.commissionCents ?? 0);
-        if (commissionCents <= 0) continue;
-        if (commissionCents > remaining) continue;
-        remaining -= commissionCents;
-        batch.set(
-          doc.ref,
-          {
-            status: "paid",
-            paidAt: now,
-            payoutId: payoutRef.id,
-          },
-          { merge: true }
-        );
-      }
-      await batch.commit();
 
       res.status(200).json({
         ok: true,

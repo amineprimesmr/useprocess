@@ -1,11 +1,5 @@
 import SwiftUI
 
-struct ProcessCrispChatView: View {
-    var body: some View {
-        ProcessSupportChatView()
-    }
-}
-
 struct ProcessSupportChatView: View {
     var initialDraftMessage: String? = nil
 

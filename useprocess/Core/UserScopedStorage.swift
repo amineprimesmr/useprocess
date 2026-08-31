@@ -91,6 +91,9 @@ enum UserScopedStorage {
     static func clearAllUserData(userId: String) {
         for base in userDataKeys {
             UserDefaults.standard.removeObject(forKey: key(base, userId: userId))
+            // Certains flags sont aussi miroités sur une clé globale (l'uid n'est
+            // pas encore résolu au cold start) — sinon ils survivaient à la purge.
+            UserDefaults.standard.removeObject(forKey: globalKey(base))
         }
 
         for (prefix, suffixes) in prefixedUserDataSuffixes {

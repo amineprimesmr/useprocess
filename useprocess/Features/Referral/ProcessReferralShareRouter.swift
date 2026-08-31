@@ -139,35 +139,3 @@ enum ProcessReferralShareRouter {
     }
 }
 
-struct ProcessReferralMessageComposeView: UIViewControllerRepresentable {
-    let body: String
-    var onFinish: () -> Void
-
-    func makeUIViewController(context: Context) -> MFMessageComposeViewController {
-        let controller = MFMessageComposeViewController()
-        controller.messageComposeDelegate = context.coordinator
-        controller.body = body
-        return controller
-    }
-
-    func updateUIViewController(_ uiViewController: MFMessageComposeViewController, context: Context) {}
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(onFinish: onFinish)
-    }
-
-    final class Coordinator: NSObject, MFMessageComposeViewControllerDelegate {
-        let onFinish: () -> Void
-
-        init(onFinish: @escaping () -> Void) {
-            self.onFinish = onFinish
-        }
-
-        func messageComposeViewController(
-            _ controller: MFMessageComposeViewController,
-            didFinishWith result: MessageComposeResult
-        ) {
-            onFinish()
-        }
-    }
-}

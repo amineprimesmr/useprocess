@@ -31,13 +31,6 @@ private struct DynamicIslandToastViewModifier: ViewModifier {
             .onChange(of: value.id) { _, _ in
                 overlayWindow?.toast = value
             }
-            .onChange(of: overlayWindow?.isPresented) { _, newValue in
-                guard let newValue,
-                      let overlayWindow,
-                      overlayWindow.toast?.id == value.id,
-                      newValue != isPresented else { return }
-                isPresented = false
-            }
     }
 
     private func applyPresentation(_ presented: Bool) {
@@ -50,6 +43,7 @@ private struct DynamicIslandToastViewModifier: ViewModifier {
 
         pendingPresentation = false
         overlayWindow.onToastTap = onTap
+        overlayWindow.onDismissRequest = { isPresented = false }
         overlayWindow.isUserInteractionEnabled = presented
         if presented {
             overlayWindow.toast = value
@@ -125,7 +119,7 @@ struct DynamicIslandToastContentView: View {
                     .contentShape(Rectangle())
                     .onTapGesture {
                         HapticManager.shared.impact(.light)
-                        window.isPresented = false
+                        window.requestDismiss()
                     }
 
                 toastCapsule(
@@ -195,13 +189,13 @@ struct DynamicIslandToastContentView: View {
             TapGesture().onEnded {
                 HapticManager.shared.impact(.light)
                 window.onToastTap?()
-                window.isPresented = false
+                window.requestDismiss()
             }
         )
         .gesture(
             DragGesture().onEnded { value in
                 if value.translation.height < 0 {
-                    window.isPresented = false
+                    window.requestDismiss()
                 }
             }
         )
@@ -239,14 +233,26 @@ struct DynamicIslandToastContentView: View {
                         Spacer(minLength: 0)
                     }
 
-                    Text(toast.title)
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.white)
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(toast.title)
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.white)
+
+                        if toast.streakAfter != nil {
+                            Spacer(minLength: 0)
+                            DynamicIslandStreakCounter(toast: toast, isExpanded: isExpanded)
+                        }
+                    }
 
                     Text(toast.message)
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.72))
                         .fixedSize(horizontal: false, vertical: true)
+
+                    if let progress = toast.streakProgress {
+                        DynamicIslandStreakProgressBar(progress: progress, isExpanded: isExpanded)
+                            .padding(.top, 2)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.bottom, haveDynamicIsland ? 18 : 8)
@@ -262,5 +268,67 @@ struct DynamicIslandToastContentView: View {
 
     private var isExpanded: Bool {
         window.isPresented
+    }
+}
+
+/// Compteur de série X → Y — s'anime après l'apparition du toast.
+private struct DynamicIslandStreakCounter: View {
+    let toast: DynamicIslandToastMessage
+    let isExpanded: Bool
+
+    @State private var displayedValue: Int = 0
+
+    var body: some View {
+        Text("\(displayedValue)")
+            .font(.title3.weight(.bold))
+            .monospacedDigit()
+            .foregroundStyle(ProcessStreakPalette.flame)
+            .contentTransition(.numericText())
+            .onChange(of: toast.id, initial: true) { _, _ in
+                displayedValue = toast.streakBefore ?? toast.streakAfter ?? 0
+            }
+            .onChange(of: isExpanded) { _, expanded in
+                guard expanded, let target = toast.streakAfter else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
+                    HapticManager.shared.impact(.light)
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                        displayedValue = target
+                    }
+                }
+            }
+    }
+}
+
+/// Barre de progression vers le prochain palier de série.
+private struct DynamicIslandStreakProgressBar: View {
+    let progress: Double
+    let isExpanded: Bool
+
+    @State private var fillFraction: CGFloat = 0
+
+    var body: some View {
+        Capsule(style: .continuous)
+            .fill(Color.white.opacity(0.14))
+            .frame(height: 4)
+            .overlay(alignment: .leading) {
+                GeometryReader { proxy in
+                    Capsule(style: .continuous)
+                        .fill(ProcessStreakPalette.flame)
+                        .frame(width: proxy.size.width * fillFraction)
+                }
+            }
+            .clipShape(Capsule(style: .continuous))
+            .onChange(of: isExpanded, initial: true) { _, expanded in
+                guard expanded else {
+                    fillFraction = 0
+                    return
+                }
+                fillFraction = 0
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.36) {
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
+                        fillFraction = CGFloat(progress)
+                    }
+                }
+            }
     }
 }

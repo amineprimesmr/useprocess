@@ -302,6 +302,7 @@ final class AppSession {
             UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("welcome.plan.chat.completed", userId: uid))
             ProcessPrivacyConsentStore.shared.clearForUser(userId: uid)
         }
+        PlanHomeTutorialStore.shared.resetForAccountWipe()
 
         clearLegacyOnboardingFlags()
     }
