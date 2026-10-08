@@ -51,3 +51,4 @@ content/tiktok/posted/**/*
 
 # Archives App Store générées par asc
 .asc/artifacts/
+android/app/google-services.json
