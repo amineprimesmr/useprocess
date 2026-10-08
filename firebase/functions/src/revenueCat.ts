@@ -1,4 +1,55 @@
+import * as admin from "firebase-admin";
+
 const REVENUECAT_API = "https://api.revenuecat.com/v1";
+
+/**
+ * MoneyMaker (RevenueCat replacement) speaks the same v1 API. During the migration, users on
+ * older app versions still buy through RevenueCat and newer ones through MoneyMaker: reads merge
+ * both, promotional grants go to both. Config lives server-only in billingConfiguration/moneymaker
+ * ({ baseUrl, secretKey }); without it everything behaves exactly as before.
+ */
+let moneyMakerCache: { at: number; config: { baseUrl: string; secretKey: string } | null } | null = null;
+async function moneyMakerConfig() {
+  if (moneyMakerCache && Date.now() - moneyMakerCache.at < 300000) return moneyMakerCache.config;
+  const data = (await admin.firestore().doc("billingConfiguration/moneymaker").get().catch(() => null))?.data();
+  const config = data?.enabled !== false && typeof data?.secretKey === "string" && typeof data?.baseUrl === "string"
+    ? { baseUrl: data.baseUrl.replace(/\/$/, ""), secretKey: data.secretKey } : null;
+  moneyMakerCache = { at: Date.now(), config };
+  return config;
+}
+
+async function fetchMoneyMakerSubscriber(appUserId: string): Promise<any | null> {
+  const mm = await moneyMakerConfig();
+  if (!mm) return null;
+  try {
+    const response = await fetch(`${mm.baseUrl}/v1/subscribers/${encodeURIComponent(appUserId)}`, {
+      headers: { Authorization: `Bearer ${mm.secretKey}` }, signal: AbortSignal.timeout(8000),
+    });
+    return response.ok ? await response.json() : null;
+  } catch {
+    return null; // MoneyMaker unavailable: RevenueCat alone still answers.
+  }
+}
+
+const laterDate = (a?: string | null, b?: string | null) => {
+  if (a === null || b === null) return null; // lifetime wins
+  return Date.parse(a ?? "0") >= Date.parse(b ?? "0") ? a : b;
+};
+
+/** Merges two v1 subscriber payloads; for each entitlement the one expiring last wins. Pure — unit-tested. */
+export function mergeSubscribers(primary: any, secondary: any): any {
+  if (!secondary?.subscriber) return primary;
+  if (!primary?.subscriber) return secondary;
+  const a = primary.subscriber, b = secondary.subscriber;
+  const entitlements: Record<string, any> = { ...(a.entitlements ?? {}) };
+  for (const [id, e] of Object.entries<any>(b.entitlements ?? {})) {
+    const cur = entitlements[id];
+    entitlements[id] = !cur || laterDate(e.expires_date, cur.expires_date) === e.expires_date ? e : cur;
+  }
+  const nonSubscriptions: Record<string, any[]> = { ...(a.non_subscriptions ?? {}) };
+  for (const [id, list] of Object.entries<any[]>(b.non_subscriptions ?? {})) nonSubscriptions[id] = [...(nonSubscriptions[id] ?? []), ...list];
+  return { ...primary, subscriber: { ...a, entitlements, subscriptions: { ...(b.subscriptions ?? {}), ...(a.subscriptions ?? {}) }, non_subscriptions: nonSubscriptions } };
+}
 
 export type RevenueCatDuration =
   | "daily"
@@ -51,6 +102,20 @@ export function isTrialStartEvent(event: any): boolean {
 }
 
 export async function fetchSubscriber(
+  appUserId: string,
+  secretKey: string
+): Promise<any> {
+  const mm = await moneyMakerConfig();
+  const [revenueCat, moneyMaker] = await Promise.all([
+    // Without MoneyMaker, a RevenueCat failure must surface exactly as before.
+    fetchRevenueCatSubscriber(appUserId, secretKey).catch(error => { if (!mm) throw error; return null; }),
+    mm ? fetchMoneyMakerSubscriber(appUserId) : Promise.resolve(null),
+  ]);
+  if (!revenueCat && !moneyMaker) throw new Error("SUBSCRIBER_FETCH_FAILED");
+  return mergeSubscribers(revenueCat, moneyMaker);
+}
+
+async function fetchRevenueCatSubscriber(
   appUserId: string,
   secretKey: string
 ): Promise<any> {
@@ -135,5 +200,15 @@ export async function grantPromotionalEntitlement(
   if (!response.ok) {
     const body = await response.text();
     throw new Error(`RC_GRANT_FAILED:${response.status}:${body}`);
+  }
+
+  // Mirror the grant in MoneyMaker so app versions reading MoneyMaker unlock it too.
+  const mm = await moneyMakerConfig();
+  if (mm) {
+    const mmResponse = await fetch(`${mm.baseUrl}/v1/subscribers/${encodeURIComponent(appUserId)}/entitlements/${encodeURIComponent(entitlementId)}/promotional`, {
+      method: "POST", headers: { Authorization: `Bearer ${mm.secretKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ duration }), signal: AbortSignal.timeout(10000),
+    }).catch(() => null);
+    if (!mmResponse?.ok) console.error("[grantPromotionalEntitlement] MoneyMaker mirror failed", mmResponse?.status);
   }
 }
