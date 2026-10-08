@@ -13,6 +13,7 @@ struct OnboardingAnalysisYesNoPopup: View {
     let question: String
     let affirmativeTitle: String
     let negativeTitle: String
+    let showsNegativeButton: Bool
     let popupOffset: CGFloat
     let onAnswer: (Bool) -> Void
 
@@ -33,6 +34,7 @@ struct OnboardingAnalysisYesNoPopup: View {
         question: String,
         affirmativeTitle: String? = nil,
         negativeTitle: String? = nil,
+        showsNegativeButton: Bool = true,
         popupOffset: CGFloat = 0,
         onAnswer: @escaping (Bool) -> Void
     ) {
@@ -41,6 +43,7 @@ struct OnboardingAnalysisYesNoPopup: View {
         self.question = question
         self.affirmativeTitle = affirmativeTitle ?? OnboardingCopy.t("Oui", en: "Yes")
         self.negativeTitle = negativeTitle ?? OnboardingCopy.t("Non", en: "No")
+        self.showsNegativeButton = showsNegativeButton
         self.popupOffset = popupOffset
         self.onAnswer = onAnswer
     }
@@ -78,12 +81,14 @@ struct OnboardingAnalysisYesNoPopup: View {
                         .padding(.horizontal, 14)
 
                     HStack(spacing: 16) {
-                        popupButton(title: negativeTitle, icon: "xmark") {
-                            HapticManager.shared.impact(.medium)
-                            onAnswer(false)
+                        if showsNegativeButton {
+                            popupButton(title: negativeTitle, icon: "xmark") {
+                                HapticManager.shared.impact(.medium)
+                                onAnswer(false)
+                            }
                         }
 
-                        popupButton(title: affirmativeTitle, icon: "checkmark") {
+                        popupButton(title: affirmativeTitle, icon: showsNegativeButton ? "checkmark" : "arrow.right") {
                             HapticManager.shared.impact(.medium)
                             onAnswer(true)
                         }

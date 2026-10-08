@@ -65,6 +65,7 @@ struct OnboardingProgramCreationStepView: View {
                         question: popup.question,
                         affirmativeTitle: popup.affirmativeTitle,
                         negativeTitle: popup.negativeTitle,
+                        showsNegativeButton: popup.kind != .healthKit,
                         onAnswer: { creationViewModel.handlePopupAnswer($0) }
                     )
                     .zIndex(100)

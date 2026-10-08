@@ -18,7 +18,7 @@ enum OnboardingAnalysisProgressConfig {
         var affirmativeTitle: String {
             switch kind {
             case .yesNo: return AppCopy.tSync("Oui", en: "Yes")
-            case .healthKit: return AppCopy.tSync("Autoriser", en: "Allow")
+            case .healthKit: return AppCopy.tSync("Continuer", en: "Continue")
             }
         }
 
@@ -28,6 +28,9 @@ enum OnboardingAnalysisProgressConfig {
             case .healthKit: return AppCopy.tSync("Plus tard", en: "Later")
             }
         }
+
+        /// Guideline 5.1.1(iv) : aucun moyen de différer la demande système HealthKit.
+        var showsNegativeButton: Bool { kind != .healthKit }
     }
 
     struct ProgressStep: Identifiable, Equatable, Sendable {

@@ -520,7 +520,7 @@ struct LymphCircuitSessionView: View {
                     }
                 }
             } label: {
-                Text(AppCopy.t("Autoriser", en: "Allow"))
+                Text(AppCopy.t("Continuer", en: "Continue"))
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(.black)
                     .frame(maxWidth: .infinity)
