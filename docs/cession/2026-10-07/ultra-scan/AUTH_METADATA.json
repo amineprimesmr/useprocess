@@ -1,0 +1,25 @@
+{
+  "status": "verified",
+  "authorizedDomains": [
+    "localhost",
+    "useprocess-d4385.firebaseapp.com",
+    "useprocess-d4385.web.app",
+    "useprocess.xyz",
+    "www.useprocess.xyz",
+    "join.useprocess.xyz",
+    "processdebloat.com",
+    "www.processdebloat.com"
+  ],
+  "signInProviders": {
+    "email": {
+      "enabled": true
+    },
+    "anonymous": {
+      "enabled": true
+    },
+    "hashConfig": {
+      "enabled": null
+    }
+  },
+  "multiTenant": false
+}

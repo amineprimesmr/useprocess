@@ -112,14 +112,6 @@ enum SubscriptionConfiguration {
     /// Locale d’affichage prix — suit la langue produit.
     static var paywallPriceLocale: Locale { ProcessAppLanguage.currentLocale }
 
-    /// FR produit → EUR à l’écran. EN → devise StoreKit (souvent USD).
-    /// Évite d’afficher `$` sur un paywall FR quand le sandbox / compte App Store est US.
-    nonisolated static func shouldUseEuroPaywallDisplay(storeCurrencyCode: String?) -> Bool {
-        guard ProcessAppLanguage.usesFrenchCopy else { return false }
-        let code = storeCurrencyCode?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() ?? ""
-        return code != "EUR"
-    }
-
     /// Formate un prix paywall avec la devise StoreKit / RevenueCat.
     /// Conserve les centimes si le montant n’est pas entier (ex. 8,99€).
     static func formatPaywallPrice(decimal: Decimal, currencyCode: String? = nil) -> String {

@@ -1,0 +1,60 @@
+{
+  "recordedAt": "2026-10-08T12:12:52.888371+00:00",
+  "sourceSha256": {
+    "content/source-projects/design-source-138145214-527364642/iOS26LSCarousel/iOS26LSCarousel/ContentView.swift": "e8571097d4d45e7f3775d9ca333a368ad7cbf437e43fe4199f3b4b01bced3a01",
+    "content/source-projects/design-source-138145214-527364642/iOS26LSCarousel/iOS26LSCarousel/iOS26LSCarouselApp.swift": "a2874ad3cdeb071a0de9e9b55250fecbc9f2d1acc18b1641cbdf1c1fb8f073cb",
+    "content/source-projects/design-source-138145214-527364642/iOS26LSCarousel/iOS26LSCarousel/Helpers/CustomCarousel.swift": "176220fbc391ca12824d8c2c1dde42948e12b754e9fec39fc2cda6336e2d82f6"
+  },
+  "originalImages": [
+    {
+      "archive": "iOS26LSCarousel.zip",
+      "member": "iOS26LSCarousel/iOS26LSCarousel/Assets.xcassets/Pics/3.imageset/3.png",
+      "name": "wallpaper_3.png",
+      "sha256": "65342fa90a28c5349cec90833d1ac877d04eabdea94364b720b8ddea3c87af6a",
+      "bytes": 92472
+    },
+    {
+      "archive": "iOS26LSCarousel.zip",
+      "member": "iOS26LSCarousel/iOS26LSCarousel/Assets.xcassets/Pics/2.imageset/2.png",
+      "name": "wallpaper_2.png",
+      "sha256": "718d4321be6489e7fede184786af2568c193f0c3586101de1ce18bedfac5f6a6",
+      "bytes": 95286
+    },
+    {
+      "archive": "iOS26LSCarousel.zip",
+      "member": "iOS26LSCarousel/iOS26LSCarousel/Assets.xcassets/Pics/4.imageset/4.png",
+      "name": "wallpaper_4.png",
+      "sha256": "9c511d37e50a2cc48d869fee8cb342fec9f57e477fa34d9339b0a24ef6231826",
+      "bytes": 79456
+    },
+    {
+      "archive": "iOS26LSCarousel.zip",
+      "member": "iOS26LSCarousel/iOS26LSCarousel/Assets.xcassets/Pics/1.imageset/1.png",
+      "name": "wallpaper_1.png",
+      "sha256": "76362c712bc93695b7ef51da823317fa538cb00c69d7d7d2c0bcdede9c3ca43b",
+      "bytes": 84663
+    }
+  ],
+  "nativeSha256": {
+    "app/src/main/java/com/process/android/TenKWallpaperCarousel.kt": "f9a464857308695a5f1a5ccff83fa9fd4b3f18109f2cf2f7215568fb4dafacf9",
+    "app/src/main/java/com/process/android/CarouselGeometry.kt": "d563ce6cb7392bb8c5b1487d94f3dbe79068a79323281a0ec731762fd1e0db83"
+  },
+  "build": "passed",
+  "unitTests": {
+    "tests": 205,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Warning": 51
+  },
+  "visual": "host only",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "remaining": [
+    "Paired physical Android/iOS screenshots, fonts, blur and motion timings",
+    "Native snap physics, safe-area behavior and accessibility on device",
+    "API28-30blur fallback; hardware composition and source materials"
+  ]
+}

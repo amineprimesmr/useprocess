@@ -4,6 +4,7 @@ import UIKit
 /// Shell principal — tab bar (Accueil · Alimentation · Routine · Progrès).
 struct MainAppView: View {
     @State private var selectedSection: ProcessMainSection = .plan
+    @State private var visitedSections: Set<ProcessMainSection> = [.plan]
     @State private var tabBeforeCoach: ProcessMainSection = .plan
     @State private var coachViewModel = CoachChatViewModel()
     @Bindable private var planBridge = CoachPlanNavigationBridge.shared
@@ -52,6 +53,7 @@ struct MainAppView: View {
             ProcessHydrationTimerMonitor.shared.handleSceneBecameActive()
         }
         .onChange(of: selectedSection) { oldValue, newValue in
+            visitedSections.insert(newValue)
             if ProcessMainSection.isCoachTabEnabled, newValue == .coach, oldValue != .coach {
                 tabBeforeCoach = oldValue
             }
@@ -136,32 +138,42 @@ struct MainAppView: View {
     @ViewBuilder
     private var tabContent: some View {
         ZStack {
-            planTabRoot
-                .opacity(selectedSection == .plan ? 1 : 0)
-                .allowsHitTesting(selectedSection == .plan)
-                .accessibilityHidden(selectedSection != .plan)
-
-            routineTabRoot
-                .opacity(selectedSection == .routine ? 1 : 0)
-                .allowsHitTesting(selectedSection == .routine)
-                .accessibilityHidden(selectedSection != .routine)
-
-            if ProcessMainSection.isCoachTabEnabled {
+            if visitedSections.contains(.plan) || selectedSection == .plan {
+                planTabRoot
+                    .environment(\.processTabIsActive, selectedSection == .plan)
+                    .opacity(selectedSection == .plan ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .plan)
+                    .accessibilityHidden(selectedSection != .plan)
+            }
+            if visitedSections.contains(.routine) || selectedSection == .routine {
+                routineTabRoot
+                    .environment(\.processTabIsActive, selectedSection == .routine)
+                    .opacity(selectedSection == .routine ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .routine)
+                    .accessibilityHidden(selectedSection != .routine)
+            }
+            if ProcessMainSection.isCoachTabEnabled,
+               visitedSections.contains(.coach) || selectedSection == .coach {
                 coachTabRoot
+                    .environment(\.processTabIsActive, selectedSection == .coach)
                     .opacity(selectedSection == .coach ? 1 : 0)
                     .allowsHitTesting(selectedSection == .coach)
                     .accessibilityHidden(selectedSection != .coach)
             }
-
-            foodTabRoot
-                .opacity(selectedSection == .food ? 1 : 0)
-                .allowsHitTesting(selectedSection == .food)
-                .accessibilityHidden(selectedSection != .food)
-
-            profileTabRoot
-                .opacity(selectedSection == .profile ? 1 : 0)
-                .allowsHitTesting(selectedSection == .profile)
-                .accessibilityHidden(selectedSection != .profile)
+            if visitedSections.contains(.food) || selectedSection == .food {
+                foodTabRoot
+                    .environment(\.processTabIsActive, selectedSection == .food)
+                    .opacity(selectedSection == .food ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .food)
+                    .accessibilityHidden(selectedSection != .food)
+            }
+            if visitedSections.contains(.profile) || selectedSection == .profile {
+                profileTabRoot
+                    .environment(\.processTabIsActive, selectedSection == .profile)
+                    .opacity(selectedSection == .profile ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .profile)
+                    .accessibilityHidden(selectedSection != .profile)
+            }
         }
         .background(Color.clear)
     }
@@ -377,5 +389,18 @@ private struct MealPhotoScanCoverModifier: ViewModifier {
                 }
             }
             .animation(MealPhotoScanCameraPresentation.spring, value: isPresented)
+    }
+}
+
+
+/// Visibility is separate from appearance: retained tabs remain mounted off screen.
+private struct ProcessTabIsActiveKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+extension EnvironmentValues {
+    var processTabIsActive: Bool {
+        get { self[ProcessTabIsActiveKey.self] }
+        set { self[ProcessTabIsActiveKey.self] = newValue }
     }
 }

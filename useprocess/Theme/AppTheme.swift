@@ -120,3 +120,26 @@ extension EnvironmentValues {
         set { self[AppThemeKey.self] = newValue }
     }
 }
+
+/// Aligne la trait collection UIKit de chaque fenêtre sur le réglage d'apparence.
+/// `.preferredColorScheme` ne pilote que la fenêtre hôte SwiftUI : les fenêtres
+/// annexes (Sign in with Apple, alertes, toasts) et toutes les couleurs dynamiques
+/// UIKit (`ProcessColors.background`, `Color(.separator)`, `Color.primary`)
+/// restaient sur le mode iPhone — d'où texte et fond qui divergent.
+@MainActor
+enum ProcessWindowAppearance {
+    static func apply(_ appearance: AppAppearance) {
+        let style: UIUserInterfaceStyle
+        switch appearance {
+        case .system: style = .unspecified
+        case .dark: style = .dark
+        case .light: style = .light
+        }
+        for scene in UIApplication.shared.connectedScenes {
+            guard let windowScene = scene as? UIWindowScene else { continue }
+            for window in windowScene.windows where window.overrideUserInterfaceStyle != style {
+                window.overrideUserInterfaceStyle = style
+            }
+        }
+    }
+}

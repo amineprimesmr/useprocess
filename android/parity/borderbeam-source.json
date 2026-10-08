@@ -1,0 +1,13 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-156996243-655369276/BorderBeam/BorderBeam/ContentView.swift": "a76d7ef0045d2097559975061181f2bbb93f1ece0020c062b5c78dbcaa999080",
+    "content/source-projects/design-source-156996243-655369276/BorderBeam/BorderBeam/BorderBeamApp.swift": "2d025b51ef602cd05ce6b7dec48e863a866c940dcba541a2893d06134a4a4ddb",
+    "content/source-projects/design-source-156996243-655369276/BorderBeam/BorderBeam/Helpers/BorderBeamEffect.swift": "a2adea9b7aa39ab60ec1d3291a68051e849d191f3fd1d14ad1d6ed8ea140a760"
+  },
+  "mirrorMatchesInventory": true,
+  "contract": "Wrap content in TenKBorderBeam. Original2.5second linear revolution,140to270degree angular window,0.6dp stroke,0.5dp inset,diagonal beam colors,inverse blurred interior and beamBlur/1.5mask are adapted with native Android Canvas shaders. Empty beam colors keep only the border; enabled=false removes the effect but retains content. Reduced motion displays a static phase; animation pauses when lifecycle stops. Software layer provides blur on API28; exact Swift blur compositing/tertiary opacity/adaptive colors and physical frame performance remain unverified. Original icon-only controls/precise gallery UI are not fully reproduced.",
+  "nativeFiles": [
+    "TenKBorderBeam.kt",
+    "TenKBorderBeamGallery.kt"
+  ]
+}

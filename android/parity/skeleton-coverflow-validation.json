@@ -1,0 +1,47 @@
+{
+  "recordedAt": "2026-10-08T02:11:33.419898+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 108,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 26
+  },
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/SkeletonModel.kt": "b821cfc9a9fc92f8f7e3430990ed0695ccfe9dd23184759d9ac203bca7db4d15",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/TenKSkeleton.kt": "f36587692dc3ad8119dc45e40b9b1ec9333c1defdefb43c6bf0a5739976cf520",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/TenKSkeletonGallery.kt": "8e6046736084563bef15bbf8e1657640090f1ac016e2aef7b2e2f8945fcf33f7",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/CoverFlowModel.kt": "e208aa599e4c31f393054912581148fb3ec8a68e9374dac1973b90debc3f332a",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/TenKCoverFlow.kt": "d8f6c25b25d36b0fe0e028368a16e0f0d3529083a265b739d32e72fc7f0bd504",
+    "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/skeleton_wwdc.png": "004c84d1662fb4178c007c9724f2c6ec4b7e87e1e6b3c69f2a0e264a1fc671bb",
+    "/Users/amine/Developer/useprocess/android/parity/original-coverflow-reflection.metal": "dc0ebfe87cc47c2d936109859f3ea01f6505515fb17bdb25da76c712615187f4",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-126526147-451505361/Skeleton/Skeleton/SkeletonApp.swift": "0f6f84406130849319f2cd3e21e6b93aabfa2aeb0f323cdb9f8ab5a0c049668d",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-126526147-451505361/Skeleton/Skeleton/ContentView1.swift": "2cc1e43922153cf211cbdafe00809059ad813efcc6c61f1f92d6c1a37f92376b",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-126526147-451505361/Skeleton/Skeleton/ContentView.swift": "9c1c435726c414123a195a2492a7c85daa2110de03f6d98238256e9b17362fae",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-126526147-451505361/Skeleton/Skeleton/Helpers/SkeletonView.swift": "e10795c060af9e8fd7ee151e209b326b44e385828064c2e7aae0e1118e2cc226",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-126526147-451505361/Skeleton/Skeleton/Helpers/SkeletonModifier.swift": "98dc80e0f75c8451ae2e9e0dd54389de0279cbdac4795ca9c8bd5f080f0d2bf1",
+    "/Users/amine/Developer/10kdesign-device.nosync/content/components/design-cover-flow/TenKiPCoverflowDemo.swift": "f15f2da4a7f806edf00e2620738ffb8c03e8b58a7a02e4c6251bfe7b41a8f552"
+  },
+  "runtime": "unverified",
+  "visual": "unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "remaining": {
+    "design-source-126526147-451505361": [
+      "Automatic arbitrary-content redaction variant not ported",
+      "API28 uses source-over rather than SoftLight blend; exact original colors/material/shadow/fonts",
+      "Runtime load toggle, mask clipping, physical blur/performance and motion checks"
+    ],
+    "design-cover-flow": [
+      "Anchor-Z perspective approximation requires native physical comparison",
+      "65sample fade gradient approximates original continuous Metal shader",
+      "Runtime reflection clipping, center snapping, external selection and accessibility",
+      "Original system gradients/colors and background animation in complete demo"
+    ]
+  },
+  "buildLog": "/tmp/process-skeleton-coverflow-build.log"
+}

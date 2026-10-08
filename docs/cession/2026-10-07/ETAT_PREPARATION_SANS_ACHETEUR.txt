@@ -1,0 +1,30 @@
+PROCESS DEBLOAT — ÉTAT RÉEL AU 7 OCTOBRE 2026
+Préparation avancée ; aucune sortie totale du vendeur ni livraison certifiée à ce stade.
+
+FAIT
+- Registre de 107 éléments (services, accès, fonctions, clés, callbacks et obligations), avec preuve, action et condition de clôture.
+- 36 fonctions, 17 secrets, 4 buckets, 3 comptes de service inventoriés ; GitHub hooks, env, deploy keys et runners inspectés.
+- Auth : 373 comptes sauvegardés en privé, structure et unicité vérifiées ; sauvegarde source tar entièrement relue. Ni comptes clients ni sauvegardes privées dans le pack.
+- Firebase : domaines nouvel email/site autorisés ; Remote Config vide, extensions et listes App Check/OAuth personnalisé/SAML inspectées. Certaines surfaces de compte restent à vérifier.
+- PostHog : owner vendeur, 2 clés personnelles All access, 4 OAuth apps, 2 flags (essai annuel actif, ancien prix désactivé), forfait gratuit affiché ; dépendances et sortie vendeur documentées.
+- Correction analytics source : plus de replay ni interaction capture ; whitelist des propriétés techniques/commerciales ; prénom retiré. Test isolé Foundation sur la vraie fonction et parsing Swift réussis. Aucun test ni compilation de l’application exécuté.
+- Prochain build 40 ; ancien 39 conservé mais non final. Apple version 1.13 est REJECTED avec build 38 attaché ; rapport readiness sans erreurs n’est pas une validation du nouveau code.
+- Confidentialité FR/EN publiée et contrôlée HTTP200 ; PostHog/AppsFlyer désormais décrits. Autres projets et ancien domaine conservés.
+- Pack interne filtré : 1 175 fichiers, pas de Git history, ancien website, sauvegardes privées ou configs client réelles ; clé de compte AppsFlyer remplacée seulement dans le snapshot. Archive et empreinte vérifiées.
+- 311 médias inventoriés ; procédure de transfert, périmètre des actifs/exclusions, exploitation et tableau des coûts à compléter préparés.
+- Projet Vercel useprocess créé par erreur supprimé ; absence confirmée ; pas de hook GitHub ajouté restant.
+
+RESTANT SANS ACQUÉREUR
+- iPhone absent : compiler build 40 sur téléphone, installer, tester sandbox/restauration/scan/consentements et vrai iPad. Aucun simulateur.
+- AppsFlyer : console reportée par propriétaire ; source SDK active connue.
+- Droits des médias/musiques/polices, propriété marque et chiffres/coûts : justificatifs réels nécessaires ; aucune certification ou chiffre inventé.
+- Tester restauration cloud dans environnement isolé, permissions provider/capacités Apple et déclarations privacy finales ; ne pas importer des données clients en production pour tester.
+- Pas de soumission Apple avant nouvel accord propriétaire.
+
+RESTANT AVEC ACQUÉREUR
+Identité/contrat, comptes destination et Team ID ; transferts Apple/Sign in with Apple/RevenueCat, Google facturation et IAM, domaine/mail/Vercel, analytics/social ; remplacement progressif des credentials puis suppression accès/recovery/2FA/cartes vendeur après recette.
+
+EMPLACEMENTS
+Registre : REGISTRE_PASSATION.json ; procédure : PROCEDURE_TRANSFERT.txt.
+Pack interne : /Users/amine/.codex/artifacts/process-debloat/preparation-2026-10-07-final.
+Les documents historiques du dossier peuvent contenir des états antérieurs ; cet état et RELEASE_PREPARATION.json précisent les changements du jour.

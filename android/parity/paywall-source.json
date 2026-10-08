@@ -1,0 +1,15 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/useprocess/Sport/Paywall/PaywallView.swift": "37a1f324c816a68a4c59eedbb9f2b7d65cc78b7c48e6a284800157fe0f1b595b",
+    "/Users/amine/Developer/useprocess/useprocess/Sport/Paywall/PaywallBevelDesign.swift": "0718535cbe2a6c1957fc88da99f28e56559ebd4eab31e22182bda93747722a7e"
+  },
+  "nativeFiles": [
+    "ProcessBillingModel.kt",
+    "ProcessBillingActions.kt",
+    "ProcessSurfacePalette.kt",
+    "ProcessMotionPreferences.kt",
+    "ProcessPaywall.kt"
+  ],
+  "contract": "Prices must come from live Play ProductDetails through ProcessBillingOffer; missing product/account disables purchase. Supply purchase/restore operations which verify backend/Play entitlement before returning VerifiedAccess(accountKey). Pending,cancelled,failed and empty-restoration outcomes never unlock access. Only the current account may complete; duplicate operations and duplicate completion are blocked. Host owns Play Billing,acknowledgement,receipt verification,identity migration and live product loading. No Play products or purchase/restore backend are connected in the development gallery. Preserves current static5feature list,31sp/-0.45tracking title,original theme gradients,88dp annual/short-plan segments,5dp inset,30/24radii,56dp CTA and0.985press scale. Display billingDescription from real product rather than generic renewal wording; annual comparison is optional and host-verified. Source close delay5seconds,400msdebounce,first shake and subsequent offer/exit adapted. Retention is offered only when a live lifetime offer exists; copy describes a purchase rather than the obsolete luck/wheel promise. Android busy operations block close. No developer premium bypass,marketing notification scheduling,referral backend or automatic entitlement query. Supply optional real scan hero. SFsymbols,glass,CTA glow,matched spring,retention overlay and physical/iOS parity incomplete.",
+  "billingIntegration": "not connected; preview only"
+}

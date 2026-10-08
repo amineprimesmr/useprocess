@@ -1,0 +1,17 @@
+{
+  "recordedAt": "2026-10-08T02:41:34.347508+00:00",
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/Plan/PlanHomeUpgradeProCard.swift": "09e1de7568c0410f19ec815ad82e8c6a843b5dc544d57fd5940f1415124f499f",
+    "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Brand/ProcessAppIcon.imageset/ProcessAppIcon.png": "48b5d74aa3025c68045d6cc82b15836961993a790736726aed60f17ebdf9f276",
+    "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/welcome_mark.png": "48b5d74aa3025c68045d6cc82b15836961993a790736726aed60f17ebdf9f276",
+    "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/UI/PlanHomeUpgradeNebula.imageset/PlanHomeUpgradeNebula.png": "2f2ee49d12df5580dea1dabd57df518a8560a6a2f8336b3bea4cd7c1ca5564ca",
+    "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/welcome_nebula.png": "2f2ee49d12df5580dea1dabd57df518a8560a6a2f8336b3bea4cd7c1ca5564ca",
+    "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/UI/PlanHomeUpgradeDollar.imageset/PlanHomeUpgradeDollar.png": "9d7a3c26043ea5aaf7e27c6c8afb5d425e68b771b4ed1e409444c3b0a373b094",
+    "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/welcome_dollar.png": "9d7a3c26043ea5aaf7e27c6c8afb5d425e68b771b4ed1e409444c3b0a373b094"
+  },
+  "originalPixelsPreserved": true,
+  "sourceBasis": "Live Process PlanHomeUpgradeProCard, not the distinct post-payment explainer screens",
+  "build": "pending",
+  "visual": "unverified",
+  "motion": "unverified"
+}

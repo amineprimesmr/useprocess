@@ -614,11 +614,12 @@ struct FaceScanAnalysisHeroView: View {
 
     private func resolveVideoWithRetry() async {
         for _ in 0..<80 {
+            guard !Task.isCancelled else { return }
             if let url = FaceScanImageStore.resolvedVideoURL(forScanId: payload.scanId) {
                 resolvedVideoURL = url
                 return
             }
-            try? await Task.sleep(for: .milliseconds(60))
+            do { try await Task.sleep(for: .milliseconds(60)) } catch { return }
         }
     }
 }

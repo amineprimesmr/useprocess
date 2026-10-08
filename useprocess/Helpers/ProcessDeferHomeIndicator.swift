@@ -162,7 +162,8 @@ final class ProcessDeferHomeHostingController: UIViewController, UIGestureRecogn
 
 private final class ProcessDeferHomePassthroughView: UIView {
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        let edgeHeight: CGFloat = 80
+        // Zone de l'indicateur Home uniquement : à 80 pt cette vue avalait la moitié basse du CONTINUER (posé à 50 pt).
+        let edgeHeight: CGFloat = 22
         guard bounds.height > 0, point.y >= bounds.height - edgeHeight else { return nil }
         return super.hitTest(point, with: event)
     }
@@ -178,7 +179,7 @@ extension View {
         )
         .overlay(alignment: .bottom) {
             Color.clear
-                .frame(height: 36)
+                .frame(height: 22)
                 .contentShape(Rectangle())
                 .gesture(
                     DragGesture(minimumDistance: 10)

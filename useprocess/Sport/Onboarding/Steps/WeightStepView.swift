@@ -19,37 +19,28 @@ struct WeightStepView: View {
     @State private var unit: WeightUnit = ProcessMeasurementPreference.prefersImperial ? .lbs : .kg
     @State private var weightString: String = ""
     @State private var didBootstrap = false
+    /// Changement d'unité en cours : le kg reste la source de vérité, on ne recalcule pas depuis l'affichage arrondi.
+    @State private var isConvertingUnit = false
     @FocusState private var isTextFieldFocused: Bool
 
     enum WeightUnit {
         case kg
         case lbs
-
-        var displayName: String {
-            switch self {
-            case .kg: return "KG"
-            case .lbs: return "LBS"
-            }
-        }
     }
+
+    private static let kgPerLb = 0.453592
+    private static let maxInputLength = 5
 
     private var displayWeight: Double {
         if weightString.isEmpty {
             return 0
         }
         let value = Double(weightString) ?? 0
-        return unit == .kg ? value : value * 0.453592
-    }
-
-    private var displayWeightString: String {
-        if weightString.isEmpty {
-            return ""
-        }
-        return weightString
+        return unit == .kg ? value : value * Self.kgPerLb
     }
 
     private var numericFieldWidth: CGFloat {
-        let sample = displayWeightString.isEmpty ? "0" : displayWeightString
+        let sample = weightString.isEmpty ? "0" : weightString
         let font = UIFont.systemFont(ofSize: 56, weight: .bold)
         let measured = (sample as NSString).size(withAttributes: [.font: font]).width
         return ceil(max(42, measured + 10))
@@ -131,7 +122,11 @@ struct WeightStepView: View {
                 return
             }
 
-            selectedWeight = displayWeight
+            if isConvertingUnit {
+                isConvertingUnit = false
+            } else {
+                selectedWeight = displayWeight
+            }
             // Valider en kg (pas la valeur brute LBS) — sinon Continue US faux positifs/négatifs.
             onValidationChanged?(OnboardingViewModel.isPlausibleWeight(displayWeight))
         }
@@ -188,8 +183,10 @@ struct WeightStepView: View {
         var result = ""
         var sawSeparator = false
         for character in raw {
-            if character.isNumber {
-                result.append(character)
+            guard result.count < maxInputLength else { break }
+            // `wholeNumberValue` convertit aussi les chiffres arabes/hindi, que `Double()` ne sait pas lire.
+            if let digit = character.wholeNumberValue, digit < 10 {
+                result.append(String(digit))
             } else if (character == "." || character == ","), !sawSeparator {
                 result.append(".")
                 sawSeparator = true
@@ -217,7 +214,7 @@ struct WeightStepView: View {
         if unit == .kg {
             weightString = formatWeight(weightKg)
         } else {
-            weightString = formatWeight(weightKg * 2.20462)
+            weightString = formatWeight(weightKg / Self.kgPerLb)
         }
     }
 
@@ -230,24 +227,15 @@ struct WeightStepView: View {
     }
 
     private func convertWeight() {
-        if selectedWeight > 0 {
-            if unit == .kg {
-                weightString = "\(Int(selectedWeight))"
-            } else {
-                let lbs = selectedWeight * 2.20462
-                weightString = "\(Int(lbs))"
-            }
-        } else if !weightString.isEmpty {
-            let currentValue = Double(weightString) ?? 0
-            if unit == .kg {
-                let kg = currentValue * 0.453592
-                weightString = "\(Int(kg))"
-                selectedWeight = kg
-            } else {
-                let lbs = currentValue * 2.20462
-                weightString = "\(Int(lbs))"
-                selectedWeight = currentValue
-            }
+        guard selectedWeight > 0 else { return }
+        let previous = weightString
+        isConvertingUnit = true
+        populateWeightString(from: selectedWeight)
+        if weightString == previous {
+            isConvertingUnit = false
+        } else {
+            // Filet : si `onChange` ne passe pas (double bascule dans le même rendu), on libère quand même.
+            DispatchQueue.main.async { isConvertingUnit = false }
         }
     }
 

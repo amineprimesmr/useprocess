@@ -1,0 +1,13 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-122938848-426565817/CustomScrollInteraction/CustomScrollInteraction/ContentView.swift": "dcaa432422eb768976b1cb74cb9c7ce627dbb0443a01c82265e1cd3b6ae8235a",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-122938848-426565817/CustomScrollInteraction/CustomScrollInteraction/Model/Contact.swift": "4df6fdd8c63690bdc255aaf6273e81d316b518026d0dc094e2ad23b36206bcfa",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-122938848-426565817/CustomScrollInteraction/CustomScrollInteraction/CustomScrollInteractionApp.swift": "42b754c934a0fe4dbeaf5a287fbe8ef9354c9979e85304a6d7fb9fbf18058308"
+  },
+  "originalContactCount": 91,
+  "nativeFiles": [
+    "ScrollIndicatorModel.kt",
+    "TenKScrollIndicator.kt"
+  ],
+  "contract": "Use actual ScrollState and host-derived activeLabel inside the real bounded viewport. Relative drag preserves start progress,clamps to content range and updates scrolling synchronously. Visual track8dp inside48dp accessible hit area,40dp thumb,half-viewport height in gallery,50dp label popup lifted50dp during drag,250ms fade/lift. SetProgress semantics enables accessibility scrolling. Original91synthetic contact names and section ordering retained in development gallery; no address-book access. Empty/nonfinite ranges never divide by zero. Source native gradient/shadow,zero-distance gesture onset,rounded glyphs and physical/iOS comparison remain unverified."
+}

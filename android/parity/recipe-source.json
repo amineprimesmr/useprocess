@@ -1,0 +1,1331 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/useprocess/WelcomePlan/ProcessDebloatMealLibrary.swift": "c9ffed0f827aec29bb90c76eacc8a293e5d22cee3601bec9a7656c9a93a0f0d9",
+    "/Users/amine/Developer/useprocess/useprocess/WelcomePlan/ProcessLocalizedMealNames.swift": "6853c7c1cd41818e6ffe86f6e1c0430a3e3daffaf5d8fef5297952a2685db2d4",
+    "/Users/amine/Developer/useprocess/useprocess/WelcomePlan/ProcessLocalizedMealContentCatalog.swift": "759ebc2ede3f18e696535a160479b97832f0c496d77ab809caa20ae6045c1c1b"
+  },
+  "recipeCount": 18,
+  "recipes": [
+    {
+      "id": "meal_debloat_eggs_banana_kiwi",
+      "name": [
+        "Œufs Brouillés Banane Kiwi",
+        "Scrambled Eggs Banana Kiwi"
+      ],
+      "slot": "breakfast",
+      "section": "breakfast",
+      "summary": [
+        "Le plus simple — 3 œufs, banane et kiwi potassium.",
+        "The simplest — 3 eggs, banana, and potassium-rich kiwi."
+      ],
+      "ingredients": [
+        {
+          "name": [
+            "Œufs plein air",
+            "Pasture-raised eggs"
+          ],
+          "quantity": [
+            "3",
+            "3"
+          ],
+          "role": "Protéine"
+        },
+        {
+          "name": [
+            "Banane",
+            "Banana"
+          ],
+          "quantity": [
+            "1",
+            "1"
+          ],
+          "role": "Glucide"
+        },
+        {
+          "name": [
+            "Kiwi",
+            "Kiwi"
+          ],
+          "quantity": [
+            "1",
+            "1"
+          ],
+          "role": "Glucide"
+        }
+      ],
+      "prepMinutes": 10,
+      "preparation": [
+        "1. Casse les 3 œufs dans un bol, bats-les à la fourchette avec poivre (sans sel).\n2. Fais chauffer une poêle à feu moyen avec un filet d’huile d’olive.\n3. Verse les œufs et brouille 4 à 5 min en remuant jusqu’à texture crémeuse.\n4. Coupe la banane et le kiwi en rondelles, puis sers à côté des œufs.",
+        "1. Crack the 3 eggs into a bowl and whisk with a fork with pepper (no salt).\n2. Heat a skillet over medium with a drizzle of olive oil.\n3. Pour in the eggs and scramble 4 to 5 min, stirring until creamy.\n4. Slice the banana and kiwi into rounds, then serve next to the eggs."
+      ],
+      "tip": [
+        "Zéro sel dans la poêle — poivre et herbes suffisent.",
+        "No salt in the pan — pepper and herbs are enough."
+      ],
+      "image": "meal_debloat_eggs_banana_kiwi"
+    },
+    {
+      "id": "meal_debloat_yogurt_blueberry",
+      "name": [
+        "Yaourt Myrtilles Miel",
+        "Yogurt Blueberries Honey"
+      ],
+      "slot": "breakfast",
+      "section": "breakfast",
+      "summary": [
+        "Petit-déj style sucré — yaourt ou kéfir nature, myrtilles et une pointe de miel.",
+        "Sweet-style breakfast — plain yogurt or kefir, blueberries, and a touch of honey."
+      ],
+      "ingredients": [
+        {
+          "name": [
+            "Yaourt nature ou kéfir nature",
+            "Plain yogurt or plain kefir"
+          ],
+          "quantity": [
+            "200 g",
+            "200 g"
+          ],
+          "role": "Protéine"
+        },
+        {
+          "name": [
+            "Myrtilles",
+            "Blueberries"
+          ],
+          "quantity": [
+            "80 g",
+            "80 g"
+          ],
+          "role": "Glucide"
+        },
+        {
+          "name": [
+            "Miel",
+            "Honey"
+          ],
+          "quantity": [
+            "1 c. à café",
+            "1 tsp"
+          ],
+          "role": "Autre"
+        },
+        {
+          "name": [
+            "Amandes non salées",
+            "Unsalted almonds"
+          ],
+          "quantity": [
+            "10 g",
+            "10 g"
+          ],
+          "role": "Gras"
+        }
+      ],
+      "prepMinutes": 5,
+      "preparation": [
+        "1. Verse le yaourt nature ou le kéfir dans un bol.\n2. Ajoute les myrtilles rincées sur le dessus.\n3. Verse 1 c. à café de miel en filet léger.\n4. Concasse les amandes non salées et parsème avant de manger.",
+        "1. Spoon the plain yogurt or kefir into a bowl.\n2. Add the rinsed blueberries on top.\n3. Drizzle 1 tsp honey lightly.\n4. Chop the unsalted almonds and sprinkle on before eating."
+      ],
+      "tip": [
+        "Une seule c. à café de miel — le goût sucré vient surtout des myrtilles.",
+        "Just one teaspoon of honey — the sweetness mostly comes from the blueberries."
+      ],
+      "image": "meal_debloat_yogurt_blueberry"
+    },
+    {
+      "id": "meal_debloat_salmon_avocado_bowl",
+      "name": [
+        "Bowl Saumon Avocat Concombre",
+        "Salmon Avocado Cucumber Bowl"
+      ],
+      "slot": "breakfast",
+      "section": "breakfast",
+      "summary": [
+        "Brunch salé drainant — saumon frais (jamais fumé), avocat et concombre.",
+        "Savory draining brunch — fresh salmon (never smoked), avocado, and cucumber."
+      ],
+      "ingredients": [
+        {
+          "name": [
+            "Saumon frais",
+            "Fresh salmon"
+          ],
+          "quantity": [
+            "120 g",
+            "120 g"
+          ],
+          "role": "Protéine"
+        },
+        {
+          "name": [
+            "Avocat mûr",
+            "Ripe avocado"
+          ],
+          "quantity": [
+            "1/2",
+            "1/2"
+          ],
+          "role": "Gras"
+        },
+        {
+          "name": [
+            "Concombre",
+            "Cucumber"
+          ],
+          "quantity": [
+            "1/2",
+            "1/2"
+          ],
+          "role": "Légume"
+        },
+        {
+          "name": [
+            "Citron + aneth ou ciboulette",
+            "Lemon + dill or chives"
+          ],
+          "quantity": [
+            "1/2 citron",
+            "1/2 lemon"
+          ],
+          "role": "Autre"
+        }
+      ],
+      "prepMinutes": 12,
+      "preparation": [
+        "1. Fais chauffer une poêle à feu moyen-vif avec un filet d’huile d’olive.\n2. Poêle le saumon frais 3 à 4 min par face, sans sel — poivre et herbes seulement.\n3. Coupe l’avocat en lamelles et le concombre en rondelles.\n4. Dresse le saumon, l’avocat et le concombre dans un bol.\n5. Arrose de citron et parsème d’aneth ou de ciboulette.",
+        "1. Heat a skillet over medium-high with a drizzle of olive oil.\n2. Pan-sear the fresh salmon 3 to 4 min per side, no salt — pepper and herbs only.\n3. Slice the avocado into strips and the cucumber into rounds.\n4. Plate the salmon, avocado, and cucumber in a bowl.\n5. Finish with lemon and sprinkle with dill or chives."
+      ],
+      "tip": [
+        "Saumon fumé = sodium élevé — toujours frais.",
+        "Smoked salmon = high sodium — always use fresh."
+      ],
+      "image": "meal_debloat_salmon_avocado_bowl"
+    },
+    {
+      "id": "meal_debloat_chicken_sweet_potato",
+      "name": [
+        "Poulet Patate Douce Brocoli",
+        "Chicken Sweet Potato Broccoli"
+      ],
+      "slot": "lunch",
+      "section": "lunch",
+      "summary": [
+        "Classique dense — poulet doré, tubercule rôti et brocoli grillé.",
+        "Dense classic — golden chicken, roasted sweet potato, and grilled broccoli."
+      ],
+      "ingredients": [
+        {
+          "name": [
+            "Blanc de poulet (label rouge)",
+            "Chicken breast (quality label)"
+          ],
+          "quantity": [
+            "180 g",
+            "180 g"
+          ],
+          "role": "Protéine"
+        },
+        {
+          "name": [
+            "Patate douce rôtie",
+            "Roasted sweet potato"
+          ],
+          "quantity": [
+            "220 g",
+            "220 g"
+          ],
+          "role": "Glucide"
+        },
+        {
+          "name": [
+            "Brocoli + courgette, huile infusée à l'ail",
+            "Broccoli + zucchini, garlic-infused oil"
+          ],
+          "quantity": [
+            "100 g + 100 g",
+            "100 g + 100 g"
+          ],
+          "role": "Légume"
+        },
+        {
+          "name": [
+            "Huile d'olive extra vierge",
+            "Extra-virgin olive oil"
+          ],
+          "quantity": [
+            "1 c. à soupe",
+            "1 tbsp"
+          ],
+          "role": "Gras"
+        }
+      ],
+      "prepMinutes": 30,
+      "preparation": [
+        "1. Préchauffe le four à 200°C.\n2. Coupe la patate douce, le brocoli et la courgette en morceaux réguliers.\n3. Mélange les légumes avec 1 c. à soupe d’huile d’olive, herbes et huile infusée à l’ail (sans sel).\n4. Étale sur une plaque et rôtis 22 min à 200°C en remuant à mi-cuisson.\n5. Pendant ce temps, poêle le blanc de poulet 6 min de chaque côté à feu moyen.\n6. Laisse reposer le poulet 2 min, tranche-le, puis dresse avec les légumes rôtis.",
+        "1. Preheat the oven to 400°F (200°C).\n2. Cut the sweet potato, broccoli, and zucchini into even pieces.\n3. Toss the vegetables with 1 tbsp olive oil, herbs, and garlic-infused oil (no salt).\n4. Spread on a sheet pan and roast 22 min at 400°F, stirring halfway.\n5. Meanwhile, pan-sear the chicken breast 6 min per side over medium heat.\n6. Rest the chicken 2 min, slice it, then plate with the roasted vegetables."
+      ],
+      "tip": [
+        "Herbes et citron plutôt que sel sur le poulet.",
+        "Herbs and lemon instead of salt on the chicken."
+      ],
+      "image": "meal_debloat_chicken_sweet_potato"
+    },
+    {
+      "id": "meal_debloat_sweet_potato_meat_avocado",
+      "name": [
+        "Patate Douce Viande Avocat",
+        "Sweet Potato Meat Avocado"
+      ],
+      "slot": "lunch",
+      "section": "lunch",
+      "summary": [
+        "Patate douce rôtie, viande hachée maigre, pico frais et avocat en éventail.",
+        "Roasted sweet potato, lean ground meat, fresh pico, and fanned avocado."
+      ],
+      "ingredients": [
+        {
+          "name": [
+            "Patate douce (très grosse ou 2 moyennes)",
+            "Sweet potato (1 large or 2 medium)"
+          ],
+          "quantity": [
+            "1",
+            "1"
+          ],
+          "role": "Glucide"
+        },
+        {
+          "name": [
+            "Viande hachée maigre (dinde, poulet ou bœuf 5%)",
+            "Lean ground meat (turkey, chicken, or 5% beef)"
+          ],
+          "quantity": [
+            "170 g",
+            "170 g"
+          ],
+          "role": "Protéine"
+        },
+        {
+          "name": [
+            "Avocat bien mûr",
+            "Very ripe avocado"
+          ],
+          "quantity": [
+            "1",
+            "1"
+          ],
+          "role": "Gras"
+        },
+        {
+          "name": [
+            "Salade pico (tomates, oignon rouge, poivron, coriandre)",
+            "Pico salad (tomatoes, red onion, bell pepper, cilantro)"
+          ],
+          "quantity": [
+            "250 g",
+            "250 g"
+          ],
+          "role": "Légume"
+        },
+        {
+          "name": [
+            "Citron + ail + cumin + huile d'olive",
+            "Lemon + garlic + cumin + olive oil"
+          ],
+          "quantity": [
+            "1 c. à café",
+            "1 tsp"
+          ],
+          "role": "Gras"
+        }
+      ],
+      "prepMinutes": 50,
+      "preparation": [
+        "1. Préchauffe le four à 200°C. Lave la patate douce et coupe-la en 2 dans le sens de la longueur.\n2. Enfourne 40–50 min (face coupée vers le haut ou le bas) jusqu’à ce qu’elle soit ultra-tendre à la fourchette.\n3. Fais revenir l’ail et le cumin dans une goutte d’huile d’olive, puis ajoute la viande hachée et cuis-la bien en l’émiettant.\n4. Hors du feu, ajoute un peu de jus de citron et du poivre. Réserve.\n5. Coupe tomates, oignon rouge et poivron en tout petits dés. Mélange avec coriandre ou persil, le reste de citron, une pincée de cumin et poivre. Laisse mariner 5–10 min.\n6. Pose les 2 moitiés de patate côte à côte, écrase légèrement la chair. Répartis la viande chaude, puis la salade. Dispose l’avocat en tranches fines en éventail au centre. Finis avec un filet de citron et un peu d’herbes.",
+        "1. Preheat the oven to 400°F (200°C). Wash the sweet potato and halve it lengthwise.\n2. Roast 40–50 min (cut side up or down) until fork-tender.\n3. Sauté garlic and cumin in a drop of olive oil, then add the ground meat and cook through, crumbling it.\n4. Off heat, add a little lemon juice and pepper. Set aside.\n5. Dice tomatoes, red onion, and bell pepper very small. Mix with cilantro or parsley, remaining lemon, a pinch of cumin, and pepper. Marinate 5–10 min.\n6. Place both sweet potato halves side by side and lightly mash the flesh. Top with hot meat, then the pico. Fan thin avocado slices in the center. Finish with lemon and herbs."
+      ],
+      "tip": [
+        "1 grosse portion ou 2 moyennes — sel très léger, le citron et le cumin portent le goût.",
+        "1 large portion or 2 medium — go very light on salt; lemon and cumin carry the flavor."
+      ],
+      "image": "meal_debloat_sweet_potato_meat_avocado"
+    },
+    {
+      "id": "meal_debloat_chicken_avocado_salad",
+      "name": [
+        "Salade Poulet Avocat Composée",
+        "Chicken Avocado Mixed Salad"
+      ],
+      "slot": "lunch",
+      "section": "lunch",
+      "summary": [
+        "Grande salade protéinée — avocat, concombre, roquette, tomate.",
+        "Big protein salad — avocado, cucumber, arugula, tomato."
+      ],
+      "ingredients": [
+        {
+          "name": [
+            "Blanc de poulet grillé (label rouge)",
+            "Grilled chicken breast (quality label)"
+          ],
+          "quantity": [
+            "180 g",
+            "180 g"
+          ],
+          "role": "Protéine"
+        },
+        {
+          "name": [
+            "Avocat mûr",
+            "Ripe avocado"
+          ],
+          "quantity": [
+            "1/2",
+            "1/2"
+          ],
+          "role": "Gras"
+        },
+        {
+          "name": [
+            "Roquette + tomates cerises",
+            "Arugula + cherry tomatoes"
+          ],
+          "quantity": [
+            "150 g",
+            "150 g"
+          ],
+          "role": "Légume"
+        },
+        {
+          "name": [
+            "Concombre + citron + huile d'olive",
+            "Cucumber + lemon + olive oil"
+          ],
+          "quantity": [
+            "150 g",
+            "150 g"
+          ],
+          "role": "Légume"
+        }
+      ],
+      "prepMinutes": 18,
+      "preparation": [
+        "1. Fais chauffer une poêle ou un grill à feu moyen-vif.\n2. Cuire le blanc de poulet 6 min de chaque côté, puis laisse reposer 2 min.\n3. Tranche le poulet en lanières.\n4. Dans un grand bol, mets la roquette, les tomates cerises et le concombre.\n5. Ajoute l’avocat en lamelles et le poulet.\n6. Prépare une vinaigrette citron + huile d’olive maison, arrose et mélange.",
+        "1. Heat a skillet or grill over medium-high.\n2. Cook the chicken breast 6 min per side, then rest 2 min.\n3. Slice the chicken into strips.\n4. In a large bowl, add arugula, cherry tomatoes, and cucumber.\n5. Add avocado slices and the chicken.\n6. Whisk a homemade lemon + olive oil dressing, drizzle, and toss."
+      ],
+      "tip": [
+        "Pas de sauce salade du commerce (sodium + sucre).",
+        "No store-bought salad dressing (sodium + sugar)."
+      ],
+      "image": "meal_debloat_chicken_avocado_salad"
+    },
+    {
+      "id": "meal_debloat_salmon_quinoa_salad",
+      "name": [
+        "Saumon Quinoa Salade Concombre",
+        "Salmon Quinoa Cucumber Salad"
+      ],
+      "slot": "lunch",
+      "section": "lunch",
+      "summary": [
+        "Oméga-3, quinoa complet et salade fraîche menthe-citron.",
+        "Omega-3s, whole quinoa, and a fresh mint-lemon salad."
+      ],
+      "ingredients": [
+        {
+          "name": [
+            "Pavé de saumon frais",
+            "Fresh salmon fillet"
+          ],
+          "quantity": [
+            "170 g",
+            "170 g"
+          ],
+          "role": "Protéine"
+        },
+        {
+          "name": [
+            "Quinoa cuit",
+            "Cooked quinoa"
+          ],
+          "quantity": [
+            "160 g",
+            "160 g"
+          ],
+          "role": "Glucide"
+        },
+        {
+          "name": [
+            "Salade concombre menthe",
+            "Cucumber mint salad"
+          ],
+          "quantity": [
+            "200 g",
+            "200 g"
+          ],
+          "role": "Légume"
+        },
+        {
+          "name": [
+            "Huile d'olive + citron",
+            "Olive oil + lemon"
+          ],
+          "quantity": [
+            "1 c. à soupe",
+            "1 tbsp"
+          ],
+          "role": "Gras"
+        }
+      ],
+      "prepMinutes": 25,
+      "preparation": [
+        "1. Rince le quinoa, puis cuis-le selon le paquet. Égoutte et laisse tiédir.\n2. Coupe le concombre, ciseèle la menthe, mélange avec citron et huile d’olive.\n3. Fais chauffer une poêle à feu moyen-vif.\n4. Poêle le saumon 4 min peau vers le bas, puis 2 min côté chair (sans sel).\n5. Dresse le quinoa, la salade concombre-menthe et le saumon dans l’assiette.",
+        "1. Rinse the quinoa, then cook per package. Drain and let cool slightly.\n2. Slice the cucumber, chop the mint, and toss with lemon and olive oil.\n3. Heat a skillet over medium-high.\n4. Pan-sear the salmon 4 min skin-side down, then 2 min on the flesh side (no salt).\n5. Plate the quinoa, cucumber-mint salad, and salmon."
+      ],
+      "tip": [
+        "Change du riz — quinoa + salade = variété et fibres.",
+        "Switch it up from rice — quinoa + salad = variety and fiber."
+      ],
+      "image": "meal_debloat_salmon_quinoa_salad"
+    },
+    {
+      "id": "meal_debloat_turkey_potato_salad",
+      "name": [
+        "Dinde Pommes Salade Verte",
+        "Turkey Potatoes Green Salad"
+      ],
+      "slot": "lunch",
+      "section": "lunch",
+      "summary": [
+        "Dinde poêlée, pommes rôties et salade verte avocat.",
+        "Pan-seared turkey, roasted potatoes, and green salad with avocado."
+      ],
+      "ingredients": [
+        {
+          "name": [
+            "Escalope de dinde",
+            "Turkey cutlet"
+          ],
+          "quantity": [
+            "180 g",
+            "180 g"
+          ],
+          "role": "Protéine"
+        },
+        {
+          "name": [
+            "Pommes de terre fermières rôties",
+            "Roasted farm potatoes"
+          ],
+          "quantity": [
+            "250 g",
+            "250 g"
+          ],
+          "role": "Glucide"
+        },
+        {
+          "name": [
+            "Salade verte + avocat",
+            "Green salad + avocado"
+          ],
+          "quantity": [
+            "180 g",
+            "180 g"
+          ],
+          "role": "Légume"
+        },
+        {
+          "name": [
+            "Huile d'olive + citron",
+            "Olive oil + lemon"
+          ],
+          "quantity": [
+            "1 c. à soupe",
+            "1 tbsp"
+          ],
+          "role": "Gras"
+        }
+      ],
+      "prepMinutes": 35,
+      "preparation": [
+        "1. Préchauffe le four à 200°C.\n2. Coupe les pommes de terre en quartiers, mélange avec thym et huile d’olive.\n3. Rôtis 25 min à 200°C jusqu’à doré.\n4. Poêle la dinde 5 min de chaque côté à feu moyen.\n5. Prépare la salade verte et l’avocat en lamelles.\n6. Finis avec citron et huile d’olive, puis dresse dinde, pommes et salade.",
+        "1. Preheat the oven to 400°F (200°C).\n2. Cut the potatoes into wedges and toss with thyme and olive oil.\n3. Roast 25 min at 400°F until golden.\n4. Pan-sear the turkey 5 min per side over medium heat.\n5. Prep the green salad and avocado slices.\n6. Finish with lemon and olive oil, then plate turkey, potatoes, and salad."
+      ],
+      "tip": [
+        "Journée rétention : sel modéré, citron sur la dinde.",
+        "Retention day: moderate salt, lemon on the turkey."
+      ],
+      "image": "meal_debloat_turkey_potato_salad"
+    },
+    {
+      "id": "meal_debloat_beef_rice_peppers",
+      "name": [
+        "Bœuf Haché Riz Poivrons",
+        "Ground Beef Rice Peppers"
+      ],
+      "slot": "lunch",
+      "section": "lunch",
+      "summary": [
+        "Bœuf 5% frais, riz basmati et poivrons rôtis — pas de patate douce.",
+        "Fresh 5% ground beef, basmati rice, and roasted peppers — no sweet potato."
+      ],
+      "ingredients": [
+        {
+          "name": [
+            "Bœuf haché 5% MG frais",
+            "Fresh 5% ground beef"
+          ],
+          "quantity": [
+            "200 g",
+            "200 g"
+          ],
+          "role": "Protéine"
+        },
+        {
+          "name": [
+            "Riz basmati semi-complet",
+            "Brown basmati rice"
+          ],
+          "quantity": [
+            "180 g cuit",
+            "180 g cooked"
+          ],
+          "role": "Glucide"
+        },
+        {
+          "name": [
+            "Poivrons + fenouil rôtis",
+            "Roasted peppers + fennel"
+          ],
+          "quantity": [
+            "220 g",
+            "220 g"
+          ],
+          "role": "Légume"
+        },
+        {
+          "name": [
+            "Huile d'olive extra vierge",
+            "Extra-virgin olive oil"
+          ],
+          "quantity": [
+            "1 c. à soupe",
+            "1 tbsp"
+          ],
+          "role": "Gras"
+        }
+      ],
+      "prepMinutes": 30,
+      "preparation": [
+        "1. Préchauffe le four à 200°C et lance la cuisson du riz basmati.\n2. Coupe poivrons et fenouil, mélange avec huile d’olive et herbes.\n3. Rôtis les légumes 18 min à 200°C.\n4. Poêle le bœuf haché 6 min à feu vif en émiettant bien (sans sauce salée).\n5. Dresse riz, bœuf et légumes, puis parsème d’herbes fraîches.",
+        "1. Preheat the oven to 400°F (200°C) and start the basmati rice.\n2. Cut peppers and fennel, toss with olive oil and herbs.\n3. Roast the vegetables 18 min at 400°F.\n4. Pan-cook the ground beef 6 min over high heat, crumbling well (no salty sauce).\n5. Plate rice, beef, and vegetables, then finish with fresh herbs."
+      ],
+      "tip": [
+        "Herbes et huile infusée à l'ail — pas de sauce taco ou tomate salée.",
+        "Herbs and garlic-infused oil — no taco sauce or salty tomato sauce."
+      ],
+      "image": "meal_debloat_beef_rice_peppers"
+    },
+    {
+      "id": "meal_debloat_white_fish_green_salad",
+      "name": [
+        "Lieu Noir Haricots Salade Fenouil",
+        "Pollock Green Beans Fennel Salad"
+      ],
+      "slot": "lunch",
+      "section": "lunch",
+      "summary": [
+        "Poisson blanc léger, haricots verts et salade fenouil-concombre.",
+        "Light white fish, green beans, and fennel-cucumber salad."
+      ],
+      "ingredients": [
+        {
+          "name": [
+            "Filet de lieu noir frais",
+            "Fresh pollock fillet"
+          ],
+          "quantity": [
+            "190 g",
+            "190 g"
+          ],
+          "role": "Protéine"
+        },
+        {
+          "name": [
+            "Haricots verts poêlés",
+            "Sautéed green beans"
+          ],
+          "quantity": [
+            "200 g",
+            "200 g"
+          ],
+          "role": "Légume"
+        },
+        {
+          "name": [
+            "Salade fenouil + concombre",
+            "Fennel + cucumber salad"
+          ],
+          "quantity": [
+            "150 g",
+            "150 g"
+          ],
+          "role": "Légume"
+        },
+        {
+          "name": [
+            "Huile d'olive + citron",
+            "Olive oil + lemon"
+          ],
+          "quantity": [
+            "1 c. à soupe",
+            "1 tbsp"
+          ],
+          "role": "Gras"
+        }
+      ],
+      "prepMinutes": 20,
+      "preparation": [
+        "1. Arrose le lieu de citron et d’herbes (sans sel).\n2. Poêle le filet 3 min de chaque côté à feu moyen.\n3. Poêle les haricots verts 5 min avec un filet d’huile infusée à l’ail.\n4. Tranche finement le fenouil et le concombre pour la salade.\n5. Dresse poisson, haricots et salade, puis arrose d’huile d’olive et citron.",
+        "1. Dress the pollock with lemon and herbs (no salt).\n2. Pan-sear the fillet 3 min per side over medium heat.\n3. Sauté the green beans 5 min with a drizzle of garlic-infused oil.\n4. Thinly slice fennel and cucumber for the salad.\n5. Plate fish, beans, and salad, then drizzle with olive oil and lemon."
+      ],
+      "tip": [
+        "Poisson blanc le soir aussi possible — très léger en sel.",
+        "White fish works in the evening too — very light on salt."
+      ],
+      "image": "meal_debloat_white_fish_green_salad"
+    },
+    {
+      "id": "meal_debloat_steak_salad_potato",
+      "name": [
+        "Steak Salade Épinards Pommes",
+        "Steak Spinach Salad Potatoes"
+      ],
+      "slot": "dinner",
+      "section": "dinner",
+      "summary": [
+        "Steak grillé, salade épinards-tomate et pommes de terre sautées — dîner viande + salade.",
+        "Grilled steak, spinach-tomato salad, and sautéed potatoes — meat + salad dinner."
+      ],
+      "ingredients": [
+        {
+          "name": [
+            "Steak maigre (rumsteck)",
+            "Lean steak (rump)"
+          ],
+          "quantity": [
+            "200 g",
+            "200 g"
+          ],
+          "role": "Protéine"
+        },
+        {
+          "name": [
+            "Pommes de terre fermières sautées",
+            "Sautéed farm potatoes"
+          ],
+          "quantity": [
+            "180 g",
+            "180 g"
+          ],
+          "role": "Glucide"
+        },
+        {
+          "name": [
+            "Salade épinards + tomates",
+            "Spinach + tomato salad"
+          ],
+          "quantity": [
+            "180 g",
+            "180 g"
+          ],
+          "role": "Légume"
+        },
+        {
+          "name": [
+            "Huile d'olive + citron",
+            "Olive oil + lemon"
+          ],
+          "quantity": [
+            "1 c. à soupe",
+            "1 tbsp"
+          ],
+          "role": "Gras"
+        }
+      ],
+      "prepMinutes": 35,
+      "preparation": [
+        "1. Coupe les pommes de terre en morceaux et fais-les revenir à la poêle avec huile d’olive et herbes jusqu’à doré.\n2. Sors le steak du frigo 10 min avant la cuisson pour qu’il soit moins froid.\n3. Grille le steak 3 min de chaque côté selon l’épaisseur (sel très léger ou aucun).\n4. Compose la salade d’épinards frais et tomates avec citron et huile d’olive.\n5. Laisse reposer le steak 2 min, puis dresse avec pommes de terre et salade.",
+        "1. Cut the potatoes into pieces and sauté in a skillet with olive oil and herbs until golden.\n2. Take the steak out of the fridge 10 min before cooking so it’s less cold.\n3. Grill the steak 3 min per side depending on thickness (very light salt or none).\n4. Build the fresh spinach and tomato salad with lemon and olive oil.\n5. Rest the steak 2 min, then plate with potatoes and salad."
+      ],
+      "tip": [
+        "Sel léger le soir ; poivre, herbes et huile infusée à l'ail sur le steak.",
+        "Go light on salt at night; pepper, herbs, and garlic-infused oil on the steak."
+      ],
+      "image": "meal_debloat_steak_salad_potato"
+    },
+    {
+      "id": "meal_debloat_chicken_salad_bowl",
+      "name": [
+        "Poulet Rôti Salade Avocat",
+        "Roasted Chicken Avocado Salad"
+      ],
+      "slot": "dinner",
+      "section": "dinner",
+      "summary": [
+        "Poulet doré au four et grande salade avocat-concombre.",
+        "Oven-roasted golden chicken and a big avocado-cucumber salad."
+      ],
+      "ingredients": [
+        {
+          "name": [
+            "Blanc de poulet label rouge",
+            "Chicken breast (quality label)"
+          ],
+          "quantity": [
+            "200 g",
+            "200 g"
+          ],
+          "role": "Protéine"
+        },
+        {
+          "name": [
+            "Salade composée (roquette, concombre)",
+            "Mixed salad (arugula, cucumber)"
+          ],
+          "quantity": [
+            "200 g",
+            "200 g"
+          ],
+          "role": "Légume"
+        },
+        {
+          "name": [
+            "Avocat mûr",
+            "Ripe avocado"
+          ],
+          "quantity": [
+            "1/2",
+            "1/2"
+          ],
+          "role": "Gras"
+        },
+        {
+          "name": [
+            "Tomates cerises",
+            "Cherry tomatoes"
+          ],
+          "quantity": [
+            "120 g",
+            "120 g"
+          ],
+          "role": "Légume"
+        }
+      ],
+      "prepMinutes": 35,
+      "preparation": [
+        "1. Préchauffe le four à 200°C.\n2. Marine le poulet 10 min avec citron, herbes et huile infusée à l’ail.\n3. Enfourne le poulet 22 min à 200°C jusqu’à doré.\n4. Pendant la cuisson, coupe roquette, concombre, tomates et avocat.\n5. Compose la salade et arrose de citron + huile d’olive.\n6. Tranche le poulet et sers avec la salade.",
+        "1. Preheat the oven to 400°F (200°C).\n2. Marinate the chicken 10 min with lemon, herbs, and garlic-infused oil.\n3. Roast the chicken 22 min at 400°F until golden.\n4. While it cooks, prep arugula, cucumber, tomatoes, and avocado.\n5. Build the salad and dress with lemon + olive oil.\n6. Slice the chicken and serve with the salad."
+      ],
+      "tip": [
+        "Marinade citron-herbes maison — pas marinade industrielle.",
+        "Homemade lemon-herb marinade — not a store-bought one."
+      ],
+      "image": "meal_debloat_chicken_salad_bowl"
+    },
+    {
+      "id": "meal_debloat_turkey_broccoli_rice",
+      "name": [
+        "Dinde Brocoli Riz Basmati",
+        "Turkey Broccoli Basmati Rice"
+      ],
+      "slot": "dinner",
+      "section": "dinner",
+      "summary": [
+        "Dinde poêlée, brocoli rôti et riz — dîner protéiné sans salade uniquement.",
+        "Pan-seared turkey, roasted broccoli, and rice — a warm protein dinner, not just salad."
+      ],
+      "ingredients": [
+        {
+          "name": [
+            "Escalope de dinde",
+            "Turkey cutlet"
+          ],
+          "quantity": [
+            "190 g",
+            "190 g"
+          ],
+          "role": "Protéine"
+        },
+        {
+          "name": [
+            "Riz basmati semi-complet",
+            "Brown basmati rice"
+          ],
+          "quantity": [
+            "160 g cuit",
+            "160 g cooked"
+          ],
+          "role": "Glucide"
+        },
+        {
+          "name": [
+            "Brocoli + courgette, huile infusée à l'ail",
+            "Broccoli + zucchini, garlic-infused oil"
+          ],
+          "quantity": [
+            "100 g + 100 g",
+            "100 g + 100 g"
+          ],
+          "role": "Légume"
+        },
+        {
+          "name": [
+            "Huile d'olive",
+            "Olive oil"
+          ],
+          "quantity": [
+            "1 c. à soupe",
+            "1 tbsp"
+          ],
+          "role": "Gras"
+        }
+      ],
+      "prepMinutes": 30,
+      "preparation": [
+        "1. Préchauffe le four à 200°C et lance la cuisson du riz basmati.\n2. Coupe brocoli et courgette, mélange avec citron et huile infusée à l’ail.\n3. Rôtis les légumes 15 min à 200°C.\n4. Poêle la dinde 5 min de chaque côté à feu moyen.\n5. Dresse riz, dinde et légumes rôtis dans l’assiette.",
+        "1. Preheat the oven to 400°F (200°C) and start the basmati rice.\n2. Cut broccoli and zucchini, toss with lemon and garlic-infused oil.\n3. Roast the vegetables 15 min at 400°F.\n4. Pan-sear the turkey 5 min per side over medium heat.\n5. Plate rice, turkey, and roasted vegetables."
+      ],
+      "tip": [
+        "Alternative chaude quand tu ne veux pas de salade froide.",
+        "A warm option when you don't want a cold salad."
+      ],
+      "image": "meal_debloat_turkey_broccoli_rice"
+    },
+    {
+      "id": "meal_debloat_cod_carrot_salad",
+      "name": [
+        "Cabillaud Carottes Salade Mâche",
+        "Cod Carrots Lamb's Lettuce Salad"
+      ],
+      "slot": "dinner",
+      "section": "dinner",
+      "summary": [
+        "Poisson blanc rôti, carottes fondantes et salade mâche citron.",
+        "Roasted white fish, tender carrots, and lemon lamb’s lettuce salad."
+      ],
+      "ingredients": [
+        {
+          "name": [
+            "Filet de cabillaud frais",
+            "Fresh cod fillet"
+          ],
+          "quantity": [
+            "190 g",
+            "190 g"
+          ],
+          "role": "Protéine"
+        },
+        {
+          "name": [
+            "Carottes rôties au thym",
+            "Thyme-roasted carrots"
+          ],
+          "quantity": [
+            "200 g",
+            "200 g"
+          ],
+          "role": "Légume"
+        },
+        {
+          "name": [
+            "Salade mâche + concombre",
+            "Lamb’s lettuce + cucumber salad"
+          ],
+          "quantity": [
+            "150 g",
+            "150 g"
+          ],
+          "role": "Légume"
+        },
+        {
+          "name": [
+            "Huile d'olive + citron",
+            "Olive oil + lemon"
+          ],
+          "quantity": [
+            "1 c. à soupe",
+            "1 tbsp"
+          ],
+          "role": "Gras"
+        }
+      ],
+      "prepMinutes": 30,
+      "preparation": [
+        "1. Préchauffe le four à 200°C.\n2. Coupe les carottes, mélange avec thym et huile d’olive, rôtis 20 min.\n3. Assaisonne le cabillaud citron-herbes, puis enfourne 14 min à 190°C.\n4. Prépare la salade mâche-concombre avec citron et huile d’olive.\n5. Dresse poisson, carottes et salade dans l’assiette.",
+        "1. Preheat the oven to 400°F (200°C).\n2. Cut the carrots, toss with thyme and olive oil, and roast 20 min.\n3. Season the cod with lemon and herbs, then bake 14 min at 375°F (190°C).\n4. Prep the lamb’s lettuce–cucumber salad with lemon and olive oil.\n5. Plate fish, carrots, and salad."
+      ],
+      "tip": [
+        "Poisson blanc le soir — sel modéré, citron sur le poisson.",
+        "White fish at night — moderate salt, lemon on the fish."
+      ],
+      "image": "meal_debloat_cod_carrot_salad"
+    },
+    {
+      "id": "meal_debloat_omad_steak_sweet_potato",
+      "name": [
+        "Assiette OMAD Steak Patate Avocat",
+        "OMAD Plate Steak Potato Avocado"
+      ],
+      "slot": "lunch",
+      "section": "omad",
+      "summary": [
+        "Repas unique dense — steak grillé, patate rôtie, avocat.",
+        "One dense plate — grilled steak, roasted sweet potato, avocado."
+      ],
+      "ingredients": [
+        {
+          "name": [
+            "Steak maigre (rumsteck)",
+            "Lean steak (rump)"
+          ],
+          "quantity": [
+            "230 g",
+            "230 g"
+          ],
+          "role": "Protéine"
+        },
+        {
+          "name": [
+            "Patate douce rôtie",
+            "Roasted sweet potato"
+          ],
+          "quantity": [
+            "320 g",
+            "320 g"
+          ],
+          "role": "Glucide"
+        },
+        {
+          "name": [
+            "Avocat mûr",
+            "Ripe avocado"
+          ],
+          "quantity": [
+            "1/2",
+            "1/2"
+          ],
+          "role": "Gras"
+        },
+        {
+          "name": [
+            "Salade roquette + concombre",
+            "Arugula + cucumber salad"
+          ],
+          "quantity": [
+            "200 g",
+            "200 g"
+          ],
+          "role": "Légume"
+        }
+      ],
+      "prepMinutes": 35,
+      "preparation": [
+        "1. Préchauffe le four à 200°C.\n2. Coupe la patate douce, rôtis 22 min à 200°C avec un filet d’huile.\n3. Grille le steak 3 min de chaque côté, puis laisse reposer 2 min.\n4. Prépare la salade roquette-concombre et tranche l’avocat.\n5. Dresse tout sur une grande assiette : steak, patate, salade, avocat.",
+        "1. Preheat the oven to 400°F (200°C).\n2. Cut the sweet potato and roast 22 min at 400°F with a drizzle of oil.\n3. Grill the steak 3 min per side, then rest 2 min.\n4. Prep the arugula-cucumber salad and slice the avocado.\n5. Plate everything on a large plate: steak, sweet potato, salad, avocado."
+      ],
+      "tip": [
+        "Sel contrôlé dans la fenêtre OMAD — herbes et citron en priorité.",
+        "Keep salt controlled in the OMAD window — herbs and lemon first."
+      ],
+      "image": "meal_debloat_omad_steak_sweet_potato"
+    },
+    {
+      "id": "meal_debloat_omad_chicken_quinoa_bowl",
+      "name": [
+        "Bowl OMAD Poulet Quinoa Salade",
+        "OMAD Chicken Quinoa Salad Bowl"
+      ],
+      "slot": "lunch",
+      "section": "omad",
+      "summary": [
+        "OMAD salade-bowl — poulet grillé, quinoa, légumes variés et avocat.",
+        "OMAD salad bowl — grilled chicken, quinoa, mixed vegetables, and avocado."
+      ],
+      "ingredients": [
+        {
+          "name": [
+            "Blanc de poulet grillé",
+            "Grilled chicken breast"
+          ],
+          "quantity": [
+            "220 g",
+            "220 g"
+          ],
+          "role": "Protéine"
+        },
+        {
+          "name": [
+            "Quinoa cuit",
+            "Cooked quinoa"
+          ],
+          "quantity": [
+            "200 g",
+            "200 g"
+          ],
+          "role": "Glucide"
+        },
+        {
+          "name": [
+            "Salade composée (roquette, tomate, concombre)",
+            "Mixed salad (arugula, tomato, cucumber)"
+          ],
+          "quantity": [
+            "250 g",
+            "250 g"
+          ],
+          "role": "Légume"
+        },
+        {
+          "name": [
+            "Avocat mûr",
+            "Ripe avocado"
+          ],
+          "quantity": [
+            "1/2",
+            "1/2"
+          ],
+          "role": "Gras"
+        }
+      ],
+      "prepMinutes": 30,
+      "preparation": [
+        "1. Cuis le quinoa selon le paquet, égoutte et laisse tiédir.\n2. Grille le poulet 6 min de chaque côté, puis tranche-le.\n3. Coupe tomates, concombre et avocat ; prépare la roquette.\n4. Compose le bowl : quinoa, salade, légumes et poulet.\n5. Arrose d’une vinaigrette citron + huile d’olive maison.",
+        "1. Cook the quinoa per package, drain, and let cool slightly.\n2. Grill the chicken 6 min per side, then slice it.\n3. Cut tomatoes, cucumber, and avocado; prep the arugula.\n4. Build the bowl: quinoa, salad, vegetables, and chicken.\n5. Drizzle a homemade lemon + olive oil dressing."
+      ],
+      "tip": [
+        "Tout en un bol dense — pas de sauce crémeuse industrielle.",
+        "Everything in one dense bowl — no creamy store-bought sauce."
+      ],
+      "image": "meal_debloat_omad_chicken_quinoa_bowl"
+    },
+    {
+      "id": "meal_debloat_coconut_banana",
+      "name": [
+        "Banane Skyr",
+        "Banana Skyr"
+      ],
+      "slot": "snack",
+      "section": "snack",
+      "summary": [
+        "Collation simple — banane potassium et skyr protéiné.",
+        "Simple snack — potassium banana and high-protein skyr."
+      ],
+      "ingredients": [
+        {
+          "name": [
+            "Banane jaune peu tachetée",
+            "Yellow banana, lightly spotted"
+          ],
+          "quantity": [
+            "1",
+            "1"
+          ],
+          "role": "Glucide"
+        },
+        {
+          "name": [
+            "Skyr nature sans lactose",
+            "Lactose-free plain skyr"
+          ],
+          "quantity": [
+            "150 g",
+            "150 g"
+          ],
+          "role": "Protéine"
+        }
+      ],
+      "prepMinutes": 3,
+      "preparation": [
+        "1. Coupe la banane en rondelles.\n2. Sers avec le skyr nature sans lactose à côté.",
+        "1. Slice the banana into rounds.\n2. Serve with the lactose-free plain skyr on the side."
+      ],
+      "tip": [
+        "Idéal après le sport — sans boisson dans le repas.",
+        "Ideal after training — no drink with the meal."
+      ],
+      "image": "meal_debloat_coconut_banana"
+    },
+    {
+      "id": "meal_debloat_pineapple_turkey_snack",
+      "name": [
+        "Ananas Dinde Rôtie",
+        "Pineapple Roast Turkey"
+      ],
+      "slot": "snack",
+      "section": "snack",
+      "summary": [
+        "Collation protéinée — ananas frais, concombre et dinde maison.",
+        "Protein snack — fresh pineapple, cucumber, and homemade turkey."
+      ],
+      "ingredients": [
+        {
+          "name": [
+            "Ananas frais",
+            "Fresh pineapple"
+          ],
+          "quantity": [
+            "200 g",
+            "200 g"
+          ],
+          "role": "Glucide"
+        },
+        {
+          "name": [
+            "Dinde rôtie maison froide",
+            "Cold homemade roast turkey"
+          ],
+          "quantity": [
+            "80 g",
+            "80 g"
+          ],
+          "role": "Protéine"
+        },
+        {
+          "name": [
+            "Concombre",
+            "Cucumber"
+          ],
+          "quantity": [
+            "100 g",
+            "100 g"
+          ],
+          "role": "Légume"
+        }
+      ],
+      "prepMinutes": 8,
+      "preparation": [
+        "1. Coupe l’ananas frais en tranches ou en cubes.\n2. Émince la dinde rôtie maison (pas de charcuterie salée).\n3. Coupe le concombre en bâtonnets.\n4. Dispose le tout dans une assiette et sers frais.",
+        "1. Cut the fresh pineapple into slices or cubes.\n2. Slice the homemade roast turkey (no salty deli meat).\n3. Cut the cucumber into sticks.\n4. Arrange everything on a plate and serve fresh."
+      ],
+      "tip": [
+        "La dinde maison évite le sodium élevé des charcuteries.",
+        "Homemade turkey avoids the high sodium in deli meats."
+      ],
+      "image": "meal_debloat_pineapple_turkey_snack"
+    }
+  ],
+  "assets": {
+    "meal_debloat_eggs_banana_kiwi": {
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_eggs_banana_kiwi.imageset/meal_debloat_eggs_banana_kiwi.png",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/recipe_meal_debloat_eggs_banana_kiwi.png",
+      "sha256": "d50d450d8653b20127a002ac89c23244d608e7e70a23b429360b0eb51ecace13",
+      "bytes": 312355
+    },
+    "meal_debloat_yogurt_blueberry": {
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_yogurt_blueberry.imageset/meal_debloat_yogurt_blueberry.png",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/recipe_meal_debloat_yogurt_blueberry.png",
+      "sha256": "a312844ec82eaf1035a3f2a184cd14f720ea09e76b11577845f1cb95e934cd6a",
+      "bytes": 319970
+    },
+    "meal_debloat_salmon_avocado_bowl": {
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_salmon_avocado_bowl.imageset/meal_debloat_salmon_avocado_bowl.png",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/recipe_meal_debloat_salmon_avocado_bowl.png",
+      "sha256": "a3a3181e38336c01143102fb4e094b60b81afb0a5b14cc2f340b5369b5375381",
+      "bytes": 353346
+    },
+    "meal_debloat_chicken_sweet_potato": {
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_chicken_sweet_potato.imageset/meal_debloat_chicken_sweet_potato.png",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/recipe_meal_debloat_chicken_sweet_potato.png",
+      "sha256": "126a962351aa8abcf5ea4195b2823c02a6f166e05f262a9295bbbfa218776bac",
+      "bytes": 364893
+    },
+    "meal_debloat_sweet_potato_meat_avocado": {
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_sweet_potato_meat_avocado.imageset/meal_debloat_sweet_potato_meat_avocado.png",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/recipe_meal_debloat_sweet_potato_meat_avocado.png",
+      "sha256": "8da0df0262f35478785f5ae15f7cf07a3b463b122cdd6b78ad8b1e1e7d274178",
+      "bytes": 316175
+    },
+    "meal_debloat_chicken_avocado_salad": {
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_chicken_avocado_salad.imageset/meal_debloat_chicken_avocado_salad.png",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/recipe_meal_debloat_chicken_avocado_salad.png",
+      "sha256": "3811366b3b51b3be2c2ee0323e9a0e6bf8d3dabef7dcd5db2b19e2c89c052a99",
+      "bytes": 396792
+    },
+    "meal_debloat_salmon_quinoa_salad": {
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_salmon_quinoa_salad.imageset/meal_debloat_salmon_quinoa_salad.png",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/recipe_meal_debloat_salmon_quinoa_salad.png",
+      "sha256": "1e6c7545ecf01455de03dfefb2414039053925433b35ef829c60c1d18f3bf702",
+      "bytes": 387725
+    },
+    "meal_debloat_turkey_potato_salad": {
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_turkey_potato_salad.imageset/meal_debloat_turkey_potato_salad.png",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/recipe_meal_debloat_turkey_potato_salad.png",
+      "sha256": "05b219ad1e2c5694a1cc50160eba2dd34795ae0ba855ade6a746e867d55752f0",
+      "bytes": 387462
+    },
+    "meal_debloat_beef_rice_peppers": {
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_beef_rice_peppers.imageset/meal_debloat_beef_rice_peppers.png",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/recipe_meal_debloat_beef_rice_peppers.png",
+      "sha256": "8ded8943fe09fe6a9eb7904210b101c43e73133496b462bbbf148ee44a4a26ca",
+      "bytes": 393095
+    },
+    "meal_debloat_white_fish_green_salad": {
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_white_fish_green_salad.imageset/meal_debloat_white_fish_green_salad.png",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/recipe_meal_debloat_white_fish_green_salad.png",
+      "sha256": "fab27cd6714aa54e7354886e6fb2ed2e27cb5efc797962d4e5dc1b653b60157e",
+      "bytes": 384067
+    },
+    "meal_debloat_steak_salad_potato": {
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_steak_salad_potato.imageset/meal_debloat_steak_salad_potato.png",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/recipe_meal_debloat_steak_salad_potato.png",
+      "sha256": "ebdd95a2891aa43e396f7a0672af8df5491a8b231b37b8364a3a90a42f1be713",
+      "bytes": 432436
+    },
+    "meal_debloat_chicken_salad_bowl": {
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_chicken_salad_bowl.imageset/meal_debloat_chicken_salad_bowl.png",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/recipe_meal_debloat_chicken_salad_bowl.png",
+      "sha256": "6990e7c5317a90c296d9507ef616f6c5348dc3ad89492f36d8fbc040f5fd3ef2",
+      "bytes": 500924
+    },
+    "meal_debloat_turkey_broccoli_rice": {
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_turkey_broccoli_rice.imageset/meal_debloat_turkey_broccoli_rice.png",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/recipe_meal_debloat_turkey_broccoli_rice.png",
+      "sha256": "4e3e6af2bd070bcaf81e5873b01349b370c0f6af4e7d3677cd924bbecfda61dd",
+      "bytes": 484240
+    },
+    "meal_debloat_cod_carrot_salad": {
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_cod_carrot_salad.imageset/meal_debloat_cod_carrot_salad.png",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/recipe_meal_debloat_cod_carrot_salad.png",
+      "sha256": "c76a32752f5cbce719cd037f5ba51629ab030031c8b649fe4e7e98854ac93e21",
+      "bytes": 509354
+    },
+    "meal_debloat_omad_steak_sweet_potato": {
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_omad_steak_sweet_potato.imageset/meal_debloat_omad_steak_sweet_potato.png",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/recipe_meal_debloat_omad_steak_sweet_potato.png",
+      "sha256": "38537191412a0df27f1cfb853d7282c1492041cd101b7018aa7ef18ac40d3c2b",
+      "bytes": 507176
+    },
+    "meal_debloat_omad_chicken_quinoa_bowl": {
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_omad_chicken_quinoa_bowl.imageset/meal_debloat_omad_chicken_quinoa_bowl.png",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/recipe_meal_debloat_omad_chicken_quinoa_bowl.png",
+      "sha256": "95258cbb3fe4ce0891c431fae40158675b2e46f69780036f87ca8dba3b3c2e46",
+      "bytes": 467205
+    },
+    "meal_debloat_coconut_banana": {
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_coconut_banana.imageset/meal_debloat_coconut_banana.png",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/recipe_meal_debloat_coconut_banana.png",
+      "sha256": "399f6f3965572a628f99722d71ef25059c433e5dd51fbf263349b516e9100eb2",
+      "bytes": 336146
+    },
+    "meal_debloat_pineapple_turkey_snack": {
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_pineapple_turkey_snack.imageset/meal_debloat_pineapple_turkey_snack.png",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/recipe_meal_debloat_pineapple_turkey_snack.png",
+      "sha256": "f2c687a674a613dac255eb996cbf031a3123d9aea16501563de3b15febf953fd",
+      "bytes": 355218
+    }
+  },
+  "scores": "Legacy score/sub arguments deliberately omitted; current Swift makeMeal ignores them",
+  "build": "pending"
+}

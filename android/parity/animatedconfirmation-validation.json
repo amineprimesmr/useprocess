@@ -1,0 +1,37 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-142537061-557377961/DeleteButton/DeleteButton/ContentView.swift": "889c176d8b93c8861cde222bb8cf07453687e6bc8d87eaafa6eea83a4d15a5a4",
+    "content/source-projects/design-source-142537061-557377961/DeleteButton/DeleteButton/DeleteButtonApp.swift": "b33574104e99516bf21f8cbeebdeaccb727a5ad0a6f8c51334968ed402038d4f",
+    "content/source-projects/design-source-142537061-557377961/DeleteButton/DeleteButton/Helpers/AnimatedDeleteButton.swift": "ef8b3eaa43196bcce3f5d76b9f56a8a2e603eb3d82590e1a0e48144d983d0f50"
+  },
+  "mirrorMatchesInventory": true,
+  "contract": "Supply pure label/content slots,onResult and optional ConfirmationAction. The source label render layer is retained when opening a full-window confirmation; content measures at destination size and is masked rather than relaid out during the morph. Source30dp/destination45dp corners,20dp content padding,10dp screen margins,40percent scrim,150ms source fade and80ms delayed return are adapted. Result fires after dismissal once; Cancel/back maps CANCELLED and action maps CONFIRMED. This explicitly resolves the misleading original isCancelled parameter name, whose true branch is actually Delete. No data is deleted by this library or gallery. Native graphics-layer capture across windows,300ms spring approximation,API28blur fallback,gradient button/system-inset behavior and physical/iOS comparisons remain unverified.",
+  "nativeFiles": [
+    "TenKAnimatedConfirmationButton.kt",
+    "TenKAnimatedConfirmationGallery.kt"
+  ],
+  "recordedAt": "2026-10-08T08:15:00.364584+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 143,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 46
+  },
+  "visual": "host render inspected; iOS comparison unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "TenKAnimatedConfirmationButton.kt": "70a0b8b999aabcf7723ba1d31fbc71d3424fc89a88b762eda299fd94e6611480",
+    "TenKAnimatedConfirmationGallery.kt": "e519072cd943aeb529e7645824824809b862eafcd61717d2f4ca4909d8163452"
+  },
+  "remaining": [
+    "Native glass,typography,exact springs/scroll/GPU motion and physical/iOS paired comparison remain unverified",
+    "Host integrations and component-specific limitations are detailed in the integration contract"
+  ],
+  "softwareFallback": "Software windows recompose the pure label at source size. Hardware uses retained RenderNode layer. Host tests cover software path; dialog PNG excludes underlying activity composite."
+}

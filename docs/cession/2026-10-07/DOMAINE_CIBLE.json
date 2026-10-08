@@ -1,0 +1,37 @@
+{
+  "domain": "processdebloat.com",
+  "purchase": "active_verified_hostinger",
+  "merchant": "Hostinger",
+  "checkout_total_eur": 12.19,
+  "initial_period": "1 an",
+  "renewal_display_eur_per_year": 16.99,
+  "seller_keeps": [
+    "useprocess.xyz",
+    "compte Hostinger personnel"
+  ],
+  "handoff": {
+    "preferred": "Déplacement du seul domaine vers le compte Hostinger acheteur",
+    "minimum_registration_hours": 96,
+    "exclude": "Site, messagerie et autres services ne migrent pas automatiquement",
+    "source": "https://www.hostinger.com/support/4068055-how-to-move-a-domain-between-hostinger-accounts/"
+  },
+  "cutover_gate": [
+    "domaine enregistré et DNS valide",
+    "site et pages légales accessibles",
+    "emails prêts",
+    "OAuth et AASA vérifiés",
+    "tests physiques réussis"
+  ],
+  "expiry": "2027-10-07",
+  "verified_at": "2026-10-07",
+  "website": "https://processdebloat.com",
+  "email": {
+    "mailbox": "contact@processdebloat.com",
+    "aliases": [
+      "support@processdebloat.com",
+      "hello@processdebloat.com"
+    ],
+    "smtp_imap_and_self_delivery": "verified",
+    "plan_billing": "Hostinger upgrade processing, invoice and duration not yet reconciled"
+  }
+}

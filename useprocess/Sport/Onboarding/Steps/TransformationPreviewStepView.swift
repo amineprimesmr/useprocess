@@ -5,6 +5,7 @@
 //  Aperçu avant / après juste avant le paywall.
 //
 
+import StoreKit
 import SwiftUI
 
 struct TransformationCaseStudy: Identifiable, Equatable {
@@ -173,6 +174,7 @@ enum TransformationCaseStudyCatalog {
 
 struct TransformationPreviewStepView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.requestReview) private var requestReview
     let gender: Gender?
     let onComplete: () -> Void
 
@@ -180,7 +182,7 @@ struct TransformationPreviewStepView: View {
         TransformationCaseStudyCatalog.availableStudies(for: gender)
     }
 
-    init(gender: Gender? = nil, onComplete: @escaping () -> Void, onBack: (() -> Void)? = nil) {
+    init(gender: Gender? = nil, onComplete: @escaping () -> Void) {
         self.gender = gender
         self.onComplete = onComplete
     }
@@ -206,6 +208,11 @@ struct TransformationPreviewStepView: View {
             continueButton
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        // Moment « preuve sociale » : le prompt natif 5 étoiles, une seule fois. `.task` est
+        // annulée si l'utilisateur quitte l'écran avant l'affichage.
+        .task {
+            await ProcessAppStoreReviewPrompt.presentDuringOnboardingIfNeeded(requestReview: requestReview)
+        }
     }
 
     private var header: some View {
@@ -264,7 +271,8 @@ struct TransformationPreviewStepView: View {
 
     private var continueButton: some View {
         Button {
-            HapticManager.shared.impact(.medium)
+            // Pas de verrou local : le host anti-rebondit déjà via `isTransitioning`, et un verrou
+            // posé pendant ce délai laissait le bouton mort sans retour possible.
             onComplete()
         } label: {
             Text(OnboardingCopy.continueCTAUpper)

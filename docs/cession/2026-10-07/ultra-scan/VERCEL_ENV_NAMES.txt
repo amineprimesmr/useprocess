@@ -1,0 +1,8 @@
+
+ name                               value                       type      environments        created    
+ VITE_FUNCTIONS_BASE_URL            eyJ2IjoidjIiLCJjIj…         Config    Production          30m ago    
+ VITE_FIREBASE_PROJECT_ID           eyJ2IjoidjIiLCJjIj…         Config    Production          30m ago    
+ VITE_FIREBASE_AUTH_DOMAIN          eyJ2IjoidjIiLCJjIj…         Config    Production          30m ago    
+ VITE_FIREBASE_APP_ID               eyJ2IjoidjIiLCJjIj…         Config    Production          30m ago    
+ VITE_FIREBASE_API_KEY              eyJ2IjoidjIiLCJjIj…         Config    Production          30m ago    
+

@@ -1,0 +1,2182 @@
+{
+  "status": "inventory_not_rights_certification",
+  "assets": [
+    {
+      "path": "useprocess/Resources/LymphCircuit/lymph_07.mp4",
+      "sha256": "f6defe4300f0479956c7f9875b8872bdf2604e72aa1ba6914d73bd248c987ed8",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Resources/LymphCircuit/lymph_06.mp4",
+      "sha256": "a93387c61c12015952f57f424f47c5f04900251ec641feaccada3be3f3f2376e",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Resources/LymphCircuit/lymph_05.mp4",
+      "sha256": "dd3e9326fe53d7595543cdf70418fdbb6d54ef9d670dc2b9d8f4ab9c694fa971",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Resources/LymphCircuit/lymph_01.mp4",
+      "sha256": "48b9718b7f4819eb76dda01c4e6cb40773b9886e71a9c83dbf7da064dffbb22b",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Resources/LymphCircuit/lymph_02.mp4",
+      "sha256": "d5ebe87f6861d36a9b9e9787d447b0626c4c9b8461f65d7a197b70a9cb44a2b0",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Resources/LymphCircuit/lymph_03.mp4",
+      "sha256": "3460827c1a565d88aa7684ef6f91c9d2c5c7228643beb4e637dcbf2db3a67563",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Resources/Sounds/pouring_water.mp3",
+      "sha256": "3ebc9f90a3ccf759d1a525dad412bd5e70448d77dc0d56771b24db2ea2b4bb59",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Resources/Sounds/revolut_pay.mp3",
+      "sha256": "18e39d76a996b645f68c45153ed49901b3f1883412c6f1a337bc7534afbb60d2",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Resources/Onboarding/danielprime.mp4",
+      "sha256": "e4e20abbdca8d7bddda999075033d05c8fd917c7300750806cad1af2a4e5d30f",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Resources/Onboarding/daniel.mp4",
+      "sha256": "74a23bbe61d01757660e8e1549d5ca66d8ca7db534035be1060995fb6b260882",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Resources/Onboarding/imranprime.mp4",
+      "sha256": "0a78447ced74b00c059a2cc0092f3cd91465e8c0289b149d83dcbc05f54b44ee",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Resources/Onboarding/imran.mp4",
+      "sha256": "9d4153ab1bb3ed7dd81c1fecf3a8b1a03668f00eb3b9b8268a66822476df1393",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/UI/PlanHomeUpgradeNebula.imageset/PlanHomeUpgradeNebula.png",
+      "sha256": "2f2ee49d12df5580dea1dabd57df518a8560a6a2f8336b3bea4cd7c1ca5564ca",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/UI/TabBar/tab_icon_streak.imageset/tab_icon_streak.png",
+      "sha256": "570e4b7b6f1c6505e1aca754b30f5c339670f0d4f2622b07de1b099093ffa956",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/UI/TabBar/tab_icon_home.imageset/tab_icon_home.png",
+      "sha256": "c807b1c00ca0390f0149bb00a221ebe8207c0ad7ecd9c5a942f100ff1a692e23",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/UI/TabBar/tab_icon_settings.imageset/tab_icon_settings.png",
+      "sha256": "8f2658e8b63866b3b6a97dd147016cbc17f9738d27ef42e2430b40ea2878bbec",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/UI/Notif.imageset/notifdark.png",
+      "sha256": "3ef5808766d3153b9b91ff7d144c4161354c9faed9453a2cd7976c298f7456cf",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/UI/Notif.imageset/notifclair.png",
+      "sha256": "5bd1ab8730bbfe0afa9ce28fe67c673fb9ce9ffdb4a97b1a0fd0a913f605d903",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/UI/carte15.imageset/carte15.png",
+      "sha256": "bd9d951086a0db8ab84b0e4ea98028160487501687303efd60f109966709144b",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/UI/carteparrainage.imageset/carteparrainage.png",
+      "sha256": "afbc398db149d1b271272b4a1464a18322b147de04b8c736e4d195a7880408a7",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/UI/PlanHomeUpgradeDollar.imageset/PlanHomeUpgradeDollar.png",
+      "sha256": "9d7a3c26043ea5aaf7e27c6c8afb5d425e68b771b4ed1e409444c3b0a373b094",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/FoodIcons/food_avocado.imageset/food_avocado.png",
+      "sha256": "d70beebe73b400fab224cb0b2635a69104de83e200eb1eb40c732d4b5b2e5fff",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/FoodIcons/food_lemon.imageset/food_lemon.png",
+      "sha256": "dd8bdaa67ab33db1df5ac085e5a90c79aecb6c774b3b9b012b54266fbba3ae4e",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/FoodIcons/food_kiwi.imageset/food_kiwi.png",
+      "sha256": "a250428ba965ca96ab178e3f567d9fbad112cd07cdcf3430ab574b7f942b943c",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/FoodIcons/food_carrot.imageset/food_carrot.png",
+      "sha256": "c9d075da8efbc7e177e7d58efed24b1c7c6d17cd55b01bf89601ee0eb85d9a49",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/FoodIcons/food_eggplant.imageset/food_eggplant.png",
+      "sha256": "940d4f6dd5d9f4d6913de3d33c602e95f031d2f4f375633f77f03a53672a0235",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/FoodIcons/food_watermelon.imageset/food_watermelon.png",
+      "sha256": "1bf219fa8855545ebce7a702a8c508f2d056efab00414a6117ed779463ec9e2a",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/FoodIcons/food_cucumber.imageset/food_cucumber.png",
+      "sha256": "a747f82004279017c4846b60da10b9657ceaccafdd12e15fb1ac52c79aedecb5",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/FoodIcons/food_tomato.imageset/food_tomato.png",
+      "sha256": "28b0185a5d70b67eddc9ce4e66f6309bd23b04c7b66f878517059161d56e446f",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/FoodIcons/food_strawberry.imageset/food_strawberry.png",
+      "sha256": "3c56a41919b8b6d6666bbeb3d332bb05338c023bbbd2cbbcfc3d00f88b11960a",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/FoodIcons/food_broccoli.imageset/food_broccoli.png",
+      "sha256": "c2f4db4110b93838c78759232137253fb9d7b4313c5729a9c837db9743d55201",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/FoodIcons/food_spinach.imageset/food_spinach.png",
+      "sha256": "51992ebe17b34221126a392bff6b00c1a2996f35c848361d9f3a25b3160bc3b4",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/FoodIcons/food_banana.imageset/food_banana.png",
+      "sha256": "9cb85ce37b96ad50a433e3ba615d9cbe453258b4060ea6ce7d068fa7bcc7173a",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Hydration/hydration_bottle.imageset/hydration_bottle.png",
+      "sha256": "1cbdf3fbc96ca21c99cfef35c679287c5e05dce85288ca221f05ead7959b1a00",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Hydration/hydration_drop.imageset/hydration_drop.png",
+      "sha256": "2594b9dcb617f7db903fd33af8dffb7025007abf320309e26b114df717228aef",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Hydration/hydration_drop.imageset/hydration_drop@2x.png",
+      "sha256": "0bcc5e30ff8692f70c331385f8e4b08dda43d335b62f82eae2f5475b5601ea64",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Hydration/hydration_drop.imageset/hydration_drop@3x.png",
+      "sha256": "08c4ddecbeac359e969a04da7ab122c66a1ca193b94239fd248ad089b795bee7",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/session_cardio.imageset/session_cardio.png",
+      "sha256": "2ff12acaa8d60f237b343d2e73d1798ff67f918241a13322356df8e1980f4064",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Posture/posture_clamshell.imageset/posture_clamshell.png",
+      "sha256": "8e1b78ed784819c6512a61511bc342869aaa009b8b95dcdb0f01e66be9f64839",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Posture/posture_breathing.imageset/posture_breathing.png",
+      "sha256": "d902e8f9f379009bc9519433e75d30f3f2cef939dadb49181ff1ab83f28c4d65",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Posture/posture_chin_tuck.imageset/posture_chin_tuck.png",
+      "sha256": "abb58961014ef81e712d1e90873f6dad96beb386e7bbf83ec6e83f2b55c9d16f",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Posture/posture_neck_curls.imageset/4.png",
+      "sha256": "3c0c49c650dba3b847b7f92c9e44755f11badba2d073f470d10535d33e00fe1b",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Posture/posture_wall_retraction.imageset/Design sans titre.png",
+      "sha256": "0fa3d2ce03477f1ee9ebe2087c82bcfbb9a555225514f07697f70a013792fbf3",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Posture/posture_foot_release.imageset/2.png",
+      "sha256": "fd7bc4a862262ed7c2f20e7aa6f98747cd3ef6c61f0247ee8dc83e03aa01f905",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Posture/posture_neck_extension_prone.imageset/5.png",
+      "sha256": "1abdb65818c9d5d59c8dc0684b7a5188acf0f6027e7fddbb2e9dd56acf3b7a69",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Posture/posture_thoracic_opener.imageset/posture_thoracic_opener.png",
+      "sha256": "5048c4a8d11a74b1c24d4007f1f90239d98c929fa501cae63fa39ddaa0082b32",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Posture/posture_glute_bridge.imageset/1.png",
+      "sha256": "67a790ba01c782e55a4a774c9a320b71df0e409340e76d2b455a9977e2744bd2",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Posture/posture_hip_flexor_stretch.imageset/3.png",
+      "sha256": "17705886a09cb83b855aa0b5f926d76451a201869d1eb088a17095aae66185c4",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Posture/posture_wall_angels.imageset/6.png",
+      "sha256": "3d330ddd33da032467fde5b7475bd86a3517ee995e55ca8a951d1c1058db5b85",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Posture/posture_cat_cow.imageset/posture_cat_cow.png",
+      "sha256": "c08c1532ed55526b3a42c05e9309b78339bc62937cde7fbf1c94343be1a0d3b2",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Cardio/cardio_natation.imageset/cardio_natation.png",
+      "sha256": "f68d56fb6da375f4d72c8adf4f4157ebfeb54916edde505ad78b7b4fa6c6ed9d",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Cardio/cardio_marche.imageset/ChatGPT Image Jun 30, 2026, 11_22_32 PM.png",
+      "sha256": "2ff12acaa8d60f237b343d2e73d1798ff67f918241a13322356df8e1980f4064",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Cardio/cardio_tapis_course.imageset/cardio_tapis_course.png",
+      "sha256": "eccf929806e35a94af32dc3a3a57ada9dc7c4aabb523980a4cb7c7f15cf6b423",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Cardio/cardio_tapis_incline.imageset/cardio_tapis_incline.png",
+      "sha256": "27a2d00a447073f6c74ecc8b02e368c90178015502642797a87110505949d0be",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Cardio/cardio_corde.imageset/cardio_corde.png",
+      "sha256": "b23a3dda2efb3cf3789eb98fcce90cc2a38dafc87bc230864c8c9d008702d18f",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Cardio/cardio_rameur.imageset/cardio_rameur.png",
+      "sha256": "c4d392597b93a3a0eb33e8d0b7ab0fbef19040196120d595acc32cff504a8294",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Cardio/cardio_velo.imageset/ChatGPT Image Jun 30, 2026, 11_23_14 PM.png",
+      "sha256": "0ee927b14f95637bb6e08fe3cc877d52ccc01d5fce578947c60d492e402d03d8",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Cardio/cardio_hiit.imageset/cardio_hiit.png",
+      "sha256": "320732f96ad9ce3d5cfa7b9df428f929ca8a317de09f81e4f2ecf2803dfbc1ae",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Cardio/cardio_elliptique.imageset/cardio_elliptique.png",
+      "sha256": "777c28f2643e8836a5d4393535667e082347081ffab988f5e0e37ddefcf6a7f4",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Cardio/cardio_course_pied.imageset/cardio_course_pied.png",
+      "sha256": "c277279c111706fd2cb8e52b69b7c240b140d158c421f04d3a3ce15784fe7b90",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Cardio/cardio_escalier.imageset/cardio_escalier.png",
+      "sha256": "381ad1fec70252090465c499279dcacf49389fca9f4b56505b50cfe35a3986b6",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/training_see_all.imageset/training_see_all.png",
+      "sha256": "7b984829f014917825db66e4967bece6905aa0a2874898cfb4bae4bf5a2b029d",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Routines/routinebras.imageset/routinebras.png",
+      "sha256": "6231cce15691153db1dd92d91b0ad8ac4b8fe49372587a986acd0398b3648b62",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Routines/routinesauts.imageset/routinesauts.png",
+      "sha256": "6d682ba81e2d7901c31a20f96b0cf7bc2ded437ddce0073976f4c9bd7f38e950",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Routines/routineglacons.imageset/routineglacons.png",
+      "sha256": "c2fed55544c82094126c8c1c5781b6fb4afa882e0bee27556e968d594fe1366b",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Routines/routinedormir.imageset/routinedormir.png",
+      "sha256": "f0b3d5e2b22438c346774b25f7d8e24ea27fae55ec0eaff533c7ddf2df7e1365",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Routines/routinebrascroix.imageset/routinebrascroix.png",
+      "sha256": "d66476d7d29a909e741c2f02525fee5fdd550fb25e72ef60a5fd3db749656f46",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Routines/routinesoleil.imageset/routinesoleil.png",
+      "sha256": "c70f3a0d9131efb09e01457f7b6c2d1f101daa18234557e6c48772fd5d3deb77",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Routines/routinethorax.imageset/routinethorax.png",
+      "sha256": "7bc6ff5273da09690fce33709790e873b8d30553911c0235da2824e863520780",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Routines/routinepointes.imageset/routinepointes.png",
+      "sha256": "e43f3598fe489f731578317237475291e5eab176bd6e5011345d66ab465206d7",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Routines/routineeautiede.imageset/routineeautiede.png",
+      "sha256": "75972b8ad878c8616b97098c9cb4616fe9f997b4c3b2ed8dba09da3d6b92202d",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Routines/routinebrasciel.imageset/routinebrasciel.png",
+      "sha256": "bb9e3902ad7775a69628f3453a283b479098ab67be5af08743d64c9809d6b922",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Routines/routinemewing.imageset/routinemewing.png",
+      "sha256": "5202b16c4c725e3e6f27be25799f7e307444c6fef40296ab65adbb19fac77080",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Routines/routineposture.imageset/routineposture.png",
+      "sha256": "d40cb6cea911691ecf2c9e7637012d1c7b4c75363a158925679c991eed4fa049",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Routines/routinegenoux.imageset/routinegenoux.png",
+      "sha256": "191a478cc3d78e2e0179ec6527a9448ca6779023b6f8e5b3da9f09ac26ba83f0",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Routines/routineau.imageset/routineau.png",
+      "sha256": "c2bbdf416fbdeaf21c4057f98d33cd4620f13ae9b70e51556e1150b7bc67f308",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Mobility/mobilite_epaules_hanches.imageset/mobilite_epaules_hanches.png",
+      "sha256": "4ea89e9fbf339d132ff2bfb268160f52a0061731cfb874b4786dfe99c6d6546f",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/check3D.imageset/check3D.png",
+      "sha256": "d29c45df9eb90b05291dffd6077a3b53de8e3963ac7f58e8c572a123e47fec89",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/danielprime.imageset/danielprime.png",
+      "sha256": "e3aa268dbfa5267b7efec8a218478987d4e3ab8926bd29f640d11ad55884a390",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/emmaprime.imageset/emmaprime.png",
+      "sha256": "12037f35e956a1745e7fb25dbf02bcc46853db8f99b8f15926e242feaceed96b",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/lucasprime.imageset/lucasprime.png",
+      "sha256": "f67b952cafc3fdc49f51490757ede4cf3a717f193c71e1ae0961ad6b1c201175",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/mannybloat.imageset/mannybloat.png",
+      "sha256": "c229ffa299c03ca60ecae75225f6885d10308b89c289d6a3b71e9c1cfc0b2cfe",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/imran.imageset/imran.png",
+      "sha256": "cc4f7d4287491b8c2f6e60502c4085cf92d79a79563215ec2e7884dad8592549",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/ava.imageset/ava.png",
+      "sha256": "ac7a9cc448ff91851fd5e8bb9871c577a163279d71b6b5fcac8133d866f32d2d",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/caochiaicon.imageset/caochiaicon.png",
+      "sha256": "6fd893fe41c003354abab2d1d57c14aa263ff2a64c0b7233d6c8d2c06f6926a1",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/fille1.imageset/fille1.jpg",
+      "sha256": "06e11daf158ef16b5ba29a6ddf542be282c7ce8d86064245b329186e5d332115",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/daniel.imageset/daniel.png",
+      "sha256": "1da063f6794ff2f00ff353852c1926e5eb0802a41c78f05eb6859f6fd570ca59",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/estebanprime.imageset/estebanprime.png",
+      "sha256": "f972617164827fa63ee651a83b30ec238c1cdfe1bfc31cd48b3a6dc3b08167fd",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/inesprime.imageset/inesprime.png",
+      "sha256": "d58f83c49a4df1024b505be13374e5adebc6e8fee4fb3c8ac76497f00aa1b084",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/mannyprime.imageset/mannyprime.png",
+      "sha256": "0b844083642b5128aa8e99eb3bad61fdf45ae0954d2f8c414265666ffaa1bf23",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/mannyprime-leverage.imageset/mannyprime-leverage.png",
+      "sha256": "719e5a7e4ce319cff61bb354b65c75cc52a556a65fbcfcee4ccab96da0e286bd",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/mayaprime.imageset/mayaprime.png",
+      "sha256": "71dcac12b9cb7b84d29d98716a0867e0541080da3a0edbe45341cbd45bc40260",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/leoprime.imageset/leoprime.png",
+      "sha256": "24cdab2b0f9a58da5f7f5334c9f52f5b822e041b0e06a1db6a3b1cf8f1898c07",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/leo.imageset/leo.png",
+      "sha256": "62ded42eb92413917b3b03252634701f87786c4ec6d4b498dd2f73ece7998aae",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/maya.imageset/maya.png",
+      "sha256": "7202b9a0d0832269879db8a2d00975a0c4f375d58ca0e302a67ea822f58991b9",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/check.imageset/Design sans titre (9) 1.png",
+      "sha256": "28399d0e532288175723a0ded59dba0a1b6c43425c2d4c7a7700e8a076c981db",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/ProcessAppIcon.imageset/ProcessAppIcon.png",
+      "sha256": "48b5d74aa3025c68045d6cc82b15836961993a790736726aed60f17ebdf9f276",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/claudeLogo.imageset/claudeLogo.png",
+      "sha256": "6070ffba94318cbf1885785da4d84d7b7f9e205ac2fbfd3e648ecc0617658a93",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/ines.imageset/ines.png",
+      "sha256": "aac4357571769739beb572e552af2ad3c8a9b4ef67c6ba306a8fd481d671b3e2",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/healthapple.imageset/Process (1).png",
+      "sha256": "7daaa7b48f756e9ab95edad55c5fa025bc1f43d1e810777b059ccd9d3e36f356",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/emma.imageset/emma.png",
+      "sha256": "b16d24e76565f852f2930f77628af57630ddd116cf373f73c48ca375cea7dc6c",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/avaprime.imageset/avaprime.png",
+      "sha256": "e4f516eaf6b610f25829e2a30faf878f344cd9a284e35b7adf07c75dd470788c",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/fingerprint.imageset/ChatGPT Image Aug 4, 2026, 12_48_26 PM.png",
+      "sha256": "8a9f1ba641d7911b8ddcd45401d5e793a91b76e0a2515bed4a515f5ff091eb3e",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/fingerprint.imageset/ChatGPT Image Aug 4, 2026, 12_51_07 PM.png",
+      "sha256": "6ab99d7df1c014b427ca04c6f26b9843ae49bc7b9466213f3778c350bbf3e59c",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/gars1.imageset/gars1.png",
+      "sha256": "b4949c5b9e2f8b4b6105c79be9d91c6960e8932f5d8246009992e7d6b4fa774d",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/imranprime.imageset/imranprime.png",
+      "sha256": "30c8265912dfc21ce811b602b2427d4e8745f6feb16c9a8719f5101848b28fc8",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/process_coach_avatar.imageset/process_coach_avatar.png",
+      "sha256": "5d15f5ef06691daad3a19b7108e068e25c46eb0efb884df5d2462021ed94e9c5",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/esteban.imageset/esteban.png",
+      "sha256": "42b94bbb98611c0cbaa7bc25204d5566ae667c5418ecdb81a05068cf0efc37e5",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/vitacoco.imageset/vitacoco.png",
+      "sha256": "8f824c3af85a99f48c477709bc75459b18a228099487e8213bd8a188db06839e",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/lucas.imageset/lucas.png",
+      "sha256": "ce4ae9be214dfe8b9c30f6e9b9dbab21fbfda6e2e873bb5429e1cbc8ab950740",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
+      "sha256": "4acef6061b087da95ec1bffdc811fca70eda9dba1377efc961a5eeac2f5b6778",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/AppIcon.appiconset/AppIcon-1024-dark.png",
+      "sha256": "4acef6061b087da95ec1bffdc811fca70eda9dba1377efc961a5eeac2f5b6778",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/AppIcon.appiconset/AppIcon-1024-tinted.png",
+      "sha256": "4acef6061b087da95ec1bffdc811fca70eda9dba1377efc961a5eeac2f5b6778",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Social/social_copy_link.imageset/social_copy_link.png",
+      "sha256": "2dca957cd1d95d01a2761fbad7c79145b52483d866bf07ce803c5e89f31a9e8e",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Social/social_snapchat.imageset/social_snapchat.png",
+      "sha256": "00bb0bcfa7b1ffb679f86f9bf417a9a6958f6837d327f734a49c247ca1b00b59",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Social/social_x.imageset/social_x.png",
+      "sha256": "6d5def176381e280e0d35efbe5e68fa85cee8cf4c6135e080343607c9c2b9185",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Social/social_whatsapp.imageset/social_whatsapp.png",
+      "sha256": "fad2696add922cf3530bfde2ed40d43a82eb34a6978173422e4e3cae95e8fd12",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Social/social_tiktok.imageset/social_tiktok.png",
+      "sha256": "3cf18e569c8ec173ae3eb51f86176876bb8799463b1288ccd2cc3cb92d8934e3",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Social/social_imessage.imageset/social_imessage.png",
+      "sha256": "c8a83d4609d4849a3d09d4f9ae8f9e214a5a62e9285db40bf64052f1aa97903f",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Social/social_instagram.imageset/social_instagram.png",
+      "sha256": "708816199df4922ede5a619d053bc36d1143b889e733913cdee84defca5e9609",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Reward/rewardProgramEN.imageset/rewardProgramEN-dark.png",
+      "sha256": "13df54f93ef6605b1d7e3ecdda15ceb174b462e998f21e926dc3155de0e0f4f0",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Reward/rewardProgramEN.imageset/reward (1).png",
+      "sha256": "3664bf11cfc309a201278c61983520f2a367ede6d9fd89b483a28b9432cda096",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Reward/rewardProgram.imageset/4.png",
+      "sha256": "adae8fe7aacf831ecb11e268d4779ed2c82fd0487bcd40e46f5b13c9207db881",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Reward/rewardProgram.imageset/3.png",
+      "sha256": "32b8f8fd1075b80543f38319311143df32fdf6ad5bee5fb478ff64a93bf7652e",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Reward/rewardDLEN.imageset/rewardDLEN-dark.png",
+      "sha256": "166ec17a311a8b681c70a8f703a550fb7029dc2e424f3acda1b2aff745a78753",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Reward/rewardDLEN.imageset/reward.png",
+      "sha256": "e5abb9207e96bae1b2bdcbc42c5e201389998ea9f807c0904e06a3d3c9a18c8e",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Reward/rewardScienceEN.imageset/reward (2).png",
+      "sha256": "2af33fb8c6069731fe0de8cf5fb75a7181e83485b34fc0ea3262af7831f7e29d",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Reward/rewardScienceEN.imageset/rewardScienceEN-dark.png",
+      "sha256": "d970072fb46af08f1f462826a3db1f6f92534c1945ab6a62167a691e66625413",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Reward/rewardDL.imageset/rewardDL-light.png",
+      "sha256": "cac1f8f21709a29266b61cce19df48de5f519cf82fe3e43a17f21fbcf81e0ea3",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Reward/rewardDL.imageset/rewardDL-dark.png",
+      "sha256": "9e15cc66b8bf873c95124fc977cbad46a3f4f6074b800f981f97f8dc8d5eacbc",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Reward/rewardScience.imageset/rewardScience-light.png",
+      "sha256": "a3a06c698603529554d84321968ab6e2811da98af184647501ed7add433fe7df",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Reward/rewardScience.imageset/rewardScience-dark.png",
+      "sha256": "9503325cf3421621a0ebee08ff6510524f473fae7f256b68743e04fc310b74ce",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_turkey_potato_salad.imageset/meal_debloat_turkey_potato_salad.png",
+      "sha256": "05b219ad1e2c5694a1cc50160eba2dd34795ae0ba855ade6a746e867d55752f0",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_omad_steak_sweet_potato.imageset/meal_debloat_omad_steak_sweet_potato.png",
+      "sha256": "38537191412a0df27f1cfb853d7282c1492041cd101b7018aa7ef18ac40d3c2b",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_eggs_tomato_salad.imageset/meal_debloat_eggs_tomato_salad.png",
+      "sha256": "5be5dc733175a63b83f9107d6b08283c125cb63655e0065de525feb598c6eb91",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_sweet_potato_meat_avocado.imageset/meal_debloat_sweet_potato_meat_avocado.png",
+      "sha256": "8da0df0262f35478785f5ae15f7cf07a3b463b122cdd6b78ad8b1e1e7d274178",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/epinardomelette.imageset/epinardomelette.png",
+      "sha256": "bf28bd7b1d8f789896c03b8350ab0e7a1b95f3ff9c5544e265c92e6251099f3f",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_chicken_sweet_potato.imageset/meal_debloat_chicken_sweet_potato.png",
+      "sha256": "126a962351aa8abcf5ea4195b2823c02a6f166e05f262a9295bbbfa218776bac",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_steak_salad_potato.imageset/meal_debloat_steak_salad_potato.png",
+      "sha256": "ebdd95a2891aa43e396f7a0672af8df5491a8b231b37b8364a3a90a42f1be713",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_chicken_avocado_salad.imageset/meal_debloat_chicken_avocado_salad.png",
+      "sha256": "3811366b3b51b3be2c2ee0323e9a0e6bf8d3dabef7dcd5db2b19e2c89c052a99",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_white_fish_green_salad.imageset/meal_debloat_white_fish_green_salad.png",
+      "sha256": "fab27cd6714aa54e7354886e6fb2ed2e27cb5efc797962d4e5dc1b653b60157e",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_eggs_banana_kiwi.imageset/meal_debloat_eggs_banana_kiwi.png",
+      "sha256": "d50d450d8653b20127a002ac89c23244d608e7e70a23b429360b0eb51ecace13",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_omad_chicken_quinoa_bowl.imageset/meal_debloat_omad_chicken_quinoa_bowl.png",
+      "sha256": "95258cbb3fe4ce0891c431fae40158675b2e46f69780036f87ca8dba3b3c2e46",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_cod_carrot_salad.imageset/meal_debloat_cod_carrot_salad.png",
+      "sha256": "c76a32752f5cbce719cd037f5ba51629ab030031c8b649fe4e7e98854ac93e21",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_salmon_quinoa_salad.imageset/meal_debloat_salmon_quinoa_salad.png",
+      "sha256": "1e6c7545ecf01455de03dfefb2414039053925433b35ef829c60c1d18f3bf702",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_coconut_banana.imageset/meal_debloat_coconut_banana.png",
+      "sha256": "399f6f3965572a628f99722d71ef25059c433e5dd51fbf263349b516e9100eb2",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_salmon_avocado_bowl.imageset/meal_debloat_salmon_avocado_bowl.png",
+      "sha256": "a3a3181e38336c01143102fb4e094b60b81afb0a5b14cc2f340b5369b5375381",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_turkey_broccoli_rice.imageset/meal_debloat_turkey_broccoli_rice.png",
+      "sha256": "4e3e6af2bd070bcaf81e5873b01349b370c0f6af4e7d3677cd924bbecfda61dd",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_beef_rice_peppers.imageset/meal_debloat_beef_rice_peppers.png",
+      "sha256": "8ded8943fe09fe6a9eb7904210b101c43e73133496b462bbbf148ee44a4a26ca",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_yogurt_blueberry.imageset/meal_debloat_yogurt_blueberry.png",
+      "sha256": "a312844ec82eaf1035a3f2a184cd14f720ea09e76b11577845f1cb95e934cd6a",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_pineapple_turkey_snack.imageset/meal_debloat_pineapple_turkey_snack.png",
+      "sha256": "f2c687a674a613dac255eb996cbf031a3123d9aea16501563de3b15febf953fd",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_chicken_salad_bowl.imageset/meal_debloat_chicken_salad_bowl.png",
+      "sha256": "6990e7c5317a90c296d9507ef616f6c5348dc3ad89492f36d8fbc040f5fd3ef2",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Meals/meal_debloat_eggs_avocado.imageset/meal_debloat_eggs_avocado.png",
+      "sha256": "09b2d121648f464ef1fb921869d49e16f53c4ee0c9b751c88a189f908615678b",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Breakfast/breakfast_layer_eggs_2.imageset/eggs2.png",
+      "sha256": "2452929dd131d28930d3d4abd9e254294c930ae70aa3ac2ea1c01618b609d21a",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Breakfast/breakfast_layer_eggs_3.imageset/eggs3.png",
+      "sha256": "24f7e28ec3b7011e5eff5c297eb8866a2e5937ea6405c0a8e4099a80c79f4385",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Nutrition/Breakfast/breakfast_builder_bg.imageset/fondpetitdej.png",
+      "sha256": "d0f324a3a74d7b0c5b2381822e1c9b5ca79a7874a99835c372aa8907476eb216",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Onboarding/face_tilt_silhouette.imageset/face_tilt_silhouette.png",
+      "sha256": "0fecb1d19f4dead011fe1005a1ba177c1c661dfcd36e9e6534fbc20295a4fa7e",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Onboarding/homme.imageset/Votre texte de paragraphe (24).png",
+      "sha256": "ee93668f55b50930c9752d3d7d8dbbec618df613a4a991af0c8882b151a4fba9",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Onboarding/femme.imageset/Votre texte de paragraphe (25) 1.png",
+      "sha256": "2916331666c0a376ec609868cf33ada6d0f3d58e25c5d64ac1d30559b6bc655b",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "useprocess/Media/hydration_drop.png",
+      "sha256": "a8d0b80ae63ba4ea3d45fe72aff5e3168f8b8dccb40050e169dc05e95752f366",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "ProcessWidgets/Assets.xcassets/hydration_drop_template.imageset/hydration_drop.png",
+      "sha256": "c3b3241af413fed316ddb6f7dad7387cfa808a54a7dcf0ce46b23005b0e2a844",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "ProcessWidgets/Assets.xcassets/hydration_drop_template.imageset/hydration_drop@2x.png",
+      "sha256": "b0a5b874154115f29eda6e3be9897e966d2ef7259f4be8f6172cded75b35e169",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "ProcessWidgets/Assets.xcassets/hydration_drop_template.imageset/hydration_drop@3x.png",
+      "sha256": "a135a76bf6d2510ddf7a208f6d1f31a31ad79e56f002956104a1a45d3cad2cd0",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "ProcessWidgets/Assets.xcassets/hydration_drop.imageset/hydration_drop.png",
+      "sha256": "77689c34f241990fbe1db742130eb835200a5998d01df9f18b1bf2529bcbbe42",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "ProcessWidgets/Assets.xcassets/hydration_drop.imageset/hydration_drop@2x.png",
+      "sha256": "ad67eefc95a62e550116283c8669f86617e3ee8db0e002f01d41deeeaee9fb09",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "ProcessWidgets/Assets.xcassets/hydration_drop.imageset/hydration_drop@3x.png",
+      "sha256": "a8d0b80ae63ba4ea3d45fe72aff5e3168f8b8dccb40050e169dc05e95752f366",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "ProcessWidgets/Media/hydration_drop.png",
+      "sha256": "a8d0b80ae63ba4ea3d45fe72aff5e3168f8b8dccb40050e169dc05e95752f366",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/iphone-custom-clean.png",
+      "sha256": "d196747a03d57309cd5c1dfb2b17aaf63f81e5bcc3a1cb13a79ec75f42344821",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/iphone-custom-clean-mobile.png",
+      "sha256": "7758722c6a8a9e44a9e592169ce7429664a21e5361bf1fc39dfcc7d12b2ea7d6",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/etape1.png",
+      "sha256": "4d96db58bd64ec5a0034a42d3e3e32e0034f1ce60a23c1d0bcee100c1cc15696",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/var1.png",
+      "sha256": "9b556d4513b1da364a5cd3287f3c13a8b50b0556039bcf45b53a44c1002fe5fc",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/etape2.png",
+      "sha256": "211b7f6e3220b8faa036844e9b52a33f0818eb488f23103af5ff954ea739a08e",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/icone.png",
+      "sha256": "c73bbe130a79db3b6c995aa6c488665cea1d75983a8db6e57554465f072b52f2",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/etape3.jpg",
+      "sha256": "81a6154c6180094aaa2391c4899ae09da08c5c4defa29b5f6ea1e722f69a020e",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/process-landing/avatar-1.png",
+      "sha256": "c32c256e0f9830228dd08e0c02faa962c09d73b760b78d07cf84cabdab29fe24",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/process-landing/avatar-2.png",
+      "sha256": "c32c256e0f9830228dd08e0c02faa962c09d73b760b78d07cf84cabdab29fe24",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/process-landing/avatar-3.png",
+      "sha256": "c32c256e0f9830228dd08e0c02faa962c09d73b760b78d07cf84cabdab29fe24",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/process-landing/icon-training.png",
+      "sha256": "550490efb23aebd3aeea59eaa775245922b8ca5448c1a5ab281261020efe6460",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/process-landing/icon-coach.png",
+      "sha256": "526139e2d2ef8bd42aba5a635ef8d99f399ffb1ca43f2cab946609a27ce5ece7",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/process-landing/avatar-6.png",
+      "sha256": "c32c256e0f9830228dd08e0c02faa962c09d73b760b78d07cf84cabdab29fe24",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/process-landing/avatar-4.png",
+      "sha256": "c32c256e0f9830228dd08e0c02faa962c09d73b760b78d07cf84cabdab29fe24",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/process-landing/phone-hero-app.png",
+      "sha256": "bb4ca45e38b78863111905f284856935fd4e9472966ab79b752437576f3e4254",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/process-landing/avatar-5.png",
+      "sha256": "c32c256e0f9830228dd08e0c02faa962c09d73b760b78d07cf84cabdab29fe24",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/process-landing/icon-share.png",
+      "sha256": "3d70dd79a6df851826cdae850a05d662428300232b70e6cf15e787fcf10c8cc2",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/process-landing/icon-hub.png",
+      "sha256": "173db2e93770fda3bf6e0ce29b15a4301f5a8dd1922c730886ae1034f441b391",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/process-landing/phone-features-scan.png",
+      "sha256": "94d10669bca9d9ca531e1913d28aa961ddd1fa62faca8865a5c0df41dba1a0a7",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/process-landing/icon-battle.png",
+      "sha256": "891aaa948ef3fb292f1cbf4535144c083fafc16fcafbf3d5b2e2d752c57e3ab2",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/process-landing/icon-progress.png",
+      "sha256": "09d25dc270bc23251bc164e7d74662869bebf5821a44b01289d0ed644e6af990",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/process-landing/icon-routines.png",
+      "sha256": "d21f3cf12073ec455715496cf1d6ee7090bd0a008da5dcef0ab9af0bfb296a17",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/process-landing/icon-3d.png",
+      "sha256": "e1306ac0a32ee33a339486cbf91d51091b9919f04115a7135a9aff986534f9f4",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/process-landing/app-store-badge.png",
+      "sha256": "3ee0b902f123806b1178e5469540a6c86e5a52c1ea791182276c52daa78139f1",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate-tiktoks/04-marlon-65k.png",
+      "sha256": "a62e67925f5093308cde289fb6683c8e9cd9543d209930d589b9c45e4647c1d5",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate-tiktoks/01-glowup-188k.png",
+      "sha256": "6e649d7213938b4112946e8ceaa9d8a8a04abb35be8154b1d560c3af8d2ab529",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate-tiktoks/05-beach-39k.png",
+      "sha256": "3c891759e41b588085b3251c2cf073e0e8a845bc5d6a5d5199e89840c6923f0f",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate-tiktoks/02-foods-107k.png",
+      "sha256": "1993528c2b3d73b4b05e74a0188179cd9a3c8b1f05f1ef4aa3d3c3771bfe9479",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate-tiktoks/07-pov-98k.png",
+      "sha256": "77f8a464cbea12cd6e79813f47d88739ad379176c8ea8b1f653c0c86808bfb40",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate-tiktoks/06-water-25k.png",
+      "sha256": "13961bcb5b6602d2c48fe21dac72e158a9f1d9a46ab0de3c05a71fd2d9aa182a",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate-tiktoks/08-car-16k.png",
+      "sha256": "f984ac44a9ea8137dc2d3a5ae69c870dcd2dadaa3d431dcb29001ca4df9c4ca8",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate-tiktoks/03-guide-178k.png",
+      "sha256": "b3021df39a5466e60d8f2c0938c51ed9f80719a14eab7f2b5a29eca9ddb6fe1b",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/logos/stripe-icon.png",
+      "sha256": "56a89c9d14edb68868c002d782bc4153372e86391de342279bba1e783bc34d23",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/logos/instagram.png",
+      "sha256": "c337c7d84d9775a7d8a18fe0e9c004cc38a9e22fd14d1e9efd40deb53d35b678",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/logos/tf1.png",
+      "sha256": "49c3b9e0c6abe2223d72f6aed984ccbd1a749aa6d07bd81c42bf31f448a91bb8",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/logos/stripe-wordmark.png",
+      "sha256": "63b13d6e3361d66ac3b6404d6200f67c51dbb40d03392579c4c93220c0402bd3",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/logos/tripadvisor.png",
+      "sha256": "a4cdc07a36c071366b74ac0ded80477d56472940670f2cc6fff9a3535b531084",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/logos/snapchat-ghost.png",
+      "sha256": "bb05ea2eba073b5372f0adfa4f1021b74c2e1e0d08bfb87ef14b8ba252a54370",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/logos/tiktok.png",
+      "sha256": "ee11e87d0f2243758cee32b4ca2e0a6c23c5f17b055341dfedaaf87d423debc8",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/logos/linkedin.png",
+      "sha256": "cb975d0322d288522cdf56d3bff6c759875617abf0a142531370577a3496b12a",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/logos/trustpilot.png",
+      "sha256": "5f162f14d1e00ca14c316f8092c58ff29133abe205c0541259ee2b97d3a8afd9",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/logos/app-store.png",
+      "sha256": "71ed53dc2a5a656af6ece52f320c8de7802063009501fa94131d6f7cdb0f3213",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/logos/google.png",
+      "sha256": "72f44ea680785c7a62d53d5ed019b34d1e38f913fabfb82df2a810df129eabdd",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/logos/facebook.png",
+      "sha256": "eb975e140778d89d9dc091d1524430c125c8995b3c5ad7368df70df82be1d2d5",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/logos/snapchat.png",
+      "sha256": "33954dd190f8bfb022a3af80006e508013cc3846ae0b975f55d26368b6f0f792",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate-howto/01-tap-x.png",
+      "sha256": "92f83d6f5194024b5a892e3ccb8f45d17bb8505a86fbb9a83fb9aeb3fb6b838a",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate-howto/02-popup.png",
+      "sha256": "445de485f97598e19c74314bb8e3912399088f8aa89d74d6e6043cd142d4d26c",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate-howto/00-open.png",
+      "sha256": "eb497b8d43c14e36d542c6dbe6ef71d0ed84b10c3ad750bd9e10643051e9ce9c",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate-howto/04-code.png",
+      "sha256": "906cb15078ea882f814e790079e05b29d5ed913b314e76e038e57e7a584caf4f",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate-howto/03-parrainage.png",
+      "sha256": "e471759776f15cd9a54a162b5d01ad3351821c8746d958105c7b9fd8a4c61b03",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/sounds/revolut_pay.mp3",
+      "sha256": "18e39d76a996b645f68c45153ed49901b3f1883412c6f1a337bc7534afbb60d2",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/image-caroussel/content-1.jpg",
+      "sha256": "d6dbbc30c7bd55e225a595aea7f063e180fd5f694f868f63227e295d5e4af869",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/image-caroussel/content-3.jpg",
+      "sha256": "2753a77b4eda547605f1eb0cf0ceef3f25dd9f1f01e7db51b8d36ffbbe379fdc",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/image-caroussel/content-2.jpg",
+      "sha256": "fe204419b70b6aac494f7c335f9c3715dc8c4070fd0360fbe1c6a1462b168f67",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/image-caroussel/content-6.jpg",
+      "sha256": "b9aa37e33187c573eee51a1dcc08a77bce65805065867df9a169227eba0c7262",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/image-caroussel/content-7.jpg",
+      "sha256": "a182aee468dd443e8ae4943ab462983af55389ccab544957a8e113be04735d4b",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/image-caroussel/content-5.jpg",
+      "sha256": "8d841cc8122550c3198766f572a16309dd00b74838a86c024332c8f4931452f3",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/image-caroussel/content-4.jpg",
+      "sha256": "b4d7737cb06b6e23dc37b8cd74b744507ecd9202454f492f6781c6249d4ccd88",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/image-caroussel/content9.png",
+      "sha256": "67cdfc52124f408129939655693d3dd7fc4c223ddb8f77059818c98fdcfea569",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/image-caroussel/content-8.jpg",
+      "sha256": "057fb28e251bfc66cd0fcaf4e3dab073aa5c793006ec431c6727df0355755d89",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/site/C.png",
+      "sha256": "20c5411715e2c2b3dc08091ee72b18c8aa07ef4896a520629dd5e93457e3fa55",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/site/A.png",
+      "sha256": "6f9e2176acfd9fd6888c76ece8c39c9b8aa3f0061f45e3ae735f56f9e8592a09",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/tiktok-mark.png",
+      "sha256": "46ac79e654668f69061ef566f234751aabf6305a607e05b0d2cc4c39fe966760",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/lab/what-is-slideshow.jpg",
+      "sha256": "405901d90657e56a237b3ff3d4afbdc711d68022cd626f00f62a1bfa581d9e78",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/lab/what-is-slideshow.mp4",
+      "sha256": "64d8fe055764e5d25b6a6cd830a48a5550b2bf7118fef412cd0e7b2c94bbf572",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/kit/scan-en.jpg",
+      "sha256": "0009937f2d16ed7d2b1ecc289fdd6b9e90a45ab9b36824d4ba603162b8ea63a1",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/kit/scan-before.jpg",
+      "sha256": "aa4fec0151ebd792a8d878cecaec6f068e0a983d5afe4d519ab39bfa09f38535",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/kit/recipes.jpg",
+      "sha256": "69e891187c30909e351837d136817ec0fe634b1f3ef36509c6b3d4ce68294b54",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/kit/scan-dark-fr.jpg",
+      "sha256": "610131f78cdf30897afe7ba34f19ec684e39f9e5085c4b52cced662b8a03d680",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/kit/home-en.jpg",
+      "sha256": "9567b271091eafb79571f0ca2668de50c23a95583dd3f0a03858f85eacf0de0a",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/kit/scan-light-fr.jpg",
+      "sha256": "fb381e895cb5e5bbe56c95163f9b25c79ee49844bc3867b9b35dd59e4f7d1da7",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/kit/appstore-listing.jpg",
+      "sha256": "1963c4f77b14eeb86dedabdec1cd07f62d526b65544a5155f488e32182ef6d8a",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/kit/head.jpg",
+      "sha256": "5d15f5ef06691daad3a19b7108e068e25c46eb0efb884df5d2462021ed94e9c5",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/kit/appstore-card.jpg",
+      "sha256": "a5b0183d6b1b13099c77606de6735dc5981df3ce4213b90674d720d21cef1da3",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/kit/scan-after.jpg",
+      "sha256": "a5ae496eb98fd73cdf9246298f628c261a66af807727bea5209e0ee5381c614a",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/debloat/7674438106254200096.jpg",
+      "sha256": "c66f5496c7c301094fb0feb894eb6aa15de1a40401302fd82c61ce9c7daca729",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/debloat/7627953602916617505.jpg",
+      "sha256": "03f55976446d817ed23f8b6f63a1bf42cd9cc174ef3a0365361b93ce7fcf8cbc",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/debloat/7668613285666770209.jpg",
+      "sha256": "6a2d42300adc277ccc53ad49f7d0f4c968827d5b5d5fc067ee6c32adcc8f35a2",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/debloat/7668608417056951584.jpg",
+      "sha256": "ddee005662d3a8969df79286495d849c27ef0083fdbccc1f611379a9357a3949",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/debloat/7672095564036721952.jpg",
+      "sha256": "748a6c009c09dfbf7a9ec037b48469f8980cd13d81fed20d223317bdfae2341f",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/debloat/7670187284473335072.jpg",
+      "sha256": "b68492c558e036e3e58b7e76bb4c664492f07adfb22e9a66bf6c6d93fa9cc45c",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/debloat/7667924169522220321.jpg",
+      "sha256": "eb5bfd22d60b40a2fae376600acd53e367c69484bb62647950cdb693b15589cb",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/debloat/7623797718799912214.jpg",
+      "sha256": "63f22908a4e908cc836af941edaba39055c69fcbcad7cb9598224d3372b9e0b5",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/debloat/7577458567981141304.jpg",
+      "sha256": "9ba90451a7877d8ddc3e1efb63c32b4491adc8698bd7fd47c7f4f922639f0abe",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/debloat/7542387603673337101.jpg",
+      "sha256": "406f47c61939d4f746991771c7946f07872f4676132ef2a104a57c0bb5330f13",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/glowup/7670070332337835297.jpg",
+      "sha256": "0df4ae0c05f4b9174d3082d0d3dcba5072cb8523318fcb642ca6db3cad4366e6",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/glowup/7669786608882748704.jpg",
+      "sha256": "466d608b7701420f1715b6ea359691174add0aa61f480a5afcdce527405bacc3",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/glowup/7674567569268854048.jpg",
+      "sha256": "1231618e6949fe145e8b183124d1f3c8d943eabd36036b3f359ba7181a573014",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/glowup/7674179216178531617.jpg",
+      "sha256": "47962b1ae192d39e1d97c78be81a01f528c9008882bd0c68d1475b8f23ad88a6",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/glowup-grid/7637666815014866183.jpg",
+      "sha256": "fff33edddbf192238037a6540aefefa548e4e160ae0eacc7424536524e1b5be3",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/glowup-grid/7627226907146194194.jpg",
+      "sha256": "4f5919114610026d5d3141d6850150d272d8b08c3d56076cea40bff1d491a4fa",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/glowup-grid/7637832814813236487.jpg",
+      "sha256": "73bbebbe87acae61f3fb459f0ccab5948c59a9189fb2c47868cdb14cf376265b",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/glowup-grid/7627424593644604680.jpg",
+      "sha256": "60b0fb36e45c7c7f619d63f994cb637716837f4dc9a37899b73b2c207df06cf6",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/glowup-grid/7638324934837587207.jpg",
+      "sha256": "256bcd674cfec53377e0ddaf7df50145a1c84330f234398eb633c1346edf80a0",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/glowup-grid/7638929381590666514.jpg",
+      "sha256": "2bd0369c6c1434e040975e14e57d30cc5d98b2ae9a04514ff385f374eca51f10",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/breakup/7643565091996175630.jpg",
+      "sha256": "a9b76745023b9c9badefd228b31960c9560494446229354b1e30296efb3e02f8",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/breakup/7574497985388694798.jpg",
+      "sha256": "7dd03e4f902542d0b0477595a1c2d8e82b17346a501d94eff59fcc48615419bc",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/breakup/7570742119556599070.jpg",
+      "sha256": "04858986a629bbda0ec115f5b222cd10f0d0900d21b7961b06289f09b188c7ec",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/breakup/7635663933696789792.jpg",
+      "sha256": "cefdd56ed47bc9266c2bf1a52d9b881b8778ad9e9bfe47fbdca8736d376d43b8",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/breakup/7586717276280229150.jpg",
+      "sha256": "de6765b9d852bbd8efeaf5f4066643767b3d70f2e026568148a1c5abbf017018",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/breakup/7638929381590666514.jpg",
+      "sha256": "60fc0b0db643964aa617e4adf3cd78f36582491fad1281e43e940e4103dee763",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/copy/evofaceprime-7653936106525740308.jpg",
+      "sha256": "2419fadd09d9d2fe7264d747970437d33943430312880f848f8add58377a09ba",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/copy/jacosahur-03.jpg",
+      "sha256": "6dbe236e0b0313238eaf494eb6272f4d9078251f5edf0807fcc35b8fd71ca359",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/copy/jacosahur-02.jpg",
+      "sha256": "c7e41fd1972c48b5bad379de31b586adbd0fe7237e5da80d23b405726088a8b8",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/copy/jacosahur-01.jpg",
+      "sha256": "536e592ad4e891d32e6f55a5b5ef2f3bd2768f3f959498ab7c042e17e030e599",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/copy/jacosahur-04.jpg",
+      "sha256": "13f814a1bff0f5b20a512966251cee0696fabceeabd3ba67a06f38ef4148d759",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/copy/evofaceprime-7674717774136020244.jpg",
+      "sha256": "96f8c3dab2f254a259b49a30ea5f1034833f6dba9c7d33a556c79d6658a77c31",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/copy/evofaceprime-7676903920333098261.jpg",
+      "sha256": "75cabb05a3d32543cf1e0b1332a8197635a4e49607d787504f9d8dd339479e51",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/copy/evofaceprime-7633513596781219092.jpg",
+      "sha256": "39da1113e40c101e8b0f3794082a07cb73923f5d363568ff6ae21da95f625652",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/copy/jacosahur-avatar.jpg",
+      "sha256": "5124c92d22cdb572e04cc123b81569f9e9b2e2a6c3c3a6a96bafe5ccbd7a42eb",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/copy/evofaceprime-avatar.jpg",
+      "sha256": "bad295d9538af4b66d5177d2e8812a2e9d1768e738304c863410eb125890c0a9",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/foods/7554943966597123383.jpg",
+      "sha256": "1a77a48b2b1584f0c9b7a2c4e64e3238ff5d84e1c3255d9c0e378ea9de0a2946",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/foods/7550252336996797710.jpg",
+      "sha256": "bd3a8f793cb97cc33fa40a7bcd37f7e3fe3d8a18570b4d9023f3e982dbc23311",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/foods/7563454708837305622.jpg",
+      "sha256": "413d3ba1fde67f1cc0f82aa5dc114a60899ae5ae6027f51835e5bc0b8c194b98",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/foods/7646868905209679137.jpg",
+      "sha256": "8574d4cd14965d3dd61228a63d52d8a723a88200103fdb2a2d8cf0e2dd73c86d",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/foods/7636847793482632469.jpg",
+      "sha256": "e5633eb01eed79be9db213e04862296f3c374eb376cac186a6e7945d625834f7",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/foods/7630134464017960214.jpg",
+      "sha256": "3c931eeb425f232ea87d582944228dec477fa02e8992149efc45de88d1f39a1d",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/library/foods/7505727589344972054.jpg",
+      "sha256": "eb3fc01329f6c82fc0dcba4bb84f4528a6ac7765572729a3a332eae70ad75ebc",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/ai/cursor.png",
+      "sha256": "1e497f8b7c5910078fd193355c48564a74cc296282b9e3a5debbfedee983f83d",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/ai/claude.png",
+      "sha256": "b2f183ebf7882855a06d9d0dd2c887fd8489c14d1942f42a78a1711883834340",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/ai/claude-code.png",
+      "sha256": "9578e95fab4f46987bff1a80ba0fb7f81d2f82ed86e8598bab9ca83ada693809",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/ai/codex.png",
+      "sha256": "d3a6aeb2dba85d9785ed3889837c12475f34a5eb1315ad3e98a3a61a704b0039",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/shadowban-fyp.png",
+      "sha256": "f8f6efdfdacb720c2ce44e922ec489136672ff59e8ba2dfea0322f96afe02163",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/manny-foods-live.jpg",
+      "sha256": "1bafa34127bead073ef81b268c908a787112bfa218949eeab9b165c921ce6350",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/bonus/eur50.png",
+      "sha256": "acc994404b3a84a9168290450cd06a4f867981b6917b7569082be2bdefc42069",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/bonus/iphone.png",
+      "sha256": "0ef1c5f978baedd3cb4fdfcb947ec67e435c138e7abf83c094dda0485f2181fc",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/bonus/eur100.png",
+      "sha256": "e460f319f2dae4301dd895dc23c3dc7704585448c6b367222e5883a931c8d20f",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/bonus/coach.png",
+      "sha256": "f58319b244369288207e8e7f12bf31a1b9441d0487bb8c2a418423e1b91d0b44",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/format-05/hook.jpg",
+      "sha256": "70dec49f3d7c33e017b5d56e30c900789557634f03e9a9953f59b7e61614ca58",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/format-05/debloat.jpg",
+      "sha256": "b2e24b81730cc56019f1344b392c4dc7227e034bf9ad13784943a06e8d9199eb",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/format-02/app.jpg",
+      "sha256": "ef9895f5a96b896696a1cd3b6612bafc1116b0b248bf12a93b9ab3caee4dcd3b",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/format-02/hook.jpg",
+      "sha256": "4a0de20114c18c3619efff658d85121584c7b465ef5209e5d8deceeeb5511a76",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/format-02/tip.jpg",
+      "sha256": "36a14fcb0cdcfbdfc7341620d11466061025a15326a81ec4a42f4e63e36c180b",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/format-03/app.jpg",
+      "sha256": "fd2d4256a15dbb005b2a9601a12d1e6d2b8496f36291160f655057ddbcf8178f",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/format-03/hook.jpg",
+      "sha256": "11eecafa1ae4ec33f178df5face22094269b03eab05475404bfe312eb5ffc47c",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/format-03/food.jpg",
+      "sha256": "ca568b19013dab316f68796b6a4dab15e3f9d6ce7da8ed93e609f342981f2271",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/format-04/hook.jpg",
+      "sha256": "cdc7d164940f297508fb84ef6b617ffbc8e72b2ec43058343518f25a949141bb",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/format-04/grid.jpg",
+      "sha256": "5a26b4b955648b680cfd35f800b301560272658ddaa14b969e627d2dc1f4e87d",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/format-01/before.jpg",
+      "sha256": "839c436553d0e5e1c20fc7b38cd91802729c38b05d295c6e062a1a6d80010853",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/format-01/hook.jpg",
+      "sha256": "4884afcad6cb1c37f2dab5b5445fab2c8fa18870de0400a2037e0f368ffe0d88",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/format-01/scan.jpg",
+      "sha256": "2958aa5031a713a65f5026d221d0b64873bb124809b19b7012e84bd7abaa157d",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/format-06/hook.jpg",
+      "sha256": "a4c777e3ce330f4dd965c6f82cae98c235282e8bf17268503fd71df210045b7a",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/format-06/grid.jpg",
+      "sha256": "e4f1c207e355fae7e742c4c5ddc1366fa9a84e10030c4096151bbf0cd97669ed",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    },
+    {
+      "path": "website-process/public/assets/affiliate/method/format-06/tip.jpg",
+      "sha256": "ceb9a1dab8831a57473dc40ef1484e148b818643954530415db890cd637d234e",
+      "rights_status": "NON_JUSTIFIE_DANS_DOSSIER",
+      "evidence_required": "création originale, licence transmissible ou autorisation du titulaire",
+      "transfer_approved": false
+    }
+  ]
+}

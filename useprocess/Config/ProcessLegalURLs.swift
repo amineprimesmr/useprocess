@@ -7,34 +7,31 @@ enum ProcessLegalURLs {
     }
 
     static var termsOfUse: URL {
-        URL(string: "https://useprocess.xyz/cgu\(langQuery)")!
+        URL(string: "\(AppConfiguration.websiteOrigin)/cgu\(langQuery)")!
     }
 
     static var privacyPolicy: URL {
-        URL(string: "https://useprocess.xyz/confidentialite\(langQuery)")!
+        URL(string: "\(AppConfiguration.websiteOrigin)/confidentialite\(langQuery)")!
     }
 
     static var privacyPolicyFaceData: URL {
-        URL(string: "https://useprocess.xyz/confidentialite\(langQuery)#donnees-faciales")!
+        URL(string: "\(AppConfiguration.websiteOrigin)/confidentialite\(langQuery)#donnees-faciales")!
     }
 
     static var privacyPolicyAI: URL {
-        URL(string: "https://useprocess.xyz/confidentialite\(langQuery)#intelligence-artificielle")!
+        URL(string: "\(AppConfiguration.websiteOrigin)/confidentialite\(langQuery)#intelligence-artificielle")!
     }
 
     static var legalNotice: URL {
-        URL(string: "https://useprocess.xyz/mentions-legales\(langQuery)")!
+        URL(string: "\(AppConfiguration.websiteOrigin)/mentions-legales\(langQuery)")!
     }
 
     static var supportPage: URL {
-        URL(string: "https://useprocess.xyz/support\(langQuery)")!
+        URL(string: "\(AppConfiguration.websiteOrigin)/support\(langQuery)")!
     }
 
-    static let supportMail = URL(string: "mailto:support@useprocess.xyz")!
+    static var supportMail: URL { URL(string: "mailto:\(AppConfiguration.supportEmail)")! }
 
-    static var affiliatePortal: URL {
-        URL(string: "https://useprocess.xyz/clipping\(langQuery)")!
-    }
 
     static let tiktok = URL(string: "https://www.tiktok.com/@useprocess")!
     static let instagram = URL(string: "https://www.instagram.com/useprocess")!

@@ -7,6 +7,11 @@ struct ProcessMotionTiltImageCard: View {
     let imageName: String
     var cornerRadius: CGFloat = 14
 
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.processTabIsActive) private var isTabActive
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private var shouldRunMotion: Bool { isTabActive && scenePhase == .active && !reduceMotion }
+
     @StateObject private var motion = ProcessDeviceMotionTiltModel()
 
     private var cardShape: RoundedRectangle {
@@ -37,7 +42,10 @@ struct ProcessMotionTiltImageCard: View {
                 x: motion.parallaxX * 0.35,
                 y: motion.parallaxY * 0.45 + 10
             )
-            .onAppear { motion.start() }
+            .onAppear { if shouldRunMotion { motion.start() } }
+            .onChange(of: shouldRunMotion) { _, active in
+                if active { motion.start() } else { motion.stop() }
+            }
             .onDisappear { motion.stop() }
             .accessibilityLabel(AppCopy.t("Carte repas", en: "Meal card"))
             .accessibilityHint(AppCopy.t(

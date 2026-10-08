@@ -50,7 +50,9 @@ struct OnboardingAnalysisYesNoPopup: View {
             Spacer()
             Spacer()
 
-            Button(action: {}) {
+            // Conteneur simple (pas un `Button`) : des boutons imbriqués dans un bouton sont fusionnés
+            // par VoiceOver en un seul élément inerte, alors que la progression attend une réponse.
+            Group {
                 VStack(spacing: headerSpacing) {
                     if let headerImageName {
                         Image(headerImageName)
@@ -93,9 +95,7 @@ struct OnboardingAnalysisYesNoPopup: View {
                 .frame(maxWidth: .infinity)
                 .frame(minHeight: headerImageName == nil ? 230 : 250)
             }
-            .processGlassButton(in: popupShape, interactive: false)
-            .buttonBorderShape(.roundedRectangle(radius: popupCornerRadius))
-            .controlSize(.large)
+            .processGlassEffect(in: popupShape, interactive: false)
             .padding(.horizontal, 12)
             .offset(y: popupOffset)
         }

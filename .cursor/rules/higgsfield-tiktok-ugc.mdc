@@ -18,8 +18,9 @@ When generating images with Higgsfield in this workspace (Manny, mannydebloat, p
 - Default **`count: 1`** only. Never generate 2–4 variants unless the user explicitly asks for several.
 - Model default: **`nano_banana_pro`** (server may map to nano_banana_2).
 - Resolution default: **`1k`** (cheaper). Use `2k`/`4k` only if the user asks for higher quality.
-- Do not call `get_cost` every time. Do not spam retries. Max **1 retry** if NSFW/fail, then stop and report.
+- Do not call `get_cost` every time. Do not spam retries. Max **1 retry** if NSFW/fail **and there is no output file**, then stop and report.
 - Prefer reuse of already-uploaded `media_id`s for locked identity refs; re-upload only when IDs are missing/expired.
+- **Video:** see `ugc-video-cost.mdc` — one paid job per clip. Never a second Atlas/Higgsfield pass to “clean captions” or tweak a completed render.
 
 ## Realism / spontaneity (locked)
 
@@ -80,12 +81,12 @@ Do not revert manybloat to the old curly-hair first gens (scene-01 knit, 2F08, e
 
 When the user gives a video to recreate (TikTok, screen recording, etc.):
 
-1. **Decompose first** — never guess. `ffprobe` duration/fps, scene-cut detect, extract ≥10 fps frames, **read the frames**, write a second-by-second shot list (gesture, camera, cut times, text to drop). Scene-detect spikes from overlay text changes are NOT hard cuts — confirm by looking at the pictures.
-2. **Omni EDIT, not still→I2V.** Upload the source clip as `@Video1` (`omni_reference_task_type: "edit"`, `duration: -1`). Identity images are `@ImageN` only. Prompt: replace the person, inherit timing/gestures/camera/cuts from `@Video1`. Do **not** animate a still and hope.
+1. **Decompose first** — never guess. `ffprobe` duration/fps, scene-cut detect, extract ≥10 fps frames, **read the frames**, write a second-by-second shot list (gesture, camera, cut times, **captions to strip**). Scene-detect spikes from overlay text changes are NOT hard cuts — confirm by looking at the pictures.
+2. **Omni EDIT, not still→I2V.** Upload the source clip as `@Video1` (`omni_reference_task_type: "edit"`, `duration: -1`). Identity images are `@ImageN` only. Prompt: replace the person, inherit timing/gestures/camera/cuts from `@Video1`, **strip all captions in that same prompt**. Do **not** animate a still and hope. **One paid submit.** Do not follow a completed render with a caption-cleanup or tweak job (`ugc-video-cost.mdc`).
 3. **Strip source audio before upload.** TikTok music trips provider copyright and fails the whole job. `ffmpeg -c:v copy -an`, then `generate_audio: false`.
 4. **No default zoom.** Explicit: locked focal length, no push-in, no dolly-in, no extra crop. Camera path = `@Video1` only.
 5. **Cuts stay.** If the source hard-cuts at 2.93s then 4.53s, the output hard-cuts at those times. Do not blend scenes into one morph.
-6. Strip burned-in captions on live-action shots unless the user wants them. Keep the beat/gap of a text/app card as a cut of the same length if it is a structural cut.
+6. **Never burn captions.** Strip ALL burned-in text / TikTok UI / word overlays from live-action shots. Do not recreate source captions, even on a “1:1”. Keep the beat/gap of a text/app **card** as a structural cut of the same length (plain background, no letters). See `ugc-video-no-captions.mdc`. Override only if that same user message explicitly asks to keep burned-in text.
 7. Match source duration (±0.3s). iPhone 13 Pro Camera app, Photographic Style Natural, 9:16. Native 1080p `duration: -1` can hold ~30s of 1080p price (~$18); if Atlas balance is under that, use `1080p-sr` (or 720p) rather than inventing I2V.
 
 ## Scene-reference workflow (locked)

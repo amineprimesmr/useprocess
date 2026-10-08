@@ -99,3 +99,52 @@ struct CoachChatImageUserMessageView: View {
         }
     }
 }
+
+
+/// A row owns its decoded images, so streaming the coach's reply does not reread disk.
+struct CoachStoredImageMessageView: View {
+    let message: CoachMessage
+    let messageId: UUID
+    var profile: UnifiedUserProfile?
+    var font: Font
+    var lineSpacing: CGFloat
+    var bubbleColor: Color
+    var textColor: Color
+    var onLongPress: (CGRect) -> Void
+
+    @State private var images: [UIImage] = []
+    @State private var hasLoaded = false
+
+    var body: some View {
+        Group {
+            if !images.isEmpty {
+                CoachChatImageUserMessageView(
+                    message: message, images: images, profile: profile,
+                    font: font, lineSpacing: lineSpacing, bubbleColor: bubbleColor,
+                    textColor: textColor, onLongPress: onLongPress
+                )
+            } else if !hasLoaded {
+                HStack {
+                    Spacer(minLength: 48)
+                    ProgressView()
+                        .frame(width: 180, height: 180)
+                        .background(bubbleColor, in: RoundedRectangle(cornerRadius: 16))
+                }
+            } else {
+                CoachUserMessageBubbleView(
+                    message: message, profile: profile, font: font,
+                    lineSpacing: lineSpacing, bubbleColor: bubbleColor,
+                    textColor: textColor, onLongPress: onLongPress
+                )
+            }
+        }
+        .task(id: messageId) {
+            images = []
+            hasLoaded = false
+            let loaded = await CoachChatAttachmentImageStore.previews(messageId: messageId)
+            guard !Task.isCancelled else { return }
+            images = loaded
+            hasLoaded = true
+        }
+    }
+}

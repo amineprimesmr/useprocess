@@ -1,0 +1,30 @@
+{
+  "recordedAt": "2026-10-08T01:35:21.405235+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 82,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 22
+  },
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/PositionPadModel.kt": "c749d25de6524b9a9791520ff6a84d72f55136baa1ccf6e3fde5f86c7b3d16e1",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/TenKPositionPad.kt": "71aef9484d96fc0513764174b0647557caa4f74be78c1466b539ca77663815e1",
+    "/Users/amine/Developer/10kdesign-device.nosync/content/components/design-position-pad/TenKPositionalPadSliderDemo.swift": "ad39fbc280f2127cde22a9c1e4f374d5d85c8adb69a1a941bb40348d5b553a89"
+  },
+  "apkSha256": "1b358d27ea1f78829000a0f1528f1ead36e7267a4aff1ee856e1e8645a20e840",
+  "runtime": "unverified",
+  "visual": "unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "remaining": [
+    "first-touch and external value animation comparison",
+    "original SwiftUI material and exact physical rendering",
+    "runtime gestures, accessibility and large-font checks"
+  ],
+  "buildLog": "/tmp/process-position-pad-build.log"
+}

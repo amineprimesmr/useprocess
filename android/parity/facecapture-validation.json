@@ -1,0 +1,47 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/useprocess/BodyScan/Views/FaceScanCaptureScreen.swift": "9e941707c545d111b7668ad6554161b9e22c85b09d7ad9731eb34d07fc973cb4",
+    "/Users/amine/Developer/useprocess/useprocess/BodyScan/Capture/FaceScanQualityValidator.swift": "337b69052b636220efe5544e1d91b11ecbd6a8bdefb2b18692fe343bc4999de2",
+    "/Users/amine/Developer/useprocess/useprocess/BodyScan/Capture/FaceScanScreenFlash.swift": "32ad0a152290bbe3a15c3dd516d9f14035601d55a7c359958709981c1974a0ec",
+    "/Users/amine/Developer/useprocess/useprocess/Sport/Onboarding/Components/FaceIDScanUI.swift": "868d371744a2325af0ff725fea1f6515d66a0423cdddd5f0c015c2148e58a3e3"
+  },
+  "nativeFiles": [
+    "FaceCaptureModel.kt",
+    "ProcessFaceCameraSession.kt",
+    "ProcessFaceCaptureScreen.kt",
+    "ProcessFaceCapture.kt"
+  ],
+  "contract": "CameraX1.6.2 front-camera preview/photo capture with bundled ML Kit face-detection16.1.7. Requires an Activity/lifecycle host; manifest declares CAMERA with optional camera hardware. Runtime request happens only on Allow camera; denied state opens Android app settings. Pass an account/request-scoped contextKey,isActive,onBack and onContinue. Continue returns true only after host takes ownership of the private-cache photo; false retains it for retry. Retake/back/disposal discard unaccepted task-owned photos; stale callbacks delete only their own new file. Own use cases unbind on inactive/non-RESUMED/disposal without unbindAll. Detection throttles100ms,keeps latest frame and always closes ImageProxy; crop rectangles rotate into detector coordinates. Live and saved JPEG require one face,source2.8%-82% area bounds,native central15%-85% bounds and within18degrees yaw/pitch. Captured image is independently checked,including source RGB luminance0.08; live Y luminance is an approximation,not ARKit lux. Observations older750ms cannot trigger capture. Original96point superellipse1.36aspect and green/gray tick treatment adapted. Screen light changes only Activity brightness and restores it. No microphone,upload or wellness score. This is a 2D photo capture adaptation,NOT equivalent ARKit3D scanning: mesh/depth,visited-sector scanning,head-tilt/arrival phases,video/gallery import,matched zoom/exact rings/haptics and full analyzer integrations remain unfinished. CameraX/ML Kit hardware behavior,EXIF/mirroring,crop,flash,permission lifecycle and pixel/motion parity require physical Android testing; host tests cover UI/model only. No actual photo was captured during development validation.",
+  "officialReferences": [
+    "https://developer.android.com/jetpack/androidx/releases/camera",
+    "https://developer.android.com/media/camera/camerax/preview",
+    "https://developer.android.com/media/camera/camerax/take-photo",
+    "https://developers.google.com/ml-kit/vision/face-detection/android"
+  ],
+  "recordedAt": "2026-10-08T09:32:38.422426+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 175,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 39
+  },
+  "visual": "host UI/model only; actual hardware unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "FaceCaptureModel.kt": "3f810cac4f3beb413ec0037d984ecc2cb5ebe6b3ba92130fa1c615d168bcaf70",
+    "ProcessFaceCameraSession.kt": "fd1aca4c02852f96a5a2a6a2d28e1a12a7137d26b854cc29c8c3cd00009eac7a",
+    "ProcessFaceCaptureScreen.kt": "6dd1cf8533af6d7b9ee58de799ce5dbc773a827d01d2fea1ac40944313c2f981",
+    "ProcessFaceCapture.kt": "fa658cf03fec991b8e92354c860b19d8eeb1369cd16b3921f4cf445419b1f77f"
+  },
+  "remaining": [
+    "Actual physical camera,permissions,lifecycle,EXIF/mirroring,crop and flash validation",
+    "ARKit3D mesh/depth,visited-sector scanning,head-tilt/video/gallery import and full analysis are not implemented",
+    "Exact camera transitions,rings,fonts and physical/iOS comparison"
+  ]
+}

@@ -117,46 +117,10 @@ struct ProcessReferralGlassSocialShareRow: View {
                 )
             }
 
-            clipperItem
         }
         .frame(maxWidth: .infinity)
     }
 
-    private var clipperItem: some View {
-        let buttonSize = ProcessReferralSocialShareMetrics.buttonSize
-        let title = AppCopy.t("Clippers", en: "Clippers")
-
-        return VStack(spacing: 8) {
-            Button {
-                HapticManager.shared.impact(.light)
-                Task { openURL(await ProcessAffiliatePortalLink.portalURLForCurrentUser()) }
-            } label: {
-                Image("PlanHomeUpgradeDollar")
-                    .resizable()
-                    .interpolation(.high)
-                    .scaledToFill()
-                    .frame(width: buttonSize, height: buttonSize)
-                    .scaleEffect(ProcessReferralSocialShareMetrics.brandImageFillScale)
-                    .frame(width: buttonSize, height: buttonSize)
-                    .clipShape(Circle())
-                    .overlay {
-                        Circle()
-                            .strokeBorder(Color.white.opacity(0.10), lineWidth: 0.5)
-                    }
-                    .shadow(color: Color.black.opacity(0.18), radius: 6, y: 3)
-            }
-            .buttonStyle(.plain)
-            .frame(width: buttonSize, height: buttonSize)
-            .accessibilityLabel(title)
-
-            Text(title)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(ProcessReferralTheme.textSecondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-        .frame(maxWidth: .infinity)
-    }
 
     private func socialItem(
         title: String,

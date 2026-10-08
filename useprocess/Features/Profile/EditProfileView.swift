@@ -154,7 +154,7 @@ struct EditProfileView: View {
                 Button { openSupportChat() } label: {
                     ProcessSettingsOpalRow(
                         icon: "bubble.left.and.bubble.right.fill",
-                        title: AppCopy.t("Discuter avec l'assistance", en: "Chat with Support")
+                        title: AppCopy.t("Assistance", en: "Support")
                     )
                 }
                 .processSettingsOpalRowButton()
@@ -250,18 +250,6 @@ struct EditProfileView: View {
                     ProcessSettingsOpalRow(
                         icon: "gift.fill",
                         title: AppCopy.t("Parrainage", en: "Refer friends")
-                    )
-                }
-                .processSettingsOpalRowButton()
-
-                ProcessSettingsOpalRowDivider()
-
-                Button {
-                    Task { inAppSafariURL = await ProcessAffiliatePortalLink.portalURLForCurrentUser() }
-                } label: {
-                    ProcessSettingsOpalRow(
-                        icon: "sparkles",
-                        title: AppCopy.t("Programme clipper", en: "Clipper program")
                     )
                 }
                 .processSettingsOpalRowButton()
@@ -367,11 +355,7 @@ struct EditProfileView: View {
 
     private func openSupportChat() {
         ProcessAnalytics.trackSupportChatOpened(source: "settings_hub")
-        if ProcessCrispSupport.isReady {
-            showsSupportChat = true
-        } else {
-            openURL(ProcessLegalURLs.supportMail)
-        }
+        showsSupportChat = true
     }
 
     private func shareProcessApp() {
@@ -379,7 +363,7 @@ struct EditProfileView: View {
             "Découvre Process — debloat ton visage avec un plan sur mesure.",
             en: "Discover Process — debloat your face with a personalized plan."
         )
-        let url = URL(string: "https://useprocess.xyz")!
+        let url = URL(string: AppConfiguration.websiteOrigin)!
         let activity = UIActivityViewController(activityItems: [text, url], applicationActivities: nil)
         guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
               let root = scene.windows.first?.rootViewController else { return }

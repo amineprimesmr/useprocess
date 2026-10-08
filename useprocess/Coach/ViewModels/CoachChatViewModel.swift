@@ -997,7 +997,9 @@ final class CoachChatViewModel {
         inputText = ""
 
         let messageId = UUID()
-        CoachChatAttachmentImageStore.save(images: images, messageId: messageId)
+        _ = await Task.detached(priority: .utility) {
+            CoachChatAttachmentImageStore.save(images: images, messageId: messageId)
+        }.value
 
         let userMsg = CoachMessage(
             id: messageId,

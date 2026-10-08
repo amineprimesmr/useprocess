@@ -1,0 +1,70 @@
+DÉCISION DU 4 OCTOBRE 2026 : useprocess.xyz et ses emails restent à l’entreprise du vendeur. Migration app vers processdebloat.fr proposée, domaine pas encore acquis et bascule non effectuée. Les mentions historiques de cession de useprocess.xyz dans ce document sont remplacées par cette décision ; consulter AUDIT_MIGRATION_PROCESSDEBLOAT_2026-10-04.txt.
+
+PROCESS — REPRISE TECHNIQUE
+
+Ce pack est un état de travail interne, pas une release App Store certifiée.
+Aucune donnée personnelle de production ni clé privée serveur n'est exportée.
+Les configs client absentes ont leurs templates ; les remplir sous les droits
+appropriés sans couper les anciennes versions encore en circulation.
+
+Architecture
+App SwiftUI → Firebase Auth (Apple / invité) → Firestore.
+App → RevenueCat / StoreKit pour achats → entitlement premium.
+Coach → Cloud Functions → vérification RevenueCat → Anthropic.
+App/site → PostHog ; attribution SDK AppsFlyer.
+Support → email contact@useprocess.xyz ; webhook et tâche planifiée Crisp supprimés.
+Affiliés → Firebase + email Hostinger ; versements manuels.
+Site Vite/React → Vercel ; domaine et mail chez Hostinger.
+Médias originaux → Storage useprocess-d4385.firebasestorage.app/media.
+MCP affilié → /api/mcp sur Vercel → affiliateMcp, tokens individuels.
+
+Connexions supplémentaires trouvées
+- WhatsApp support personnel codé dans website/src/affiliate/affiliate-utils.js :
+  remplacer par le numéro de support repreneur lors du transfert convenu.
+- Documentation Telegram clippers dans le checkout : ownership, participants,
+  bot et liens à inventorier séparément ; aucun bot facturé confirmé.
+- TikTok OAuth : sources présentes mais aucune variable TIKTOK_* constatée dans
+  les environmentVariables des fonctions listées. Ne pas annoncer ce service
+  comme configuré/opérationnel sans validation.
+- App Check : aucun ENFORCE_APP_CHECK trouvé dans ces variables déployées.
+  Dépendance de sécurité et réglages à vérifier, sans activer brutalement une
+  protection qui pourrait bloquer l'app publiée.
+- Les scopes API Apple/RevenueCat et clés client AppsFlyer peuvent couvrir
+  d'autres projets : transférer le projet, pas l'ensemble du compte personnel.
+
+Déploiements
+Backend : depuis la racine, npm --prefix firebase/functions ci,
+  npm --prefix firebase/functions run build, puis tests du package.
+  Firebase minimal : firebase deploy --project useprocess-d4385
+  --only functions:<noms concernés>. Le predeploy configure la compilation TS.
+  Règles/indexes seulement si modifiés, après tests et validation de compatibilité.
+Site : cd website ; npm ci ; npm run build.
+  Relier le projet Vercel de l'acquéreur avant déploiement sous ses droits.
+  Le dossier .vercel du vendeur est exclu : ne pas déployer par erreur chez lui.
+  Vérifier pages légales, API rewrite, AASA, domaines et adresses email.
+iOS : restaurer packages via Package.resolved, renseigner équipe/signing,
+  profils et capabilities ; conserver bundle et produits historiques.
+  Aucun simulateur ; utiliser l'iPhone 14 Pro Max physique de cette session.
+  Une compilation à la fois, nice -n 15 et xcodebuild -jobs 1.
+  Ne pas réutiliser les scripts historiques de pricing sans comprendre leurs effets.
+
+Sauvegarde et données
+Les médias statiques sont inventoriés dans MEDIAS_STORAGE.txt ; leur copie a échoué faute de place disque. Aucun média original cloud ni photos/conversations users n’est exporté.
+Conserver le projet Firebase et UID ; sauvegarde Auth/Firestore et restauration
+à préparer sous un périmètre documenté, avant cession. Les buckets techniques
+Cloud Functions ne sont pas les médias produit et n'ont pas été copiés.
+AASA, clé Sign in with Apple, signatures et RevenueCat doivent être migrés dans
+l'ordre décrit dans le plan de cession. Pas de retrait prématuré du vendeur.
+
+Validation de reprise
+Connexion Apple/invité, restauration, achats sandbox, accès coach, suppression,
+mail affilié, ouverture email assistance, webhook Apple/RevenueCat, liens universels, medias et site.
+Résultats à renseigner ; aucune validation sous compte acquéreur encore possible.
+
+Dernières étapes
+Compléter AppsFlyer (connexion nécessaire), conserver PostHog Free et ses analyses, coûts GitHub/Apple,
+licences médias et droits marque, build Release/App Review, migration Apple,
+sauvegarde/restauration, comptes destinataires et signature des annexes.
+Conserver le manifeste SHA256 et régénérer le pack après toute correction source.
+
+MISE À JOUR : assistance remplacée par email contact@useprocess.xyz. Webhook et polling Crisp supprimés ; endpoint supportSendMessage maintenu sans secret/stockage en réponse HTTP 410 pour anciennes versions. Les anciennes apps affichent une erreur 410 ; mise à jour iOS nécessaire pour le nouveau support email. Les conversations historiques et les secrets non attachés restent sur le compte vendeur et ne sont pas remis dans le pack. PostHog Free vérifié ; AppsFlyer reste inaccessible.

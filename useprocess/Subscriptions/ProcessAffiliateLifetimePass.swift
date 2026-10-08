@@ -15,12 +15,21 @@ enum ProcessAffiliateLifetimePass {
     private static let codeKey = "process.affiliate.lifetime_pass.code"
 
     static var isUnlocked: Bool {
-        UserDefaults.standard.bool(forKey: unlockedKey)
+        #if DEBUG
+        return UserDefaults.standard.bool(forKey: unlockedKey)
+        #else
+        // Production access comes from Apple purchases or RevenueCat-managed entitlements.
+        return false
+        #endif
     }
 
     static func matches(_ raw: String) -> Bool {
+        #if DEBUG
         let normalized = ProcessReferralCode.normalize(raw)
         return normalized == code
+        #else
+        return false
+        #endif
     }
 
     /// Alias explicite — même logique que `matches`, pour les call sites paywall / resolve.
@@ -31,6 +40,7 @@ enum ProcessAffiliateLifetimePass {
     /// Persiste l’accès et active le premium local. Idempotent.
     @MainActor
     static func unlock() {
+        guard matches(code) else { return }
         let wasUnlocked = isUnlocked
         UserDefaults.standard.set(true, forKey: unlockedKey)
         UserDefaults.standard.set(code, forKey: codeKey)

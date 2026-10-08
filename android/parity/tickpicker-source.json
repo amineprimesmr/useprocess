@@ -1,0 +1,13 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-146374647-584248521/TickPickerView/TickPickerView/ContentView.swift": "03acf6f7b054415648b5d9adc0100ac0f735de4c471aa7af2dbbfbd443c3e012",
+    "content/source-projects/design-source-146374647-584248521/TickPickerView/TickPickerView/TickPickerViewApp.swift": "c283d766fde6d91e2c18482969974cca684354a1c138f75230f3be20112fb81f",
+    "content/source-projects/design-source-146374647-584248521/TickPickerView/TickPickerView/Helpers/TickPicker.swift": "b16e9856bef1dd577012f02f674c52553ab203d5c1636e5e5eed0dc15f977932"
+  },
+  "mirrorMatchesInventory": true,
+  "contract": "Supply inclusive count (0through count),controlled integer selection,onSelection and TickPickerConfig. Defaults3dp ticks/3dp side padding,30dp full height/55percent idle,60dp interaction region,yellow active and top/bottom/center anchors. Initial50ms setup gate,centered end padding,changed-index animation range,immediate rise and300ms release are adapted. External selection recenters and accessible progress is adjustable. Original demo starts5,count100,2dp ticks and50+selection CM. Native fling/snap behavior may cross multiple ticks unlike the Swift alwaysByOne target; native spring/color/scroll geometry and physical comparison remain unfinished.",
+  "nativeFiles": [
+    "TenKTickPicker.kt",
+    "TenKTickPickerGallery.kt"
+  ]
+}

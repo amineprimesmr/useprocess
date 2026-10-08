@@ -1,0 +1,20 @@
+{
+  "recordedAt": "2026-10-08T02:13:50.542534+00:00",
+  "created": true,
+  "purpose": "Candidate Google Play upload key; not registered with Play App Signing",
+  "propertiesPath": "/Users/amine/Library/Application Support/Process Android Signing/keystore.properties",
+  "keystorePath": "/Users/amine/Library/Application Support/Process Android Signing/process-upload.p12",
+  "privateFileModes": {
+    "directory": "0o700",
+    "properties": "0o600",
+    "keystore": "0o600"
+  },
+  "keyAlias": "process-upload",
+  "publicCertificate": "/Users/amine/Developer/useprocess/android/parity/upload-certificate.pem",
+  "sha1": "CA:E5:3F:28:83:13:46:A8:CE:A5:4D:8F:42:84:BD:01:7D:02:1E:B9",
+  "sha256": "B1:2A:9D:68:83:1F:31:0C:92:22:4D:72:0F:D1:8F:13:59:F1:72:3B:67:68:1A:62:B1:63:F0:26:40:85:3C:4E",
+  "releasePublished": false,
+  "releaseBundleBuilt": false,
+  "gradleSigningReport": "passed; release variant resolves upload configuration with matching SHA-256",
+  "validationLog": "parity/logs/process-upload-signing-report.log"
+}

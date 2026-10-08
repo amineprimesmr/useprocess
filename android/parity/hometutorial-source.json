@@ -1,0 +1,17 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/useprocess/Features/HomeTutorial/PlanHomeTutorialOverlay.swift": "59db45ef02458f5b790d199bc2af13ccd0d6a6b5b597f5bc93008824f7e96b34",
+    "/Users/amine/Developer/useprocess/useprocess/Features/HomeTutorial/PlanHomeTutorialFocus.swift": "de50aa8fd3927568a61afa8d492cc9add90ab911587d0970a11b4abc1580ea6c",
+    "/Users/amine/Developer/useprocess/useprocess/Features/HomeTutorial/PlanHomeTutorialRotatingBorder.swift": "dd234dfcab8523c36b0b9658c738caf068d17a08b385124c0a7162d6a85ed574",
+    "/Users/amine/Developer/useprocess/useprocess/Features/HomeTutorial/PlanHomeTutorialStore.swift": "6d4b0a09042d966d13f1f3634f4ed075040baca7ece7d79f9365c3ffdbe46950",
+    "/Users/amine/Developer/useprocess/useprocess/Features/HomeTutorial/PlanHomeTutorialStep.swift": "48d6c5c4374f7435840fab04b278693f7e406099516571c141384fabf07df9da"
+  },
+  "nativeFiles": [
+    "HomeTutorialModel.kt",
+    "ProcessHomeTutorialState.kt",
+    "ProcessHomeTutorial.kt",
+    "ProcessTutorialBorder.kt",
+    "ProcessMotionPreferences.kt"
+  ],
+  "contract": "Create rememberHomeTutorialState with a stable account/context key,real persisted completion and a completion callback. Mount ProcessHomeTutorialCoordinator with actual plan availability,home mount state,selected tab and navigation/focus callbacks. Wrap real cards in ProcessHomeTutorial; use ProcessTutorialTabFooter/Outline for the final profile/streak step. Source order scan,hydration,nutrition,routine,streak and cumulative section visibility retained; hydration temporarily hides meal cards,meal step does not request vertical scroll. No missing plan is fabricated. Preview suppression prevents activation and suspends an active tutorial. Manual tab changes complete without forcing navigation home. A missing visible Continue control releases a mounted foreground home after1500ms; lifecycle/background and missing home suspend this watchdog. Native coordinator restarts when home mounts instead of abandoning the original20poll/30second window. Host owns durable completion/migration; gallery completion is ephemeral. Original4home dots,26sp/16sp caption,22dpgap,54dpCTA,30/22radii,2.75dpborder,4.8second narrow cyan/white beam and30fps cap are adapted. Source Dynamic Island wording is removed on Android; host owns hydration timer implementation. Footer uses consistent dark contrast. UIKit glass,exact caption/focus/tab springs,source absolute phase and physical/iOS pixel/motion comparison remain unverified."
+}

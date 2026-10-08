@@ -1,0 +1,32 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-119040180-399441231/DownsizedImages/DownsizedImages/ContentView.swift": "819acb7f832c3ddf5feff7813b36484b35dd2616a6bc5957d34accb569ef7bb3",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-119040180-399441231/DownsizedImages/DownsizedImages/DownsizedImagesApp.swift": "9287d7b35cc5e20073f3c5eced9f4afa8e0a677473013993dd11703234ed054e",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-119040180-399441231/DownsizedImages/DownsizedImages/Helpers/CacheManager.swift": "5c8550a0224275dece09ec7c12f6b7baced4e6f4e2640a40e6d15c514738d842"
+  },
+  "assets": [
+    {
+      "archive": "/Users/amine/Downloads/DownsizedImage + Caching.zip",
+      "member": "DownsizedImages/DownsizedImages/Assets.xcassets/Pic1.imageset/Pic 1.jpg",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/cache_pic1.jpg",
+      "sha256": "e891f9ec43e0d2c7d3542a32488dad618860b4424709bd815b33e4e67f2910a0"
+    },
+    {
+      "archive": "/Users/amine/Downloads/DownsizedImage + Caching.zip",
+      "member": "DownsizedImages/DownsizedImages/Assets.xcassets/Pic2.imageset/Pic 2.jpg",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/cache_pic2.jpg",
+      "sha256": "c501b48631f6a58dd7a49beb018da890dcf18dd1e7a09962cd978f540be86dc2"
+    },
+    {
+      "archive": "/Users/amine/Downloads/DownsizedImage + Caching.zip",
+      "member": "DownsizedImages/DownsizedImages/Assets.xcassets/Pic3.imageset/Pic 3.jpg",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/cache_pic3.jpg",
+      "sha256": "330671ebe37f384ce285dc01c4d37f0ea8a50366655a27ff9e41d6541fad37a2"
+    }
+  ],
+  "nativeFiles": [
+    "TenKImageCache.kt",
+    "TenKDownsizedImage.kt"
+  ],
+  "contract": "Local bitmap adapter with source aspect-fit resizing off the main thread and30-entry FIFO disk cache. Original3photos recovered from archive whose3Swift files match every byte. Host provides one shared cache instance per private scope,id,sourceRevision,physical pixel size and decoded source Bitmap; revision must change when image bytes change. Cache identity includes revision and dimensions,fixing stale source/size reuse. SHA256names prevent key path traversal; atomic entry replacement,64MiB total/32MiB entry limits,calendar-day TTL and expiration check on every read. Scope-specific clear only removes owned hashed image entries; cancel pending loads before account clear. CRUD is synchronized per instance; do not create parallel instances for the same scope. JPEG100 for opaque output,PNG for alpha; source bitmap is never recycled. Cancelled context results cannot update UI or call failure callback; corrupt cache falls back to current original. Missing original without valid cache shows explicit failure instead of permanent spinner. Target pixel area capped16million; host owns source decode/privacy/permissions. Native font,scale/upscale interpolation,JPEG pixels and physical/iOS comparisons remain unverified."
+}

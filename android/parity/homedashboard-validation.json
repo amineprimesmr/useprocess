@@ -1,0 +1,80 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/useprocess/Health/Views/PlanDashboardView.swift": "ebf46c52459540eb45f00641b6668255a221c0dffdab5ebadf7ddb03dfae789a",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/PlanHomeTopChrome.swift": "b9fa0540ea53c320556f9f0f5ea64e82a72d6892242ca50ea9a1eed15e676176",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/PlanHomeGreeting.swift": "4b8aecb96d9219792aa18d8ee975bd6c7e3ae52b4e62671a78931a0c9268a185",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/PlanHomeSectionDesign.swift": "199c13f7499fb410108f083fdc94bd205cc7b43087547a485534abca0c40bf01",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/PlanHomeLayoutStore.swift": "b23dce4055617bf7ba0c4a7f056ff5fd6dfa1bc75588f3198153588372fccff5",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/DailyJournalChecklistView.swift": "2563305549b614d8daf5601f5f8839f53312b762b075d46e16c822dce43ffdf0",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/PlanLastFaceScanSection.swift": "3468df8ffd1e5f301e74af530b973930ef99d1e53087b75c1bc6f399ad549441",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/PlanHomePeriodicTicker.swift": "3e98518fb4fddafefa9e1090d67835033f7ec7cb337bf68216bd083ea73aa38f",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/Plan/PlanNutritionDaySection.swift": "9c121d37cdbed65cf9e6907fc0eb11be3c506f29eaa21fc19249cf097a7514a6",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/Plan/PlanFaceDaySection.swift": "6fb90cc722977af79a744f1c2a2816bbfd8f5f7ae70aa596ff52b6be46d540eb",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/Plan/PlanHomeUpgradeProCard.swift": "09e1de7568c0410f19ec815ad82e8c6a843b5dc544d57fd5940f1415124f499f",
+    "/Users/amine/Developer/useprocess/useprocess/WelcomePlan/OriginPlanPresenter.swift": "8b94b7bfe66d5383814fe8ffacfe9870ab748b74a329ac119b9782194cf23828",
+    "/Users/amine/Developer/useprocess/useprocess/Engagement/ProcessPlanProgressEngine.swift": "69d0bff047f6c7f10522380379a2895bd7f4716442b653537c348eb5fccb2f11",
+    "/Users/amine/Developer/useprocess/useprocess/BodyScan/Services/FaceScanCadence.swift": "d48647075e1b89937f759ea2296e426c72e891f6b19ba3eea2e63407d9081232"
+  },
+  "nativeFiles": [
+    "ProcessHomeModel.kt",
+    "ProcessHomeDashboard.kt",
+    "ProcessHomeScanCard.kt",
+    "ProcessHomeNutrition.kt",
+    "ProcessHomeRoutineSection.kt",
+    "ProcessSurfacePalette.kt",
+    "ProcessMotionPreferences.kt",
+    "ProcessStreakFlame.kt",
+    "HydrationGeometry.kt",
+    "ProcessHydrationCard.kt",
+    "ProcessRoutineCatalog.kt",
+    "ProcessRoutineHoldCard.kt",
+    "RoutineHomeModel.kt",
+    "WelcomeCardsModel.kt",
+    "ProcessWelcomeCards.kt",
+    "HomeTutorialModel.kt",
+    "ProcessHomeTutorialState.kt",
+    "ProcessHomeTutorial.kt",
+    "ProcessTutorialBorder.kt"
+  ],
+  "contract": "Provide a real ProcessHomeSnapshot scoped to account/plan/day,real plan-adjusted calendar,selected date,resolved first name,scan,hydration,meal images/assessments and routine completions. Preferred date clamps to the source first/last program day; future dates cannot edit. Default order scan,nutrition,lymphatic circuit; training/resources remain excluded and nutrition cannot be hidden. Header28sp,120x5program track,source first-day elapsed count,streak flame/attention badge; scan100dp due/136dp recorded,26radius,6AM local-day unlock and DST-aware countdown. Host owns actual camera,media permissions,scan consent and analysis; no image,plan,score or consent fabricated. Future scan timestamps intentionally do not unlock capture. Source cadence peculiarity retained: an older scan before today6AM can display<1min despite next-calendar target already elapsed. Real wall clock ticks1Hz only active+RESUMED. No-plan restore and pull-to-refresh are suspend host callbacks; context changes cancel outstanding operations. Nutrition uses original248dp bottle and first3meal image collage96dp with source offsets/scales; average score shown only when every included host assessment exists. Local hydration adjustments take priority over external health values,allowing decreases. Routine retains original6stills/280second catalog and5second hold intents; host opens media/session and persists validated completion. Welcome/referral deck and optional HomeTutorialState are composed; mount the tutorial coordinator in the actual host and pass real lifecycle/tab state. Personal data/backend/health and durable writes remain host-owned. Native glass,missing media slot,score gradient/tick bar,exact carousel edge transforms,scroll-focus anchor/springs,fonts/SF symbols and physical/iOS comparison remain unverified. Library includes18original recipe images and6routine stills; exercise videos belong to the exercise-detail integration.",
+  "recordedAt": "2026-10-08T09:17:45.873256+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 171,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 36
+  },
+  "visual": "host render inspected; iOS comparison unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "ProcessHomeModel.kt": "8283d0da3680e2b350f0b2ea6b0af6162664d2157e74a948a392111f66905bc0",
+    "ProcessHomeDashboard.kt": "837ca1caa876102cb943440f6c3d583ff9402a6725c19e542c53a77aa98d2995",
+    "ProcessHomeScanCard.kt": "e66f567fcfb01f2691f2a3ab23701cb79cfab20f098799c938f7b14fa46883a9",
+    "ProcessHomeNutrition.kt": "3f036e8f2b337294d9cc22f0bc94680a942a523cd57f4b84d3aec6e8f353cc7e",
+    "ProcessHomeRoutineSection.kt": "7850d8a2a2a0c15c9b09a291dd86d566541a5b82c2214a90f4fa168c596e5cf3",
+    "ProcessSurfacePalette.kt": "2ca843a0a032026cb1f6fc2f8811f765f3c632a4ac372e23742e2d4c259bd32a",
+    "ProcessMotionPreferences.kt": "5f62c13457fb14a4db1e32f7095cc3b929bdde001e26bd4e1de74fd35a943462",
+    "ProcessStreakFlame.kt": "ad1d8f4f65cda473661167efcfdc399c97bce71eeb7679324f414516c01e1f42",
+    "HydrationGeometry.kt": "a517156c6512c9b319e91d75cac9f439442e79ec3de53ff7bef69443e9c73555",
+    "ProcessHydrationCard.kt": "6b729f2cc065815689ef715929d6e27f94f086c2588a0b982ee69fa481ce94be",
+    "ProcessRoutineCatalog.kt": "beee30e9dce72bfff593acb342c0c1feb0896a08853b7f108f2084d18adc2c99",
+    "ProcessRoutineHoldCard.kt": "51f4cecc88de210d572ceae9fdcfb0a8d989a5a572c370abc90ac173091dbf47",
+    "RoutineHomeModel.kt": "c08412e93e73f4f11ff7761049ddcc4fa98115e3d7d02a93179c4250154e5e45",
+    "WelcomeCardsModel.kt": "ba1d72d87b2c0cae645fb854e0d209861990ee70d301296a29977aa9cd432018",
+    "ProcessWelcomeCards.kt": "3fc7e295d2242284ebb7d910aa23366484cf0f2df43bdf7275e3f482f5c46e45",
+    "HomeTutorialModel.kt": "8118479f86b2020f05fef4dbbc187590b8a2ab365c77fc796fa01d274f0fa42d",
+    "ProcessHomeTutorialState.kt": "3672df2ebddb3fbde25a7074f8884dba3f0a1c3cfa13a35d8b64571827e4f24a",
+    "ProcessHomeTutorial.kt": "11773aa0ab626cdf6dee858e71e70e82fab007319b316b3a8f1f3253f2c46cc3",
+    "ProcessTutorialBorder.kt": "1b2b7fa6ce0e1abf976e299e427593ceec573368118c39905de3d56c7b8f86c3"
+  },
+  "remaining": [
+    "Account/plan/day persistence,camera/media,real nutrition assessments and health integration",
+    "Original glass,fonts,exact motion and physical/iOS comparison"
+  ]
+}

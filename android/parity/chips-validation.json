@@ -1,0 +1,27 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-124065546-434132724/ChipSelection/ChipSelection/ContentView.swift": "fdcb6e7ace72a788246452ef2681da3aa08c46e9804b1ae5ec51dc7200b82310",
+    "content/source-projects/design-source-124065546-434132724/ChipSelection/ChipSelection/ChipSelectionApp.swift": "da3df8d7b767eb0539092fad920827de16323b96dc62c7d64e271c99e7d28ee1",
+    "content/source-projects/design-source-124065546-434132724/ChipSelection/ChipSelection/Helper/ChipsView.swift": "1a32629955af8bdca50aa73c54c8c54b4c5398de0ed67c699c5e22b7ae4f6af2"
+  },
+  "mirrorMatchesInventory": true,
+  "build": "passed",
+  "visual": "host-only; original comparison unverified",
+  "motion": "unverified",
+  "recordedAt": "2026-10-08T03:04:03.109359+00:00",
+  "unitTests": {
+    "tests": 122,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 31
+  },
+  "hostUi": "8tests passed; final color-corrected screenshot inspected; see parity/host-render/validation.json",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "TenKChips.kt": "29969f764f1a32144ca90963a8e36f2867ff687d619b914b0917516ff79a8b3a"
+  }
+}

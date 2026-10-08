@@ -84,7 +84,8 @@ private struct OnboardingExplainerStepView: View {
 
     private var continueButton: some View {
         Button {
-            HapticManager.shared.impact(.medium)
+            // Pas de verrou local : le host anti-rebondit déjà via `isTransitioning`, et un verrou
+            // posé pendant ce délai laissait le bouton mort sans retour possible.
             onComplete()
         } label: {
             Text(OnboardingCopy.continueCTAUpper)

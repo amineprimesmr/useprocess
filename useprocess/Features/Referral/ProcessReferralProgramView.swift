@@ -119,6 +119,7 @@ private struct ProcessReferralProgramScreen: View {
         .processSettingsScrollToolBar(
             title: AppCopy.t("Récompenses", en: "Rewards"),
             titleAlignment: .center,
+            appliesDarkToolbarColorScheme: true,
             showsBackButton: showsBackButton,
             onBack: onBack
         )

@@ -1,0 +1,7 @@
+Rejet Apple confirmé dans App Store Connect le 7 octobre 2026.
+Soumission 1860acb3-23c9-4bc1-b933-75312df78cba ; version 1.13 (38).
+Guideline 2.1(a), App Completeness.
+Apple indique que le bouton « Claim my offer » rendait l’application non réactive.
+Appareil de review : iPad Air 11 pouces M4, iPadOS 27.0.
+L’offre a été remplacée dans le code par un achat explicite, sans roue, faux gain ou compte à rebours.
+La validation réelle des achats, restaurations et du comportement sur iPad reste à faire. Aucune réponse ni resoumission envoyée à Apple.

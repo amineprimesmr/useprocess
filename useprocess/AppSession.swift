@@ -192,8 +192,6 @@ final class AppSession {
         OnboardingProgressService.shared.resetProgressForAccountDeletion(primaryUID: primary)
         WelcomePlanStore.shared.resetForCurrentUser()
         ProcessAnalytics.reset()
-        ProcessCrispSupport.resetSession()
-
         AuthenticationManager.shared.applyPostAccountDeletion()
         AuthenticationManager.shared.startOnboarding()
     }
@@ -450,6 +448,7 @@ final class AppSession {
     func setAppearance(_ mode: AppAppearance) {
         appearance = mode
         UserDefaults.standard.set(mode.rawValue, forKey: Keys.appearance)
+        ProcessWindowAppearance.apply(mode)
     }
 
     private var onboardingStorageKey: String {

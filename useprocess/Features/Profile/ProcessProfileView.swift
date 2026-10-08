@@ -9,7 +9,7 @@ struct ProcessProfileView: View {
     var showsCloseButton: Bool = true
 
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.appTheme) private var theme
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Bindable private var faceHistoryStore = FaceScanHistoryStore.shared
@@ -28,7 +28,7 @@ struct ProcessProfileView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .processAppPageBackground()
         .background {
-            if colorScheme == .dark {
+            if theme.isDark {
                 Color.black.ignoresSafeArea()
             }
         }

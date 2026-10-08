@@ -27,9 +27,7 @@ extension SportOnboardingView {
             HeightStepView(
                 selectedHeight: $viewModel.selectedHeight,
                 onValidationChanged: { isValid in
-                    Task { @MainActor in
-                        viewModel.isHeightWeightSelected = isValid
-                    }
+                    viewModel.isHeightWeightSelected = isValid
                 }
             )
         case .weight:
@@ -105,7 +103,6 @@ extension SportOnboardingView {
                 hasCompletedFirstScan: viewModel.isFaceAnalysisCompleted,
                 onFirstScanResult: { viewModel.recordDashboardFaceScanResult($0) },
                 onFirstScanContinue: { advanceFromEarlyDashboardFaceScan() },
-                onBeginFirstScan: { viewModel.dismissOnboardingFaceScan() },
                 onFirstScanSkipLater: {
                     viewModel.skipDashboardFaceScanForLater()
                     advanceFromEarlyDashboardFaceScan()
@@ -120,11 +117,6 @@ extension SportOnboardingView {
                     }
                 }
             )
-            .onAppear {
-                viewModel.onOnboardingFaceScanContinueFromDashboard = {
-                    advanceFromEarlyDashboardFaceScan()
-                }
-            }
         case .dreamFaceCommit:
             DreamFaceCommitStepView(onComplete: nextStep)
         case .programCreation:

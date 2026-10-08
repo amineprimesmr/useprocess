@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Slider studio Mauvais → Réaliste → Excellent (mode créateur `Amineprcs`).
+/// Slider studio Mauvais → Réaliste → Excellent (mode créateur `Manny`).
 struct FaceScanStudioQualitySlider: View {
     @Binding var quality: Double
     var onEditingEnded: ((Double) -> Void)? = nil

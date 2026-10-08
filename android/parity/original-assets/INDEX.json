@@ -1,0 +1,745 @@
+{
+  "scope": "Original bytes staged outside iCloud for future native ports; unused by APK unless explicitly imported",
+  "files": [
+    {
+      "slug": "design-source-151176681-617589520",
+      "asset": "Screen1",
+      "archive": "/Users/amine/Downloads/iOSStyleOnBoarding Updated.zip",
+      "member": "iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen1.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-151176681-617589520/iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen1.imageset/Contents.json",
+      "sha256": "ca67e7f868e2401bede4664e32ee83c826ad6cea47cb12d6e3c806ceb0df005f",
+      "bytes": 355
+    },
+    {
+      "slug": "design-source-151176681-617589520",
+      "asset": "Screen1",
+      "archive": "/Users/amine/Downloads/iOSStyleOnBoarding Updated.zip",
+      "member": "iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen1.imageset/simulator_screenshot_374086FA-9120-4447-B536-EC0E628AC5DB.png",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-151176681-617589520/iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen1.imageset/simulator_screenshot_374086FA-9120-4447-B536-EC0E628AC5DB.png",
+      "sha256": "d6cf36f4b2ce8c8bb1d75b74df3e70fd912e920553f6136e2cd8d7d0a22d694d",
+      "bytes": 3834872
+    },
+    {
+      "slug": "design-source-151176681-617589520",
+      "asset": "Screen2",
+      "archive": "/Users/amine/Downloads/iOSStyleOnBoarding Updated.zip",
+      "member": "iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen2.imageset/Screen2.png",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-151176681-617589520/iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen2.imageset/Screen2.png",
+      "sha256": "c1918def995efaa0b86dcb6dd45a0ddd893bb1c8b7bd3f2bf0dd8a04bb3e85e3",
+      "bytes": 1734739
+    },
+    {
+      "slug": "design-source-151176681-617589520",
+      "asset": "Screen2",
+      "archive": "/Users/amine/Downloads/iOSStyleOnBoarding Updated.zip",
+      "member": "iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen2.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-151176681-617589520/iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen2.imageset/Contents.json",
+      "sha256": "1c18f0fe223cff7c67fd72f6d4f15c8ba2449a5372fc85af92b829660b12af15",
+      "bytes": 305
+    },
+    {
+      "slug": "design-source-151176681-617589520",
+      "asset": "Screen4",
+      "archive": "/Users/amine/Downloads/iOSStyleOnBoarding Updated.zip",
+      "member": "iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen4.imageset/Screen5.png",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-151176681-617589520/iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen4.imageset/Screen5.png",
+      "sha256": "41563769f07175d674ebeb2b0fb0b2abd2f20c1aae90325ccbdc4021f173457d",
+      "bytes": 1471019
+    },
+    {
+      "slug": "design-source-151176681-617589520",
+      "asset": "Screen4",
+      "archive": "/Users/amine/Downloads/iOSStyleOnBoarding Updated.zip",
+      "member": "iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen4.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-151176681-617589520/iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen4.imageset/Contents.json",
+      "sha256": "129a2f5c421bb5056fbc13b94f7683faed31e69dc844cedfa4b6fdf9df531206",
+      "bytes": 305
+    },
+    {
+      "slug": "design-source-151176681-617589520",
+      "asset": "Screen3",
+      "archive": "/Users/amine/Downloads/iOSStyleOnBoarding Updated.zip",
+      "member": "iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen3.imageset/Screen3.png",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-151176681-617589520/iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen3.imageset/Screen3.png",
+      "sha256": "4c60db932804a8b8e2943fa6c834908cd0ce611af5c9713102c3c9d8d63e510f",
+      "bytes": 4358713
+    },
+    {
+      "slug": "design-source-151176681-617589520",
+      "asset": "Screen3",
+      "archive": "/Users/amine/Downloads/iOSStyleOnBoarding Updated.zip",
+      "member": "iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen3.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-151176681-617589520/iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen3.imageset/Contents.json",
+      "sha256": "2a50214a5c9ab06a41b323710e95cb07cd15adce1c867c46e27e3216172a4fa4",
+      "bytes": 305
+    },
+    {
+      "slug": "design-source-151176681-617589520",
+      "asset": "Screen5",
+      "archive": "/Users/amine/Downloads/iOSStyleOnBoarding Updated.zip",
+      "member": "iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen5.imageset/Screen2.png",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-151176681-617589520/iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen5.imageset/Screen2.png",
+      "sha256": "8a640302a3dae21727e6582cd2d689970d846abd3cda275031cdf7c60e577739",
+      "bytes": 3284395
+    },
+    {
+      "slug": "design-source-151176681-617589520",
+      "asset": "Screen5",
+      "archive": "/Users/amine/Downloads/iOSStyleOnBoarding Updated.zip",
+      "member": "iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen5.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-151176681-617589520/iOSStyleOnBoarding/iOSStyleOnBoarding/Assets.xcassets/Screen5.imageset/Contents.json",
+      "sha256": "1c18f0fe223cff7c67fd72f6d4f15c8ba2449a5372fc85af92b829660b12af15",
+      "bytes": 305
+    },
+    {
+      "slug": "design-source-143347241-563170862",
+      "asset": "MapImage",
+      "archive": "/Users/amine/Downloads/LocationOnboarding.zip",
+      "member": "LocationOnboarding/LocationOnboarding/Assets.xcassets/MapImage.imageset/Dark.png",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-143347241-563170862/LocationOnboarding/LocationOnboarding/Assets.xcassets/MapImage.imageset/Dark.png",
+      "sha256": "f506ee30e1d90c1acb0bcf9c124e7d6514b0d5c2f0df22d63e3c0f9ff227b8eb",
+      "bytes": 1104036
+    },
+    {
+      "slug": "design-source-143347241-563170862",
+      "asset": "MapImage",
+      "archive": "/Users/amine/Downloads/LocationOnboarding.zip",
+      "member": "LocationOnboarding/LocationOnboarding/Assets.xcassets/MapImage.imageset/Light.png",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-143347241-563170862/LocationOnboarding/LocationOnboarding/Assets.xcassets/MapImage.imageset/Light.png",
+      "sha256": "78a033caca5950f9717959c0ef8269c5600a1148829ce934bdb92bd308146c4b",
+      "bytes": 1364120
+    },
+    {
+      "slug": "design-source-143347241-563170862",
+      "asset": "MapImage",
+      "archive": "/Users/amine/Downloads/LocationOnboarding.zip",
+      "member": "LocationOnboarding/LocationOnboarding/Assets.xcassets/MapImage.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-143347241-563170862/LocationOnboarding/LocationOnboarding/Assets.xcassets/MapImage.imageset/Contents.json",
+      "sha256": "20055632cdce626d9942a946850e140527b568d9f0d228e1e33187f90e824bb6",
+      "bytes": 409
+    },
+    {
+      "slug": "design-source-145830901-580574649",
+      "asset": "logo",
+      "archive": "/Users/amine/Downloads/AppStoreScrollEffect.zip",
+      "member": "AppStoreScrollEffect/AppStoreScrollEffect/Assets.xcassets/Logo.imageset/Logo.png",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-145830901-580574649/AppStoreScrollEffect/AppStoreScrollEffect/Assets.xcassets/Logo.imageset/Logo.png",
+      "sha256": "eb48c796b37f99fc5bea41fc2446eb5328f6188eba07f118ae20ace22623b5aa",
+      "bytes": 146427
+    },
+    {
+      "slug": "design-source-145830901-580574649",
+      "asset": "logo",
+      "archive": "/Users/amine/Downloads/AppStoreScrollEffect.zip",
+      "member": "AppStoreScrollEffect/AppStoreScrollEffect/Assets.xcassets/Logo.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-145830901-580574649/AppStoreScrollEffect/AppStoreScrollEffect/Assets.xcassets/Logo.imageset/Contents.json",
+      "sha256": "1267240c4465e32f6dbb636b6af7214ba81a8bf477b08cd1e7cf82f186183bf5",
+      "bytes": 302
+    },
+    {
+      "slug": "design-source-145830901-580574649",
+      "asset": "content",
+      "archive": "/Users/amine/Downloads/AppStoreScrollEffect.zip",
+      "member": "AppStoreScrollEffect/AppStoreScrollEffect/Assets.xcassets/Content.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-145830901-580574649/AppStoreScrollEffect/AppStoreScrollEffect/Assets.xcassets/Content.imageset/Contents.json",
+      "sha256": "5e1219a24f77f3b7c8938158bfd23d2f2e86dc816ae79b48f3bfbb623cd5f1c1",
+      "bytes": 339
+    },
+    {
+      "slug": "design-source-145830901-580574649",
+      "asset": "content",
+      "archive": "/Users/amine/Downloads/AppStoreScrollEffect.zip",
+      "member": "AppStoreScrollEffect/AppStoreScrollEffect/Assets.xcassets/Content.imageset/2.png",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-145830901-580574649/AppStoreScrollEffect/AppStoreScrollEffect/Assets.xcassets/Content.imageset/2.png",
+      "sha256": "de04f9c94abc77a705a8d797fbe4318471f40b15fac80e3b8d0e6e0cd1d52986",
+      "bytes": 862821
+    },
+    {
+      "slug": "design-source-145830901-580574649",
+      "asset": "content",
+      "archive": "/Users/amine/Downloads/AppStoreScrollEffect.zip",
+      "member": "AppStoreScrollEffect/AppStoreScrollEffect/Assets.xcassets/Content.imageset/1.png",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-145830901-580574649/AppStoreScrollEffect/AppStoreScrollEffect/Assets.xcassets/Content.imageset/1.png",
+      "sha256": "3ee0b89c6e972f2c7639c2c7e0b158a6fe758380d6ab7eb9b091cbdf60ee08ab",
+      "bytes": 867744
+    },
+    {
+      "slug": "design-source-122420875-422985983",
+      "asset": "pic",
+      "archive": "/Users/amine/Downloads/AnimatedKeyPad.zip",
+      "member": "AnimatedKeyPad/AnimatedKeyPad/Assets.xcassets/Pic.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-122420875-422985983/AnimatedKeyPad/AnimatedKeyPad/Assets.xcassets/Pic.imageset/Contents.json",
+      "sha256": "317666b3a1ae4a22f95206068bb16a00748e2e7ecb6177ded879059e0ee1b5ba",
+      "bytes": 301
+    },
+    {
+      "slug": "design-source-122420875-422985983",
+      "asset": "pic",
+      "archive": "/Users/amine/Downloads/AnimatedKeyPad.zip",
+      "member": "AnimatedKeyPad/AnimatedKeyPad/Assets.xcassets/Pic.imageset/Pic.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-122420875-422985983/AnimatedKeyPad/AnimatedKeyPad/Assets.xcassets/Pic.imageset/Pic.jpg",
+      "sha256": "10ce7947d14030fd5127048c9231c826ae31d7f3bfeda2a9cc40f9af6b4a4ea5",
+      "bytes": 27150
+    },
+    {
+      "slug": "design-source-116455449-381760008",
+      "asset": "pic",
+      "archive": "/Users/amine/Downloads/SnapEffect.zip",
+      "member": "SnapEffect/SnapEffect/Assets.xcassets/Pic.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-116455449-381760008/SnapEffect/SnapEffect/Assets.xcassets/Pic.imageset/Contents.json",
+      "sha256": "317666b3a1ae4a22f95206068bb16a00748e2e7ecb6177ded879059e0ee1b5ba",
+      "bytes": 301
+    },
+    {
+      "slug": "design-source-116455449-381760008",
+      "asset": "pic",
+      "archive": "/Users/amine/Downloads/SnapEffect.zip",
+      "member": "SnapEffect/SnapEffect/Assets.xcassets/Pic.imageset/Pic.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-116455449-381760008/SnapEffect/SnapEffect/Assets.xcassets/Pic.imageset/Pic.jpg",
+      "sha256": "10ce7947d14030fd5127048c9231c826ae31d7f3bfeda2a9cc40f9af6b4a4ea5",
+      "bytes": 27150
+    },
+    {
+      "slug": "design-source-138602415-530517482",
+      "asset": "header",
+      "archive": "/Users/amine/Downloads/StickyHeaderList.zip",
+      "member": "StickyHeaderList/StickyHeaderList/Assets.xcassets/Header.imageset/Header.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-138602415-530517482/StickyHeaderList/StickyHeaderList/Assets.xcassets/Header.imageset/Header.jpg",
+      "sha256": "ea2b9bf15cf9dac87431ddc147910b8450e9445ccf995df06670dee2bee9ec94",
+      "bytes": 44285
+    },
+    {
+      "slug": "design-source-138602415-530517482",
+      "asset": "header",
+      "archive": "/Users/amine/Downloads/StickyHeaderList.zip",
+      "member": "StickyHeaderList/StickyHeaderList/Assets.xcassets/Header.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-138602415-530517482/StickyHeaderList/StickyHeaderList/Assets.xcassets/Header.imageset/Contents.json",
+      "sha256": "2271804de0424429edbc75e9c28e02fbbf41ade8c54cb9f7018bf8476ecce2c9",
+      "bytes": 304
+    },
+    {
+      "slug": "design-source-134882702-504916703",
+      "asset": "header",
+      "archive": "/Users/amine/Downloads/ResizableScrollHeader.zip",
+      "member": "ResizableScrollHeader/ResizableScrollHeader/Assets.xcassets/Header.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-134882702-504916703/ResizableScrollHeader/ResizableScrollHeader/Assets.xcassets/Header.imageset/Contents.json",
+      "sha256": "317666b3a1ae4a22f95206068bb16a00748e2e7ecb6177ded879059e0ee1b5ba",
+      "bytes": 301
+    },
+    {
+      "slug": "design-source-134882702-504916703",
+      "asset": "header",
+      "archive": "/Users/amine/Downloads/ResizableScrollHeader.zip",
+      "member": "ResizableScrollHeader/ResizableScrollHeader/Assets.xcassets/Header.imageset/Pic.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-134882702-504916703/ResizableScrollHeader/ResizableScrollHeader/Assets.xcassets/Header.imageset/Pic.jpg",
+      "sha256": "10ce7947d14030fd5127048c9231c826ae31d7f3bfeda2a9cc40f9af6b4a4ea5",
+      "bytes": 27150
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 1",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 1.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 1.imageset/Contents.json",
+      "sha256": "3ebcc8524e523d8916aaa01694986e5a9e15badad07fdc6300b9c660f20df03a",
+      "bytes": 303
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 1",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 1.imageset/Pic 1.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 1.imageset/Pic 1.jpg",
+      "sha256": "a2962cdfe95c190ece6581edc45aee87c0de21a0cb9ce1dbf304ce4594fbebe2",
+      "bytes": 40890
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 2",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 2.imageset/Pic 2.jpeg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 2.imageset/Pic 2.jpeg",
+      "sha256": "72fcf5e2de27089ee2650c9dae06a1e99e97192ffa7a03f909437c959eb8f12f",
+      "bytes": 65527
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 2",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 2.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 2.imageset/Contents.json",
+      "sha256": "91759a325bfa8aa82905d189834be87500298b362387f05aee00c2406cd0208c",
+      "bytes": 304
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 3",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 3.imageset/Pic 3.jpeg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 3.imageset/Pic 3.jpeg",
+      "sha256": "cc47be39990b75a95aabc254fa0cb192f0b61c81f912bfdd120ddde6ca861088",
+      "bytes": 22245
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 3",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 3.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 3.imageset/Contents.json",
+      "sha256": "6882a08e89b622cb1a5c694f35e68b515c423b5d6302976dff59b66a7f299881",
+      "bytes": 304
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 4",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 4.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 4.imageset/Contents.json",
+      "sha256": "3ebcc8524e523d8916aaa01694986e5a9e15badad07fdc6300b9c660f20df03a",
+      "bytes": 303
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 4",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 4.imageset/Pic 1.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 4.imageset/Pic 1.jpg",
+      "sha256": "cebd00a9cd23ae35346cb682213b4168d2febb4888771132146411c5db207243",
+      "bytes": 138680
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 5",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 5.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 5.imageset/Contents.json",
+      "sha256": "dc8fca313f5fb330830aafe0d367539693974519e07c76d4dad3d57d11fd3aca",
+      "bytes": 303
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 5",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 5.imageset/Pic 2.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 5.imageset/Pic 2.jpg",
+      "sha256": "8c20bf60c8ddf1d91812a3ee39aa89178f6a6bd0f486d4c3af6f6b127ae26c83",
+      "bytes": 56738
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 6",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 6.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 6.imageset/Contents.json",
+      "sha256": "58059c0b41a4cc6aa87afa94ba1cf0f5cff58cd55e70057ca568862de21362ba",
+      "bytes": 303
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 6",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 6.imageset/Pic 3.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 6.imageset/Pic 3.jpg",
+      "sha256": "aa703b65e7bc54a357576e0184b860da06549679efd640f76d35d3749c0fcdb1",
+      "bytes": 136874
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 7",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 7.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 7.imageset/Contents.json",
+      "sha256": "cce11724cc62447ec58e52c7225648ed2a40dc76814d6b2eb7bd2e49bdbb0b50",
+      "bytes": 303
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 7",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 7.imageset/Pic 4.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 7.imageset/Pic 4.jpg",
+      "sha256": "6f1a4ec6444d0ff77f4cb289f96c0faa610f9b2b8945938392cc5ac71e67a839",
+      "bytes": 51829
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 8",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 8.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 8.imageset/Contents.json",
+      "sha256": "b09a0ac2c41a3b1c315865bd97ea593a30f899d88b901a13849e1eeafbea311e",
+      "bytes": 303
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 8",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 8.imageset/Pic 5.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 8.imageset/Pic 5.jpg",
+      "sha256": "59e5f252ac9b3a7f5370b61d22d7638bd78b4f5518adb764d4f1074d5fea4e26",
+      "bytes": 62393
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 9",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 9.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 9.imageset/Contents.json",
+      "sha256": "c45f1563d0a0384f6e56680a97c9c36b8cc6f00bde51bad5aaa1e421f27861a4",
+      "bytes": 303
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 9",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 9.imageset/Pic 6.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 9.imageset/Pic 6.jpg",
+      "sha256": "39636024b4ce34c3e25d572b9b22cabf5e9759a9b773e576ce475e89b3a9fa69",
+      "bytes": 93220
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 10",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 10.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 10.imageset/Contents.json",
+      "sha256": "795da47b77d819a9aed5bd1bb96c838abc743e1d6d13ae590cbd88f2ddeb2766",
+      "bytes": 303
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 10",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 10.imageset/Pic 7.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 10.imageset/Pic 7.jpg",
+      "sha256": "e7b83b9bdaaa7bd1286c2b4e5cc1674a26fb34ebcfcf3314d76fbdb331788f13",
+      "bytes": 169826
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 11",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 11.imageset/Pic 8.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 11.imageset/Pic 8.jpg",
+      "sha256": "438c6196dfa23da5c196c1a27d18b1de2f6ca0a7070ef7884dea7bacbfa7048b",
+      "bytes": 184184
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 11",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 11.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 11.imageset/Contents.json",
+      "sha256": "c9605791de1b0c97a9fa49c85ba52aef027e7860308e296727487209c851e54f",
+      "bytes": 303
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 12",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 12.imageset/Pic 9.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 12.imageset/Pic 9.jpg",
+      "sha256": "6a99e6202b8b4c9b0b074b1fd335e49f10076b54c31aea15869b11f8884ebf8c",
+      "bytes": 82733
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 12",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 12.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 12.imageset/Contents.json",
+      "sha256": "bf0a974e3b11302557d0b4c149bb4549f60eb62893cec65b90d8f77e7e6e0d66",
+      "bytes": 303
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 13",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 13.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 13.imageset/Contents.json",
+      "sha256": "a23f7bc9406256319f639f240996f46fbe5edb6a8f0af31eba75494e843f58aa",
+      "bytes": 304
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 13",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 13.imageset/Pic 10.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 13.imageset/Pic 10.jpg",
+      "sha256": "e8d97c0654ef6fb3dea633e25a9c60e424cfbc6a20ca0d0891f11ca89bbce076",
+      "bytes": 111182
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 14",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 14.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 14.imageset/Contents.json",
+      "sha256": "879ef3a27ba41f0c063b2e887a961f7f518d7578837d1db503af0433d83d85f6",
+      "bytes": 304
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 14",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 14.imageset/Pic 11.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 14.imageset/Pic 11.jpg",
+      "sha256": "ab3f140a4bbf5615bf3f9eb3d55e488c92d7627224dd26fd6533d211e54e4f14",
+      "bytes": 85887
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 15",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 15.imageset/Pic 15.jpeg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 15.imageset/Pic 15.jpeg",
+      "sha256": "b25d4464e54e48b5f188c2c60300e6f3beaf2c89d60a7644504b640b715c135d",
+      "bytes": 126046
+    },
+    {
+      "slug": "design-source-136924264-519121365",
+      "asset": "Pic 15",
+      "archive": "/Users/amine/Downloads/Multi-Drag-Demo.zip",
+      "member": "Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 15.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136924264-519121365/Multi-Drag-Demo/Multi-Drag-Demo/Assets.xcassets/Images/Pic 15.imageset/Contents.json",
+      "sha256": "8387a2ccc0af416bb73eb0af3261bb52c55d6df13d12fd53f8353b83a8e5fd56",
+      "bytes": 305
+    },
+    {
+      "slug": "design-source-135256347-507576642",
+      "asset": "BG",
+      "archive": "/Users/amine/Downloads/GlassMenuEffect.zip",
+      "member": "GlassMenuEffect/GlassMenuEffect/Assets.xcassets/BG.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-135256347-507576642/GlassMenuEffect/GlassMenuEffect/Assets.xcassets/BG.imageset/Contents.json",
+      "sha256": "f0540d7caa8042e161be6579d35d5f9acd3aeb3162f04b7cbf9206c3825e1fad",
+      "bytes": 300
+    },
+    {
+      "slug": "design-source-135256347-507576642",
+      "asset": "BG",
+      "archive": "/Users/amine/Downloads/GlassMenuEffect.zip",
+      "member": "GlassMenuEffect/GlassMenuEffect/Assets.xcassets/BG.imageset/BG.png",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-135256347-507576642/GlassMenuEffect/GlassMenuEffect/Assets.xcassets/BG.imageset/BG.png",
+      "sha256": "f8adbe011850e11d62443bb0ed6afa93a810a801bd64cde186bc49162bdedbe3",
+      "bytes": 40419
+    },
+    {
+      "slug": "design-source-114707944-526255178",
+      "asset": "artwork",
+      "archive": "/Users/amine/Downloads/AppleMusicMiniPlayer Updated iOS 26.zip",
+      "member": "AppleMusicMiniPlayer/AppleMusicMiniPlayer/Assets.xcassets/Artwork.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-114707944-526255178/AppleMusicMiniPlayer/AppleMusicMiniPlayer/Assets.xcassets/Artwork.imageset/Contents.json",
+      "sha256": "62e02345ff4d45d221dc6209b4953df76344f4789ef3dcdc19d88699373bfb04",
+      "bytes": 305
+    },
+    {
+      "slug": "design-source-114707944-526255178",
+      "asset": "artwork",
+      "archive": "/Users/amine/Downloads/AppleMusicMiniPlayer Updated iOS 26.zip",
+      "member": "AppleMusicMiniPlayer/AppleMusicMiniPlayer/Assets.xcassets/Artwork.imageset/Artwork.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-114707944-526255178/AppleMusicMiniPlayer/AppleMusicMiniPlayer/Assets.xcassets/Artwork.imageset/Artwork.jpg",
+      "sha256": "fab1b8b01db922b4961275ea0af6ba7cc379b4acd12ae20c6f737a889f41d017",
+      "bytes": 71889
+    },
+    {
+      "slug": "design-source-114707944-526255178",
+      "asset": "Artwork",
+      "archive": "/Users/amine/Downloads/AppleMusicMiniPlayer Updated iOS 26.zip",
+      "member": "AppleMusicMiniPlayer/AppleMusicMiniPlayer/Assets.xcassets/Artwork.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-114707944-526255178/AppleMusicMiniPlayer/AppleMusicMiniPlayer/Assets.xcassets/Artwork.imageset/Contents.json",
+      "sha256": "62e02345ff4d45d221dc6209b4953df76344f4789ef3dcdc19d88699373bfb04",
+      "bytes": 305
+    },
+    {
+      "slug": "design-source-114707944-526255178",
+      "asset": "Artwork",
+      "archive": "/Users/amine/Downloads/AppleMusicMiniPlayer Updated iOS 26.zip",
+      "member": "AppleMusicMiniPlayer/AppleMusicMiniPlayer/Assets.xcassets/Artwork.imageset/Artwork.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-114707944-526255178/AppleMusicMiniPlayer/AppleMusicMiniPlayer/Assets.xcassets/Artwork.imageset/Artwork.jpg",
+      "sha256": "fab1b8b01db922b4961275ea0af6ba7cc379b4acd12ae20c6f737a889f41d017",
+      "bytes": 71889
+    },
+    {
+      "slug": "design-source-135022790-505930313",
+      "asset": "BG",
+      "archive": "/Users/amine/Downloads/GlassMorhpingEffects.zip",
+      "member": "GlassMorhpingEffects/GlassMorhpingEffects/Assets.xcassets/BG.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-135022790-505930313/GlassMorhpingEffects/GlassMorhpingEffects/Assets.xcassets/BG.imageset/Contents.json",
+      "sha256": "f0540d7caa8042e161be6579d35d5f9acd3aeb3162f04b7cbf9206c3825e1fad",
+      "bytes": 300
+    },
+    {
+      "slug": "design-source-135022790-505930313",
+      "asset": "BG",
+      "archive": "/Users/amine/Downloads/GlassMorhpingEffects.zip",
+      "member": "GlassMorhpingEffects/GlassMorhpingEffects/Assets.xcassets/BG.imageset/BG.png",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-135022790-505930313/GlassMorhpingEffects/GlassMorhpingEffects/Assets.xcassets/BG.imageset/BG.png",
+      "sha256": "f8adbe011850e11d62443bb0ed6afa93a810a801bd64cde186bc49162bdedbe3",
+      "bytes": 40419
+    },
+    {
+      "slug": "design-source-161099601-681497433",
+      "asset": "BG",
+      "archive": "/Users/amine/Downloads/SSTabBar.zip",
+      "member": "SSTabBar/SSTabBar/Assets.xcassets/BG.imageset/BG9.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-161099601-681497433/SSTabBar/SSTabBar/Assets.xcassets/BG.imageset/BG9.jpg",
+      "sha256": "8232a9782a39c043c41effc674928959b9d2a5555d91ad092bd4310461ec851a",
+      "bytes": 550166
+    },
+    {
+      "slug": "design-source-161099601-681497433",
+      "asset": "BG",
+      "archive": "/Users/amine/Downloads/SSTabBar.zip",
+      "member": "SSTabBar/SSTabBar/Assets.xcassets/BG.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-161099601-681497433/SSTabBar/SSTabBar/Assets.xcassets/BG.imageset/Contents.json",
+      "sha256": "88e70cc95e509f0897e1ea6c396cedbf5f5c93ee69e3f30d38fc2a118dc60ff5",
+      "bytes": 301
+    },
+    {
+      "slug": "design-source-140755774-545181471",
+      "asset": "artwork",
+      "archive": "/Users/amine/Downloads/Full-Screen-Sheet.zip",
+      "member": "Full-Screen-Sheet/Full-Screen-Sheet/Assets.xcassets/Artwork.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-140755774-545181471/Full-Screen-Sheet/Full-Screen-Sheet/Assets.xcassets/Artwork.imageset/Contents.json",
+      "sha256": "62e02345ff4d45d221dc6209b4953df76344f4789ef3dcdc19d88699373bfb04",
+      "bytes": 305
+    },
+    {
+      "slug": "design-source-140755774-545181471",
+      "asset": "artwork",
+      "archive": "/Users/amine/Downloads/Full-Screen-Sheet.zip",
+      "member": "Full-Screen-Sheet/Full-Screen-Sheet/Assets.xcassets/Artwork.imageset/Artwork.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-140755774-545181471/Full-Screen-Sheet/Full-Screen-Sheet/Assets.xcassets/Artwork.imageset/Artwork.jpg",
+      "sha256": "fab1b8b01db922b4961275ea0af6ba7cc379b4acd12ae20c6f737a889f41d017",
+      "bytes": 71889
+    },
+    {
+      "slug": "design-source-117288900-387327474",
+      "asset": "pic",
+      "archive": "/Users/amine/Downloads/WalletCardAnimation.zip",
+      "member": "WalletCardAnimation/WalletCardAnimation/Assets.xcassets/Pic.imageset/Pic1.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-117288900-387327474/WalletCardAnimation/WalletCardAnimation/Assets.xcassets/Pic.imageset/Pic1.jpg",
+      "sha256": "ded6cc1f9fbb6832f5a286fc8766a08d86f83780f7c61c96fe6006fe98d67f9c",
+      "bytes": 27391
+    },
+    {
+      "slug": "design-source-117288900-387327474",
+      "asset": "pic",
+      "archive": "/Users/amine/Downloads/WalletCardAnimation.zip",
+      "member": "WalletCardAnimation/WalletCardAnimation/Assets.xcassets/Pic.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-117288900-387327474/WalletCardAnimation/WalletCardAnimation/Assets.xcassets/Pic.imageset/Contents.json",
+      "sha256": "b2298b0e2f142bdafe79d184f6a2ef261cee02dc5c2e78eea3c4a9efabba4e19",
+      "bytes": 302
+    },
+    {
+      "slug": "design-source-117288900-387327474",
+      "asset": "visa",
+      "archive": "/Users/amine/Downloads/WalletCardAnimation.zip",
+      "member": "WalletCardAnimation/WalletCardAnimation/Assets.xcassets/Visa.imageset/Visa.png",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-117288900-387327474/WalletCardAnimation/WalletCardAnimation/Assets.xcassets/Visa.imageset/Visa.png",
+      "sha256": "650bbcd19831e03ce34e8438f9d06c01b07c57c1512bac484bc07da3ba95930f",
+      "bytes": 14939
+    },
+    {
+      "slug": "design-source-117288900-387327474",
+      "asset": "visa",
+      "archive": "/Users/amine/Downloads/WalletCardAnimation.zip",
+      "member": "WalletCardAnimation/WalletCardAnimation/Assets.xcassets/Visa.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-117288900-387327474/WalletCardAnimation/WalletCardAnimation/Assets.xcassets/Visa.imageset/Contents.json",
+      "sha256": "fc12da8b10ccc42f0f6f9228415ba2f0710103b06ba8bd900598fd2b2835bcf8",
+      "bytes": 302
+    },
+    {
+      "slug": "design-source-129268121-546015292",
+      "asset": "pic",
+      "archive": "/Users/amine/Downloads/InstagramProfileScroll Updated.zip",
+      "member": "InstagramProfileScroll/InstagramProfileScroll/Assets.xcassets/Pic.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-129268121-546015292/InstagramProfileScroll/InstagramProfileScroll/Assets.xcassets/Pic.imageset/Contents.json",
+      "sha256": "317666b3a1ae4a22f95206068bb16a00748e2e7ecb6177ded879059e0ee1b5ba",
+      "bytes": 301
+    },
+    {
+      "slug": "design-source-129268121-546015292",
+      "asset": "pic",
+      "archive": "/Users/amine/Downloads/InstagramProfileScroll Updated.zip",
+      "member": "InstagramProfileScroll/InstagramProfileScroll/Assets.xcassets/Pic.imageset/Pic.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-129268121-546015292/InstagramProfileScroll/InstagramProfileScroll/Assets.xcassets/Pic.imageset/Pic.jpg",
+      "sha256": "10ce7947d14030fd5127048c9231c826ae31d7f3bfeda2a9cc40f9af6b4a4ea5",
+      "bytes": 27150
+    },
+    {
+      "slug": "design-source-161562312-684332271",
+      "asset": "BG",
+      "archive": "/Users/amine/Downloads/WSSection.zip",
+      "member": "WSSection/WSSection/Assets.xcassets/BG.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-161562312-684332271/WSSection/WSSection/Assets.xcassets/BG.imageset/Contents.json",
+      "sha256": "331188bd2e6b41bced81a80a758340ab3378cd366ce57700d6f714e60efb5d6a",
+      "bytes": 300
+    },
+    {
+      "slug": "design-source-161562312-684332271",
+      "asset": "BG",
+      "archive": "/Users/amine/Downloads/WSSection.zip",
+      "member": "WSSection/WSSection/Assets.xcassets/BG.imageset/BG.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-161562312-684332271/WSSection/WSSection/Assets.xcassets/BG.imageset/BG.jpg",
+      "sha256": "8232a9782a39c043c41effc674928959b9d2a5555d91ad092bd4310461ec851a",
+      "bytes": 550166
+    },
+    {
+      "slug": "design-source-144025734-567948845",
+      "asset": "BG",
+      "archive": "/Users/amine/Downloads/Text-Shape.zip",
+      "member": "Text-Shape/Text-Shape/Assets.xcassets/BG.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-144025734-567948845/Text-Shape/Text-Shape/Assets.xcassets/BG.imageset/Contents.json",
+      "sha256": "331188bd2e6b41bced81a80a758340ab3378cd366ce57700d6f714e60efb5d6a",
+      "bytes": 300
+    },
+    {
+      "slug": "design-source-144025734-567948845",
+      "asset": "BG",
+      "archive": "/Users/amine/Downloads/Text-Shape.zip",
+      "member": "Text-Shape/Text-Shape/Assets.xcassets/BG.imageset/BG.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-144025734-567948845/Text-Shape/Text-Shape/Assets.xcassets/BG.imageset/BG.jpg",
+      "sha256": "c4bf049d79dc166f5ecba2b68fae648b5d6ad824254a0e928d73db1ce877dd65",
+      "bytes": 182629
+    },
+    {
+      "slug": "design-source-155125368-643055719",
+      "asset": "pic",
+      "archive": "/Users/amine/Downloads/APTransition.zip",
+      "member": "APTransition/APTransition/Assets.xcassets/Pic.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-155125368-643055719/APTransition/APTransition/Assets.xcassets/Pic.imageset/Contents.json",
+      "sha256": "765ab77ef41d83081c3220f54d579b74bce854f956c14a3d126a210b4a945c9b",
+      "bytes": 303
+    },
+    {
+      "slug": "design-source-155125368-643055719",
+      "asset": "pic",
+      "archive": "/Users/amine/Downloads/APTransition.zip",
+      "member": "APTransition/APTransition/Assets.xcassets/Pic.imageset/Pic 2.png",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-155125368-643055719/APTransition/APTransition/Assets.xcassets/Pic.imageset/Pic 2.png",
+      "sha256": "80a5485a91ef6d4ed6bce9ff836f318ff11fd302f8ff6bebf4e724cc9fc75c8a",
+      "bytes": 310060
+    },
+    {
+      "slug": "design-source-136157297-531571090",
+      "asset": "pic",
+      "archive": "/Users/amine/Downloads/User-Tutorial-Screen Updated.zip",
+      "member": "User-Tutorial-Screen/User-Tutorial-Screen/Assets.xcassets/Pic.imageset/Contents.json",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136157297-531571090/User-Tutorial-Screen/User-Tutorial-Screen/Assets.xcassets/Pic.imageset/Contents.json",
+      "sha256": "317666b3a1ae4a22f95206068bb16a00748e2e7ecb6177ded879059e0ee1b5ba",
+      "bytes": 301
+    },
+    {
+      "slug": "design-source-136157297-531571090",
+      "asset": "pic",
+      "archive": "/Users/amine/Downloads/User-Tutorial-Screen Updated.zip",
+      "member": "User-Tutorial-Screen/User-Tutorial-Screen/Assets.xcassets/Pic.imageset/Pic.jpg",
+      "path": "/Users/amine/Developer/useprocess/android/parity/original-assets/design-source-136157297-531571090/User-Tutorial-Screen/User-Tutorial-Screen/Assets.xcassets/Pic.imageset/Pic.jpg",
+      "sha256": "10ce7947d14030fd5127048c9231c826ae31d7f3bfeda2a9cc40f9af6b4a4ea5",
+      "bytes": 27150
+    }
+  ],
+  "fileCount": 82,
+  "byteCount": 22581339
+}

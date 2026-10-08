@@ -25,6 +25,9 @@ struct PlanHomeTutorialRotatingBorder: View, Equatable {
 
 /// Animation isolée — seul ce subtree redessine à chaque frame.
 private struct PlanHomeTutorialRotatingBorderPulse: View, Equatable {
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.processTabIsActive) private var isTabActive
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let cornerRadius: CGFloat
     let lineWidth: CGFloat
     let rotationPeriod: Double
@@ -38,7 +41,7 @@ private struct PlanHomeTutorialRotatingBorderPulse: View, Equatable {
     }
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !isTabActive || scenePhase != .active || reduceMotion)) { timeline in
             let elapsed = timeline.date.timeIntervalSinceReferenceDate
             let progress = elapsed.truncatingRemainder(dividingBy: rotationPeriod) / rotationPeriod
             let angle = Angle.degrees(progress * 360)

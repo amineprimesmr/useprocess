@@ -1,0 +1,55 @@
+{
+  "recordedAt": "2026-10-08T00:37:57.934221+00:00",
+  "status": "development-preview",
+  "build": "passed",
+  "apkSha256": "f0da982cd2c69b6d26e9da5664c50814d8f9e4e8539cc90fa3935089a268679c",
+  "unitTests": {
+    "tests": 31,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 13
+  },
+  "runtime": {
+    "device": "emulator-5580",
+    "passed": [
+      "name accepts Amine with focused text keyboard",
+      "name committed to local preview preferences",
+      "weight decimal comma normalized to 72.5 kg",
+      "72.5 kg converts to 159.8 lbs and returns to 72.5 kg",
+      "Continue navigates to hydration and persists 72.5",
+      "weight reloads as 72.5 after force-stop/relaunch"
+    ],
+    "notTested": [
+      "physical Android device",
+      "pixel parity",
+      "motion parity",
+      "dark theme",
+      "authenticated backend"
+    ],
+    "deviation": "canonical kilograms retained on unit toggle and Continue rather than reparsing rounded imperial display"
+  },
+  "sourceSha256": {
+    "app/src/main/java/com/process/android/OnboardingInputRules.kt": "03fea5ce4091b2318e4fe9397887117f5357adeaa586ae42842d32aa91c41e87",
+    "app/src/main/java/com/process/android/OnboardingInputTheme.kt": "5b91a25c38bd8bf0cd041963989e1791a745113350af5cce881fb38d51ccfdb8",
+    "app/src/main/java/com/process/android/ProcessWeightInput.kt": "e526e6d34e4043bf41d0ea7e34900f1baecf11bc18cb9067cbd21eb582268c8a",
+    "app/src/main/java/com/process/android/ProcessFirstNameInput.kt": "e5249d41fe3b41b891ccad327aa5cdc89f1ea456538cd558729513cbc29e7981",
+    "app/src/main/java/com/process/android/MainActivity.kt": "c91d9192c1bb50d84bde44110f4fb58b70089ae846d2377bfcd862a9088093df",
+    "app/src/test/java/com/process/android/OnboardingInputRulesTest.kt": "1a1ce53b9f9be0bd97606e7ea3b8c441bcaf9aefc1a175efe15a4f7c41b21002"
+  },
+  "evidence": {
+    "name-entered.png": "023a382dbf14db4f99262e57d284ea05667a8c4f08431807fdb7081ba7f56db3",
+    "weight-relaunch-ui.xml": "c37a99516256bb1692cb78903219b8706894fef9538415bee1e225bbfa42fe02",
+    "weight-lbs-ui.xml": "0be840435e828fab4bd94dd4802dfaf9aaf80db9a0475430b008533ed01f90fd",
+    "weight-empty-ui.xml": "d11c807d3247b2e6be8dc32b3ed35686b94db808d27078f8b45a76459712f475",
+    "name-entered-ui.xml": "39df99086d62b943e378fc76dc7951b298a199c5e82da4056ef061c5a7a68b7f",
+    "weight-saved-ui.xml": "ced6fae6a5e1c2a7f4002822a0ec8907d5d70e1c8e5409f6f5ae46331eac2085",
+    "weight-roundtrip-ui.xml": "c37a99516256bb1692cb78903219b8706894fef9538415bee1e225bbfa42fe02",
+    "name-empty-ui.xml": "d847a722b7af03678eb488f22f1dcc843e6cf80e224decf91cc1c29ce5e63387",
+    "weight-kg.png": "8b8a27c036729f56a31f46d42d41c8a4f2e1b7ba909c9e5899106e58214f3760",
+    "weight-entered-ui.xml": "c37a99516256bb1692cb78903219b8706894fef9538415bee1e225bbfa42fe02"
+  }
+}

@@ -87,7 +87,7 @@ enum FaceScanBehaviorReviewBuilder {
         )
     }
 
-    /// Données studio simulées — pilotées par le curseur qualité (mode Amineprcs).
+    /// Données studio simulées — pilotées par le curseur qualité (mode Manny).
     @MainActor
     static func buildStudio(
         for result: FaceScanResult,

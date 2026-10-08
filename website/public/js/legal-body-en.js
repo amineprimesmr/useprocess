@@ -1,6 +1,6 @@
 window.LEGAL_BODY_EN = {
   "/cgu": `
-      <p class="meta">Last updated: August 17, 2026</p>
+      <p class="meta">Last updated: October 4, 2026</p>
 
       <p>
         These terms govern access to and use of the mobile application
@@ -23,16 +23,9 @@ window.LEGAL_BODY_EN = {
         <li>You can delete your account from the App settings.</li>
       </ul>
 
-      <h2>3. Subscriptions</h2>
-      <p>
-        Some features require a paid subscription managed by Apple (In-App Purchase).
-        Payment is charged to your Apple account. Renewal is automatic unless canceled
-        at least 24 hours before the end of the current period, via Settings &gt; Apple ID &gt; Subscriptions.
-      </p>
-      <p>
-        Prices, free trial durations, and promotional terms are displayed in the App
-        before any purchase. Restore purchases is available from the paywall or iOS Settings.
-      </p>
+      <h2>3. In-App Purchases</h2>
+      <p>Some features require an in-app purchase managed by Apple. Payment is charged to your Apple account. Monthly and annual subscriptions renew automatically unless canceled at least 24 hours before the end of the current period, via Settings &gt; Apple ID &gt; Subscriptions. Lifetime access is a one-time purchase with no renewal.</p>
+      <p>Prices and available offer terms are displayed in the App before purchase. Restore purchases is available in the App. Apple handles refund requests at <a href="https://reportaproblem.apple.com">reportaproblem.apple.com</a>.</p>
 
       <h2>4. Acceptable use</h2>
       <p>You agree not to:</p>
@@ -90,7 +83,7 @@ window.LEGAL_BODY_EN = {
 
       <h2>12. Contact</h2>
       <p>
-        <a href="mailto:support@useprocess.xyz">support@useprocess.xyz</a> —
+        <a href="mailto:contact@useprocess.xyz">contact@useprocess.xyz</a> —
         <a href="/support">Support page</a>
       </p>
 `,
@@ -107,7 +100,7 @@ window.LEGAL_BODY_EN = {
       <h2>1. Data controller</h2>
       <p>
         Publisher: <strong>Process</strong><br>
-        Contact: <a href="mailto:support@useprocess.xyz">support@useprocess.xyz</a><br>
+        Contact: <a href="mailto:contact@useprocess.xyz">contact@useprocess.xyz</a><br>
         Website: <a href="https://useprocess.xyz">useprocess.xyz</a>
       </p>
 
@@ -256,7 +249,6 @@ window.LEGAL_BODY_EN = {
         <li><strong>Apple</strong>: App Store, Sign in with Apple, HealthKit, in-app purchases, Speech (on-device dictation).</li>
         <li><strong>Google Firebase</strong>: authentication, Firestore, Cloud Functions (AI proxy).</li>
         <li><strong>RevenueCat</strong>: subscription management.</li>
-        <li><strong>Crisp</strong>: support chat (messages you send via the website widget or in-app chat). Hosted in the EU (Crisp IM SAS).</li>
         <li><strong>Anthropic (Claude)</strong>: AI coach and vision analyses — <strong>only with explicit consent</strong> (section 4).</li>
       </ul>
 
@@ -276,7 +268,7 @@ window.LEGAL_BODY_EN = {
         (HealthKit, AI, face scan) via iOS Settings or in the App (Settings → AI Privacy).
       </p>
       <p>
-        To exercise your rights: <a href="mailto:support@useprocess.xyz">support@useprocess.xyz</a>.
+        To exercise your rights: <a href="mailto:contact@useprocess.xyz">contact@useprocess.xyz</a>.
         You may also lodge a complaint with the CNIL.
       </p>
 
@@ -306,7 +298,7 @@ window.LEGAL_BODY_EN = {
 
       <h2>14. Contact</h2>
       <p>
-        Questions: <a href="mailto:support@useprocess.xyz">support@useprocess.xyz</a><br>
+        Questions: <a href="mailto:contact@useprocess.xyz">contact@useprocess.xyz</a><br>
         Support: <a href="/support">useprocess.xyz/support</a>
       </p>
 `,
@@ -317,7 +309,7 @@ window.LEGAL_BODY_EN = {
       <h2>Website and application publisher</h2>
       <p>
         <strong>Process</strong> — publisher of the Process AI mobile application (iOS)<br>
-        Email: <a href="mailto:support@useprocess.xyz">support@useprocess.xyz</a><br>
+        Email: <a href="mailto:contact@useprocess.xyz">contact@useprocess.xyz</a><br>
         Website: <a href="https://useprocess.xyz">https://useprocess.xyz</a>
       </p>
 
@@ -351,12 +343,12 @@ window.LEGAL_BODY_EN = {
       <p>
         For information on how we process your data, see our
         <a href="/confidentialite">privacy policy</a>.
-        To exercise your rights: <a href="mailto:support@useprocess.xyz">support@useprocess.xyz</a>.
+        To exercise your rights: <a href="mailto:contact@useprocess.xyz">contact@useprocess.xyz</a>.
       </p>
 
       <h2>Contact</h2>
       <p>
-        <a href="mailto:support@useprocess.xyz">support@useprocess.xyz</a> —
+        <a href="mailto:contact@useprocess.xyz">contact@useprocess.xyz</a> —
         <a href="/support">Support page</a>
       </p>
 `,
@@ -366,12 +358,12 @@ window.LEGAL_BODY_EN = {
 
       <p>
         Have a question about the app, your subscription, your data, or a technical issue?
-        Open the chat in the bottom-right corner, or email us — we typically respond within 2 business days.
+        Email us — we typically respond within 2 business days.
       </p>
 
       <p>
         <strong>Email:</strong>
-        <a href="mailto:support@useprocess.xyz">support@useprocess.xyz</a>
+        <a href="mailto:contact@useprocess.xyz">contact@useprocess.xyz</a>
       </p>
 
       <h2>Before you write</h2>
@@ -474,7 +466,7 @@ window.LEGAL_BODY_EN = {
 
       <h2>Contact</h2>
       <p>
-        Questions: <a href="mailto:support@useprocess.xyz">support@useprocess.xyz</a> —
+        Questions: <a href="mailto:contact@useprocess.xyz">contact@useprocess.xyz</a> —
         <a href="/support">Support page</a>
       </p>
 `,

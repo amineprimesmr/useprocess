@@ -322,6 +322,26 @@ private struct PlanHydrationCarouselCard: View {
                 animatedFill = targetFill
             }
         }
+        .task {
+            #if DEBUG && targetEnvironment(simulator)
+            // Deterministic recording of the native pour animation for the design catalog.
+            if ProcessInfo.processInfo.arguments.contains("--catalog-hydration-autoplay") {
+                // Capture the native visual transition without journal/network/live-activity
+                // updates invalidating the whole dashboard during simulator recording.
+                animatedFill = fillLevel(for: 0)
+                try? await Task.sleep(for: .seconds(25))
+                for step in 0..<4 {
+                    guard !Task.isCancelled else { return }
+                    runHydrationPourCelebration(
+                        fromMilliliters: step * 500,
+                        toMilliliters: (step + 1) * 500,
+                        playFeedback: false
+                    )
+                    try? await Task.sleep(for: .seconds(3))
+                }
+            }
+            #endif
+        }
         .onChange(of: effectiveMilliliters) { oldValue, newValue in
             guard sipCelebration.peekFromMilliliters() == nil else { return }
 

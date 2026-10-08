@@ -1,0 +1,13 @@
+{
+  "status": "structural_integrity_verified_not_restore_test",
+  "count": 373,
+  "unique_uids": 373,
+  "all_have_uid": true,
+  "bytes": 75031,
+  "sha256": "c75bf5c2f147ed88e6e32182b5d5a3f9527195db1b214aa74609c215df0ad586",
+  "mode": "0o600",
+  "private_export_in_commercial_pack": false,
+  "restore_executed": false,
+  "source_backup_members": 1294,
+  "source_backup_full_read_passed": true
+}

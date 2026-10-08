@@ -16,7 +16,7 @@ struct FaceScanRecordingMediaView: View {
 
     @State private var resolvedVideoURL: URL?
     @State private var resolvedSnapshot: UIImage?
-    @State private var mediaRefreshToken = 0
+    @State private var snapshotReloadToken = 0
 
     var body: some View {
         mediaContent
@@ -25,7 +25,12 @@ struct FaceScanRecordingMediaView: View {
             .frame(maxHeight: displayMode == .sidePanel ? .infinity : nil)
             .clipped()
             .modifier(FaceScanMediaCornerClip(radius: cornerRadius))
-            .id("\(result.id)-\(displayMode)-\(mediaRefreshToken)")
+            .task(id: "\(result.id)-\(result.snapshotFilename ?? "")-\(snapshotReloadToken)") {
+                resolvedSnapshot = nil
+                let image = await FaceScanImageStore.preview(scanId: result.id, filename: result.snapshotFilename)
+                guard !Task.isCancelled else { return }
+                resolvedSnapshot = image
+            }
             .onAppear(perform: refreshResolvedMedia)
             .onChange(of: result.id) { _, _ in
                 refreshResolvedMedia()
@@ -36,14 +41,8 @@ struct FaceScanRecordingMediaView: View {
             .onChange(of: result.snapshotFilename) { _, _ in
                 refreshResolvedMedia()
             }
-            .onChange(of: result.studioFraming) { _, _ in
-                mediaRefreshToken &+= 1
-            }
-            .onChange(of: isPlaybackActive) { _, isActive in
-                guard isActive else { return }
-                mediaRefreshToken &+= 1
-            }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                if resolvedSnapshot == nil { snapshotReloadToken &+= 1 }
                 refreshResolvedMedia()
             }
     }
@@ -136,14 +135,6 @@ struct FaceScanRecordingMediaView: View {
     private func refreshResolvedMedia() {
         let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
         resolvedVideoURL = FaceScanImageStore.resolvedVideoURL(for: reconciled)
-        if let filename = FaceScanImageStore.resolvedSnapshotFilename(for: reconciled) {
-            resolvedSnapshot = FaceScanImageStore.load(filename: filename)
-        } else {
-            resolvedSnapshot = nil
-        }
-        if resolvedVideoURL == nil, resolvedSnapshot == nil {
-            mediaRefreshToken &+= 1
-        }
     }
 }
 
@@ -161,6 +152,8 @@ private struct FaceScanMediaCornerClip: ViewModifier {
 
 /// Boucle vidéo muette — AVPlayerLayer (pas VideoPlayer) pour ne pas couper la musique.
 struct FaceScanSilentVideoLoopView: UIViewRepresentable {
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.processTabIsActive) private var isTabActive
     let url: URL
     var isPlaybackActive: Bool = true
 
@@ -171,18 +164,13 @@ struct FaceScanSilentVideoLoopView: UIViewRepresentable {
     func makeUIView(context: Context) -> FaceScanVideoLoopContainerView {
         let view = FaceScanVideoLoopContainerView()
         context.coordinator.attach(to: view, url: url)
-        view.setPlaybackActive(isPlaybackActive)
+        view.setPlaybackActive(isPlaybackActive && isTabActive && scenePhase == .active)
         return view
     }
 
     func updateUIView(_ uiView: FaceScanVideoLoopContainerView, context: Context) {
         context.coordinator.attach(to: uiView, url: url)
-        uiView.setPlaybackActive(isPlaybackActive)
-        guard isPlaybackActive else { return }
-        uiView.resumePlaybackIfNeeded()
-        DispatchQueue.main.async {
-            uiView.resumePlaybackIfNeeded()
-        }
+        uiView.setPlaybackActive(isPlaybackActive && isTabActive && scenePhase == .active)
     }
 
     static func dismantleUIView(_ uiView: FaceScanVideoLoopContainerView, coordinator: Coordinator) {
@@ -197,7 +185,6 @@ struct FaceScanSilentVideoLoopView: UIViewRepresentable {
         func attach(to view: FaceScanVideoLoopContainerView, url: URL) {
             if configuredURL == url, let player {
                 view.setPlayer(player)
-                view.resumePlaybackIfNeeded()
                 return
             }
 
@@ -266,6 +253,7 @@ final class FaceScanVideoLoopContainerView: UIView {
     }
 
     func setPlaybackActive(_ active: Bool) {
+        guard playbackActive != active else { return }
         playbackActive = active
         if active {
             resumePlaybackIfNeeded()

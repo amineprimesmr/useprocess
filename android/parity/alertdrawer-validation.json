@@ -1,0 +1,35 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-125513704-444192744/AlertDrawer/AlertDrawer/ContentView.swift": "4a7bb1feb161f1cc34dab6da7aa9b2d246b5956d43de1d76057a93aa2ee8983f",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-125513704-444192744/AlertDrawer/AlertDrawer/AlertDrawerApp.swift": "f1ac73062fe2f6c847bdb36d851cfc5f896c8ad90c91c63c9559a1092156b227",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-125513704-444192744/AlertDrawer/AlertDrawer/Helpers/CustomAlertDrawer.swift": "95b11f97d51dde68f886406c1b61c6ed3e5199e4e17599bb99aebe74f0c93408"
+  },
+  "nativeFiles": [
+    "TenKAlertDrawer.kt",
+    "ProcessMotionPreferences.kt"
+  ],
+  "contract": "Mount TenKAlertDrawer at a bounded root and use TenKDrawerSourceButton with shared rememberAlertDrawerState(contextKey). Source button global bounds map into host coordinates. Card background and primary button interpolate from source to bottom drawer over350ms; press scale0.95/100ms. Preserve20dp outer/inner inset,10dp bottom,15dp content spacing,25dp content-action gap,10dp action gap and source-button half-height corner radius. Background dim50percent; body becomes scrollable when viewport/text needs it. Primary/secondary return true to dismiss,false to remain; callbacks fire only when presentation settles. Scrim,close and Android back dismiss; source restores only after closing animation. Context changes discard old presentation; hidden background semantics removed. Gallery preserves original wallet-warning text and explicitly connects no wallet/action. Swift snappy spring,ultraThinMaterial,dual shadows,exact SFsymbols/fonts,keyboard/focus confinement and physical/iOS paired motion/pixel comparison remain unverified.",
+  "recordedAt": "2026-10-08T09:55:35.433073+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 179,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 40
+  },
+  "visual": "host only",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "TenKAlertDrawer.kt": "4032b483ac3c0a6ccc90eb2bf305aa3ae2ed1bdef702458e4de38aef10d7dab4",
+    "ProcessMotionPreferences.kt": "5f62c13457fb14a4db1e32f7095cc3b929bdde001e26bd4e1de74fd35a943462"
+  },
+  "remaining": [
+    "Exact source springs/materials/fonts/symbols and physical/iOS paired motion/pixel comparison",
+    "Production host integration and device accessibility/gesture testing"
+  ]
+}

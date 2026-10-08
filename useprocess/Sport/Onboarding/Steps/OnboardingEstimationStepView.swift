@@ -28,7 +28,7 @@ struct OnboardingEstimationStepView: View {
     @State private var animationTask: Task<Void, Never>?
     @State private var fallbackUnlockTask: Task<Void, Never>?
 
-    private let mainAnimationDuration: TimeInterval = 3.5
+    private let mainAnimationDuration: TimeInterval = 2.2
 
     private var engine: OnboardingEstimationEngine { .shared }
 
@@ -64,17 +64,7 @@ struct OnboardingEstimationStepView: View {
         }
         .onDisappear {
             cancelRunningTasks()
-            resetForNextVisit()
         }
-    }
-
-    private func resetForNextVisit() {
-        isCountdownFinished = false
-        curveAnimationProgress = 0
-        displayedDay = ""
-        displayedMonth = ""
-        onContinueUnlockProgressChanged?(0)
-        onValidationChanged?(false)
     }
 
     private var currentDisplayDay: String {
@@ -83,7 +73,7 @@ struct OnboardingEstimationStepView: View {
         if let date = projectedDate {
             return "\(Calendar.current.component(.day, from: date))"
         }
-        return "..."
+        return ""
     }
 
     private var currentDisplayMonth: String {
@@ -92,7 +82,7 @@ struct OnboardingEstimationStepView: View {
         if let date = projectedDate {
             return formatMonth(date)
         }
-        return "..."
+        return ""
     }
 
     private var bottomMessageView: some View {
@@ -118,11 +108,15 @@ struct OnboardingEstimationStepView: View {
     private func ensureHydrated() {
         let needsContent = projectedDate == nil || graphSnapshot == nil || summaryLine.isEmpty
 
-        if isAlreadyCompleted {
+        if isAlreadyCompleted || isCountdownFinished {
             if needsContent {
                 hydrateContent()
             }
             presentCompletedState()
+            return
+        }
+
+        if animationTask != nil || fallbackUnlockTask != nil {
             return
         }
 
@@ -167,6 +161,10 @@ struct OnboardingEstimationStepView: View {
     }
 
     private func startCountdownAnimation() {
+        guard !isCountdownFinished else {
+            presentCompletedState()
+            return
+        }
         cancelRunningTasks()
 
         guard let finalDate = projectedDate else { return }
@@ -183,7 +181,7 @@ struct OnboardingEstimationStepView: View {
         }
 
         fallbackUnlockTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 6_000_000_000)
+            try? await Task.sleep(nanoseconds: 3_200_000_000)
             guard !Task.isCancelled, !isCountdownFinished else { return }
             finishAnimation()
         }

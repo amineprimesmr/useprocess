@@ -1,0 +1,18 @@
+[
+  {
+    "keyAlgorithm": "KEY_ALG_RSA_2048",
+    "keyOrigin": "GOOGLE_PROVIDED",
+    "keyType": "SYSTEM_MANAGED",
+    "name": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com/keys/f959972beee82a252af9d5c24c255157d25412fc",
+    "validAfterTime": "2026-06-15T11:50:30Z",
+    "validBeforeTime": "2027-06-15T11:50:30Z"
+  },
+  {
+    "keyAlgorithm": "KEY_ALG_RSA_2048",
+    "keyOrigin": "GOOGLE_PROVIDED",
+    "keyType": "SYSTEM_MANAGED",
+    "name": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com/keys/95823b760ca7417ec41388a950804ce8e928c0bf",
+    "validAfterTime": "2026-06-15T11:50:30Z",
+    "validBeforeTime": "2027-06-15T11:50:30Z"
+  }
+]

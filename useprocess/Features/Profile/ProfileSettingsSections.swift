@@ -427,7 +427,7 @@ struct ProfileSettingsLegalDetailView: View {
                 ProcessSettingsOpalRowDivider()
 
                 Button { openSupportChat() } label: {
-                    ProcessSettingsOpalRow(icon: "bubble.left.and.bubble.right.fill", title: AppCopy.t("Discuter avec l'équipe", en: "Chat with the team"), showsDivider: false)
+                    ProcessSettingsOpalRow(icon: "bubble.left.and.bubble.right.fill", title: AppCopy.t("Assistance", en: "Support"), showsDivider: false)
                 }
                 .processSettingsOpalRowButton()
 
@@ -474,11 +474,7 @@ struct ProfileSettingsLegalDetailView: View {
 
     private func openSupportChat() {
         ProcessAnalytics.trackSupportChatOpened(source: "settings_legal")
-        if ProcessCrispSupport.isReady {
-            showsSupportChat = true
-        } else {
-            openURL(ProcessLegalURLs.supportMail)
-        }
+        showsSupportChat = true
     }
 
     private func legalRow(icon: String, title: String, url: URL, showsDivider: Bool = false) -> some View {

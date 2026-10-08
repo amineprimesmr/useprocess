@@ -1,0 +1,11 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-146010903-581752683/TruncationEffect/TruncationEffect/ContentView.swift": "60b2410c990b8ec449d0636617adf1c57f20a517397002661a37124265812b40",
+    "content/source-projects/design-source-146010903-581752683/TruncationEffect/TruncationEffect/TruncationEffectApp.swift": "18c38a348ef44c54b00b67b5fe056098f015e12e9522a371ee05f207e3e3f5a3",
+    "content/source-projects/design-source-146010903-581752683/TruncationEffect/TruncationEffect/Helpers/TextTruncationEffect.swift": "c2aae1246c5dd487ed498df2a382035c7c1f36c4778a1626281ecefea295957e"
+  },
+  "mirrorMatchesInventory": true,
+  "build": "pending",
+  "visual": "unverified",
+  "motion": "unverified"
+}

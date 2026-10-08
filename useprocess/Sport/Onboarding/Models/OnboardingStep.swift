@@ -60,6 +60,18 @@ enum OnboardingStep: Int, CaseIterable {
         Self.liveOrder.firstIndex(of: self) ?? rawValue
     }
 
+    /// Écrans réellement affichés : parcours linéaire, sans les étapes désactivées
+    /// ni `.complete` (finalisation technique, jamais une destination de navigation).
+    static var visibleFlow: [OnboardingStep] {
+        liveOrder.filter { !$0.isTransientSkippedStep && $0 != .complete }
+    }
+
+    /// Écran suivant dans le parcours affiché — `nil` sur le dernier écran.
+    var nextVisibleStep: OnboardingStep? {
+        guard let index = Self.liveOrder.firstIndex(of: self) else { return nil }
+        return Self.liveOrder[(index + 1)...].first { Self.visibleFlow.contains($0) }
+    }
+
     var usesInternalContinueAction: Bool {
         switch self {
         case .weightMotivation, .biometricAuth, .transformationPreview,
@@ -70,14 +82,6 @@ enum OnboardingStep: Int, CaseIterable {
         default:
             return false
         }
-    }
-
-    static var maxRawValue: Int {
-        allCases.map(\.rawValue).max() ?? 0
-    }
-
-    static var validSavedStepUpperBound: Int {
-        maxRawValue + 1
     }
 
     /// Code créateur optionnel uniquement — plus d’étapes fantômes.

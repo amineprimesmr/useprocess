@@ -11,8 +11,9 @@ struct FirstNameInputStepView: View {
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject var profileService: UnifiedProfileService
     @Binding var firstName: String
-    @State private var isTextFieldFocused = false
     @State private var didBootstrap = false
+    /// Évite de re-sauver le même prénom (changement de langue, aller-retour).
+    @State private var lastCommittedName = ""
     @FocusState private var isTextFieldFocusedState: Bool
 
     // Callback pour passer à la page suivante
@@ -51,14 +52,7 @@ struct FirstNameInputStepView: View {
                     let trimmed = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
                     guard !trimmed.isEmpty else { return }
 
-                    HapticManager.shared.impact(.medium)
-                    ProcessAnalytics.trackFirstNameSet(trimmed, source: "onboarding_first_name_submit")
-                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                     onComplete?()
-
-                    Task.detached(priority: .background) {
-                        await saveFirstNameAndContinue()
-                    }
                 }
                 .padding(.horizontal, 40)
 
@@ -80,9 +74,6 @@ struct FirstNameInputStepView: View {
                 )
             }
         }
-        .onChange(of: isTextFieldFocusedState) { _, newValue in
-            isTextFieldFocused = newValue
-        }
         .onChange(of: firstName) { _, newValue in
             // Valider automatiquement quand le prénom est saisi
             let isValid = !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -90,6 +81,18 @@ struct FirstNameInputStepView: View {
         }
         .onDisappear {
             isTextFieldFocusedState = false
+            commitFirstName()
+        }
+    }
+
+    /// Sauvegarde unique, quel que soit le chemin de sortie (bouton CONTINUER global ou touche Retour).
+    private func commitFirstName() {
+        let trimmed = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard OnboardingViewModel.isRealUserFirstName(trimmed), trimmed != lastCommittedName else { return }
+        lastCommittedName = trimmed
+        ProcessAnalytics.trackFirstNameSet(trimmed, source: "onboarding_first_name_submit")
+        Task.detached(priority: .background) {
+            await saveFirstName()
         }
     }
 
@@ -120,7 +123,7 @@ struct FirstNameInputStepView: View {
         }
     }
 
-    private func saveFirstNameAndContinue() async {
+    private func saveFirstName() async {
         let trimmedFirstName = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !trimmedFirstName.isEmpty else { return }
@@ -141,13 +144,11 @@ struct FirstNameInputStepView: View {
                     return
                 }
 
-                // ✅ NOUVEAU: Vérifier s'il y a un prénom en attente à sauvegarder
-                let pendingFirstName = UserDefaults.standard.string(forKey: "pending_firstname_to_save") ?? trimmedFirstName
-                let pendingBase = UserDefaults.standard.string(forKey: "pending_username_to_save") ?? baseUsername
-                if UserDefaults.standard.string(forKey: "pending_firstname_to_save") != nil {
-                    UserDefaults.standard.removeObject(forKey: "pending_firstname_to_save")
-                    UserDefaults.standard.removeObject(forKey: "pending_username_to_save")
-                }
+                // Le prénom saisi maintenant gagne toujours sur un ancien prénom en attente.
+                let pendingFirstName = trimmedFirstName
+                let pendingBase = baseUsername
+                UserDefaults.standard.removeObject(forKey: "pending_firstname_to_save")
+                UserDefaults.standard.removeObject(forKey: "pending_username_to_save")
 
                 let pendingUsername = try await ProcessUsernameRegistry.shared.suggestAvailableUsername(
                     base: pendingBase.isEmpty ? "user" : pendingBase,
@@ -178,9 +179,6 @@ struct FirstNameInputStepView: View {
                     changeRequest.displayName = pendingFirstName
                     try? await changeRequest.commitChanges()
                 }
-
-                // Ne pas passer automatiquement - l'utilisateur doit cliquer sur CONTINUER
-                // onComplete?() sera appelé quand l'utilisateur clique sur le bouton
         } catch {
             DebugLogger.error("\(error.localizedDescription)")
         }

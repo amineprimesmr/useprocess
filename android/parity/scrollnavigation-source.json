@@ -1,0 +1,12 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-151896818-621548683/AppleStoreTabScroll/AppleStoreTabScroll/ContentView.swift": "50832117e82ca20a132473ef7ba53813ee8ef9b257df828cd5189ba5ad4ad47a",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-151896818-621548683/AppleStoreTabScroll/AppleStoreTabScroll/AppleStoreTabScrollApp.swift": "91167481a72561bfa7f018a05b30385149f8e8692c275eea3a16feed2022b4a3"
+  },
+  "nativeFiles": [
+    "ScrollNavigationModel.kt",
+    "TenKScrollAwareNavigation.kt",
+    "ProcessMotionPreferences.kt"
+  ],
+  "contract": "Root overlay receives actual ScrollState,navigation slot and content slot. Source50dp down threshold and60dp hidden-direction baseline retain10dp reverse hysteresis. Only user drag changes visibility; fling/programmatic geometry still updates direction/baseline. Duplicate offset observations are ignored because source geometry callback runs only for changed offsets. Native300ms transition; context change restores visible state. Host owns actual navigation,accessory,bottom content inset and per-tab scroll state. Gallery retains source50rows and5tabs,marks historical899-dollar10percent offer as an original demo,performs no shopping. Native icon/tab material,system tab/accessory transition,safe-area/viewport behavior and physical/iOS parity remain unverified."
+}

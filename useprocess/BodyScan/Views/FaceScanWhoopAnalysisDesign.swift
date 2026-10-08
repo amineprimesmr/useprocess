@@ -623,7 +623,7 @@ private struct FaceScanWhoopCircularPhoto: View {
 
     @State private var resolvedVideoURL: URL?
     @State private var snapshot: UIImage?
-    @State private var mediaRefreshToken = 0
+    @State private var snapshotReloadToken = 0
 
     var body: some View {
         GeometryReader { geo in
@@ -639,7 +639,7 @@ private struct FaceScanWhoopCircularPhoto: View {
                         .scaledToFill()
                 } else {
                     Circle()
-                        .fill(Color.white.opacity(0.08))
+                        .fill(Color.primary.opacity(0.08))
                         .overlay {
                             Image(systemName: "face.smiling")
                                 .font(.system(size: 44, weight: .light))
@@ -657,7 +657,12 @@ private struct FaceScanWhoopCircularPhoto: View {
             .clipped()
             .position(x: geo.size.width / 2, y: geo.size.height / 2)
         }
-        .id("\(result.id)-media-\(mediaRefreshToken)")
+        .task(id: "\(result.id)-\(result.snapshotFilename ?? "")-\(snapshotReloadToken)") {
+            snapshot = nil
+            let image = await FaceScanImageStore.preview(scanId: result.id, filename: result.snapshotFilename)
+            guard !Task.isCancelled else { return }
+            snapshot = image
+        }
         .onAppear(perform: refreshMedia)
         .onChange(of: result.id) { _, _ in
             refreshMedia()
@@ -665,6 +670,7 @@ private struct FaceScanWhoopCircularPhoto: View {
         .onChange(of: result.videoFilename) { _, _ in refreshMedia() }
         .onChange(of: result.snapshotFilename) { _, _ in refreshMedia() }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                if snapshot == nil { snapshotReloadToken &+= 1 }
             refreshMedia()
         }
         .task(id: result.id) {
@@ -675,24 +681,17 @@ private struct FaceScanWhoopCircularPhoto: View {
     private func refreshMedia() {
         let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
         resolvedVideoURL = FaceScanImageStore.resolvedVideoURL(for: reconciled)
-        if let filename = FaceScanImageStore.resolvedSnapshotFilename(for: reconciled) {
-            snapshot = FaceScanImageStore.load(filename: filename)
-        } else {
-            snapshot = nil
-        }
-        if resolvedVideoURL == nil, snapshot == nil {
-            mediaRefreshToken &+= 1
-        }
     }
 
     private func resolveVideoWithRetry() async {
         for _ in 0..<24 {
+            guard !Task.isCancelled else { return }
             let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
             if let url = FaceScanImageStore.resolvedVideoURL(for: reconciled) {
                 resolvedVideoURL = url
                 return
             }
-            try? await Task.sleep(for: .milliseconds(180))
+            do { try await Task.sleep(for: .milliseconds(180)) } catch { return }
         }
     }
 }
@@ -1496,14 +1495,14 @@ private struct FaceScanWhoopLineChart: View {
                         path.move(to: CGPoint(x: 0, y: y))
                         path.addLine(to: CGPoint(x: width, y: y))
                     }
-                    .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
                 }
 
                 ForEach(Array(slots.enumerated()), id: \.element.id) { index, slot in
                     if slot.isToday {
                         let x = xPosition(for: index, width: width)
                         RoundedRectangle(cornerRadius: 4, style: .continuous)
-                            .fill(Color.white.opacity(0.07))
+                            .fill(Color.primary.opacity(0.07))
                             .frame(width: max(columnWidth * 0.72, 18), height: plotHeight)
                             .position(x: x, y: plotHeight / 2)
                     }
@@ -1655,7 +1654,7 @@ private struct FaceScanWhoopAnalysisInfoSheet: View {
 
                                         if index < recentScans.count - 1 {
                                             Divider()
-                                                .overlay(Color.white.opacity(0.08))
+                                                .overlay(Color.primary.opacity(0.08))
                                                 .padding(.leading, 56)
                                         }
                                     }
@@ -1795,7 +1794,7 @@ private struct FaceScanDetailHistoryRow: View {
                         .scaledToFill()
                 } else {
                     Circle()
-                        .fill(Color.white.opacity(0.08))
+                        .fill(Color.primary.opacity(0.08))
                         .overlay {
                             Image(systemName: "face.smiling")
                                 .font(.system(size: 16, weight: .light))
@@ -1832,17 +1831,17 @@ private struct FaceScanDetailHistoryRow: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .onAppear(perform: loadThumbnail)
+        .task(id: "\(scan.id)-\(scan.snapshotFilename ?? "")") { await loadThumbnail() }
     }
 
     private var formattedDate: String {
         FaceScanWhoopDateLabel.historyRow(for: scan.createdAt)
     }
 
-    private func loadThumbnail() {
-        let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: scan)
-        if let filename = FaceScanImageStore.resolvedSnapshotFilename(for: reconciled) {
-            thumbnail = FaceScanImageStore.load(filename: filename)
-        }
+    private func loadThumbnail() async {
+        thumbnail = nil
+        let image = await FaceScanImageStore.preview(scanId: scan.id, filename: scan.snapshotFilename, maxPixelSize: 240)
+        guard !Task.isCancelled else { return }
+        thumbnail = image
     }
 }

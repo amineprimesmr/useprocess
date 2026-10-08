@@ -1,0 +1,37 @@
+{
+  "info" : {
+    "arguments" : [
+      "devicectl",
+      "device",
+      "install",
+      "app",
+      "--device",
+      "00008120-0000158022D0C01E",
+      "/Users/amine/Library/Developer/Xcode/DerivedData/useprocess-chhbpanprprsykanlmahuyoacvhm/Build/Products/Debug-iphoneos/useprocess.app",
+      "--json-output",
+      "/tmp/process-onboarding-install-20261008.json"
+    ],
+    "commandType" : "devicectl.device.install.app",
+    "environment" : {
+      "TERM" : "dumb"
+    },
+    "jsonVersion" : 5,
+    "outcome" : "success",
+    "version" : "642.15"
+  },
+  "result" : {
+    "deviceIdentifier" : "E825B8DF-535C-5CF9-970C-6B29139A7A8A",
+    "installedApplications" : [
+      {
+        "bundleID" : "com.useprocess",
+        "databaseSequenceNumber" : 7848,
+        "databaseUUID" : "D6B84F94-43D9-4B91-90A8-C88E0A0DEF44",
+        "installationURL" : "file:///private/var/containers/Bundle/Application/63188AEB-152E-477D-B4AE-8DC8BAC32EB2/useprocess.app/",
+        "launchServicesIdentifier" : "unknown",
+        "options" : {
+
+        }
+      }
+    ]
+  }
+}

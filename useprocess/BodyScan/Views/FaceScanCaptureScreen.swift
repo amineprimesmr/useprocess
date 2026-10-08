@@ -117,14 +117,9 @@ struct FaceScanCaptureScreen: View {
     @State private var showsDelayedScanLaterLink = false
     @State private var delayedScanLaterTask: Task<Void, Never>?
 
+    // Tighter portrait crop on the compositor; ARKit keeps its native geometry.
     private var cameraZoom: CGFloat {
-        if isScanDayHubCamera {
-            return ProcessScanCamera.scanDayHubPreviewZoom
-        }
-        if usesOnboardingFaceOval {
-            return ProcessScanCamera.onboardingPortraitPreviewZoom
-        }
-        return AdaptiveScreenLayout.faceScanCameraZoom(horizontalSizeClass: horizontalSizeClass)
+        ProcessScanCamera.portraitPreviewZoom(for: portraitLockProfile)
     }
 
     private var portraitFieldOfView: CGFloat {
@@ -673,8 +668,6 @@ struct FaceScanCaptureScreen: View {
                 .frame(minHeight: 6, maxHeight: 12)
 
             cameraSection(viewportSize: viewportSize)
-                // La caméra n’a pas besoin des taps — sinon elle mange « Faire mon scan plus tard ».
-                .allowsHitTesting(false)
 
             if showsMediaImport, phase != .completed {
                 importMediaButton
@@ -714,8 +707,6 @@ struct FaceScanCaptureScreen: View {
 
         return ZStack {
             cameraSection(viewportSize: viewportSize)
-                // La caméra n’a pas besoin des taps — sinon elle mange « Faire mon scan plus tard ».
-                .allowsHitTesting(false)
 
             if isDeviceSupported, phase != .completed {
                 VStack(spacing: 0) {
@@ -881,6 +872,9 @@ struct FaceScanCaptureScreen: View {
         action: @escaping () -> Void
     ) -> some View {
         Button {
+            #if DEBUG
+            print("[FaceScanRuntime] control tapped: \(systemName)")
+            #endif
             HapticManager.shared.impact(.light)
             action()
         } label: {
@@ -1422,6 +1416,7 @@ struct FaceScanCaptureScreen: View {
                 portraitLockProfile: portraitLockProfile,
                 onComplete: handleCapture
             )
+            .allowsHitTesting(false)
             .id(isInlineHome ? "inline-home-face-mesh-\(inlineMeshResetNonce)" : scanSessionID.uuidString)
             .blur(radius: scanBlockedByLighting ? 7 : 0)
             .opacity(meshPreviewHiddenForCountdown ? 0 : 1)

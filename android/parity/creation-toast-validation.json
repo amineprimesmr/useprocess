@@ -1,0 +1,62 @@
+{
+  "recordedAt": "2026-10-08T01:45:51.956718+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 94,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 22
+  },
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/process/android/ProgramCreationModel.kt": "ccf6ac9fc5239b6559d5ecd1e6f830e66c16c52e416e75baa02da911652aa9cc",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/process/android/ProcessProgramCreation.kt": "566c1c62425b06c3c9e85705e58b37772479c8e9633fd5efbce0e92ae1a58c44",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/process/android/ProcessToastModel.kt": "0b55383980abca715dd390c72287daf06ebbec4bc9728f2dfd66711cdcb7a43a",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/process/android/ProcessToast.kt": "c8abd5e5cebef89450e19bd5872f91fa8241b791ab4d80ceb89ed670e1adc0e9",
+    "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/creation_science.png": "a3a06c698603529554d84321968ab6e2811da98af184647501ed7add433fe7df",
+    "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/creation_download_dark.png": "9e15cc66b8bf873c95124fc977cbad46a3f4f6074b800f981f97f8dc8d5eacbc",
+    "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/creation_download.png": "cac1f8f21709a29266b61cce19df48de5f519cf82fe3e43a17f21fbcf81e0ea3",
+    "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/creation_science_en.png": "2af33fb8c6069731fe0de8cf5fb75a7181e83485b34fc0ea3262af7831f7e29d",
+    "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/creation_check.png": "d29c45df9eb90b05291dffd6077a3b53de8e3963ac7f58e8c572a123e47fec89",
+    "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/creation_science_dark.png": "9503325cf3421621a0ebee08ff6510524f473fae7f256b68743e04fc310b74ce",
+    "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/creation_download_en.png": "e5abb9207e96bae1b2bdcbc42c5e201389998ea9f807c0904e06a3d3c9a18c8e",
+    "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/creation_download_en_dark.png": "166ec17a311a8b681c70a8f703a550fb7029dc2e424f3acda1b2aff745a78753",
+    "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/creation_program_dark.png": "32b8f8fd1075b80543f38319311143df32fdf6ad5bee5fb478ff64a93bf7652e",
+    "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/creation_program_en_dark.png": "13df54f93ef6605b1d7e3ecdda15ceb174b462e998f21e926dc3155de0e0f4f0",
+    "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/creation_science_en_dark.png": "d970072fb46af08f1f462826a3db1f6f92534c1945ab6a62167a691e66625413",
+    "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/creation_program_en.png": "3664bf11cfc309a201278c61983520f2a367ede6d9fd89b483a28b9432cda096",
+    "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/creation_program.png": "adae8fe7aacf831ecb11e268d4779ed2c82fd0487bcd40e46f5b13c9207db881",
+    "/Users/amine/Developer/useprocess/useprocess/DesignSystem/DynamicIslandToast/DynamicIslandToastView.swift": "182a7862457279a39271d0060c27e848e003d4837637648f6a871708ae5644c4",
+    "/Users/amine/Developer/useprocess/useprocess/DesignSystem/DynamicIslandToast/DynamicIslandPassThroughWindow.swift": "060b2ee459eefb75aa711a3830a3d1ebe84bb9a785fc8d845be70ed4de61d127",
+    "/Users/amine/Developer/useprocess/useprocess/DesignSystem/DynamicIslandToast/DynamicIslandToastMessage.swift": "ea07279c02d659391896a5fbd83b896ce316f353e65715f52a58267dc2839966",
+    "/Users/amine/Developer/useprocess/useprocess/DesignSystem/DynamicIslandToast/DynamicIslandToastHostingController.swift": "e664cded637d5a9dc0db1a18bfd69b8e17138eabe297ecd26954ae1d8717394f",
+    "/Users/amine/Developer/useprocess/useprocess/DesignSystem/DynamicIslandToast/ScanCompletionToastPresenter.swift": "43fbab61fed6edd61283b9034e23a3ebd7a730817703a9e8aed43e006d340f48",
+    "/Users/amine/Developer/useprocess/useprocess/DesignSystem/DynamicIslandToast/WindowExtractor.swift": "dbe1ff1d9601908c9af86e5b257a0eeed8ca41d9fbee5236cf68544c40c244be",
+    "/Users/amine/Developer/useprocess/useprocess/Sport/Onboarding/Steps/OnboardingProgramCreationStepView.swift": "f720a8f2650c00f6fa148c86fb8431f52114b1dc76de9652abf48a6e7279db4b",
+    "/Users/amine/Developer/useprocess/useprocess/Sport/Onboarding/Steps/OnboardingProgramCreationViewModel.swift": "9c5612dacd0901d7eb98df9536316bfab6bece8bee29e2afa62a2b4d7fc83cfb",
+    "/Users/amine/Developer/useprocess/useprocess/Sport/Onboarding/Steps/OnboardingProgramCreationUI.swift": "7b415b26525b94e7938993fb9762786ca62ef80560279b8ef09367c13ddabdae",
+    "/Users/amine/Developer/useprocess/useprocess/Sport/Onboarding/ProfileChat/OnboardingAnalysisProgressConfig.swift": "a9de1795cacf0b92e80e92a11519c840f72b9aabfe2ce9ed3ee6469003106d75"
+  },
+  "runtime": "unverified",
+  "visual": "unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "remaining": {
+    "process-program-creation": [
+      "Health Connect permission integration and production plan preparation",
+      "Exact success reveal springs, numeric transition, glow and native modal presentation",
+      "Randomized trajectory and physical haptic/visual comparison",
+      "Real host completion persistence and account changes"
+    ],
+    "process-dynamic-island-toast": [
+      "Runtime tap, swipe, auto-dismiss, replacement and accessibility checks",
+      "Original SF-symbol rather than static native Process flame default",
+      "iOS bouncy geometry and blur; Android intentionally uses legacy layout under status inset",
+      "Physical font/motion comparison"
+    ]
+  },
+  "buildLog": "/tmp/process-toast-build.log"
+}

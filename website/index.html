@@ -5,40 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <script>
       document.documentElement.classList.add("app-booting");
-      (function () {
-        try {
-          var u = new URL(location.href);
-          var looksLike =
-            u.searchParams.has("oobCode") ||
-            u.searchParams.get("mode") === "signIn" ||
-            u.searchParams.get("emailLink") === "1";
-          if (looksLike) {
-            var p = u.pathname.replace(/\/$/, "") || "/";
-            if (p !== "/clipping" && p !== "/clipping.html") {
-              u.pathname = "/clipping";
-              location.replace(u.toString());
-              return;
-            }
-          }
-        } catch (e) {}
-        var path = location.pathname.replace(/\/$/, "");
-        if (path === "/clipping" || path === "/clipping.html" || path === "/affiliate" || path === "/affiliate.html") {
-          document.documentElement.classList.add("page-affiliate");
-        }
-      })();
     </script>
     <style>
       .hidden { display: none !important; }
       html.app-booting #landing { visibility: hidden; }
-      html.page-affiliate,
-      html.page-affiliate body {
-        background: #fff !important;
-        color: #0a0a0a !important;
-      }
-      html.page-affiliate #landing,
-      html.page-affiliate #page-404 { display: none !important; }
-      html.page-affiliate #page-affiliate { display: block !important; visibility: visible !important; }
-      html.page-affiliate #affiliate-root { min-height: 100vh; }
     </style>
     <meta
       name="description"
@@ -103,9 +73,7 @@
       </main>
     </div>
 
-    <div id="page-affiliate" class="hidden" aria-hidden="true">
-      <div id="affiliate-root"></div>
-    </div>
+
 
     <div id="page-404" class="hidden" aria-hidden="true">
       <div style="font-family: Inter, system-ui, sans-serif; max-width: 28rem; margin: 4rem auto; padding: 2rem; text-align: center">

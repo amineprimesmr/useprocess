@@ -69,7 +69,7 @@ struct ProfileNameEditorView: View {
             VStack(spacing: 0) {
                 Text(AppCopy.t("Comment t'appelles-tu ?", en: "What's your name?"))
                     .font(.system(size: 34, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 28)
                     .padding(.top, 28)

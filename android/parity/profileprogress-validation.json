@@ -1,0 +1,44 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/useprocess/Features/Profile/ProcessProfileHomeView.swift": "e0241d90d6bf71a2884896b827e88ef69b060c28d076358a67400aef597e32f0",
+    "/Users/amine/Developer/useprocess/useprocess/Features/Profile/ProfileScanEvolutionPair.swift": "d8a42e9f8dc56f25cb00647d04c5eda4d72b6d0a4ad23cd9404f3b54d858f9ba",
+    "/Users/amine/Developer/useprocess/useprocess/Features/Profile/ProfileDebloatScoreSection.swift": "2f692126270ceb16766ccb6a08177c6423c7bbabf4744e802ff2fabdd5ef9208",
+    "/Users/amine/Developer/useprocess/useprocess/Features/Profile/ProfileMetricChartDesign.swift": "f16c421e213767cd2076c0b16870219c55380e41757b2a19daad3ce2fd593448",
+    "/Users/amine/Developer/useprocess/useprocess/Features/Profile/ProfileRegularityChart.swift": "0c8355e9f6d536db5e0755778a64c977de45b0f75df0d2446288e71467a270d4",
+    "/Users/amine/Developer/useprocess/useprocess/Features/Profile/ProfileWeightHistory.swift": "0b538a1f0ad887814311f2dbe53e4618e5e9ec2150d17d8e987db2ef69fd573f"
+  },
+  "nativeFiles": [
+    "ProcessProfileProgress.kt",
+    "ProcessProfileCharts.kt",
+    "ProcessProfileModel.kt",
+    "ProcessSurfacePalette.kt",
+    "ProcessMotionPreferences.kt"
+  ],
+  "contract": "Supply account-scoped ProfileSnapshot with actual scan IDs,instants,wellness values and precomputed visual metrics; no scan or health analysis runs here. Null snapshot retains placeholders and an explicitly disclosed sample curve,never a fabricated latest score. Host supplies private scan-media slot and playback flag,settings/calendar callbacks,selected date and timezone. First/latest scans and creator overrides,same-scan unlocked teaser,source latest-per-day aggregation,7/30/90-day score windows and11/30/90-point labelled sample shapes are preserved. Metrics preserve current order/renamed Visual index,Apparent puffiness andCapture; hidden weight/effort stay hidden. Source excludes zero-valued metrics and compares -6..0 with-19..-13 for deltas,including its historical intervening gap. Source cubic midpoint paths,0..100score grid,metric ranges/colors/bar/line variants and0.85/0.9second entry animation are adapted. Native charts use consistent point geometry instead of source18dp dot offset; native glow,exact rounded glyphs,glass,sticky collapsed headers,range transition andpaired physical/iOS comparison remain incomplete. No profile writes,downloaded private media or fabricated metrics.",
+  "recordedAt": "2026-10-08T08:38:05.938418+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 153,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 33
+  },
+  "visual": "host render inspected; iOS comparison unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "ProcessProfileProgress.kt": "8b1eb4930d3759490751cc0db0cb4e5a9d1110212ad45d0438b445859041185e",
+    "ProcessProfileCharts.kt": "de7c73b081899d81035ea4d519552b0e094e0abdf797dbea24208336a770022f",
+    "ProcessProfileModel.kt": "b3b8dd97e7048af908188e7242ddbea25447f59625a728b9c53f28656e741401",
+    "ProcessSurfacePalette.kt": "2ca843a0a032026cb1f6fc2f8811f765f3c632a4ac372e23742e2d4c259bd32a",
+    "ProcessMotionPreferences.kt": "5f62c13457fb14a4db1e32f7095cc3b929bdde001e26bd4e1de74fd35a943462"
+  },
+  "remaining": [
+    "Live account-scoped scan history,private media and host navigation integration",
+    "Sticky minimized headers,original SFsymbols,rounded typefaces,glow and physical/iOS comparison"
+  ]
+}

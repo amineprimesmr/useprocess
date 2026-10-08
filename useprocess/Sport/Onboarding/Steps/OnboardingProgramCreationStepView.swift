@@ -86,7 +86,9 @@ struct OnboardingProgramCreationStepView: View {
             }
         }
         .onDisappear {
-            creationViewModel.cancel()
+            if !viewModel.isProgramCreationCompleted {
+                creationViewModel.cancel()
+            }
         }
     }
 
@@ -128,7 +130,8 @@ struct OnboardingProgramCreationStepView: View {
     }
 
     private func handleContinue() {
-        HapticManager.shared.impact(.medium)
+        // Pas de verrou local : le host anti-rebondit déjà via `isTransitioning`, et un verrou
+        // posé pendant ce délai laissait le bouton mort sans retour possible.
         creationViewModel.submitContinue()
         onComplete()
     }

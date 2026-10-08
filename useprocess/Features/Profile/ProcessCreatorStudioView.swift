@@ -5,6 +5,7 @@ struct ProcessCreatorStudioView: View {
     @ObservedObject private var creator = ProcessCreatorModeStore.shared
     @Bindable private var scanStore = FaceScanHistoryStore.shared
     @Environment(\.appTheme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var pendingImportSlot: ProcessCreatorStudioScanSlot?
     @State private var isImportingStudioMedia = false
@@ -24,7 +25,7 @@ struct ProcessCreatorStudioView: View {
                     HStack {
                         Text(AppCopy.t("Rendu par défaut", en: "Default Result"))
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                         Spacer()
                         Text(creator.qualityLabel)
                             .font(.system(size: 14, weight: .bold))
@@ -47,7 +48,7 @@ struct ProcessCreatorStudioView: View {
                 .padding(16)
                 .background {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(ProcessSettingsOpalTheme.cardFillDark)
+                        .fill(ProcessSettingsOpalTheme.cardFill(colorScheme))
                         .overlay {
                             RoundedRectangle(cornerRadius: 18, style: .continuous)
                                 .strokeBorder(ProcessSettingsOpalTheme.cardBorderDark, lineWidth: 0.5)
@@ -57,7 +58,7 @@ struct ProcessCreatorStudioView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(AppCopy.t("Page scan analyse", en: "Scan analysis page"))
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
                     Picker(
                         AppCopy.t("Page scan analyse", en: "Scan analysis page"),
@@ -77,7 +78,7 @@ struct ProcessCreatorStudioView: View {
                 .padding(16)
                 .background {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(ProcessSettingsOpalTheme.cardFillDark)
+                        .fill(ProcessSettingsOpalTheme.cardFill(colorScheme))
                         .overlay {
                             RoundedRectangle(cornerRadius: 18, style: .continuous)
                                 .strokeBorder(ProcessSettingsOpalTheme.cardBorderDark, lineWidth: 0.5)

@@ -1,0 +1,71 @@
+DÉCISION DU 4 OCTOBRE 2026 : useprocess.xyz et ses emails restent à l’entreprise du vendeur. Migration app vers processdebloat.fr proposée, domaine pas encore acquis et bascule non effectuée. Les mentions historiques de cession de useprocess.xyz dans ce document sont remplacées par cette décision ; consulter AUDIT_MIGRATION_PROCESSDEBLOAT_2026-10-04.txt.
+
+PROCESS / DEBLOAT — PRÉPARATION TECHNIQUE À LA VENTE
+Audit du 4 octobre 2026
+Projet : /Users/amine/Developer/useprocess
+
+CHANGEMENTS LIVRÉS
+- Retour aux achats intégrés Apple via RevenueCat / StoreKit : mensuel, annuel, achat à vie.
+- Restauration et gestion des abonnements Apple rétablies. Les anciens SKU restent reconnus pour les abonnés existants.
+- SDK Stripe, service iOS, capacités Apple Pay / achat externe, checkout, reporting externe et liaison des comptes Stripe retirés du code Process.
+- 13 fonctions de paiement externe / Stripe Connect retirées de Firebase ; 3 webhooks Stripe désactivés.
+- Configuration externe désactivée en production et sandbox. Catalogue Stripe iOS de production archivé. Historique de facturation conservé.
+- Notifications Apple conservées : relais vérifié vers RevenueCat, configuration indépendante dans billingConfiguration/apple.
+- Coach Premium et récompenses de parrainage vérifiés côté serveur par RevenueCat uniquement.
+- Prix issus des vrais produits Apple, dans la devise réelle du storefront. Aucun autre SKU substitué au produit affiché.
+- Récompenses de parrainage exécutées sans retarder l'accès après achat. Transactions différées StoreKit prises en charge lorsque le SDK RevenueCat n'est pas configuré.
+- Achat du parcours invité conservé lors de la connexion Apple. Code Premium local réservé aux builds DEBUG ; les accès offerts de production doivent être gérés dans RevenueCat.
+- Programme affiliés conservé avec versements manuels : suivi des commissions et contact support ; connexion Stripe supprimée.
+- Conditions d'achat, remboursement et achat à vie Apple mises à jour. Promesses d'essai gratuit obsolètes corrigées sur les liens d'acquisition.
+- Chiffres promotionnels non corroborés remplacés par des caractéristiques du produit sur les surfaces corrigées.
+
+VÉRIFICATIONS
+- Backend : compilation TypeScript réussie ; 40 tests réussis, 0 échec.
+- Contrôles supplémentaires : Premium mensuel / annuel / à vie ; refus d'accès expiré, absent, date invalide, preuve externe forgée ; erreur réseau sans accès indû ; SKU annuel historique avec essai reconnu.
+- Dépendances backend : 7 vulnérabilités initiales corrigées, audit de production à 0 vulnérabilité connue. Nodemailer 10.0.14.
+- Site : compilation Vite réussie ; dépendances Firebase 12.19.0, Vercel CLI 62.2.0 (développement), gRPC 1.14.5. Audit npm des dépendances de production : 0 vulnérabilité connue. Déploiement de production effectué.
+- Plists et projet Xcode : validation de syntaxe réussie ; Stripe absent des packages iOS et des capacités de paiement.
+- Aucun fichier de clé privée / secret plist suivi par Git dans le contrôle effectué. Aucun secret privé trouvé dans les deux fichiers Secrets.plist présents de l'app. Ce contrôle n'est pas un audit historique exhaustif des commits.
+- Firestore : les sous-documents d'abonnement et de commissions sont en écriture serveur uniquement ; les utilisateurs ont accès à leurs propres données. Storage interdit les écritures client.
+- Compilation Debug sur iPhone 14 Pro Max (UDID 00008120-0000158022D0C01E) réussie ; application installée et lancée. Les catalogues traduits embarqués correspondent aux sources actuelles. Aucun framework Stripe ni capacité externe dans le bundle vérifié.
+- Vérification HTTP des endpoints déployés : coachComplete, coachStream, deleteUserAccount, affiliateAdminMarkPaid et appleBillingNotifications refusent les requêtes sans authentification / signature (401).
+- Aucun achat réel ni remboursement client effectué pendant l'intervention.
+
+PRODUITS APP STORE
+App Apple ID : 6753808143 ; bundle : com.useprocess.
+Produits vérifiés comme APPROVED : com.useprocess.monthly999 (9,99 EUR / mois), com.useprocess.annual3499 (34,99 EUR / an), com.useprocess.lifetime (19 EUR, achat unique). Prix France vérifiés dans App Store Connect.
+Anciens abonnements approuvés conservés pour la restauration et les utilisateurs existants.
+Le code ne propose plus le SKU avec essai pour les nouveaux achats.
+Version publique : 1.12. Version 1.13 : REJECTED au moment de l'audit.
+Les correctifs locaux et le backend déployé ne constituent pas une nouvelle version App Store approuvée.
+
+POINTS ENCORE OUVERTS AVANT DE PRÉSENTER UNE VERSION COMME ENTIÈREMENT VALIDÉE
+1. Sur l'iPhone, vérifier les prix et la devise, l'annulation de la feuille Apple, le succès d'achat sandbox, l'achat à vie, la restauration, le passage invité → connexion Apple, le retour après relance et l'accès au coach. Vérifier aussi le mode avion, la perte réseau et une offre indisponible. Aucun paiement réel ne doit être nécessaire pour ces contrôles sandbox.
+2. Préparer un nouveau build de distribution, l'associer à la version corrigée et obtenir l'approbation Apple. Aucun envoi à App Review ni transfert d'app n'a été effectué ici.
+3. L'audit général des traductions ne passe pas encore : 143 chaînes statiques iOS, 20 modèles interpolés et 372 chaînes web manquent au contrôle automatisé (certaines sont des fragments ou du contenu historique). Les libellés ajoutés pendant cette intervention sont traduits ; une validation complète des sept langues reste nécessaire.
+4. Les témoignages et comparaisons visuelles restants doivent avoir une source et une autorisation vérifiables. Aucun audit clinique des algorithmes de scan ni garantie de résultat n'a été effectué.
+5. L'audit porte sur les achats, accès Premium, authentification associée, règles, dépendances, site et préparation de cession. Il ne démontre pas l'absence de tout bug dans les fonctions sport, santé, scans et recommandations.
+
+PÉRIMÈTRE À TRANSMETTRE À L'ACHETEUR
+- Projet iOS useprocess + ProcessWidgets + Shared ; sources, ressources et configuration des dépendances.
+- firebase/functions, règles Firestore / Storage, index, projet Firebase useprocess-d4385, facturation cloud.
+- Site website et projet Vercel associé ; domaine useprocess.xyz et adresses de support.
+- Projet RevenueCat ab4f477a, entitlement premium, offerings, produits Apple et endpoints de notification / webhook.
+- App Store Connect, version approuvée, historique, métadonnées et souscriptions.
+- Selon le contrat : PostHog, AppsFlyer, Anthropic, comptes TikTok @mannyprcs et @debloatman, bibliothèque des formats et droits sur les médias.
+Les dossiers appbid et footgoat sont d'autres projets présents dans le checkout ; ils ne font pas partie du code iOS Process livré. Leurs configurations Stripe et les identifiants personnels sont à exclure du dossier acheteur.
+Les clés Stripe / comptes personnels existants ne sont pas à céder avec Process. Ils ont été préservés lorsqu'ils peuvent servir à d'autres projets ; le code et les fonctions Process ne les utilisent plus.
+
+TRANSFERT À PRÉPARER UNE FOIS L'ACHETEUR IDENTIFIÉ
+- Vérifier les critères de transfert App Store ; organiser les clés de souscription et notifications du compte destinataire. Le retrait de Stripe du code ne modifie pas à lui seul les accords et avenants déjà acceptés auprès d'Apple.
+- Prévoir la migration Sign in with Apple et des identifiants utilisateur entre équipes pour conserver les comptes et leurs données.
+- Transférer l'accès aux projets Firebase, RevenueCat, Vercel et aux services nécessaires avec la facturation et les clés de l'acheteur. Éviter de transmettre les mots de passe de comptes personnels.
+- Établir le périmètre des données utilisateurs, des contenus / médias et des comptes sociaux dans le contrat de cession.
+- Exporter séparément les agrégats commerciaux. Les identifiants SDK RevenueCat ne sont pas un décompte certifié de personnes uniques.
+- Documenter les coûts, remboursements, renouvellements, secrets, sauvegardes et procédure de déploiement ; retirer ensuite les accès du vendeur selon le calendrier de cession.
+
+RÉFÉRENCES OFFICIELLES
+Critères Apple : https://developer.apple.com/help/app-store-connect/transfer-an-app/app-transfer-criteria/
+Vue d'ensemble du transfert : https://developer.apple.com/help/app-store-connect/transfer-an-app/overview-of-app-transfer/
+Restauration RevenueCat : https://www.revenuecat.com/docs/getting-started/restoring-purchases
+Identifiants RevenueCat : https://www.revenuecat.com/docs/customers/user-ids

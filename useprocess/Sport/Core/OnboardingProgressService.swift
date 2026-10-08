@@ -11,7 +11,7 @@ final class OnboardingProgressService {
         if AppSession.shared.hasCompletedOnboarding {
             return UserScopedStorage.currentUserId() ?? "onboarding-local"
         }
-        return "onboarding-in-progress"
+        return Self.inProgressUserId
     }
 
     private func scopedKey(_ suffix: String) -> String {
@@ -24,7 +24,7 @@ final class OnboardingProgressService {
     func migrateInProgressStorageIfNeeded() {
         guard !AppSession.shared.hasCompletedOnboarding else { return }
 
-        let targetUID = "onboarding-in-progress"
+        let targetUID = Self.inProgressUserId
         var sourceUIDs: [String] = ["onboarding-local"]
         if let uid = UserScopedStorage.currentUserId() {
             sourceUIDs.append(uid)
@@ -88,8 +88,13 @@ final class OnboardingProgressService {
         return min(max(userDefaults.double(forKey: Self.legacyPrefix + "onboarding_flow_progress"), 0), 1)
     }
 
+    private static let inProgressUserId = "onboarding-in-progress"
+
     func resetProgress() {
         resetProgress(userId: storageUserId)
+        // Une fois connecté, `storageUserId` devient l'uid : sans ça les réponses « en cours »
+        // survivent et un onboarding ultérieur reprend avec les données de la personne précédente.
+        resetProgress(userId: Self.inProgressUserId)
         clearLegacyProgressKeys()
     }
 
@@ -99,6 +104,7 @@ final class OnboardingProgressService {
         userIds.insert("onboarding-local")
         userIds.insert("anonymous")
         userIds.insert("local-user")
+        userIds.insert(Self.inProgressUserId)
 
         for uid in userIds {
             resetProgress(userId: uid)
@@ -136,6 +142,14 @@ final class OnboardingProgressService {
         }
         guard let data = userDefaults.data(forKey: Self.legacyPrefix + "onboarding_answers_cache") else { return nil }
         return try? JSONDecoder().decode(OnboardingAnswersSnapshot.self, from: data)
+    }
+
+    func declaredAgeForCheckout() -> Int? {
+        if let age = loadAnswers()?.selectedAge { return age }
+        guard AuthUser.current == nil || AuthUser.isAnonymous,
+              let data = userDefaults.data(forKey: UserScopedStorage.key("onboarding.progress.answers", userId: Self.inProgressUserId)),
+              let answers = try? JSONDecoder().decode(OnboardingAnswersSnapshot.self, from: data) else { return nil }
+        return answers.selectedAge
     }
 
     func savePendingDataIfNeeded(to profileService: UnifiedProfileService) async {

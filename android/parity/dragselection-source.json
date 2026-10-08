@@ -1,0 +1,13 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-113380193-361766208/DragToSelect/DragToSelect/ContentView.swift": "1fc78c8440be6c94e006db144cf55b745484c0491219c2e9537bacc0b20a3107",
+    "content/source-projects/design-source-113380193-361766208/DragToSelect/DragToSelect/View/Home.swift": "5900ce11cb0dbc1f1bc642f56ddc7a41f5f1f433ffd768ec0b7f0a68a319818e",
+    "content/source-projects/design-source-113380193-361766208/DragToSelect/DragToSelect/Model/Item.swift": "fa3d95fe531ed20630cf9330140af5a3f8600132ec9d69e3b03897f0d7543b18",
+    "content/source-projects/design-source-113380193-361766208/DragToSelect/DragToSelect/DragToSelectApp.swift": "b67959dbf73e0fc885bd85efe91907e420046c8278fa875cc55d9f20253c552c"
+  },
+  "nativeFiles": [
+    "DragSelectionModel.kt",
+    "TenKDragSelectionGrid.kt"
+  ],
+  "contract": "Controlled keyed grid,selectedKeys and selectionEnabled. Four columns,80dp cells,15dp padding,8dp gaps,source header and toolbar. Drag starting on unselected item unions the start/end range with the baseline; starting on selected item subtracts from the baseline. Reversing direction retracts only the current range. Tap toggles one item. Cancellation/background restores baseline and stops auto-scroll. Edge regions60dp scroll300dp/second using frame clock,matching source3points/10ms while avoiding its stale timer direction. Grid order is host-owned; stable unique string keys required,reserved __tenk_header prohibited. Share/delete emit selected keys only; no data is deleted. Host owns durable selection. Gallery uses45deterministic samples from original9color palette instead of random reshuffling. Swift color gradients,blurReplace,snappy curves,thin material and physical/iOS pixel/motion parity remain unverified."
+}

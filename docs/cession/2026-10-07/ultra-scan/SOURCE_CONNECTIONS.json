@@ -1,0 +1,549 @@
+[
+  {
+    "file": "useprocess/GoogleService-Info.plist",
+    "config_keys": [
+      "API_KEY",
+      "GCM_SENDER_ID",
+      "PLIST_VERSION",
+      "BUNDLE_ID",
+      "PROJECT_ID",
+      "STORAGE_BUCKET",
+      "IS_ADS_ENABLED",
+      "IS_ANALYTICS_ENABLED",
+      "IS_APPINVITE_ENABLED",
+      "IS_GCM_ENABLED",
+      "IS_SIGNIN_ENABLED",
+      "GOOGLE_APP_ID"
+    ]
+  },
+  {
+    "file": "useprocess/Core/RemoteMediaCache.swift",
+    "hosts": [
+      "firebasestorage.googleapis.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "useprocess/Config/AppConfiguration.swift",
+    "hosts": [
+      "processdebloat.com",
+      "processdebloat.com."
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "useprocess/Config/ProcessLegalURLs.swift",
+    "hosts": [
+      "www.instagram.com",
+      "www.snapchat.com",
+      "www.tiktok.com",
+      "x.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "useprocess/Retention/ProcessAppUpdateChecker.swift",
+    "hosts": [
+      "apps.apple.com",
+      "itunes.apple.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "useprocess/Retention/ProcessAppStoreReviewPrompt.swift",
+    "hosts": [
+      "apps.apple.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "useprocess/Health/Components/HealthMedicalSourcesView.swift",
+    "hosts": [
+      "www.apple.com",
+      "www.cdc.gov",
+      "www.heart.org",
+      "www.ncbi.nlm.nih.gov",
+      "www.nhlbi.nih.gov",
+      "www.who.int"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "useprocess/Features/Referral/ProcessReferralShareRouter.swift",
+    "hosts": [
+      "wa.me",
+      "www.instagram.com",
+      "www.tiktok.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "useprocess/Sport/Onboarding/Moss/ProcessMossTheme.swift",
+    "hosts": [
+      "github.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "useprocess/Sport/Onboarding/ProfileChat/OnboardingProfileChatView.swift",
+    "hosts": [
+      "github.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "useprocess/Subscriptions/RevenueCatSecrets.plist",
+    "config_keys": [
+      "REVENUECAT_API_KEY"
+    ]
+  },
+  {
+    "file": "useprocess/Coach/Config/ClaudeConfiguration.swift",
+    "hosts": [
+      "api.anthropic.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "useprocess/Helpers/VariableBlur.swift",
+    "hosts": [
+      "github.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "useprocess/Analytics/PostHogConfiguration.swift",
+    "hosts": [
+      "eu.i.posthog.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "useprocess/Analytics/PostHogSecrets.plist",
+    "config_keys": [
+      "POSTHOG_PROJECT_TOKEN",
+      "POSTHOG_HOST"
+    ]
+  },
+  {
+    "file": "useprocess/Analytics/ProcessAcquisitionAttribution.swift",
+    "hosts": [
+      "api-adservices.apple.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "ProcessWidgets/Info.plist",
+    "config_keys": [
+      "CFBundleDisplayName",
+      "NSExtension",
+      "NSSupportsLiveActivities"
+    ]
+  },
+  {
+    "file": "firebase/functions/src/appleSignIn.ts",
+    "hosts": [
+      "appleid.apple.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "firebase/functions/src/revenueCat.ts",
+    "hosts": [
+      "api.revenuecat.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "firebase/functions/src/affiliate.ts",
+    "hosts": [],
+    "secret_names": [
+      "AFFILIATE_ADMIN_SECRET",
+      "PROCESS_SMTP_PASSWORD"
+    ]
+  },
+  {
+    "file": "firebase/functions/src/affiliateLibraryShared.ts",
+    "hosts": [
+      "processdebloat.com",
+      "www.tiktok.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "firebase/functions/src/affiliateLoginEmail.ts",
+    "hosts": [
+      "processdebloat.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "firebase/functions/src/affiliateTikTok.ts",
+    "hosts": [
+      "open.tiktokapis.com",
+      "processdebloat.com",
+      "us-central1-useprocess-d4385.cloudfunctions.net",
+      "www.tiktok.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "firebase/functions/src/clippingSeed.json",
+    "hosts": [
+      "www.tiktok.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "firebase/functions/src/index.ts",
+    "hosts": [],
+    "secret_names": [
+      "ANTHROPIC_API_KEY",
+      "APPLE_SIGNIN_KEY_ID",
+      "APPLE_SIGNIN_PRIVATE_KEY",
+      "APPLE_SIGNIN_TEAM_ID",
+      "REVENUECAT_SECRET_API_KEY"
+    ]
+  },
+  {
+    "file": "firebase/functions/src/referralRewards.ts",
+    "hosts": [],
+    "secret_names": [
+      "REVENUECAT_SECRET_API_KEY",
+      "REVENUECAT_WEBHOOK_SECRET"
+    ]
+  },
+  {
+    "file": "firebase/functions/src/appleRootCertificates.ts",
+    "hosts": [
+      "www.apple.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "firebase/functions/src/affiliateLibrary.ts",
+    "hosts": [
+      "www.tiktok.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "firebase/functions/src/affiliateCommissions.ts",
+    "hosts": [],
+    "secret_names": [
+      "AFFILIATE_ADMIN_SECRET",
+      "REVENUECAT_WEBHOOK_SECRET"
+    ]
+  },
+  {
+    "file": "firebase/functions/src/affiliateShared.ts",
+    "hosts": [
+      "identitytoolkit.googleapis.com",
+      "www.googleapis.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "firebase/scripts/setup-clipper-login-email.sh",
+    "hosts": [
+      "useprocess.xyz"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "firebase/scripts/setup-affiliate-rc-webhook.sh",
+    "hosts": [
+      "api.revenuecat.com",
+      "us-central1-useprocess-d4385.cloudfunctions.net"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "firebase/scripts/retention-messaging-checklist.sh",
+    "hosts": [
+      "www.revenuecat.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "firebase/scripts/list-pending-clippers.sh",
+    "hosts": [
+      "us-central1-useprocess-d4385.cloudfunctions.net"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "firebase/scripts/mark-paid-clipper.sh",
+    "hosts": [
+      "us-central1-useprocess-d4385.cloudfunctions.net"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "firebase/scripts/approve-clipper.sh",
+    "hosts": [
+      "us-central1-useprocess-d4385.cloudfunctions.net",
+      "useprocess.xyz"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "firebase/scripts/create-clipper.sh",
+    "hosts": [
+      "join.useprocess.xyz",
+      "us-central1-useprocess-d4385.cloudfunctions.net",
+      "useprocess.xyz"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "firebase/scripts/deploy-affiliate.sh",
+    "hosts": [
+      "us-central1-useprocess-d4385.cloudfunctions.net"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "firebase/scripts/deploy-referral.sh",
+    "hosts": [
+      "us-central1-useprocess-d4385.cloudfunctions.net"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "firebase/scripts/revenuecat-audit.sh",
+    "hosts": [
+      "api.revenuecat.com",
+      "app.revenuecat.com",
+      "us-central1-useprocess-d4385.cloudfunctions.net"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/landing-cinematic/HeroSection.jsx",
+    "hosts": [
+      "d8j0ntlcm91z4.cloudfront.net"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/landing-cinematic/fooontic-kwp-ragr-switcher.fragment.html",
+    "hosts": [
+      "www.w3.org"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/landing-cinematic/LandingIcons.jsx",
+    "hosts": [
+      "www.w3.org"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/landing-cinematic/CapabilitiesSection.jsx",
+    "hosts": [
+      "d8j0ntlcm91z4.cloudfront.net"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/features/referral-link.js",
+    "hosts": [
+      "processdebloat.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/features/acquisition-link.js",
+    "hosts": [
+      "processdebloat.com",
+      "us-central1-useprocess-d4385.cloudfunctions.net"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/features/app-store-urls.js",
+    "hosts": [
+      "apps.apple.com",
+      "play.google.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/features/in-app-browser-escape.js",
+    "hosts": [
+      "processdebloat.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/features/firebase-client.js",
+    "hosts": [
+      "us-central1-useprocess-d4385.cloudfunctions.net"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/features/bio-link.js",
+    "hosts": [
+      "get.useprocess.xyz",
+      "processdebloat.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/features/kube-liquid-glass/liquid-glass-menu-filters.js",
+    "hosts": [
+      "kube.io"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/affiliate/method-catalog.js",
+    "hosts": [
+      "www.tiktok.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/affiliate/AffiliateFormats.jsx",
+    "hosts": [
+      "www.tiktok.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/affiliate/AffiliateOnboarding.jsx",
+    "hosts": [
+      "processdebloat.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/affiliate/AffiliateLanding.jsx",
+    "hosts": [
+      "processdebloat.com",
+      "x.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/affiliate/AffiliateAutomation.jsx",
+    "hosts": [
+      "claude.ai",
+      "docs.anthropic.com",
+      "processdebloat.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/affiliate/affiliate-utils.js",
+    "hosts": [
+      "processdebloat.com",
+      "wa.me",
+      "x.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/affiliate/us-guide.js",
+    "hosts": [
+      "appleid.apple.com",
+      "apps.apple.com",
+      "console.hetzner.cloud",
+      "getoutline.org",
+      "play.google.com",
+      "raw.githubusercontent.com",
+      "whatismyipaddress.com",
+      "www.hetzner.com",
+      "www.textnow.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/src/affiliate/format-library.js",
+    "hosts": [
+      "www.tiktok.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/public/confidentialite/index.html",
+    "hosts": [
+      "processdebloat.com",
+      "www.anthropic.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/public/sources-sante/index.html",
+    "hosts": [
+      "processdebloat.com",
+      "www.apple.com",
+      "www.cdc.gov",
+      "www.heart.org",
+      "www.nhlbi.nih.gov",
+      "www.who.int"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/public/js/qr_code_styling.js",
+    "hosts": [
+      "www.w3.org"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/public/js/legal-body-en.js",
+    "hosts": [
+      "processdebloat.com",
+      "reportaproblem.apple.com",
+      "vercel.com",
+      "www.anthropic.com",
+      "www.apple.com",
+      "www.cdc.gov",
+      "www.heart.org",
+      "www.nhlbi.nih.gov",
+      "www.who.int"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/public/cgu/index.html",
+    "hosts": [
+      "reportaproblem.apple.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/public/mentions-legales/index.html",
+    "hosts": [
+      "processdebloat.com",
+      "vercel.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "website-process/public/support/index.html",
+    "hosts": [
+      "processdebloat.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "scripts/setup_paywall_pricing_ab.py",
+    "hosts": [
+      "eu.posthog.com"
+    ],
+    "secret_names": []
+  },
+  {
+    "file": "scripts/setup_french_trial_prod.py",
+    "hosts": [
+      "api.revenuecat.com"
+    ],
+    "secret_names": []
+  }
+]

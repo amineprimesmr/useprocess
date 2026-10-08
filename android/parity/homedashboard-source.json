@@ -1,0 +1,40 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/useprocess/Health/Views/PlanDashboardView.swift": "ebf46c52459540eb45f00641b6668255a221c0dffdab5ebadf7ddb03dfae789a",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/PlanHomeTopChrome.swift": "b9fa0540ea53c320556f9f0f5ea64e82a72d6892242ca50ea9a1eed15e676176",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/PlanHomeGreeting.swift": "4b8aecb96d9219792aa18d8ee975bd6c7e3ae52b4e62671a78931a0c9268a185",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/PlanHomeSectionDesign.swift": "199c13f7499fb410108f083fdc94bd205cc7b43087547a485534abca0c40bf01",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/PlanHomeLayoutStore.swift": "b23dce4055617bf7ba0c4a7f056ff5fd6dfa1bc75588f3198153588372fccff5",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/DailyJournalChecklistView.swift": "2563305549b614d8daf5601f5f8839f53312b762b075d46e16c822dce43ffdf0",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/PlanLastFaceScanSection.swift": "3468df8ffd1e5f301e74af530b973930ef99d1e53087b75c1bc6f399ad549441",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/PlanHomePeriodicTicker.swift": "3e98518fb4fddafefa9e1090d67835033f7ec7cb337bf68216bd083ea73aa38f",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/Plan/PlanNutritionDaySection.swift": "9c121d37cdbed65cf9e6907fc0eb11be3c506f29eaa21fc19249cf097a7514a6",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/Plan/PlanFaceDaySection.swift": "6fb90cc722977af79a744f1c2a2816bbfd8f5f7ae70aa596ff52b6be46d540eb",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/Plan/PlanHomeUpgradeProCard.swift": "09e1de7568c0410f19ec815ad82e8c6a843b5dc544d57fd5940f1415124f499f",
+    "/Users/amine/Developer/useprocess/useprocess/WelcomePlan/OriginPlanPresenter.swift": "8b94b7bfe66d5383814fe8ffacfe9870ab748b74a329ac119b9782194cf23828",
+    "/Users/amine/Developer/useprocess/useprocess/Engagement/ProcessPlanProgressEngine.swift": "69d0bff047f6c7f10522380379a2895bd7f4716442b653537c348eb5fccb2f11",
+    "/Users/amine/Developer/useprocess/useprocess/BodyScan/Services/FaceScanCadence.swift": "d48647075e1b89937f759ea2296e426c72e891f6b19ba3eea2e63407d9081232"
+  },
+  "nativeFiles": [
+    "ProcessHomeModel.kt",
+    "ProcessHomeDashboard.kt",
+    "ProcessHomeScanCard.kt",
+    "ProcessHomeNutrition.kt",
+    "ProcessHomeRoutineSection.kt",
+    "ProcessSurfacePalette.kt",
+    "ProcessMotionPreferences.kt",
+    "ProcessStreakFlame.kt",
+    "HydrationGeometry.kt",
+    "ProcessHydrationCard.kt",
+    "ProcessRoutineCatalog.kt",
+    "ProcessRoutineHoldCard.kt",
+    "RoutineHomeModel.kt",
+    "WelcomeCardsModel.kt",
+    "ProcessWelcomeCards.kt",
+    "HomeTutorialModel.kt",
+    "ProcessHomeTutorialState.kt",
+    "ProcessHomeTutorial.kt",
+    "ProcessTutorialBorder.kt"
+  ],
+  "contract": "Provide a real ProcessHomeSnapshot scoped to account/plan/day,real plan-adjusted calendar,selected date,resolved first name,scan,hydration,meal images/assessments and routine completions. Preferred date clamps to the source first/last program day; future dates cannot edit. Default order scan,nutrition,lymphatic circuit; training/resources remain excluded and nutrition cannot be hidden. Header28sp,120x5program track,source first-day elapsed count,streak flame/attention badge; scan100dp due/136dp recorded,26radius,6AM local-day unlock and DST-aware countdown. Host owns actual camera,media permissions,scan consent and analysis; no image,plan,score or consent fabricated. Future scan timestamps intentionally do not unlock capture. Source cadence peculiarity retained: an older scan before today6AM can display<1min despite next-calendar target already elapsed. Real wall clock ticks1Hz only active+RESUMED. No-plan restore and pull-to-refresh are suspend host callbacks; context changes cancel outstanding operations. Nutrition uses original248dp bottle and first3meal image collage96dp with source offsets/scales; average score shown only when every included host assessment exists. Local hydration adjustments take priority over external health values,allowing decreases. Routine retains original6stills/280second catalog and5second hold intents; host opens media/session and persists validated completion. Welcome/referral deck and optional HomeTutorialState are composed; mount the tutorial coordinator in the actual host and pass real lifecycle/tab state. Personal data/backend/health and durable writes remain host-owned. Native glass,missing media slot,score gradient/tick bar,exact carousel edge transforms,scroll-focus anchor/springs,fonts/SF symbols and physical/iOS comparison remain unverified. Library includes18original recipe images and6routine stills; exercise videos belong to the exercise-detail integration."
+}

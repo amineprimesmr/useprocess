@@ -63,7 +63,7 @@ struct PaywallView: View {
     }
 
     private var shortBillingPlan: SubscriptionBillingPlan {
-        pricingVariant.shortPlan
+        subscriptionService.shortBillingPlan
     }
 
     private var selectedPlanAvailableOnStore: Bool {
@@ -146,7 +146,7 @@ struct PaywallView: View {
         .task {
             await subscriptionService.loadSubscriptions()
             if !didSetInitialPlan {
-                if subscriptionService.hasLiveAnnualProduct {
+                if subscriptionService.hasLiveProduct(for: .annual) {
                     selectedBillingPlan = .annual
                 } else if subscriptionService.hasLiveProduct(for: shortBillingPlan) {
                     selectedBillingPlan = shortBillingPlan
@@ -419,8 +419,8 @@ struct PaywallView: View {
 
     private var paywallCommunitySubtitle: String {
         OnboardingCopy.t(
-            "Rejoins +\(TransformationCaseStudyCatalog.transformedPeopleCount) personnes qui ont déjà dégonflés leur visage avec Process.",
-            en: "Join +\(TransformationCaseStudyCatalog.transformedPeopleCount) people who already debloated their face with Process."
+            "Retrouve ton suivi, tes habitudes et ton coach IA dans un même espace.",
+            en: "Keep your tracking, habits and AI coach in one place."
         )
     }
 
@@ -431,21 +431,23 @@ struct PaywallView: View {
             PaywallBevelPlanSegmentPicker(
                 selection: $selectedBillingPlan,
                 shortPlan: shortBillingPlan,
-                annualComparePrice: subscriptionService.displayProduct(for: shortBillingPlan)
-                    .paywallAnnualStrikethroughComparePrice,
+                annualComparePrice: subscriptionService.hasLiveProduct(for: shortBillingPlan)
+                    ? subscriptionService.displayProduct(for: shortBillingPlan).paywallAnnualStrikethroughComparePrice : "—",
                 annualPrice: annualPrimaryPrice,
                 shortPlanPrice: shortPlanPrimaryPrice,
                 annualOfferBadge: nil
             )
 
+
             PaywallBevelContinueButton(
                 title: paywallContinueButtonTitle,
-                isLoading: isPurchasing,
+                isLoading: isPurchasing || subscriptionService.isLoading,
                 isEnabled: paywallContinueButtonEnabled
             ) {
                 Task { await purchaseSubscription() }
             }
             .modifier(PaywallContinueShakeEffect(shakes: continueShakeTicks))
+
 
             Text(paywallContinueSubtitle)
                 .font(.system(size: 12, weight: .medium))
@@ -454,10 +456,7 @@ struct PaywallView: View {
                 .padding(.top, 2)
 
             if !subscriptionService.isLoading, !selectedPlanAvailableOnStore {
-                Text(OnboardingCopy.t(
-                    "Cette offre n'est pas encore disponible sur l'App Store. Réessayez dans quelques minutes.",
-                    en: "This offer isn’t available on the App Store yet. Try again in a few minutes."
-                ))
+                Text(SubscriptionError.productNotFound.localizedDescription)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Color.red.opacity(0.85))
                     .multilineTextAlignment(.center)
@@ -471,10 +470,11 @@ struct PaywallView: View {
     // MARK: - Prix
 
     private var annualPrimaryPrice: String {
-        subscriptionService.displayProduct(for: .annual).paywallPrimaryAnnualPriceLabel
+        subscriptionService.hasLiveProduct(for: .annual) ? subscriptionService.displayProduct(for: .annual).paywallPrimaryAnnualPriceLabel : "—"
     }
 
     private var shortPlanPrimaryPrice: String {
+        guard subscriptionService.hasLiveProduct(for: shortBillingPlan) else { return "—" }
         let display = subscriptionService.displayProduct(for: shortBillingPlan)
         return display.paywallShortPlanPriceLabel(for: shortBillingPlan)
     }
@@ -567,20 +567,17 @@ struct PaywallView: View {
 
     @MainActor
     private func purchaseSubscription() async {
-        if !subscriptionService.canPurchase {
-            await subscriptionService.loadSubscriptions()
-            guard subscriptionService.canPurchase else {
-                purchaseError = OnboardingCopy.t(
-                    "Les offres ne sont pas encore chargées. Réessayez dans quelques instants.",
-                    en: "Offers aren’t loaded yet. Try again in a moment."
-                )
-                return
-            }
-        }
-
+        guard !isPurchasing else { return }
         isPurchasing = true
         purchaseError = nil
         defer { isPurchasing = false }
+        if !selectedPlanAvailableOnStore {
+            await subscriptionService.loadSubscriptions()
+        }
+        guard selectedPlanAvailableOnStore else {
+            purchaseError = SubscriptionError.productNotFound.localizedDescription
+            return
+        }
 
         let plan = selectedBillingPlan.rawValue
         let offer = "standard"
@@ -595,6 +592,8 @@ struct PaywallView: View {
                 ProcessAnalytics.trackPurchaseCompleted(plan: plan, offer: offer, source: "paywall")
                 ProcessMarketingNotificationService.shared.handlePurchaseSuccess(plan: plan)
                 completePaywallFlow()
+            } else {
+                throw SubscriptionError.pending
             }
         } catch SubscriptionError.userCancelled {
             ProcessAnalytics.trackPurchaseCancelled(
@@ -812,7 +811,6 @@ private struct PaywallReferralCodeSheet: View {
         }
 
         ProcessAcquisitionAttribution.captureReferralCode(normalized, source: "paywall", medium: "referral")
-        ProcessAcquisitionAttribution.captureAffiliateCode(normalized, source: "paywall", medium: "creator")
         ProcessReferralAttribution.rememberManualEntry(normalized)
         ProcessAnalytics.trackReferralCodeApplied(source: "paywall_menu")
 
@@ -975,7 +973,7 @@ struct PaywallFaceScanHero: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var resolvedVideoURL: URL?
     @State private var resolvedSnapshot: UIImage?
-    @State private var mediaRefreshToken = 0
+    @State private var snapshotReloadToken = 0
     @State private var animatedProgress: Double = 0
 
     private let ringSize: CGFloat = 168
@@ -1028,7 +1026,12 @@ struct PaywallFaceScanHero: View {
             onDeveloperUnlock?()
         }
         #endif
-        .id("\(result.id)-paywall-\(mediaRefreshToken)")
+        .task(id: "\(result.id)-\(result.snapshotFilename ?? "")-\(snapshotReloadToken)") {
+            resolvedSnapshot = nil
+            let image = await FaceScanImageStore.preview(scanId: result.id, filename: result.snapshotFilename)
+            guard !Task.isCancelled else { return }
+            resolvedSnapshot = image
+        }
         .onAppear {
             refreshMedia()
             animatedProgress = 0
@@ -1046,6 +1049,7 @@ struct PaywallFaceScanHero: View {
         .onChange(of: result.videoFilename) { _, _ in refreshMedia() }
         .onChange(of: result.snapshotFilename) { _, _ in refreshMedia() }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                if resolvedSnapshot == nil { snapshotReloadToken &+= 1 }
             refreshMedia()
         }
         .task(id: result.id) {
@@ -1076,24 +1080,17 @@ struct PaywallFaceScanHero: View {
     private func refreshMedia() {
         let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
         resolvedVideoURL = FaceScanImageStore.resolvedVideoURL(for: reconciled)
-        if let filename = FaceScanImageStore.resolvedSnapshotFilename(for: reconciled) {
-            resolvedSnapshot = FaceScanImageStore.load(filename: filename)
-        } else {
-            resolvedSnapshot = nil
-        }
-        if resolvedVideoURL == nil, resolvedSnapshot == nil {
-            mediaRefreshToken &+= 1
-        }
     }
 
     private func resolveVideoWithRetry() async {
         for _ in 0..<24 {
+            guard !Task.isCancelled else { return }
             let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
             if let url = FaceScanImageStore.resolvedVideoURL(for: reconciled) {
                 resolvedVideoURL = url
                 return
             }
-            try? await Task.sleep(for: .milliseconds(180))
+            do { try await Task.sleep(for: .milliseconds(180)) } catch { return }
         }
     }
 }

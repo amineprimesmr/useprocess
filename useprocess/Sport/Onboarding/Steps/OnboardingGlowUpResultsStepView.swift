@@ -21,7 +21,6 @@ struct OnboardingGlowUpResultsStepView: View {
     @State private var showStatRating = false
     @State private var showStatResults = false
     @State private var showContinueButton = false
-    @State private var isContinuing = false
 
     private let accentBlue = Color(red: 0.0, green: 0.478, blue: 1.0)
 
@@ -53,12 +52,8 @@ struct OnboardingGlowUpResultsStepView: View {
                 .accessibilityHidden(!showContinueButton)
         }
         .onAppear {
-            isContinuing = false
             showContinueButton = true
             startRevealSequence()
-        }
-        .onDisappear {
-            isContinuing = false
         }
     }
 
@@ -145,22 +140,22 @@ struct OnboardingGlowUpResultsStepView: View {
     private var statsRow: some View {
         HStack(spacing: 10) {
             statCard(
-                label: OnboardingCopy.t("UTILISATEURS", en: "USERS"),
-                value: "+10k",
+                label: OnboardingCopy.t("LANGUES", en: "LANGUAGES"),
+                value: "7",
                 style: .dark
             )
             .staggerReveal(showStatUsers, reduceMotion: reduceMotion)
 
             statCard(
-                label: OnboardingCopy.t("NOTE", en: "RATING"),
-                value: "4.8",
+                label: OnboardingCopy.t("ABONNEMENTS", en: "SUBSCRIPTIONS"),
+                value: "2",
                 style: .light
             )
             .staggerReveal(showStatRating, reduceMotion: reduceMotion)
 
             statCard(
-                label: OnboardingCopy.t("RÉSULTATS", en: "AVG RESULTS"),
-                value: OnboardingCopy.t("6 sem.", en: "6 wks"),
+                label: OnboardingCopy.t("COACH", en: "COACH"),
+                value: "IA",
                 style: .blue
             )
             .staggerReveal(showStatResults, reduceMotion: reduceMotion)
@@ -236,8 +231,6 @@ struct OnboardingGlowUpResultsStepView: View {
 
     private var continueButton: some View {
         Button {
-            guard !isContinuing else { return }
-            isContinuing = true
             HapticManager.shared.impact(.medium)
             onContinue()
         } label: {
@@ -248,7 +241,6 @@ struct OnboardingGlowUpResultsStepView: View {
                 .frame(height: 58)
         }
         .onboardingPrimaryActionStyle()
-        .disabled(isContinuing)
         .padding(.horizontal, 34)
         .padding(.top, 8)
         .padding(.bottom, 34)

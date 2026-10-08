@@ -1,0 +1,242 @@
+PROCESS / DEBLOAT — DOSSIER DE CESSION ET PLAN DE LIVRAISON
+4 octobre 2026 — document interne, sans mots de passe ni clés privées
+
+1. COMMENT VENDRE L'APP
+
+L'opération correcte est le transfert de l'app existante dans App Store Connect.
+La fiche, le Bundle ID com.useprocess, les notes et les mises à jour restent associés
+à la même app. Il ne faut pas créer une nouvelle fiche chez l'acheteur : cela
+fragmenterait le produit et ne remplacerait pas le transfert des abonnements.
+Le transfert Apple ne transfère ni le code source, ni Firebase, ni RevenueCat,
+ni le domaine, ni les comptes sociaux. Chacun a sa propre opération de cession.
+
+Deux calendriers possibles :
+A. Recommandé : corriger et tester, publier la mise à jour approuvée, puis céder.
+   L'acheteur reçoit un état publié qui correspond au code remis.
+B. Vente plus rapide : transférer la version publique actuelle si elle est éligible,
+   remettre les correctifs et laisser l'acheteur publier sous sa propre équipe.
+   Le contrat doit alors distinguer la version publiée du code corrigé non publié.
+
+Les correctifs iOS nécessitent un nouveau build et une validation Apple pour
+atteindre les utilisateurs de l'App Store. Les correctifs serveur/site déployés
+peuvent prendre effet immédiatement ; leur compatibilité avec 1.12 doit rester vérifiée.
+Un build installé sur un iPhone n'est pas une mise à jour App Store.
+Un IPA signé par le vendeur n'est pas le livrable de publication du nouvel acquéreur.
+Après transfert, l'acquéreur compile et signe les prochaines versions avec son équipe.
+TestFlight sert à vérifier un build avant publication ; il ne remplace pas la cession.
+
+État constaté dans l'audit précédent : publique 1.12 ; version 1.13 REJECTED.
+Les statuts Waiting for Review, In Review, Processing for Distribution, Accepted,
+Pending Developer Release et Pending Apple Release empêchent le transfert.
+REJECTED n'est pas dans cette liste, mais ne certifie pas l'éligibilité globale.
+Recontrôler tous les critères dans App Store Connect au moment de la vente.
+Les titulaires des deux comptes initient/acceptent le transfert ; vérifier contrats,
+identifiants de produits, éventuels accords EU, TestFlight et Xcode Cloud.
+Le délai de review n'est pas garanti. Ne pas donner de date contractuelle ferme
+sans avoir tenu compte du rejet actuel et des derniers contrôles.
+
+2. INVENTAIRE CONFIRMÉ ET ACTION POUR CHAQUE SERVICE
+
+APPLE
+- App ID 6753808143 ; bundle com.useprocess ; équipe source F2CJGJ69XU.
+- Code iOS useprocess, extension ProcessWidgets, Shared ; iOS minimum 18.
+- Achats Apple mensuel/annuel/à vie et anciens produits à préserver.
+- Transférer l'app, fournir métadonnées, screenshots, notes de review et produits.
+- Régénérer les profils/certificats nécessaires chez l'acheteur ; ne pas céder
+  la clé API Apple globale, le compte Apple personnel ou des certificats multiapps.
+- Vérifier HealthKit, App Attest, liens universels et notifications après transfert.
+- Le widget n'a pas d'App Group déclaré dans son fichier d'entitlements actuel.
+- Préparer une éventuelle reconnexion après changement d'équipe/keychain.
+
+SIGN IN WITH APPLE — POINT CRITIQUE
+- Utilisé dans l'app et dans la suppression de compte côté backend.
+- Secrets serveur : APPLE_SIGNIN_TEAM_ID, APPLE_SIGNIN_KEY_ID,
+  APPLE_SIGNIN_PRIVATE_KEY ; client com.useprocess par défaut.
+- Préparer les identifiants de transfert des utilisateurs Apple et les échanger
+  avec l'équipe destinataire. Apple prévoit une fenêtre de migration de 60 jours.
+- Ne pas assimiler le nouvel identifiant Apple au Firebase UID existant : conserver
+  les liens entre comptes, données et App User ID RevenueCat.
+- Aucun outil de migration Apple dédié n'a été identifié dans les sources parcourues.
+- Vérifier utilisateurs avec email masqué, comptes invités liés et suppression/revocation.
+- Ne pas remplacer les secrets de l'équipe source avant d'avoir préparé la migration.
+
+FIREBASE / GOOGLE CLOUD
+- Projet useprocess-d4385, actif, sans parent organisation renvoyé par projects describe.
+- IAM contrôlé : un propriétaire humain ; comptes de service techniques conservés.
+- Facturation active ; changer la facturation séparément du propriétaire.
+- Privilégier la conservation du projet : IAM et compte de facturation de l'acheteur,
+  validation du fonctionnement, puis retrait des accès du vendeur.
+- Cela conserve les endpoints, Firebase UID et données ; recréer un projet imposerait
+  une migration supplémentaire Auth, Firestore, Storage, configurations et applications.
+- Firestore (default) : eur3, FIRESTORE_NATIVE ; PITR désactivé et protection de
+  suppression désactivée. Aucun backupSchedule constaté ; aucun backup listé par CLI.
+- Sauvegarde et test de restauration à préparer avant la cession. Activer un service
+  facturable ou exporter des données sensibles nécessite un périmètre défini.
+- Scheduler actif : supportCrispPoll toutes les minutes, us-central1.
+- Préserver IAM des comptes de service, scheduler, fonctions Node 22, règles et index.
+- Contrôler aussi App Check, domaines Auth, quotas, budgets/alertes, logs, buckets,
+  rétention des données, accès support et intégrations Google Analytics éventuelles.
+
+REVENUECAT
+- Projet ab4f477a ; app app1dab14dae3 ; entitlement premium.
+- Conserver le projet et l'app plutôt que reconstruire un catalogue parallèle.
+- Transfert de propriété RevenueCat séparé du transfert Apple.
+- Remplacer/valider les clés In-App Purchase et App Store Connect, le secret partagé
+  spécifique à l'app, ainsi que les notifications production et sandbox.
+- Préserver produits historiques, offerings, expériences de prix et restore behavior.
+- Tester achat sandbox, restore et accès coach après remplacement des credentials.
+- Les utilisateurs existants ne doivent pas être forcés à racheter leurs accès.
+
+SITE / VERCEL / DOMAINE / EMAIL
+- Site website ; production useprocess.xyz ; projet Vercel lié dans website/.vercel.
+- Transfert du projet Vercel, Git, variables, DNS et facturation à traiter ensemble.
+- Transfert au registrar du domaine à vérifier séparément ; registrar/propriétaire
+  juridique et dates de renouvellement non confirmés par cet audit.
+- AASA live useprocess.xyz référence F2CJGJ69XU.com.useprocess : mettre à jour
+  les associations avec l'identifiant effectivement signé après transfert, en
+  conservant la compatibilité des versions installées pendant la transition.
+- join.useprocess.xyz : requête HTTPS AASA en échec lors du contrôle ; ne pas
+  présenter ce sous-domaine comme opérationnel sans vérifier DNS/TLS/Vercel.
+- L'app utilise plusieurs adresses : hello@, support@ ; portail contact@useprocess.xyz.
+- Envoi des liens affiliés : smtp.hostinger.com:465, contact@useprocess.xyz,
+  secret PROCESS_SMTP_PASSWORD. Transférer la boîte dédiée ou recréer son accès,
+  vérifier aliases, MX, SPF, DKIM, DMARC et réception des demandes de support.
+- Les boîtes et aliases existants n'ont pas été vérifiés chez Hostinger.
+
+IA / ANALYTICS / SUPPORT
+- Anthropic : ANTHROPIC_API_KEY côté serveur ; proxy Firebase en production.
+  L'acheteur doit fournir sa facturation et une clé propre au projet.
+- PostHog : projet connu 240558, région EU ; propriété et facturation à confirmer.
+  Conserver historique, funnels, événements, dashboards et expériences utiles.
+- AppsFlyer : SDK configuré dans le code ; Dev Key client liée au compte.
+  Confirmer possibilité de transfert de l'app chez AppsFlyer et permissions compte.
+- Crisp : CRISP_IDENTIFIER, CRISP_KEY, CRISP_WEBHOOK_SECRET ; polling support actif.
+  Transférer le website dédié, conversations autorisées et opérations de support ;
+  vérifier que le token API ne couvre pas d'autres sites personnels.
+- Aucun propriétaire/facture de ces comptes n'est certifié par une simple lecture du code.
+- Éviter d'interrompre l'ancien binaire en changeant une clé client embarquée sans
+  période de compatibilité : identifier les clés nécessitant une nouvelle version.
+
+AFFILIATION / TIKTOK / MARQUE
+- Comptes vendus annoncés : @mannyprcs et @debloatman ; à écrire dans le contrat.
+- Intégration OAuth TikTok dans le backend : client key/secret, redirect URI,
+  scopes, environnement sandbox à inventorier dans les paramètres déployés.
+- Programme affiliés conservé, paiements manuels ; commissions/impayés/remboursements
+  et obligations envers les affiliés à arrêter comptablement au jour de cession.
+- AFFILIATE_ADMIN_SECRET est un accès technique à renouveler selon les dépendances.
+- Bibliothèque content/tiktok, scripts de carrousels, templates et documentation
+  Telegram présents. La présence d'un document n'atteste pas d'un bot déployé.
+- Recenser comptes sociaux supplémentaires : le code référence également @useprocess
+  sur TikTok, Instagram, Snapchat et X. Propriété et inclusion non confirmées.
+- Transfert social : vérifier règles de chaque plateforme, email/téléphone liés,
+  récupération, 2FA, sessions, droits sur les publications et musiques.
+- Définir droits sur Process/Debloat, logo, design, fichiers sources, vidéos, photos,
+  voix, témoignages, formats gagnants et éventuels contrats de prestataires.
+- Sources Pinterest / contenus tiers présents dans la bibliothèque : inventorier
+  licences et autorisations ; ne pas présumer leur cessibilité.
+- Dépôt de marque, titulaire et disponibilité juridique non vérifiés.
+
+3. CONNEXIONS À EXCLURE OU RENOUVELER
+
+- Compte Apple personnel et clés couvrant d'autres apps : exclus.
+- Compte Google personnel, compte de facturation partagé : exclus.
+- Compte Stripe partagé : exclu ; Process ne l'utilise plus. Secrets historiques
+  encore présents dans Secret Manager, à inventorier et isoler avant retrait éventuel.
+- PROCESS_APPLE_REPORTING_KEY également présent : usage résiduel à confirmer.
+- Pas de suppression aveugle des secrets : ils peuvent servir à d'autres projets.
+- Checkout contient 146 fichiers suivis des autres projets appbid/footgoat : exclus.
+- .env locaux, sessions, fichiers .p8, credentials gcloud/Firebase/Vercel/asc et
+  historique Git doivent être contrôlés avant constitution du dossier acquéreur.
+- Remettre les secrets indispensables par un canal sécurisé séparé du dossier,
+  puis organiser leur rotation lorsque l'acheteur a repris tous les services.
+
+4. BILAN TECHNIQUE : LIVRÉ, TROUVÉ, À VALIDER
+
+Livré/vérifié dans l'intervention achats : retrait Stripe iOS et serveur, restauration
+Apple, 40 tests backend réussis, audits dépendances de production à zéro vulnérabilité
+connue, déploiements Firebase/site, build Debug installé/lancé sur iPhone 14 Pro Max.
+Voir PREPARATION_VENTE_PROCESS_2026-10-04.txt pour preuves et limites.
+
+Nouveaux constats de cette inspection :
+- Consentements IA et visage activés automatiquement par ensureActiveConsents ;
+  presentThirdPartyAIConsentIfNeeded exécute immédiatement l'action sans afficher
+  l'écran existant. acceptFaceScanCapture active aussi le partage IA. Corriger le
+  parcours complet et les preuves de consentement ; une autorisation caméra iOS
+  ne suffit pas à démontrer un accord à l'envoi de photos à un tiers.
+- Pas de sauvegardes Firestore planifiées constatées ; restauration non testée.
+- Un seul propriétaire humain Firebase ; procédure de reprise à préparer.
+- Liens universels liés à l'équipe actuelle ; sous-domaine join non vérifié opérationnel.
+- Adresses de support multiples ; réception et redirection à valider.
+- Audit de couverture copy non passant : 143 statiques iOS, 20 interpolations,
+  372 web signalées. Trier les faux positifs puis corriger les parcours actifs.
+
+Matrice de validation restante, avec résultat à renseigner pour chaque ligne :
+AUTH : installation neuve, invité, Apple, liaison invité, reconnexion, suppression.
+ACHATS : trois produits, devise, abandon, pending, restore, ancien abonné, accès expiré.
+DATA : isolation entre comptes, relance, hors-ligne, réseau interrompu, synchronisation.
+COACH : autorisation explicite, erreurs API, timeout, stream interrompu, pièces jointes.
+SCANS : permission refusée, reprise caméra, capture/photo, analyse, historique, suppression.
+SANTÉ : HealthKit absent/refusé, données partielles, sommeil/pas, calculs et recommandations.
+PLAN : création, repas/allergènes, routines, progression, rappel et changement de jour.
+SITE : acquisition, lien référent, login mail, affilié, commissions, support mobile.
+QUALITÉ : sept langues, accessibilité, écrans petits/grands, build Release, crash/hang.
+SÉCURITÉ : historique des secrets, règles déployées, privilèges, quotas et nettoyage logs.
+REVIEW : motifs exacts du rejet 1.13, privacy labels, achats, consentement et contenus.
+CESSION : sandbox et auth validés sous les credentials de l'acheteur après transfert.
+
+Cette inspection parcourt un produit comportant 811 fichiers useprocess, 28 sources
+backend et 101 fichiers website/src. Elle ne constitue pas une preuve que chacun
+des parcours ou calculs a été testé. Aucun nouveau correctif applicatif ni nouvelle
+compilation n'a été effectué dans cette phase d'inventaire.
+
+5. DOSSIER À REMETTRE ET ORDRE DE CESSION
+
+Avant signature / fermeture :
+1) Annexe des actifs inclus/exclus, dettes/coûts, droits médias et état publié.
+2) Inventaire de comptes avec propriétaire, abonnement, coût réel, renouvellement,
+   moyen de transfert et accès requis ; justificatifs au lieu de coûts estimés.
+3) Validation des bugs prioritaires, sauvegarde/restauration, build de livraison
+   et tests iPhone. Faire approuver Apple avant cession si le calendrier le permet.
+4) Préparer les comptes acheteur, secrets dédiés, migration Apple et support transitoire.
+5) Dossier source filtré : Xcode + Shared + widgets + ressources, backend/règles/index,
+   website, lockfiles, outils utiles, metadata et documentation de déploiement.
+   Inclure les médias nécessaires ignorés par Git ; exclure autres apps et secrets.
+6) Export d'agrégats commerciaux et pièces App Store/RevenueCat ; historique Git
+   nettoyé si nécessaire, version de référence et manifeste des ressources.
+
+Au closing :
+7) Selon les conditions contractuelles de paiement, transferts Apple, Firebase IAM
+   et facturation, RevenueCat, Vercel, domaine/email et actifs de marque convenus.
+8) Migration Sign in with Apple, nouveaux credentials Apple côté serveur et RevenueCat,
+   validation notifications et liens universels ; tests d'achat/restauration/support.
+9) Contrôle des accès acheteur, facturation, déploiement et sauvegarde ; procès-verbal
+   des validations et exceptions. Retirer le vendeur après les tests convenus.
+
+Après closing :
+10) Suivi des erreurs et obligations de support selon durée/horaires fixés dans le
+    contrat ; traitement des commissions/remboursements antérieurs selon la date
+    d'effet ; clôture des accès transitoires, sans toucher aux autres projets.
+
+Ne pas remettre des photos de santé et conversations à des prospects dans une data
+room commerciale. Les données personnelles de production doivent suivre un périmètre
+de cession et des droits d'accès documentés, avec information des utilisateurs à prévoir.
+Contrat de cession, titularité des actifs et responsabilités données à faire valider
+par le professionnel chargé de l'opération ; ce document est un audit technique.
+
+6. POINTS NON CONFIRMÉS
+
+Acheteur et comptes destinataires ; propriétaires des services SaaS ; factures/coûts
+réels ; registrar, DNS et boîtes email ; droits de marque/médias ; obligations sociales ;
+motifs exacts de rejet/review ; crashs production ; inventaire complet de données et
+historique Git ; configuration OAuth TikTok déployée ; migration Apple implémentée.
+Les inconnues restent ouvertes : elles ne sont pas assimilées à des contrôles réussis.
+
+SOURCES OFFICIELLES CONSULTÉES
+https://developer.apple.com/help/app-store-connect/transfer-an-app/overview-of-app-transfer/
+https://developer.apple.com/help/app-store-connect/transfer-an-app/app-transfer-criteria/
+https://developer.apple.com/documentation/technotes/tn3159-migrating-sign-in-with-apple-users-for-an-app-transfer
+https://www.revenuecat.com/docs/revenuecat-support/common-tickets/update-after-developer-account-transfer
+https://www.revenuecat.com/docs/welcome/projects
+https://firebase.google.com/support/faq
+https://docs.cloud.google.com/billing/docs/how-to/modify-project
+https://vercel.com/docs/projects/transferring-projects

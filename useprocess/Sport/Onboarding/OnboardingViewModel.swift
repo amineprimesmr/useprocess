@@ -18,7 +18,7 @@ class OnboardingViewModel: ObservableObject {
     
     // MARK: - Informations personnelles
     @Published var selectedGender: Gender? = nil
-    @Published var selectedAge: Int = 21
+    @Published var selectedAge: Int = OnboardingViewModel.defaultAge
     @Published var selectedHeight: Double = 170 // cm — défaut 1m70
     @Published var selectedWeight: Double = 0 // kg — 0 = pas encore saisi
     @Published var firstName: String = ""
@@ -40,7 +40,7 @@ class OnboardingViewModel: ObservableObject {
 
     // MARK: - États de validation
     @Published var isGenderSelected: Bool = false
-    @Published var isAgeSelected: Bool = false
+    @Published var isAgeSelected: Bool = true
     @Published var isHeightWeightSelected: Bool = false
     @Published var isFirstNameEntered: Bool = false
     @Published var isPrimaryGoalSelected: Bool = false
@@ -85,8 +85,9 @@ class OnboardingViewModel: ObservableObject {
         }
         
         if savedStep > 0 {
-            let saved = OnboardingStep.resolved(from: savedStep)
-            let resumeStep = saved.unpaidResumeStep.rawValue
+            // Pas de rétrogradation « non payé » ici : le statut d'abonnement n'est pas encore connu
+            // au lancement (voir `reconcileUnpaidOnboardingResumeIfNeeded`).
+            let resumeStep = OnboardingStep.resolved(from: savedStep).rawValue
             currentStep = resumeStep
 
             if !savedVisitedSteps.isEmpty {
@@ -150,10 +151,13 @@ class OnboardingViewModel: ObservableObject {
             isFirstNameEntered = true
         }
 
-        if profile.age > 0, profile.age <= 120, !isAgeSelected {
+        // `isAgeSelected` vaut `true` par défaut (l'âge pré-rempli est valide) : on reprend l'âge
+        // du profil tant que la molette est restée sur sa valeur par défaut.
+        let hasLocalAge = selectedAge != Self.defaultAge
+        if profile.age > 0, profile.age <= 120, !hasLocalAge {
             selectedAge = profile.age
             isAgeSelected = true
-        } else if profile.birthDate != Date(timeIntervalSince1970: 0), !isAgeSelected {
+        } else if profile.birthDate != Date(timeIntervalSince1970: 0), !hasLocalAge {
             let calendar = Calendar.current
             if let calculatedAge = calendar.dateComponents([.year], from: profile.birthDate, to: Date()).year,
                calculatedAge > 0, calculatedAge <= 120 {
@@ -188,7 +192,7 @@ class OnboardingViewModel: ObservableObject {
         case .genderSelection:
             return isGenderSelected && selectedGender != nil
         case .ageSelection:
-            return isAgeSelected && selectedAge > 0 && selectedAge <= 120
+            return selectedAge >= 13 && selectedAge <= 120
         case .height:
             return selectedHeight > 0
         case .weight:
@@ -196,7 +200,7 @@ class OnboardingViewModel: ObservableObject {
         case .firstNameInput:
             return isFirstNameEntered && !firstName.trimmingCharacters(in: .whitespaces).isEmpty
         case .faceLeverageIntro:
-            return isFaceLeverageIntroCompleted
+            return true
         case .weightMotivation:
             return isWeightMotivationCompleted
         case .weightEstimation:
@@ -216,7 +220,13 @@ class OnboardingViewModel: ObservableObject {
 
     func refreshBodyCompositionRouting() {
         // Défauts debloat une seule fois — évite une tempête de @Published pendant la nav.
-        guard hasWeightGoal != false else { return }
+        guard hasWeightGoal != false else {
+            // Poids corrigé après un retour arrière : la cible debloat suit le poids saisi.
+            if !isIdealWeightEntered, idealWeightValue != selectedWeight {
+                idealWeightValue = selectedWeight
+            }
+            return
+        }
         applyFitProfileDebloatDefaults()
     }
 
@@ -281,6 +291,8 @@ class OnboardingViewModel: ObservableObject {
     /// Tant que l’onboarding n’est pas payé, on mémorise le dashboard — pas le paywall.
     private var persistedResumeStep: Int {
         guard !AppSession.shared.hasCompletedOnboarding,
+              SubscriptionService.shared.hasResolvedInitialSubscriptionStatus,
+              SubscriptionService.shared.subscriptionStatus != .unknown,
               !SubscriptionService.shared.subscriptionStatus.isActive else {
             return currentStep
         }
@@ -291,12 +303,6 @@ class OnboardingViewModel: ObservableObject {
         OnboardingProgressService.shared.saveFlowProgress(progress)
     }
     
-    func resetProgress() {
-        OnboardingProgressService.shared.resetProgress()
-        sleepProfile = SleepProfile()
-        currentStep = OnboardingStep.genderSelection.rawValue
-    }
-
     func makeAnswersSnapshot() -> OnboardingAnswersSnapshot {
         OnboardingAnswersSnapshot(
             selectedGender: selectedGender,
@@ -480,24 +486,6 @@ class OnboardingViewModel: ObservableObject {
     /// Après un retour manuel vers le chat : ne pas enchaîner automatiquement vers la création du programme.
     var suppressProfileChatAutoFinish = false
 
-    /// Retour depuis « Création du programme » : rouvrir la page résultats du premier scan.
-    var shouldReopenFaceScanResultsAfterBack = false
-
-    /// Scan onboarding plein écran — un seul cover (deux `.fullScreenCover` se ferment tout seuls).
-    @Published var presentedOnboardingFaceScan: OnboardingFaceScanPresentation?
-
-    var onOnboardingFaceScanCancel: (() -> Void)?
-    var onOnboardingFaceScanSkip: (() -> Void)?
-    var onOnboardingFaceScanResult: ((FaceScanResult) -> Void)?
-    var onOnboardingFaceScanContinue: (() -> Void)?
-    var onOnboardingFaceScanContinueFromDashboard: (() -> Void)?
-
-    func configureDashboardPreviewPresentation(entering step: OnboardingStep, from previous: OnboardingStep?) {
-        guard step == .dashboardPreview else { return }
-        dashboardPreviewPresentation = .firstScanPending
-        saveProgress()
-    }
-
     func recordDashboardFaceScanResult(_ result: FaceScanResult) {
         onboardingFaceMesh = OnboardingFaceMarkersStore.loadMesh()
         onboardingFaceMarkers = result.markers
@@ -551,7 +539,6 @@ class OnboardingViewModel: ObservableObject {
         referralCode = normalized
         creatorCodeDraft = normalized
         ProcessAcquisitionAttribution.captureReferralCode(normalized)
-        ProcessAcquisitionAttribution.captureAffiliateCode(normalized)
         saveProgress()
     }
 
@@ -574,22 +561,6 @@ class OnboardingViewModel: ObservableObject {
         if let pending = ProcessReferralAttribution.pendingCode ?? ProcessAffiliateAttribution.pendingCode {
             creatorCodeDraft = pending
         }
-    }
-
-    func presentOnboardingFaceScan(initialResult: FaceScanResult? = nil, usesChatCallbacks: Bool = true) {
-        if OnboardingStep.resolved(from: currentStep) == .dashboardPreview,
-           dashboardPreviewPresentation == .firstScanPending,
-           initialResult == nil {
-            return
-        }
-        presentedOnboardingFaceScan = OnboardingFaceScanPresentation(
-            initialResult: initialResult,
-            usesChatCallbacks: usesChatCallbacks
-        )
-    }
-
-    func dismissOnboardingFaceScan() {
-        presentedOnboardingFaceScan = nil
     }
 
     /// Données du premier scan disponibles pour réafficher l'analyse.
@@ -622,12 +593,6 @@ class OnboardingViewModel: ObservableObject {
             isWeightMotivationCompleted = false
             suppressProfileChatAutoFinish = true
 
-            if current == .programCreation,
-               isFaceAnalysisCompleted {
-                shouldReopenFaceScanResultsAfterBack = true
-                return
-            }
-
             if current == .dashboardPreview,
                dashboardPreviewPresentation == .firstScanPending {
                 let orderedIDs = OnboardingProfileChatQuestionBank.questions(for: self).map(\.id)
@@ -659,6 +624,8 @@ class OnboardingViewModel: ObservableObject {
         return !blocked.contains(normalized.lowercased())
     }
 
+    static let defaultAge = 21
+
     static func isPlausibleWeight(_ value: Double) -> Bool {
         value >= 35 && value <= 250
     }
@@ -666,21 +633,4 @@ class OnboardingViewModel: ObservableObject {
 
 enum OnboardingDashboardPreviewPresentation: String, Equatable {
     case firstScanPending
-}
-
-/// Cover scan onboarding (capture live ou résultats déjà calculés).
-struct OnboardingFaceScanPresentation: Identifiable, Equatable {
-    let id: String
-    let initialResult: FaceScanResult?
-    let usesChatCallbacks: Bool
-
-    init(initialResult: FaceScanResult? = nil, usesChatCallbacks: Bool = true) {
-        self.initialResult = initialResult
-        self.usesChatCallbacks = usesChatCallbacks
-        if let initialResult {
-            id = "results-\(initialResult.id)"
-        } else {
-            id = "live-capture"
-        }
-    }
 }

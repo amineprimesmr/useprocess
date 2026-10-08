@@ -1,0 +1,911 @@
+{
+  "date": "2026-10-08",
+  "backup": "/Users/amine/.codex/backups/process-debloat/onboarding-restore-20261008-102920",
+  "restored_views": [
+    {
+      "file": "useprocess/Sport/Onboarding/Steps/TransformationPreviewStepView.swift",
+      "exact_snapshot_match": true
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/Steps/OnboardingEstimationStepView.swift",
+      "exact_snapshot_match": true
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/Services/OnboardingEstimationEngine.swift",
+      "exact_snapshot_match": true
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/Components/EstimationStepLayout.swift",
+      "exact_snapshot_match": true
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/Steps/OnboardingGlowUpResultsStepView.swift",
+      "exact_snapshot_match": true
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/Steps/FaceLeverageIntroStepView.swift",
+      "exact_snapshot_match": true
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/Steps/OnboardingWelcomeExplainerSteps.swift",
+      "exact_snapshot_match": true
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/ProfileChat/OnboardingProfileChatModels.swift",
+      "exact_snapshot_match": true
+    }
+  ],
+  "changes": [
+    "Restored wheel presentation on cancelled purchase, retaining current StoreKit/RevenueCat integration and image performance fixes.",
+    "Shared prewarmed dashboard snapshots; no sequential 900 ms placeholders. Live app-page fallback if cache is unavailable.",
+    "Single face camera retained between thumbnail and expanded capture page; reduced-motion support and camera-permission gate.",
+    "Preview does not save pending onboarding data or refresh health data.",
+    "Removed clipper app entries, portal source modules, tracking, commissions logic, library, TikTok integration, admin scripts and unused mail dependency.",
+    "Retired legacy HTTP endpoints with 410 and acknowledged old webhook deliveries without writes. Friend referrals retained.",
+    "Removed Android clipper settings entry."
+  ],
+  "validation": {
+    "backend_tests": "22 passed",
+    "website_process_build": "passed",
+    "website_build": "passed",
+    "device_build": "passed, including final incremental verification",
+    "simulators_used": false,
+    "apple_submission": false,
+    "remote_site_or_backend_deployment": false,
+    "database_records_deleted": false,
+    "device_ui_and_payment_validation": "awaiting user checks; no real purchase performed",
+    "android_build": "not run (settings entry removal only)",
+    "backend_test_log": "/tmp/process-clipper-tests-20261008.log",
+    "device_build_log": "/tmp/process-onboarding-verified-build-20261008.log",
+    "device_install": "passed on physical iPhone 14 Pro Max",
+    "device_launch": "passed, com.useprocess launched",
+    "device_install_evidence": "/Users/amine/Developer/useprocess/docs/performance/2026-10-08-onboarding/device-install.json",
+    "device_launch_evidence": "/Users/amine/Developer/useprocess/docs/performance/2026-10-08-onboarding/device-launch.json",
+    "version": "1.13",
+    "build": "40"
+  },
+  "limits": [
+    "Source retirement is prepared locally. Production cloud functions and web deployments still require publishing this change.",
+    "Physical-device UI, camera zoom, snapshot appearance and payment cancellation must be verified by the user."
+  ],
+  "source_changes": [
+    {
+      "file": "useprocess/Core/UserSessionCoordinator.swift",
+      "status": "modified",
+      "before_sha256": "49c1bbd3379652968065c48613b0170b724ab5d78264d0c400a1e2ef7a27a1e1",
+      "after_sha256": "262fc0385ebaadbf328e9666aea08c6f0a41fdf2099ae95ec81bb3fb1022b9f4"
+    },
+    {
+      "file": "useprocess/Core/ProcessAffiliateLink.swift",
+      "status": "modified",
+      "before_sha256": "eaaec907125d1bf235c141d582223687fb929fb3b468da8398eddfec66c00076",
+      "after_sha256": "2077d36c5fdc9334eb6e4e44b8cbc6e801927e6db3404e5d90761eda360f713b"
+    },
+    {
+      "file": "useprocess/Config/ProcessLegalURLs.swift",
+      "status": "modified",
+      "before_sha256": "382484b6e2a63a8e7738e8b4d79c6cfc4011226435c852e4f1f952a18c0cbc6b",
+      "after_sha256": "bb37d78309729d9fd32b6e0d2c0bccfa5e113f9f04c210414539fe80ee664e9c"
+    },
+    {
+      "file": "useprocess/Health/Views/PlanDashboardView.swift",
+      "status": "modified",
+      "before_sha256": "66285efad18773215e78b83a04c112e860e184508c2ee8c95e40a0aa7ba72d31",
+      "after_sha256": "ebf46c52459540eb45f00641b6668255a221c0dffdab5ebadf7ddb03dfae789a"
+    },
+    {
+      "file": "useprocess/Features/Referral/ProcessReferralRewardsDesign.swift",
+      "status": "modified",
+      "before_sha256": "d9e9bbea32682465cba9081a403f6a8df629f556b0377dcd537381dcd8b555bb",
+      "after_sha256": "318ce6e2fd4e404fb7c71ea3ce782e03f97379f0a39138c95aea31ed31afa01a"
+    },
+    {
+      "file": "useprocess/Features/Profile/EditProfileView.swift",
+      "status": "modified",
+      "before_sha256": "36a8e0a2269bec5de572c4d8fe5fa7a95ac3616d9ba285619d5b451bf66f475f",
+      "after_sha256": "6a3c9df6634c9dc9322a30fcfb98ba7d0e31503e9747bd20604ca278863f961e"
+    },
+    {
+      "file": "useprocess/Features/Affiliate/AffiliateService.swift",
+      "status": "modified",
+      "before_sha256": "82165a1a839bcdc6be7024273b1499447c662d7160dd0899825bd1a7949a1b0e",
+      "after_sha256": "0e9d35fb04c1d78e5427a9b215e06841e85fa8cbceac1543d32c574554cd668e"
+    },
+    {
+      "file": "useprocess/Features/Affiliate/ProcessAffiliatePortalLink.swift",
+      "status": "removed",
+      "before_sha256": "0227b4b6c4a1a47d600880d3a53f8d1c967fa1ba42b1233118844514d07acf31"
+    },
+    {
+      "file": "useprocess/Features/Affiliate/ProcessAffiliateProgramView.swift",
+      "status": "removed",
+      "before_sha256": "e2c1fdfd9afb498be0adcd57a04663c712e811f422d935e449e66b9207856b2c"
+    },
+    {
+      "file": "useprocess/Features/Affiliate/ProcessAffiliateModels.swift",
+      "status": "modified",
+      "before_sha256": "028be2ebc8d4883b6fb698ddab128d800fa624ecfc30c6e393953a5ef9993ac9",
+      "after_sha256": "8f4855a4a8155034891570f54982cf4b2261f6a64c63a90daecb61bcb390e16f"
+    },
+    {
+      "file": "useprocess/Features/Affiliate/AffiliateRemoteService.swift",
+      "status": "modified",
+      "before_sha256": "52096071e0e49b63f66ac1f0bb878d06165374795c3203518bcdb8ba835c7e4d",
+      "after_sha256": "b2695e4a8a7825e989b39f38b260df90fdc20a2840a43d1ddc61a3087b2465a3"
+    },
+    {
+      "file": "useprocess/Features/Affiliate/AcquisitionCodeService.swift",
+      "status": "modified",
+      "before_sha256": "20989dc33c7d5738020cf86d3eccfadcdb3610e68dad9a4a264743120da267c7",
+      "after_sha256": "ddfd995e8d23fb261fda27b152ed59fce5deb54e7ecab695c1ebb1de28acb993"
+    },
+    {
+      "file": "useprocess/Sport/Paywall/PaywallView.swift",
+      "status": "modified",
+      "before_sha256": "e9fbb71fda5a9a96b350ec7a81b410ff7562a987365bbbd968373107783210ff",
+      "after_sha256": "306eacefbebd1439b0c4380f3a84911f74ed99f4788b79824d31bac739e5037a"
+    },
+    {
+      "file": "useprocess/Sport/Paywall/PaywallSpinWinbackView.swift",
+      "status": "modified",
+      "before_sha256": "d8d2e2712672d7e4417db5e63bf7314569705e4316789206a57a1ee3ec8068e9",
+      "after_sha256": "d2ab44dc9b7a4f9206196aa53543618d4092d3a0d56bac4538d314dbe93c8ecf"
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/OnboardingView.swift",
+      "status": "modified",
+      "before_sha256": "7e69c63125e0aabf40938c4c5e05e026180a96763dc82e754ca29757c2dc93ef",
+      "after_sha256": "dcc3d70ea9faa3c0d1d821d15eef5d64e444c3f6e4d6778bb6e4f238dff62d48"
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/OnboardingViewModel.swift",
+      "status": "modified",
+      "before_sha256": "0e6a5722290af05f7a59bac5132646d1f149a0ca8aaf2a92295ebaa98b9f1357",
+      "after_sha256": "247721e230989ce3b0b73f23c2cb7297ca035083f588a9b752cab79bcbe51790"
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/Components/EstimationStepLayout.swift",
+      "status": "modified",
+      "before_sha256": "0167401d1d244a0c66d09c110e431ababe48a23ceb5f94d03fc8ff1baaed5060",
+      "after_sha256": "284c6228275ada49b79776cfd018a4fe4b31f34decea957862e21ff0c61eb43c"
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/Steps/OnboardingEstimationStepView.swift",
+      "status": "modified",
+      "before_sha256": "a39312fdee457cb3dabaaad21f302778b3fab34667115214b8659defa517a2e1",
+      "after_sha256": "4ec2e5a912b20e251abcf84cf971e7699ffbd9d8a0534cc047f7dde4ada1fd0b"
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/Steps/OnboardingWelcomeExplainerSteps.swift",
+      "status": "modified",
+      "before_sha256": "93f7e1b685a2a04e096cefcaadaea2d5b09d2399ecf1eb44a8a86fd7bf217610",
+      "after_sha256": "304613d0e25b8e3a32979da02fea8b474acb8b363cd1fcd43acee2b8f1109212"
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/Steps/DashboardPreviewStepView.swift",
+      "status": "modified",
+      "before_sha256": "1c63de3dac42b2abbb9e968a60dedec02c7eb1bdec01799d235ecc9e8d391a31",
+      "after_sha256": "19585b0c04585356a9d16c775b997f30353af8daf72b1285f853adf9f584f49b"
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/Steps/FaceLeverageIntroStepView.swift",
+      "status": "modified",
+      "before_sha256": "14a8beb79e44d306e10befcc08a2bf476fa16c5aa170447ab8a8bfda7a340af3",
+      "after_sha256": "ce4a1e977737ead1c6cd6e669314bba023685e02c7cf73ab66f8802aa2f7942b"
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/Steps/TransformationPreviewStepView.swift",
+      "status": "modified",
+      "before_sha256": "22debbd9b948a5ab12130a5a24149046a1b411561c13069a33cf0a33d15c9bec",
+      "after_sha256": "63929e5ddea963fbc5a84870795510a5d6adf9d761143502e99203442ba420cc"
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/Steps/OnboardingGlowUpResultsStepView.swift",
+      "status": "modified",
+      "before_sha256": "91c66bdb55b66d93c8d3d70ab44f02e7472e342507fa317f57c3e746f8e638e8",
+      "after_sha256": "6cb01cdda0504d73dcf45c3b4af697563b631282e9d821101369d21ae9e6b05b"
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/Steps/OnboardingCreatorCodeStepView.swift",
+      "status": "modified",
+      "before_sha256": "a42c73455c5ae4cb66b4f1aa34adf94733a1ad7e3e44b68c2aed2625c2788b1e",
+      "after_sha256": "fc956eb570b873fc726b8a68f9a3c7bb6db40fc3a660a5a0cb7344eec411c039"
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/ProfileChat/OnboardingProfileChatModels.swift",
+      "status": "modified",
+      "before_sha256": "dbc342ff9fb439dcb847b7f55c01d09d3fe449a575e2b2e7fbac6ef91d35f779",
+      "after_sha256": "3e24ef0b216af392c8562e8ad4164483383ef0f5e5a1f73cd02004469c4c1581"
+    },
+    {
+      "file": "useprocess/Sport/Onboarding/Services/OnboardingEstimationEngine.swift",
+      "status": "modified",
+      "before_sha256": "91c163367722c311602d56d89efac9b19bc6d926c07930286521b84c9798e27e",
+      "after_sha256": "676251c660f7bfff941430b909cbbfc0fe9cbb85d0169b2f10278ecd2e24e281"
+    },
+    {
+      "file": "useprocess/Analytics/ProcessAnalytics.swift",
+      "status": "modified",
+      "before_sha256": "97c7cdaac7d70c97bb8099f3f70863fa9e7f2ae193a3452efa0f5ed7f26f811c",
+      "after_sha256": "6cc18e7cb4bd7bf1bc20e82e5274636f7ba333eb354075fd4a7b7c8e8faa1bb6"
+    },
+    {
+      "file": "firebase/functions/src/affiliate.ts",
+      "status": "removed",
+      "before_sha256": "fbc6733362a323e80edbd6e279a00b7a58e52c979625c92d513e883d1c819d9e"
+    },
+    {
+      "file": "firebase/functions/src/affiliatePortalHandoff.ts",
+      "status": "removed",
+      "before_sha256": "bb06db5aef42aa45decbea5a85288a6450d3ec3a0f5f92602dd5c14d001ebd83"
+    },
+    {
+      "file": "firebase/functions/src/affiliateAnalytics.ts",
+      "status": "removed",
+      "before_sha256": "d95aa21ed7ee4b424ee052e987a21f7b8c25ff61e5b66eae9473429684b152b3"
+    },
+    {
+      "file": "firebase/functions/src/affiliateLibraryShared.ts",
+      "status": "removed",
+      "before_sha256": "9465901cf8cda097436a9181a70ec65e0dddd94aa1c251f6cfd8d253ba6e6ab6"
+    },
+    {
+      "file": "firebase/functions/src/affiliateLoginEmail.ts",
+      "status": "removed",
+      "before_sha256": "6311aef559f8d079246d5ffe8f9c6cd86edacd243c983e69ba3ccce0a20cbb33"
+    },
+    {
+      "file": "firebase/functions/src/affiliateFunnel.ts",
+      "status": "removed",
+      "before_sha256": "e82082d8d64550ccca567711fed3adda11290adb6580effcc19bd644baaf7d54"
+    },
+    {
+      "file": "firebase/functions/src/affiliateTikTok.ts",
+      "status": "removed",
+      "before_sha256": "39e5d596f59142ceca8b6cb7c61835977a5308838ca3838ea02be401735a14f3"
+    },
+    {
+      "file": "firebase/functions/src/clippingSeed.json",
+      "status": "removed",
+      "before_sha256": "afa628c5d2af0ac0987a24ca763a53593e763fd2e0b3072b532c23c70b5adb8e"
+    },
+    {
+      "file": "firebase/functions/src/index.ts",
+      "status": "modified",
+      "before_sha256": "9beeece42144c4d3a7f644bd04b979c97da51fe4292573d3113364dea88289ca",
+      "after_sha256": "2f620834e764b2fdabb02b43196df30723966a542b8d44072133b80778e600b3"
+    },
+    {
+      "file": "firebase/functions/src/referralRewards.ts",
+      "status": "modified",
+      "before_sha256": "62a6520a61f7a8077a590040395b2631b6563471f632d8d6d9fb241c67e720d6",
+      "after_sha256": "9d8f70d9ef76f7805661fd83bfe5ec7e88b7d68ec01bb18827c46a7ae91e1b0c"
+    },
+    {
+      "file": "firebase/functions/src/affiliateLibrary.ts",
+      "status": "removed",
+      "before_sha256": "dec24ce3e6b8409b6b80c5e141c7c7c4d33e322fed2722866184a8dcb1240b06"
+    },
+    {
+      "file": "firebase/functions/src/affiliateLeaderboardShared.ts",
+      "status": "removed",
+      "before_sha256": "c35eccee9a7a62af259faf85007a66cea2ca566f49830821b09c4f2f190cd011"
+    },
+    {
+      "file": "firebase/functions/src/affiliateCommissions.ts",
+      "status": "removed",
+      "before_sha256": "3214bed9bc64a4b79dda49cc58ae5c11e1001f79ffac471cc1bf3b676698df29"
+    },
+    {
+      "file": "firebase/functions/src/affiliateShared.ts",
+      "status": "removed",
+      "before_sha256": "341916c0c062efd1ac1bdb62a040865644505ebd2066eb0b24ba2be7a9daa094"
+    },
+    {
+      "file": "firebase/functions/src/affiliateMcp.ts",
+      "status": "removed",
+      "before_sha256": "ec5f4af6d7642427a0ab4e299234aa114dccc30ddd60d763c28ed787fec33e3c"
+    },
+    {
+      "file": "firebase/functions/src/affiliateLeaderboard.ts",
+      "status": "removed",
+      "before_sha256": "340bf930d83aca24c8d7b6db789e9a1a2eb9376444de3b3b84116dbad4f6a25b"
+    },
+    {
+      "file": "firebase/functions/lib/affiliateLibraryShared.js",
+      "status": "removed",
+      "before_sha256": "dde79b990c24a8a67687e88792e923546c2885f6666213e9c92abe3f56c056bb"
+    },
+    {
+      "file": "firebase/functions/lib/affiliateLoginEmail.js",
+      "status": "removed",
+      "before_sha256": "259c2b29232470fd1df5955b642437a2eddddcf53a52a0043f48569d00aca055"
+    },
+    {
+      "file": "firebase/functions/lib/affiliateFunnel.js",
+      "status": "removed",
+      "before_sha256": "85d7e1c78fda08d6f7d718c8e090505c027c966bb522381b0e2fd975520fe12d"
+    },
+    {
+      "file": "firebase/functions/lib/affiliateLeaderboardShared.js",
+      "status": "removed",
+      "before_sha256": "16a03b14593fd475aa8d1ec60982c4b7bd274368760379898b1a6dd26e41ca34"
+    },
+    {
+      "file": "firebase/functions/lib/affiliateShared.js",
+      "status": "removed",
+      "before_sha256": "281566001c68e06747b44ad11a3d4d2977af165bc83a56cf23bace9624d44942"
+    },
+    {
+      "file": "firebase/functions/lib/affiliateCommissions.js",
+      "status": "removed",
+      "before_sha256": "4db9de8a45cb8a03a490f9ae7b25b2e12dc90ed16f007c90eedcf54330a34aca"
+    },
+    {
+      "file": "firebase/functions/lib/affiliateLeaderboard.js",
+      "status": "removed",
+      "before_sha256": "cb1608daa545b319cb1cb3e22cb7d63392ac863e5699ca9e5b4b8d7c22acf605"
+    },
+    {
+      "file": "firebase/functions/lib/affiliateMcp.js",
+      "status": "removed",
+      "before_sha256": "eaf6e536be547d06a7642ea4fa49e667917be4276b6df668ee4efe91aecb9def"
+    },
+    {
+      "file": "firebase/functions/lib/affiliateTikTok.js",
+      "status": "removed",
+      "before_sha256": "61d31f37ce127a7f4e95468adc3db868fe963e875a8ddd46d148e1ac715efd75"
+    },
+    {
+      "file": "firebase/functions/lib/index.js",
+      "status": "modified",
+      "before_sha256": "a87300c6ea755b4ff6cedc6f270723e69c706f5ce98a5a0b388d024416e51a7d",
+      "after_sha256": "184907c46e57650a08d14633ad5c4d059cf9cd247b721294a2acd53bc2fc161e"
+    },
+    {
+      "file": "firebase/functions/lib/referralRewards.js",
+      "status": "modified",
+      "before_sha256": "2cad03e50b774d63d4684c27a318f246bf6f0ea1b17d9b433b1282f8a3c81c0a",
+      "after_sha256": "f060f9f9f64076e421286a894411f82d30eef116aceb2da819447a98b1aeddd0"
+    },
+    {
+      "file": "firebase/functions/lib/affiliateLibrary.js",
+      "status": "removed",
+      "before_sha256": "5fc1d101360a8e739ec464ab2942d64c9c5b446b3ae9e19bb5a7be130a1a33d1"
+    },
+    {
+      "file": "firebase/functions/lib/affiliate.js",
+      "status": "removed",
+      "before_sha256": "a32dea24ee1d2b4fcb7412806fa313644a7d3e387174d277c32f1a9c3d5e660f"
+    },
+    {
+      "file": "firebase/functions/lib/affiliateAnalytics.js",
+      "status": "removed",
+      "before_sha256": "0b1a8a43e14036b92971fefb347f53a6afef6e479f6192c470a4691ac336b22e"
+    },
+    {
+      "file": "firebase/functions/lib/clippingSeed.json",
+      "status": "removed",
+      "before_sha256": "cdb0c681418f788fb098178aa0f10dcc850920d57026f13bb6b9b4c973f4af93"
+    },
+    {
+      "file": "firebase/functions/lib/affiliatePortalHandoff.js",
+      "status": "removed",
+      "before_sha256": "4625fac456b069420a9260a8476af762d66b7d21c948bdda68af8d10b00aec31"
+    },
+    {
+      "file": "firebase/functions/test/affiliateShared.test.js",
+      "status": "removed",
+      "before_sha256": "4aeda0fca14c1d157f95b674a02e90ac6b3f8c2154ddf766792a9e8de9c04672"
+    },
+    {
+      "file": "firebase/functions/test/affiliateLibrary.test.js",
+      "status": "removed",
+      "before_sha256": "53f996b7c8d4f941686c105d56979e2acbf758dc01c8b0f845f98a2747dcddb8"
+    },
+    {
+      "file": "firebase/functions/test/affiliateFunnel.test.js",
+      "status": "removed",
+      "before_sha256": "8395434f1f81fde8048389ceecedc848ca6729fbbe4eacd10c3463d6ba833880"
+    },
+    {
+      "file": "firebase/functions/test/affiliateLeaderboard.test.js",
+      "status": "removed",
+      "before_sha256": "12abf096df3e0a20a22287aa1fe845104c8a5a463a32b539358b258b80bd93ac"
+    },
+    {
+      "file": "firebase/scripts/setup-clipper-login-email.sh",
+      "status": "removed",
+      "before_sha256": "7d49b1e7197dbff0766874c5d7504fa8ce431ee46bd8f0f9e8505dc3746eca11"
+    },
+    {
+      "file": "firebase/scripts/setup-affiliate-rc-webhook.sh",
+      "status": "removed",
+      "before_sha256": "4ee6226e8467f6a5ea755d8cf0ba11fc7a9d081d5a1338a2bb37d66035537c46"
+    },
+    {
+      "file": "firebase/scripts/list-pending-clippers.sh",
+      "status": "removed",
+      "before_sha256": "924220be29cff1bec1efa14ffaeb78ab2ee4c5af1bffea507f05e5c25e670c8a"
+    },
+    {
+      "file": "firebase/scripts/mark-paid-clipper.sh",
+      "status": "removed",
+      "before_sha256": "ce74deba0add2bb42f95aaaf5d009826ec33ba6cbb67a12daac6670f14b967d4"
+    },
+    {
+      "file": "firebase/scripts/approve-clipper.sh",
+      "status": "removed",
+      "before_sha256": "1f484b0459c0311db845bd1bf5ba59f65d6383f5c9f9e6564bc7570b853a326d"
+    },
+    {
+      "file": "firebase/scripts/create-clipper.sh",
+      "status": "removed",
+      "before_sha256": "63cd84e6d1132a0768acc9975d656d1a11d984e4f2a1694bd0ceca47d368d6a7"
+    },
+    {
+      "file": "firebase/scripts/deploy-affiliate.sh",
+      "status": "removed",
+      "before_sha256": "ad24daa60f06d3e0addb8b1fe1147340a98ef6dd36be7ea89e7b910bee646657"
+    },
+    {
+      "file": "website-process/src/main.js",
+      "status": "modified",
+      "before_sha256": "ab86b3d6296895b9d630b16f77acb79922cdd8342c8cc700b116b7ef0bbae35b",
+      "after_sha256": "77f9f7a73c236db6c8cc1920f1dc01b19493c4a2c145e1a1efb28a303af61b1e"
+    },
+    {
+      "file": "website-process/src/features/acquisition-link.js",
+      "status": "modified",
+      "before_sha256": "a55c0b44284e9d141db60b2b4eed18709fb2b6fa2f04b755eb17e5ad62892218",
+      "after_sha256": "75c6dc71f5031266b5beea601a4bf812e2c3c7e55a18f7fce25691861928f64f"
+    },
+    {
+      "file": "website-process/src/features/firebase-client.js",
+      "status": "removed",
+      "before_sha256": "979fb632696c09e489b73de0e064739e8dba2b7f49c44b2fa52f08478c761f1a"
+    },
+    {
+      "file": "website-process/src/affiliate/affiliate-dashboard-cache.js",
+      "status": "removed",
+      "before_sha256": "826e0cd105e8f672b4ff214ecf769a3181a2612577aeee2d6432b72fa529e35f"
+    },
+    {
+      "file": "website-process/src/affiliate/method-catalog.js",
+      "status": "removed",
+      "before_sha256": "c272ae3194b374adb2cabaabaa70de79c6ca4b49ac51053c3060deaf305a088b"
+    },
+    {
+      "file": "website-process/src/affiliate/affiliate-process-assets.css",
+      "status": "removed",
+      "before_sha256": "464d970d7cec9405c48fbe18a4bee4f89349f7315069ffff35708421c017570b"
+    },
+    {
+      "file": "website-process/src/affiliate/affiliate-onboarding-state.js",
+      "status": "removed",
+      "before_sha256": "8a6cc0633eb22f6ecfb4e024948c52c8deb3ae90aef528701b8110a98a52831e"
+    },
+    {
+      "file": "website-process/src/affiliate/action-feedback.jsx",
+      "status": "removed",
+      "before_sha256": "a298e1baec1a1e3ae68838331866819cd2b51d6682e43318d2fe96e09322399e"
+    },
+    {
+      "file": "website-process/src/affiliate/AffiliateUs.jsx",
+      "status": "removed",
+      "before_sha256": "17652ac58c16ca5b58067559d7a2b8d61f055acf2b30c6d4c7aa91a888c123ad"
+    },
+    {
+      "file": "website-process/src/affiliate/AffiliateApp.jsx",
+      "status": "removed",
+      "before_sha256": "25a7e88dd98a8f0d80ed0d56624b9494f5e01261eba61c63ddb23424bfd51ce9"
+    },
+    {
+      "file": "website-process/src/affiliate/AffiliateFormats.jsx",
+      "status": "removed",
+      "before_sha256": "7b4a70761b3c7ddde22b94d6b4541fc752bd024d9a755fb565622999d0d61a2f"
+    },
+    {
+      "file": "website-process/src/affiliate/affiliate-automation.css",
+      "status": "removed",
+      "before_sha256": "6b4caeed80b687cfd55ad493a33178c9bd3ac28c5df096edfb9097042c6a7c58"
+    },
+    {
+      "file": "website-process/src/affiliate/AffiliateOnboarding.jsx",
+      "status": "removed",
+      "before_sha256": "b98927bb7e5fccdb1caa5918cf3f3387ed24600f05bcc65d6f0f3401bea164cc"
+    },
+    {
+      "file": "website-process/src/affiliate/affiliate-formats.css",
+      "status": "removed",
+      "before_sha256": "c3fde94644a16572f7ca1e721197fcb28766162b4735979536964ac4b3656b72"
+    },
+    {
+      "file": "website-process/src/affiliate/affiliate-email-link.js",
+      "status": "removed",
+      "before_sha256": "0e435fb1a791cdc4534c47c16f39049ebcdb8daff6279549702dd80d79589723"
+    },
+    {
+      "file": "website-process/src/affiliate/AffiliateLanding.jsx",
+      "status": "removed",
+      "before_sha256": "8fd5b2f635388fdd87006b925bf61fb1b8bf476d774eed591455fb2ba6cd4a79"
+    },
+    {
+      "file": "website-process/src/affiliate/affiliate-useful.css",
+      "status": "removed",
+      "before_sha256": "b05863d4582f705d3ddc6a9f6c5ded46950fb5478bdcad30286cb8a1ac263a9f"
+    },
+    {
+      "file": "website-process/src/affiliate/affiliate-landing.css",
+      "status": "removed",
+      "before_sha256": "93f85913e86702a629fe84829a403bca7f7665f146096f03b9ac9100329d5495"
+    },
+    {
+      "file": "website-process/src/affiliate/AffiliateAutomation.jsx",
+      "status": "removed",
+      "before_sha256": "a55e5fd3063c4495f2f343b50300932f7069079301fd08b28e8ee48615ad1a0f"
+    },
+    {
+      "file": "website-process/src/affiliate/affiliate-onboarding.css",
+      "status": "removed",
+      "before_sha256": "eb36745951b6976b90790ce8a99915f33a739e4de5194b9a3cf13622008f7c23"
+    },
+    {
+      "file": "website-process/src/affiliate/affiliate-method.css",
+      "status": "removed",
+      "before_sha256": "434859060675805450ff78e21e15057c3a51931adbd16de39423ae8eb75b5f9d"
+    },
+    {
+      "file": "website-process/src/affiliate/affiliate-us.css",
+      "status": "removed",
+      "before_sha256": "5d2982eec24f21d837c50034b87c07ba33f11a0df38bae694f1ac19034164c21"
+    },
+    {
+      "file": "website-process/src/affiliate/AffiliateIcons.jsx",
+      "status": "removed",
+      "before_sha256": "25b60757e40ddd11ac4921e2cc53319a63b7eaaed11c2a38677144b8d6990bef"
+    },
+    {
+      "file": "website-process/src/affiliate/affiliate.css",
+      "status": "removed",
+      "before_sha256": "8aaa192dfb27c2b8fc11522a4f8ca5d817f037230131884606396f24cb906dd3"
+    },
+    {
+      "file": "website-process/src/affiliate/view-bonus.css",
+      "status": "removed",
+      "before_sha256": "e64bb66736746c357b660384325f1d53e29f6b733168717537319270bd0ce062"
+    },
+    {
+      "file": "website-process/src/affiliate/affiliate-utils.js",
+      "status": "removed",
+      "before_sha256": "0d1fa836b239f2a422289e2081c8f953d2bb2ea1bf38d0a422a0a21db3adca76"
+    },
+    {
+      "file": "website-process/src/affiliate/mount.jsx",
+      "status": "removed",
+      "before_sha256": "74f8c6799a548ad57b7cf9a72859cb1d206082379c67f00a9da66b7aa542c70d"
+    },
+    {
+      "file": "website-process/src/affiliate/AffiliateUseful.jsx",
+      "status": "removed",
+      "before_sha256": "0310fbd1b3727dddafafed7480acd34899918e2e596d4f33bac373695ebf0f66"
+    },
+    {
+      "file": "website-process/src/affiliate/affiliate-clippers.css",
+      "status": "removed",
+      "before_sha256": "ec6a341c8494bf06382cd8bd696dcfe9d9f3c218277bf77d2288a28fca25cb76"
+    },
+    {
+      "file": "website-process/src/affiliate/ViewBonusBoard.jsx",
+      "status": "removed",
+      "before_sha256": "d1812ab8f9b361089c179bf517f0f51727c3b0a033a1990cac8acab0ab5357b3"
+    },
+    {
+      "file": "website-process/src/affiliate/us-guide.js",
+      "status": "removed",
+      "before_sha256": "32aaaf0bbc0942620a4589ae574324069aa7a2c3fdb5d47c3dc5d0f9047d609d"
+    },
+    {
+      "file": "website-process/src/affiliate/affiliate-slideshow-lab.css",
+      "status": "removed",
+      "before_sha256": "479fcac1285d5c3dd16772868184a956694db2a9dc5a8637d0163c25242d4ce7"
+    },
+    {
+      "file": "website-process/src/affiliate/AffiliateSlideshowLab.jsx",
+      "status": "removed",
+      "before_sha256": "39baac0b910c67889637a39e9862db4c147e91bffc73306ef9105967c986decf"
+    },
+    {
+      "file": "website-process/src/affiliate/ClipperBonusLadder.jsx",
+      "status": "removed",
+      "before_sha256": "16b7f0c56955d4cce7453402d0cca45149942c249bfb2c8e40799a58284c9cc1"
+    },
+    {
+      "file": "website-process/src/affiliate/AffiliateClippers.jsx",
+      "status": "removed",
+      "before_sha256": "733609666877db9e51f1a74f433531a11918e2326b187292f4df2c14f0d4e5c7"
+    },
+    {
+      "file": "website-process/src/affiliate/affiliate-local-preview.js",
+      "status": "removed",
+      "before_sha256": "5870cfbc8864e61f4d3b3eeec23a77ce002725d1f6a43c74bd7ef7d28da455b3"
+    },
+    {
+      "file": "website-process/src/affiliate/AffiliateMethod.jsx",
+      "status": "removed",
+      "before_sha256": "118da7718868e430c97ed70ea88472579789ec7b601dae3eb51ab8ad3eeee3b2"
+    },
+    {
+      "file": "website-process/src/affiliate/format-library.js",
+      "status": "removed",
+      "before_sha256": "8af816a5f703022945327f7392408f0b7251082c84a95c56bc78e89b6d753b69"
+    },
+    {
+      "file": "website-process/src/affiliate/AffiliateProcessAssets.jsx",
+      "status": "removed",
+      "before_sha256": "31706dc9f42e14d3804a59d843570b2f861f498cd978f9fbc2c7f9df099b60d0"
+    },
+    {
+      "file": "website-process/src/pages/affiliate.js",
+      "status": "removed",
+      "before_sha256": "c726ace21885650360706d889f52d5a7840653deb6fdd3adde998e7dbcb99319"
+    },
+    {
+      "file": "website-process/src/router/index.js",
+      "status": "modified",
+      "before_sha256": "b8d156693fb76deb5e3021ce41340ebcfd72802c2382d281dc6040e233b9ce32",
+      "after_sha256": "686c8e938869a887b349a9bfb43558816c4ab375ab7d28e188b0cba7230e83e6"
+    },
+    {
+      "file": "website-process/vercel.json",
+      "status": "modified",
+      "before_sha256": "e6baaac833883c764f4a293c497ac52d0bdf2c4ffe0e9765476cd2e7871eff58",
+      "after_sha256": "015f79737acec0224d3efd472a065892a010f4cbde8d2c8c2e10bd111970aa9c"
+    },
+    {
+      "file": "website-process/clipping.html",
+      "status": "modified",
+      "before_sha256": "a7b4a3816cb0512a01c00dc756d4dada1031731adfdb928af9ffd7634d4bbaca",
+      "after_sha256": "6e5b1c207cb3ea324381306674be0db182320df291b2c3d8e11c4546eada9db5"
+    },
+    {
+      "file": "website-process/affiliate.html",
+      "status": "modified",
+      "before_sha256": "efe2df9ca4a780594e542abc9d02456a873f55c07db774b2a7d3feccf4c0d233",
+      "after_sha256": "6e5b1c207cb3ea324381306674be0db182320df291b2c3d8e11c4546eada9db5"
+    },
+    {
+      "file": "website/index.html",
+      "status": "modified",
+      "before_sha256": "a556d6efb488a157ffa3914c7032e03f222b3180bec91f6145a1f100cb3c0702",
+      "after_sha256": "3efcbe0041c9fa391557b56e4ae7aba52a8e73c4397ffb7fab2d17dfdf4275dc"
+    },
+    {
+      "file": "website/vercel.json",
+      "status": "modified",
+      "before_sha256": "0a0819b4fe98a1e4f4877fb081c14e34ff4e62262fffe487e706e8cad431e658",
+      "after_sha256": "e9e231eab280b7817a445ddd1d3da2cd6bbb4524ba3bf783f6492ca51ab3cac6"
+    },
+    {
+      "file": "website/affiliate.html",
+      "status": "modified",
+      "before_sha256": "067a85467ccd7fc4b31543c11dec44c6958a2e1b9934b95926d37ff715354a99",
+      "after_sha256": "6e5b1c207cb3ea324381306674be0db182320df291b2c3d8e11c4546eada9db5"
+    },
+    {
+      "file": "website/clipping.html",
+      "status": "modified",
+      "before_sha256": "0cd89283e9e8d9464211b0e9842afd31ac251950b65a1e17a1dc0ba0574c7e89",
+      "after_sha256": "6e5b1c207cb3ea324381306674be0db182320df291b2c3d8e11c4546eada9db5"
+    },
+    {
+      "file": "website/src/main.js",
+      "status": "modified",
+      "before_sha256": "ab86b3d6296895b9d630b16f77acb79922cdd8342c8cc700b116b7ef0bbae35b",
+      "after_sha256": "77f9f7a73c236db6c8cc1920f1dc01b19493c4a2c145e1a1efb28a303af61b1e"
+    },
+    {
+      "file": "website/src/features/acquisition-link.js",
+      "status": "modified",
+      "before_sha256": "6dcc29fa2b6e27291819cefd36d3f936551f86b0028cd3bbfe653ba130e1f87f",
+      "after_sha256": "0fa24f0148cf6c79cfbaa7ceeeb6df12ea1b2e0c5c3c45230cd5f91460b66026"
+    },
+    {
+      "file": "website/src/features/firebase-client.js",
+      "status": "removed",
+      "before_sha256": "979fb632696c09e489b73de0e064739e8dba2b7f49c44b2fa52f08478c761f1a"
+    },
+    {
+      "file": "website/src/affiliate/affiliate-dashboard-cache.js",
+      "status": "removed",
+      "before_sha256": "826e0cd105e8f672b4ff214ecf769a3181a2612577aeee2d6432b72fa529e35f"
+    },
+    {
+      "file": "website/src/affiliate/method-catalog.js",
+      "status": "removed",
+      "before_sha256": "c272ae3194b374adb2cabaabaa70de79c6ca4b49ac51053c3060deaf305a088b"
+    },
+    {
+      "file": "website/src/affiliate/affiliate-process-assets.css",
+      "status": "removed",
+      "before_sha256": "464d970d7cec9405c48fbe18a4bee4f89349f7315069ffff35708421c017570b"
+    },
+    {
+      "file": "website/src/affiliate/affiliate-onboarding-state.js",
+      "status": "removed",
+      "before_sha256": "8a6cc0633eb22f6ecfb4e024948c52c8deb3ae90aef528701b8110a98a52831e"
+    },
+    {
+      "file": "website/src/affiliate/action-feedback.jsx",
+      "status": "removed",
+      "before_sha256": "a298e1baec1a1e3ae68838331866819cd2b51d6682e43318d2fe96e09322399e"
+    },
+    {
+      "file": "website/src/affiliate/AffiliateUs.jsx",
+      "status": "removed",
+      "before_sha256": "17652ac58c16ca5b58067559d7a2b8d61f055acf2b30c6d4c7aa91a888c123ad"
+    },
+    {
+      "file": "website/src/affiliate/AffiliateApp.jsx",
+      "status": "removed",
+      "before_sha256": "629b21d6e8631602cbf56c5ede002e3b86bbdbea8cbecac66074be58adf61f02"
+    },
+    {
+      "file": "website/src/affiliate/AffiliateFormats.jsx",
+      "status": "removed",
+      "before_sha256": "7b4a70761b3c7ddde22b94d6b4541fc752bd024d9a755fb565622999d0d61a2f"
+    },
+    {
+      "file": "website/src/affiliate/affiliate-automation.css",
+      "status": "removed",
+      "before_sha256": "6b4caeed80b687cfd55ad493a33178c9bd3ac28c5df096edfb9097042c6a7c58"
+    },
+    {
+      "file": "website/src/affiliate/AffiliateOnboarding.jsx",
+      "status": "removed",
+      "before_sha256": "da9f32bcb7992cf9b402a26ccf4c43a3b36f918964a67f6744e42815d9ce1c28"
+    },
+    {
+      "file": "website/src/affiliate/affiliate-formats.css",
+      "status": "removed",
+      "before_sha256": "c3fde94644a16572f7ca1e721197fcb28766162b4735979536964ac4b3656b72"
+    },
+    {
+      "file": "website/src/affiliate/affiliate-email-link.js",
+      "status": "removed",
+      "before_sha256": "0e435fb1a791cdc4534c47c16f39049ebcdb8daff6279549702dd80d79589723"
+    },
+    {
+      "file": "website/src/affiliate/AffiliateLanding.jsx",
+      "status": "removed",
+      "before_sha256": "2d9d5a4023417badabf2c2f23711a77dd13ea4af0d5f43d61491be03ab2503d2"
+    },
+    {
+      "file": "website/src/affiliate/affiliate-useful.css",
+      "status": "removed",
+      "before_sha256": "b05863d4582f705d3ddc6a9f6c5ded46950fb5478bdcad30286cb8a1ac263a9f"
+    },
+    {
+      "file": "website/src/affiliate/affiliate-landing.css",
+      "status": "removed",
+      "before_sha256": "93f85913e86702a629fe84829a403bca7f7665f146096f03b9ac9100329d5495"
+    },
+    {
+      "file": "website/src/affiliate/AffiliateAutomation.jsx",
+      "status": "removed",
+      "before_sha256": "ee5cf892bb3635a6ba86cdfa2ba5b4b10ada9ad01c8c0c92bf1c911fb094381c"
+    },
+    {
+      "file": "website/src/affiliate/affiliate-onboarding.css",
+      "status": "removed",
+      "before_sha256": "eb36745951b6976b90790ce8a99915f33a739e4de5194b9a3cf13622008f7c23"
+    },
+    {
+      "file": "website/src/affiliate/affiliate-method.css",
+      "status": "removed",
+      "before_sha256": "434859060675805450ff78e21e15057c3a51931adbd16de39423ae8eb75b5f9d"
+    },
+    {
+      "file": "website/src/affiliate/affiliate-us.css",
+      "status": "removed",
+      "before_sha256": "5d2982eec24f21d837c50034b87c07ba33f11a0df38bae694f1ac19034164c21"
+    },
+    {
+      "file": "website/src/affiliate/AffiliateIcons.jsx",
+      "status": "removed",
+      "before_sha256": "25b60757e40ddd11ac4921e2cc53319a63b7eaaed11c2a38677144b8d6990bef"
+    },
+    {
+      "file": "website/src/affiliate/affiliate.css",
+      "status": "removed",
+      "before_sha256": "8aaa192dfb27c2b8fc11522a4f8ca5d817f037230131884606396f24cb906dd3"
+    },
+    {
+      "file": "website/src/affiliate/view-bonus.css",
+      "status": "removed",
+      "before_sha256": "e64bb66736746c357b660384325f1d53e29f6b733168717537319270bd0ce062"
+    },
+    {
+      "file": "website/src/affiliate/affiliate-utils.js",
+      "status": "removed",
+      "before_sha256": "f09b0d6d02b98399251181c58a7848cf597b1869962258d870744322ef18f692"
+    },
+    {
+      "file": "website/src/affiliate/mount.jsx",
+      "status": "removed",
+      "before_sha256": "74f8c6799a548ad57b7cf9a72859cb1d206082379c67f00a9da66b7aa542c70d"
+    },
+    {
+      "file": "website/src/affiliate/AffiliateUseful.jsx",
+      "status": "removed",
+      "before_sha256": "0310fbd1b3727dddafafed7480acd34899918e2e596d4f33bac373695ebf0f66"
+    },
+    {
+      "file": "website/src/affiliate/affiliate-clippers.css",
+      "status": "removed",
+      "before_sha256": "ec6a341c8494bf06382cd8bd696dcfe9d9f3c218277bf77d2288a28fca25cb76"
+    },
+    {
+      "file": "website/src/affiliate/ViewBonusBoard.jsx",
+      "status": "removed",
+      "before_sha256": "d1812ab8f9b361089c179bf517f0f51727c3b0a033a1990cac8acab0ab5357b3"
+    },
+    {
+      "file": "website/src/affiliate/us-guide.js",
+      "status": "removed",
+      "before_sha256": "32aaaf0bbc0942620a4589ae574324069aa7a2c3fdb5d47c3dc5d0f9047d609d"
+    },
+    {
+      "file": "website/src/affiliate/affiliate-slideshow-lab.css",
+      "status": "removed",
+      "before_sha256": "479fcac1285d5c3dd16772868184a956694db2a9dc5a8637d0163c25242d4ce7"
+    },
+    {
+      "file": "website/src/affiliate/AffiliateSlideshowLab.jsx",
+      "status": "removed",
+      "before_sha256": "39baac0b910c67889637a39e9862db4c147e91bffc73306ef9105967c986decf"
+    },
+    {
+      "file": "website/src/affiliate/ClipperBonusLadder.jsx",
+      "status": "removed",
+      "before_sha256": "16b7f0c56955d4cce7453402d0cca45149942c249bfb2c8e40799a58284c9cc1"
+    },
+    {
+      "file": "website/src/affiliate/AffiliateClippers.jsx",
+      "status": "removed",
+      "before_sha256": "733609666877db9e51f1a74f433531a11918e2326b187292f4df2c14f0d4e5c7"
+    },
+    {
+      "file": "website/src/affiliate/affiliate-local-preview.js",
+      "status": "removed",
+      "before_sha256": "5870cfbc8864e61f4d3b3eeec23a77ce002725d1f6a43c74bd7ef7d28da455b3"
+    },
+    {
+      "file": "website/src/affiliate/AffiliateMethod.jsx",
+      "status": "removed",
+      "before_sha256": "8f66d5a5922220321bec57d77c4b87e7c2df7a1763c6d72f268458e2aa11023a"
+    },
+    {
+      "file": "website/src/affiliate/format-library.js",
+      "status": "removed",
+      "before_sha256": "8af816a5f703022945327f7392408f0b7251082c84a95c56bc78e89b6d753b69"
+    },
+    {
+      "file": "website/src/affiliate/AffiliateProcessAssets.jsx",
+      "status": "removed",
+      "before_sha256": "31706dc9f42e14d3804a59d843570b2f861f498cd978f9fbc2c7f9df099b60d0"
+    },
+    {
+      "file": "website/src/pages/affiliate.js",
+      "status": "removed",
+      "before_sha256": "c726ace21885650360706d889f52d5a7840653deb6fdd3adde998e7dbcb99319"
+    },
+    {
+      "file": "website/src/router/index.js",
+      "status": "modified",
+      "before_sha256": "b8d156693fb76deb5e3021ce41340ebcfd72802c2382d281dc6040e233b9ce32",
+      "after_sha256": "686c8e938869a887b349a9bfb43558816c4ab375ab7d28e188b0cba7230e83e6"
+    }
+  ],
+  "status": "installed_on_device_awaiting_ui_validation"
+}

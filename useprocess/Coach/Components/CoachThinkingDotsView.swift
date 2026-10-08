@@ -2,10 +2,13 @@ import SwiftUI
 
 /// Indicateur « en cours » — 3 points animés, léger.
 struct CoachThinkingDotsView: View {
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.processTabIsActive) private var isTabActive
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.appTheme) private var theme
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 0.45)) { timeline in
+        TimelineView(.animation(minimumInterval: 0.45, paused: !isTabActive || scenePhase != .active || reduceMotion)) { timeline in
             let phase = timeline.date.timeIntervalSinceReferenceDate
             HStack(spacing: 6) {
                 ForEach(0..<3, id: \.self) { index in
@@ -22,7 +25,7 @@ struct CoachThinkingDotsView: View {
     }
 
     private var dotColor: Color {
-        colorScheme == .dark ? .white.opacity(0.85) : .black.opacity(0.75)
+        theme.isDark ? .white.opacity(0.85) : .black.opacity(0.75)
     }
 
     private func dotOpacity(index: Int, phase: TimeInterval) -> Double {

@@ -1,0 +1,16 @@
+{
+  "recordedAt": "2026-10-08T11:33:40.403649+00:00",
+  "status": "compiled-only",
+  "executed": false,
+  "reason": "Shared Android emulator remains reserved by active V2 chat; Robolectric has no native PdfDocument implementation.",
+  "sourceSha256": {
+    "app/src/androidTest/java/com/process/android/PdfExportDeviceTest.kt": "5cf08caf5d5f62c1c25f7cdd7a11049305815b6e447180aedfbf3ac22a78a7b0",
+    "app/src/main/java/com/process/android/TenKPdfMaker.kt": "1cf5f360938732d7180005750342e81b02ff558a0fe7e87e3ddaed5e72d89beb",
+    "app/src/main/java/com/process/android/TenKPdfSample.kt": "d247d3c616ec27895f3b4ad64936fd317ddff43d70c084206c520bade2f98087"
+  },
+  "buildLog": "parity/logs/process-current-instrumentation-build.log",
+  "testApk": {
+    "path": "/Users/amine/Developer/useprocess/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+    "sha256": "4a057451f605dd3ffb696bd36bf7fe7d38a25577cb3a689d6bd187987918da27"
+  }
+}

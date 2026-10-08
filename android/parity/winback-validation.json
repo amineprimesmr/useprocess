@@ -1,0 +1,40 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/useprocess/Sport/Paywall/PaywallSpinWinbackView.swift": "d8d2e2712672d7e4417db5e63bf7314569705e4316789206a57a1ee3ec8068e9"
+  },
+  "nativeFiles": [
+    "ProcessBillingModel.kt",
+    "ProcessBillingActions.kt",
+    "ProcessSurfacePalette.kt",
+    "ProcessLifetimeOffer.kt",
+    "ProcessWinbackOffer.kt"
+  ],
+  "contract": "Prices must come from live Play ProductDetails through ProcessBillingOffer; missing product/account disables purchase. Supply purchase/restore operations which verify backend/Play entitlement before returning VerifiedAccess(accountKey). Pending,cancelled,failed and empty-restoration outcomes never unlock access. Only the current account may complete; duplicate operations and duplicate completion are blocked. Host owns Play Billing,acknowledgement,receipt verification,identity migration and live product loading. No Play products or purchase/restore backend are connected in the development gallery. The current Swift source replaced its historical spin wheel with an explicit lifetime purchase page. Both presentation modes use the same page. Android preserves that removal; no invented draw,winnings,discount or timer. Original catalog slug remains for compatibility. Native buttons/fonts and physical comparison remain unverified.",
+  "billingIntegration": "not connected; preview only",
+  "recordedAt": "2026-10-08T08:29:37.638350+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 148,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 48
+  },
+  "visual": "host render inspected; iOS comparison unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "ProcessBillingModel.kt": "84b8b390a79d02a59f8a0bbeab2df84acfff729eed853eaa3a79519aa33ecfa9",
+    "ProcessBillingActions.kt": "f2e981dc3136db218be27d16900315801f91c4e4d7f6dc8328fc54c6860b9e84",
+    "ProcessSurfacePalette.kt": "2ca843a0a032026cb1f6fc2f8811f765f3c632a4ac372e23742e2d4c259bd32a",
+    "ProcessLifetimeOffer.kt": "f9606add311a5cac52d3f22d0faeea38f97a00a0633df75b214a4d48a408e244",
+    "ProcessWinbackOffer.kt": "28306a8f4be408b0b8d66d547571593e03d6f7e5a1af33f7077fe719fd657786"
+  },
+  "remaining": [
+    "Real Play products,Billing purchase/acknowledgement and verified backend entitlement integration",
+    "Original SFsymbols,glass,typography,springs and paired physical/iOS validation; specific differences recorded in integration contract"
+  ]
+}

@@ -8,11 +8,14 @@ enum CoachEdgeBlobMode: Equatable {
 }
 
 struct CoachEdgeBlobOverlay: View {
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.processTabIsActive) private var isTabActive
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.appTheme) private var theme
     var mode: CoachEdgeBlobMode
 
     private var blobFill: Color {
-        colorScheme == .dark ? .white : .black
+        theme.isDark ? .white : .black
     }
 
     /// Ralentit légèrement toute la séquence thinking (~6 %).
@@ -28,14 +31,14 @@ struct CoachEdgeBlobOverlay: View {
     private let canvasHeight: CGFloat = 96
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !isTabActive || scenePhase != .active || reduceMotion)) { timeline in
             let frame = resolveFrame(at: timeline.date)
             blobLayer(for: frame, fill: blobFill)
         }
         .frame(width: canvasWidth, height: canvasHeight, alignment: .leading)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-        .id(colorScheme)
+        .id(theme.isDark)
     }
 
     @ViewBuilder

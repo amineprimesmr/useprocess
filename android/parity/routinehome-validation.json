@@ -1,0 +1,59 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/useprocess/Health/Views/ProcessRoutineHomeView.swift": "b32763b882cdeadc5ab8d3a3299ef978f74a209e23dd6222e4c14ef1de64942a",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/Plan/PlanLymphCircuitStepsBar.swift": "8658259492ecb1e0d99cd40c19db9e08783ab8cb1ea9cfbb2361a6358568b53c",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/Plan/PlanFaceDaySection.swift": "6fb90cc722977af79a744f1c2a2816bbfd8f5f7ae70aa596ff52b6be46d540eb",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/Plan/PlanTrainingDaySection.swift": "1544094828e1cf87713c64c2c649bb7e398fa974c2d3ce314ebc0b578f53b29e",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/Plan/PlanProtocolCarousel.swift": "089b9fe635c7188c14d9f76e2e3a5c9c9ad9bd86daa5c88449c09add92706f5f",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/Plan/PlanRoutineHoldValidate.swift": "b4ec29311d2698e23d9427feebcf72d721c24fbbef3dd2eb7dac50d33de9ff72",
+    "/Users/amine/Developer/useprocess/useprocess/WelcomePlan/FaceMorningRoutineCatalog.swift": "012f12a9b87439974233b87b28e7cfc9817db84535cd8fd4710d1db469d79a88",
+    "/Users/amine/Developer/useprocess/useprocess/DesignSystem/ProcessPageTitleHeader.swift": "5b3faec30eaf6ce091d02cb6bf498470d6a57158b66ecaa02dc00fe71ce83ef4",
+    "/Users/amine/Developer/useprocess/useprocess/Health/Components/PlanHomeSectionDesign.swift": "199c13f7499fb410108f083fdc94bd205cc7b43087547a485534abca0c40bf01",
+    "/Users/amine/Developer/useprocess/useprocess/Sport/Core/HapticManager.swift": "a27ec89ef2adc865494ef955e654e944aae4751cfcaeb1092751e23648454a2f"
+  },
+  "sourceBasis": "Current live Process",
+  "contract": "Supply nullable RoutineHomeDay with account/plan/day contextKey, real step count and host callbacks for details, sessions, posture and validation. Missing plan shows source empty state; unknown steps remain unavailable, never fabricated zero. Original6routine records/stills,156x272cards,22radius,12gap,view-start snapping,36section spacing,10000step/52dpbar are retained. Short taps below350ms open details;5second holds emit a context-scoped completion intent once per gesture. Scrolling/cancel/disposal/lifecycle pause stop the hold; day-key replacement cancels old state.40ms native haptic pulses,0.97press scale and120ms/550ms completion burst follow source structure; native amplitude differs. Host must idempotently validate account and editable day before persisting and update completedStepIds. No durable completion or camera/body tracking is simulated. Posture items come from host plan,limited4; detail/session execution and plan/date selection remain host work. Original precise relief/glass/3D press/GPU scroll/zoom/spring and physical/iOS comparison remain incomplete.",
+  "nativeFiles": [
+    "RoutineHomeModel.kt",
+    "ProcessRoutineHome.kt",
+    "ProcessRoutineHoldCard.kt",
+    "ProcessRoutineCatalog.kt",
+    "ProcessSurfacePalette.kt",
+    "ProcessMotionPreferences.kt"
+  ],
+  "resources": {
+    "routinebrasciel.png": "bb9e3902ad7775a69628f3453a283b479098ab67be5af08743d64c9809d6b922",
+    "routinebrascroix.png": "d66476d7d29a909e741c2f02525fee5fdd550fb25e72ef60a5fd3db749656f46",
+    "routinegenoux.jpg": "191a478cc3d78e2e0179ec6527a9448ca6779023b6f8e5b3da9f09ac26ba83f0",
+    "routinepointes.png": "e43f3598fe489f731578317237475291e5eab176bd6e5011345d66ab465206d7",
+    "routinesauts.jpg": "6d682ba81e2d7901c31a20f96b0cf7bc2ded437ddce0073976f4c9bd7f38e950",
+    "routinethorax.png": "7bc6ff5273da09690fce33709790e873b8d30553911c0235da2824e863520780"
+  },
+  "recordedAt": "2026-10-08T07:44:10.599626+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 137,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 32
+  },
+  "visual": "host render inspected; iOS comparison unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "RoutineHomeModel.kt": "c08412e93e73f4f11ff7761049ddcc4fa98115e3d7d02a93179c4250154e5e45",
+    "ProcessRoutineHome.kt": "38d30d77331375b51d983bd99841ea51d62a6edfb8cd960f13a0038952717aa9",
+    "ProcessRoutineHoldCard.kt": "51f4cecc88de210d572ceae9fdcfb0a8d989a5a572c370abc90ac173091dbf47",
+    "ProcessRoutineCatalog.kt": "beee30e9dce72bfff593acb342c0c1feb0896a08853b7f108f2084d18adc2c99",
+    "ProcessSurfacePalette.kt": "2ca843a0a032026cb1f6fc2f8811f765f3c632a4ac372e23742e2d4c259bd32a",
+    "ProcessMotionPreferences.kt": "5f62c13457fb14a4db1e32f7095cc3b929bdde001e26bd4e1de74fd35a943462"
+  },
+  "remaining": [
+    "Camera/body-tracked sessions,plan/date selection,posture generation and completion persistence require host integration",
+    "Native haptic amplitude,card relief/3Dpress,exact spring/zoom/scroll and physical comparison"
+  ]
+}

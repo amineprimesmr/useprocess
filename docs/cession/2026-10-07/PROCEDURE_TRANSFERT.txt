@@ -1,0 +1,39 @@
+ACTUALISATION — 7 OCTOBRE 2026
+Le propriétaire n’a pas son iPhone. Les corrections analytics ajoutées après le build 39 nécessitent le build 40, une nouvelle archive et des tests physiques. Le build 39 reste une preuve antérieure, pas la livraison finale. Aucun upload ni soumission Apple.
+PostHog audité : 2 clés personnelles All access, 4 apps OAuth, essai annuel A/B actif ; forfait gratuit affiché. AppsFlyer console reportée à la demande du propriétaire.
+373 comptes Auth exportés en privé ; intégrité vérifiée, restauration complète non testée. Compte Stripe clôturé selon confirmation propriétaire.
+
+PROCESS DEBLOAT — PROCÉDURE DE TRANSFERT PRÉPARÉE, NON EXÉCUTÉE
+Préconditions : acquéreur identifié, accord finalisé, destinations connues, version validée par propriétaire et utilisateurs sur appareils physiques, factures/droits rapprochés. Aucun compte personnel à transmettre.
+
+AVANT ACQUÉREUR
+1. Geler une release après tests réels ; conserver archive/IPA, hash, code source correspondant et preuves.
+2. Sauvegardes séparées Auth/Firestore/Storage ; contrôles d’intégrité effectués séparément d’un exercice réel de restauration.
+3. Préparer matrice des services/secrets, configuration et coûts ; aucun secret dans le ZIP. Liste dans REGISTRE_PASSATION.json.
+4. Examiner les médias et droits ; factures/licences/autorisation pour chaque actif avant livraison.
+
+AVEC ACQUÉREUR
+5. Recueillir Account Holder Apple, Team ID, comptes Google/Vercel/Hostinger/RevenueCat/analytics et facturation. Activer ses 2FA/recovery sans jamais communiquer le mot de passe personnel vendeur.
+6. Inviter de façon ciblée, transfert officiel du seul projet concerné et validation de l’accès. Ne pas retirer le vendeur avant continuité.
+7. Préparer Apple : critères éligibilité, contrats, version hors états bloquants, TestFlight et Xcode Cloud selon exigences ; secret partagé spécifique app pour abonnements. Préparer migration Sign in with Apple par utilisateur et vérifier association Service ID/groupes.
+8. Préparer RevenueCat : projet Process conservé, credentials Apple acquéreur, webhook Referral/Affiliate et tests des droits existants. Transfert Apple et propriété RevenueCat sont deux opérations distinctes.
+9. Initier/faire accepter transfert App Store Connect par Account Holders ; ni compte vendeur ni clé multi-apps cédée. Respecter les délais de migration Apple et de l’identité ; vérifier notifications, nouveaux profils de provisioning et accès utilisateurs.
+10. Conserver Firebase projet/UIDs ; facturation acheteur, nouveaux membres propriétaires ; remplacer secrets fournisseur un par un. Google runtime/service agents restent.
+11. Transférer Vercel process-debloat vers team acheteur et domaine processdebloat.com ; vérifier DNS/SSL/AASA incluant Team ID destinataire. useprocess.xyz reste vendeur ; ne pas casser anciennes versions installées.
+12. Hostinger : le déplacement du domaine ne transfère pas automatiquement email/hébergement. Prévoir email séparément, export/migration boîte si nécessaire, aliases/MX/SPF/DKIM/DMARC et test délivrabilité. Les nouveaux domaines peuvent subir des délais de déplacement interne/registrar : vérifier au moment de vente.
+13. PostHog/AppsFlyer/TikTok : propriété exacte et droits provider à contrôler ; préserver historique/flags, attribution et callback OAuth avant rotation.
+14. Vérifier toutes recettes chez acheteur : connexion existante et nouvelle, premium/restore, coach, liens email/support, referral, portail, backend et supervision.
+15. Rotation coordonnée : créer nouvelle clé dédiée → configurer service → déployer uniquement fonction concernée → test → révoquer ancien credential fournisseur → désactiver ancienne version secret si plus utilisée. Jamais révocation en bloc.
+16. Retirer accès vendeur, recovery/2FA, cartes/facturation, permissions GitHub/Vercel/Google, accès domaine/mail/social/provider. Vérifier consoles ET anciennes clés. Signer la recette et documenter fin d’assistance.
+
+POINTS À NE PAS CONFONDRE
+36 fonctions et 17 secrets inventoriés ; 9 secrets non montés dans les fonctions actuelles ne sont pas certifiés inutilisés.
+Le compte Stripe Process Debloat a été clôturé par le vendeur selon sa confirmation. Il hébergeait un abonnement ScrollShow en annulation prévue le 9 octobre : documenter l’incidence séparément sans modifier ScrollShow.
+Le rapport asc readiness valide la version enregistrée dans Apple, pas le build 39 local. Aucune soumission ni upload effectué dans cette préparation.
+
+SOURCES OFFICIELLES CONSULTÉES LE 7/10/2026
+Apple : https://developer.apple.com/help/app-store-connect/transfer-an-app/overview-of-app-transfer/
+Critères Apple : https://developer.apple.com/help/app-store-connect/transfer-an-app/app-transfer-criteria/
+RevenueCat : https://www.revenuecat.com/docs/projects/overview
+Hostinger domaine : https://support.hostinger.com/en/articles/4068055-how-to-move-a-domain-between-hostinger-accounts
+Hostinger délais/services : https://www.hostinger.com/support/1583284-how-to-move-services-from-one-hostinger-account-to-another/

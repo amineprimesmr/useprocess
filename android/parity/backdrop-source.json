@@ -1,0 +1,39 @@
+{
+  "slug": "design-source-119243063-400838571",
+  "sourceSha256": {
+    "content/source-projects/design-source-119243063-400838571/BackdropCarousel/BackdropCarousel/ContentView.swift": "efb9440001c97fec7a491f2e3fb2b621dd1aa7445965108ef689fceebc9f907d",
+    "content/source-projects/design-source-119243063-400838571/BackdropCarousel/BackdropCarousel/View/Home.swift": "b0f6721109444020e25ed2701ab86c7a99ba8b811db9d8cefe95b9e0969fdd58",
+    "content/source-projects/design-source-119243063-400838571/BackdropCarousel/BackdropCarousel/Model/ImageModel.swift": "747da68c0d7498893a714226ee265502732e28e841c468d8326c91fcf07b4dcc",
+    "content/source-projects/design-source-119243063-400838571/BackdropCarousel/BackdropCarousel/BackdropCarouselApp.swift": "2c5ca738bfda011b7059226811da82db66fcf3cf9e611d7164d03a43274039d1"
+  },
+  "originalImages": [
+    {
+      "archive": "AmbientCarousel.zip",
+      "member": "BackdropCarousel/BackdropCarousel/Assets.xcassets/Images/Pic 1.imageset/Pic 1.jpg",
+      "name": "backdrop_1.jpg",
+      "sha256": "e891f9ec43e0d2c7d3542a32488dad618860b4424709bd815b33e4e67f2910a0",
+      "bytes": 35034
+    },
+    {
+      "archive": "AmbientCarousel.zip",
+      "member": "BackdropCarousel/BackdropCarousel/Assets.xcassets/Images/Pic 2.imageset/Pic 2.jpg",
+      "name": "backdrop_2.jpg",
+      "sha256": "c501b48631f6a58dd7a49beb018da890dcf18dd1e7a09962cd978f540be86dc2",
+      "bytes": 11521
+    },
+    {
+      "archive": "AmbientCarousel.zip",
+      "member": "BackdropCarousel/BackdropCarousel/Assets.xcassets/Images/Pic 3.imageset/Pic 3.jpg",
+      "name": "backdrop_3.jpg",
+      "sha256": "330671ebe37f384ce285dc01c4d37f0ea8a50366655a27ff9e41d6541fad37a2",
+      "bytes": 54796
+    },
+    {
+      "archive": "AmbientCarousel.zip",
+      "member": "BackdropCarousel/BackdropCarousel/Assets.xcassets/Images/Pic 4.imageset/Pic 4.jpg",
+      "name": "backdrop_4.jpg",
+      "sha256": "b547fc16b255f2ccc2c55147e446182563fe6ff104edb3717094a6f9fac1e582",
+      "bytes": 70398
+    }
+  ]
+}

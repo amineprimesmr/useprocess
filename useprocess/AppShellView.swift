@@ -13,6 +13,15 @@ struct AppShellView: View {
     /// Armé après le cold start — évite de monter le deferral Home pendant le 1er frame Review.
     @State private var isHomeSwipeArmed = false
 
+    // Local capture of the real app for the design catalog. Never present in device/release builds.
+    private var isCatalogCapture: Bool {
+        #if DEBUG && targetEnvironment(simulator)
+        ProcessInfo.processInfo.arguments.contains("--catalog-hydration-capture")
+        #else
+        false
+        #endif
+    }
+
     private var theme: AppTheme {
         AppTheme(appearance: session.appearance, colorScheme: colorScheme)
     }
@@ -53,7 +62,9 @@ struct AppShellView: View {
         ZStack {
             ProcessScreenBackground()
 
-            if session.hasCompletedOnboarding {
+            if isCatalogCapture {
+                MainAppView()
+            } else if session.hasCompletedOnboarding {
                 if !subscriptionService.hasResolvedInitialSubscriptionStatus {
                     ProgressView()
                         .task {
@@ -91,6 +102,7 @@ struct AppShellView: View {
                 ProcessMarketingNotificationService.shared.handleAppLeftForeground()
                 ProcessHydrationTimerMonitor.shared.handleSceneWillBackground()
             case .active:
+                ProcessWindowAppearance.apply(session.appearance)
                 ProcessMarketingNotificationService.shared.handleAppBecameActive()
                 ProcessAudioSession.configureForMixingWithOthersIfIdle()
                 ProcessHomeScreenQuickActions.syncForCurrentUser()
@@ -135,6 +147,7 @@ struct AppShellView: View {
             }
         }
         .task {
+            ProcessWindowAppearance.apply(session.appearance)
             ProcessHydrationTimerMonitor.shared.bootstrapAtLaunch()
             // Garantit Firebase prêt avant tout usage Auth tardif.
             FirebaseBootstrap.configure()
@@ -144,13 +157,11 @@ struct AppShellView: View {
             AppSession.shared.reloadForCurrentUser()
             ProcessAnalytics.configure()
             ProcessAppsFlyer.shared.configure()
-            ProcessCrispSupport.configure()
             ProcessAnalytics.trackAppOpened(hasCompletedOnboarding: session.hasCompletedOnboarding)
             if let uid = AuthUser.current?.uid {
                 ProcessAnalytics.identify(userId: uid)
             }
             ProcessAnalytics.syncFirstNameFromProfile()
-            ProcessCrispSupport.syncUser()
             // Laisse le 1er frame se peindre avant d’armer le double-swipe Home.
             try? await Task.sleep(for: .milliseconds(900))
             guard !Task.isCancelled else { return }

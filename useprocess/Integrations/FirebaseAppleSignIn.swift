@@ -226,7 +226,25 @@ extension AppleSignInManager: ASAuthorizationControllerDelegate {
 
                 switch activeIntent {
                 case .signIn:
-                    let result = try await Auth.auth().signIn(with: firebaseCredential)
+                    let guest = Auth.auth().currentUser
+                    let linkingPaidGuest = guest?.isAnonymous == true && SubscriptionService.shared.subscriptionStatus.isActive
+                    let result: AuthDataResult
+                    if let guest, guest.isAnonymous {
+                        do {
+                            result = try await guest.link(with: firebaseCredential)
+                        } catch {
+                            let nsError = error as NSError
+                            guard nsError.code == AuthErrorCode.credentialAlreadyInUse.rawValue,
+                                  let updated = nsError.userInfo[AuthErrorUserInfoUpdatedCredentialKey] as? AuthCredential else { throw error }
+                            result = try await Auth.auth().signIn(with: updated)
+                        }
+                    } else {
+                        result = try await Auth.auth().signIn(with: firebaseCredential)
+                    }
+                    await SubscriptionService.shared.syncAppUserID(result.user.uid)
+                    if linkingPaidGuest {
+                        await SubscriptionService.shared.syncPurchasesAfterAccountLink()
+                    }
                     if let fullName = credential.fullName {
                         let formatter = PersonNameComponentsFormatter()
                         let displayName = formatter.string(from: fullName).trimmingCharacters(in: .whitespacesAndNewlines)

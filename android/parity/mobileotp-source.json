@@ -1,0 +1,27 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-137463292-522870817/MobileOTPLogin/MobileOTPLogin/ContentView.swift": "0cdc290277252ab8cabfe553a271e275e33684b50d6308b005faec8197fe45a2",
+    "content/source-projects/design-source-137463292-522870817/MobileOTPLogin/MobileOTPLogin/OTPKit/OTPKit.swift": "3791a58cb20c2fea9c1d958cf2e0be6f746820e3d7c7a615bc7537291c78b911",
+    "content/source-projects/design-source-137463292-522870817/MobileOTPLogin/MobileOTPLogin/OTPKit/LoginView.swift": "19fac5ce535ceb573a48df6e25159232e9e471d403932d5dc5306fe584b0f0e0",
+    "content/source-projects/design-source-137463292-522870817/MobileOTPLogin/MobileOTPLogin/MobileOTPLoginApp.swift": "79360be4b0aa64cad9f76664c061904c9186553444591abbbd44926032f7ac8b",
+    "content/source-projects/design-source-137463292-522870817/MobileOTPLogin/MobileOTPLogin/OTPKit/OTPVerificationView.swift": "58ddb490dd76a6e428c6ec8eef3b12e12210f1b43b792057ff2acc71d7c3df4c",
+    "content/source-projects/design-source-137463292-522870817/MobileOTPLogin/MobileOTPLogin/OTPKit/Helpers/CountryPicker.swift": "e807f7a08c23bb293ca05e6707301f97abeb869072e29beb67230290eb2bcb14",
+    "content/source-projects/design-source-137463292-522870817/MobileOTPLogin/MobileOTPLogin/OTPKit/Helpers/VerificationField.swift": "e5ff469d6fe497b8cd64846de8f6dcb57954ee7a911813263b8824232d1feb1c"
+  },
+  "mirrorMatchesInventory": true,
+  "countryResource": {
+    "archive": "/Users/amine/Downloads/MobileOTPLogin.zip",
+    "member": "MobileOTPLogin/MobileOTPLogin/OTPKit/Helpers/CountryCodes.json",
+    "sha256": "3755ff250e026f7b69730bc0a5a603b8cf5f3c93df5becd42ebd8b350b411440",
+    "count": 242,
+    "declaredInInventory": false
+  },
+  "nativeFiles": [
+    "MobileOtpModel.kt",
+    "MobileOtpCountries.kt",
+    "TenKMobileOtpLogin.kt",
+    "VerificationCodeModel.kt",
+    "TenKVerificationCode.kt"
+  ],
+  "contract": "Provide contextKey,a genuine MobileOtpService,host resolvePhone,onVerified and real legal navigation callbacks. Null service disables Get OTP. Host resolves national numbers with current numbering metadata; E164 syntax is additionally bounded to15digits. Recovered original242country JSON remains byte-identical and ordered; it contains archival numbering errors and is not used as authoritative validation. Loading waits original2seconds,cycles symbols every1.2seconds only while STARTED,then displays six50dp code cells with2dp borders. Send/verify timeout60seconds; stale context/code results cannot complete UI; verified phone must match request,callback fires once. No local logged-in Boolean grants access. Source Apple placeholder legal links are removed. A real SMS/Firebase provider,consent,app verification and current numbering metadata are host integrations; no SMS is sent by the gallery. Native bottom sheet,material icons and fade transitions approximate SF symbols/blurReplace; autofocus,keyboard/window geometry,motion and physical/iOS parity remain unverified."
+}

@@ -1,0 +1,74 @@
+{
+  "recordedAt": "2026-10-08T00:08:44.727552+00:00",
+  "status": "development-preview",
+  "apkSha256": "dbd1a686b6061e197394955e89a46cac0d121a2a48af200dba41787a1a871942",
+  "build": "passed",
+  "unitTests": {
+    "tests": 26,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 10
+  },
+  "runtime": {
+    "device": "emulator-5580",
+    "passed": [
+      "catalog opens in French and English",
+      "French query filters foods and tags",
+      "favorite survives process restart",
+      "at-home preference survives process restart",
+      "grocery added from detail survives process restart",
+      "detail preferences expose checked checkbox semantics"
+    ],
+    "notTested": [
+      "dark theme",
+      "physical Android device",
+      "iPhone screenshot comparison",
+      "motion parity",
+      "signed-in backend persistence"
+    ]
+  },
+  "evidence": {
+    "food-page.png": "4b7ee3cfc46e9c240853bfce2260ef813394b60d769c59474f6c2a7d27c3860a",
+    "food-english.png": "b492115125fa1e1d8d3153bf4acea8645f2b9ff3ebed5a0eb984cdac0b1c4e0d",
+    "food-detail-english.png": "269c83e8cbf075315a45b146664f40d4ceed3b7606f2b3ad3af55fe548955100",
+    "food-tastes-relaunch.png": "e828fee429c8937d3d92778072a49275257b584b1d0617887b85377b86c8766c",
+    "food-search-ui.xml": "f909333a6972e63953e1f49b369336c07679fed7498cb218d505720da7ca57a7",
+    "food-tastes-relaunch-ui.xml": "6aa8dc62030c5e19045d97eb29c81c422e9713e5900155e6a3525e9ef3524549",
+    "food-groceries-relaunch-ui.xml": "3669a9ef7940db39bafd12db2c72aed82ecb9abfe3992b06279ab9c0e1bd8dce",
+    "food-detail-accessibility-ui.xml": "0bc160c0d1ab66635be01b1568171d24812adc306451fb981854b635c4bfcc35"
+  },
+  "sourceSha256": {
+    "app/src/main/AndroidManifest.xml": "02ef9de1f7675e2cee90179fe9fda1df4ad43181847d917fba3506eea5a981c4",
+    "app/src/main/java/com/process/android/DebloatFood.kt": "684e99f5593e6e2e5d5f09e25eb0d3051c9de0b68d635240240e4ed3d28e6625",
+    "app/src/main/java/com/process/android/DebloatFoods.kt": "2b7b92e2cb116bf3874755e6a9cd49e3ac278fdd52c3323d399c000b62f632fa",
+    "app/src/main/java/com/process/android/FoodCatalogModel.kt": "6a442b1104df90b01cf0d7a39bc1c836bd7397280d48e721c4a158c3e706daa9",
+    "app/src/main/java/com/process/android/FoodCopy.kt": "76639be3dc7a0de9cccc13ac30c6c5f11deaecc07560c0ddc458d0b7df79e20a",
+    "app/src/main/java/com/process/android/FoodPreferenceStore.kt": "a1d65a9e63c208c301f99f23d911e3b443728196159ad43285c93470fefd787a",
+    "app/src/main/java/com/process/android/FoodPresentation.kt": "7f9013bf66d4eb73b0ffbc3ac0faadb0be875083542aad8b26c73675df76652c",
+    "app/src/main/java/com/process/android/FoodShoppingList.kt": "67c005720089bd6c40dd8d48f9d2f1b070c9c26bedfa5f4cdd28f256cc0d3299",
+    "app/src/main/java/com/process/android/FoodShoppingListPage.kt": "56f66507c78cd5c904e4539a1fc9b271304160674790c520fc171705ccbb1cc5",
+    "app/src/main/java/com/process/android/HydrationGeometry.kt": "a517156c6512c9b319e91d75cac9f439442e79ec3de53ff7bef69443e9c73555",
+    "app/src/main/java/com/process/android/MainActivity.kt": "497ceffebbd7059afe91b029ad5661c7f5676231e0f02f29389bfb0eb61807e2",
+    "app/src/main/java/com/process/android/OnboardingStep.kt": "f042fc9a5efcf4b118ca9ac9a74f4d3097b38034945855b0b3d6afe85f009e1f",
+    "app/src/main/java/com/process/android/ProcessFoodCatalogPage.kt": "adec7bba80f16392dfcff1a7d4e184f9fc44ae00af8b4362f90e576318e58290",
+    "app/src/main/java/com/process/android/ProcessGenderSelection.kt": "a99a2ea04e61eff2d3bed0371202f1b1ac4e1791c3cb72eaae5da682fa84062c",
+    "app/src/main/java/com/process/android/ProcessHydrationCard.kt": "6b729f2cc065815689ef715929d6e27f94f086c2588a0b982ee69fa481ce94be",
+    "app/src/main/java/com/tenkdesign/android/TenKTypewriter.kt": "9e3d7b8c1f00ec6d867bc51e02567d391cfea7bb69b371ebb8becb626d1b0cd3",
+    "app/src/main/java/com/tenkdesign/android/TypewriterTiming.kt": "3ba44715f29864210c74e8b918cbb8e19c763cd848c125fef1204901f8a5b24d",
+    "app/src/main/res/drawable-nodpi/femme.png": "2916331666c0a376ec609868cf33ada6d0f3d58e25c5d64ac1d30559b6bc655b",
+    "app/src/main/res/drawable-nodpi/homme.png": "ee93668f55b50930c9752d3d7d8dbbec618df613a4a991af0c8882b151a4fba9",
+    "app/src/main/res/drawable-nodpi/hydration_bottle.png": "1cbdf3fbc96ca21c99cfef35c679287c5e05dce85288ca221f05ead7959b1a00",
+    "app/src/main/res/drawable-nodpi/hydration_drop.png": "08c4ddecbeac359e969a04da7ab122c66a1ca193b94239fd248ad089b795bee7",
+    "app/src/main/res/raw/pouring_water.mp3": "3ebc9f90a3ccf759d1a525dad412bd5e70448d77dc0d56771b24db2ea2b4bb59",
+    "app/src/main/res/values/styles.xml": "2897686263cb15060705977a0b0220d3367cb3f1303e4d0d90a493d5d175b6a2",
+    "app/src/test/java/com/process/android/DebloatFoodTest.kt": "fb47c8848340a3b9644602d79b06ab229a174625e684413d70b34eb88c16bfec",
+    "app/src/test/java/com/process/android/FoodCatalogModelTest.kt": "033dcaafd01ebc639789c41adb199efc19824240ae6e1f99fb858c0ea61e3dab",
+    "app/src/test/java/com/process/android/HydrationGeometryTest.kt": "f389541aa11ab0eb55637f604fdffe595da8a95bc95827daf073c08466933b01",
+    "app/src/test/java/com/process/android/OnboardingStepTest.kt": "5ccbb26a249595ba492d424c227b92a08305ca44a1c7b8cf8c10b2fc6cd37343",
+    "app/src/test/java/com/tenkdesign/android/TypewriterTimingTest.kt": "ac00d6f57763050233c3e02fdf21b3865ff2d14af8ae2f65bdcc0251b772dae8"
+  }
+}

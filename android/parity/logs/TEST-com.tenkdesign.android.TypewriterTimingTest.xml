@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tenkdesign.android.TypewriterTimingTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-08T00:06:58.278Z" hostname="Mac.lan" time="0.001">
+  <properties/>
+  <testcase name="noPauseInterpolatesContinuouslyAndHalfPauseHolds" classname="com.tenkdesign.android.TypewriterTimingTest" time="0.0"/>
+  <testcase name="emptyContentAndTimesAtBoundaryRemainFinite" classname="com.tenkdesign.android.TypewriterTimingTest" time="0.0"/>
+  <testcase name="blinkingIndicatorMatchesQuarterSecondRampsAndHold" classname="com.tenkdesign.android.TypewriterTimingTest" time="0.0"/>
+  <testcase name="fullPauseNeverDividesByZeroAndStepsAtCharacterBoundaries" classname="com.tenkdesign.android.TypewriterTimingTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,221 @@
+{
+  "appId": "6753808143",
+  "versionId": "5f9b5a51-12cb-43cd-a862-4e2d0db5a970",
+  "versionString": "1.13",
+  "platform": "IOS",
+  "summary": {
+    "errors": 0,
+    "warnings": 9,
+    "infos": 1,
+    "blocking": 0
+  },
+  "remediation": {
+    "totalActionable": 10,
+    "steps": [
+      {
+        "order": 1,
+        "blocking": false,
+        "severity": "warning",
+        "checkId": "subscriptions.images.recommended",
+        "message": "Subscription \"annual\" (com.useprocess.annual) has no subscription promotional image",
+        "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+        "field": "images",
+        "resourceType": "subscription",
+        "resourceId": "6755552317"
+      },
+      {
+        "order": 2,
+        "blocking": false,
+        "severity": "warning",
+        "checkId": "subscriptions.images.recommended",
+        "message": "Subscription \"Premium Yearly 34.99\" (com.useprocess.annual3499) has no subscription promotional image",
+        "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+        "field": "images",
+        "resourceType": "subscription",
+        "resourceId": "6798429081"
+      },
+      {
+        "order": 3,
+        "blocking": false,
+        "severity": "warning",
+        "checkId": "subscriptions.images.recommended",
+        "message": "Subscription \"Premium Yearly 34.99 Trial\" (com.useprocess.annual3499trial) has no subscription promotional image",
+        "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+        "field": "images",
+        "resourceType": "subscription",
+        "resourceId": "6803672506"
+      },
+      {
+        "order": 4,
+        "blocking": false,
+        "severity": "warning",
+        "checkId": "subscriptions.images.recommended",
+        "message": "Subscription \"Premium Yearly 49.99\" (com.useprocess.annual4999) has no subscription promotional image",
+        "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+        "field": "images",
+        "resourceType": "subscription",
+        "resourceId": "6798429517"
+      },
+      {
+        "order": 5,
+        "blocking": false,
+        "severity": "warning",
+        "checkId": "subscriptions.images.recommended",
+        "message": "Subscription \"mensuel\" (com.useprocess.monthly) has no subscription promotional image",
+        "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+        "field": "images",
+        "resourceType": "subscription",
+        "resourceId": "6780629820"
+      },
+      {
+        "order": 6,
+        "blocking": false,
+        "severity": "warning",
+        "checkId": "subscriptions.images.recommended",
+        "message": "Subscription \"Premium Monthly 9.99\" (com.useprocess.monthly999) has no subscription promotional image",
+        "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+        "field": "images",
+        "resourceType": "subscription",
+        "resourceId": "6798429065"
+      },
+      {
+        "order": 7,
+        "blocking": false,
+        "severity": "warning",
+        "checkId": "subscriptions.images.recommended",
+        "message": "Subscription \"Premium Weekly 8.99\" (com.useprocess.weekly899) has no subscription promotional image",
+        "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+        "field": "images",
+        "resourceType": "subscription",
+        "resourceId": "6798428127"
+      },
+      {
+        "order": 8,
+        "blocking": false,
+        "severity": "warning",
+        "checkId": "metadata.keywords.overlap_name",
+        "message": "keyword field repeats one or more localized app-name terms",
+        "remediation": "Avoid repeating app-name terms inside the keyword field",
+        "locale": "en-US",
+        "field": "keywords",
+        "resourceType": "appStoreVersionLocalization",
+        "resourceId": "0c9c9ef1-f17e-4f8e-970b-86be221d6a10"
+      },
+      {
+        "order": 9,
+        "blocking": false,
+        "severity": "warning",
+        "checkId": "metadata.keywords.overlap_subtitle",
+        "message": "keyword field repeats one or more localized subtitle terms",
+        "remediation": "Avoid repeating subtitle terms inside the keyword field",
+        "locale": "en-US",
+        "field": "keywords",
+        "resourceType": "appStoreVersionLocalization",
+        "resourceId": "0c9c9ef1-f17e-4f8e-970b-86be221d6a10"
+      },
+      {
+        "order": 10,
+        "blocking": false,
+        "severity": "info",
+        "checkId": "privacy.publish_state.unverified",
+        "message": "App Privacy publish state is not verifiable via the public App Store Connect API and may still block submission",
+        "remediation": "Confirm App Privacy is published in App Store Connect before submitting: https://appstoreconnect.apple.com/apps/6753808143/appPrivacy",
+        "resourceType": "appPrivacy",
+        "resourceId": "6753808143"
+      }
+    ]
+  },
+  "checks": [
+    {
+      "id": "subscriptions.images.recommended",
+      "severity": "warning",
+      "message": "Subscription \"annual\" (com.useprocess.annual) has no subscription promotional image",
+      "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+      "field": "images",
+      "resourceType": "subscription",
+      "resourceId": "6755552317"
+    },
+    {
+      "id": "subscriptions.images.recommended",
+      "severity": "warning",
+      "message": "Subscription \"Premium Yearly 34.99\" (com.useprocess.annual3499) has no subscription promotional image",
+      "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+      "field": "images",
+      "resourceType": "subscription",
+      "resourceId": "6798429081"
+    },
+    {
+      "id": "subscriptions.images.recommended",
+      "severity": "warning",
+      "message": "Subscription \"Premium Yearly 34.99 Trial\" (com.useprocess.annual3499trial) has no subscription promotional image",
+      "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+      "field": "images",
+      "resourceType": "subscription",
+      "resourceId": "6803672506"
+    },
+    {
+      "id": "subscriptions.images.recommended",
+      "severity": "warning",
+      "message": "Subscription \"Premium Yearly 49.99\" (com.useprocess.annual4999) has no subscription promotional image",
+      "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+      "field": "images",
+      "resourceType": "subscription",
+      "resourceId": "6798429517"
+    },
+    {
+      "id": "subscriptions.images.recommended",
+      "severity": "warning",
+      "message": "Subscription \"mensuel\" (com.useprocess.monthly) has no subscription promotional image",
+      "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+      "field": "images",
+      "resourceType": "subscription",
+      "resourceId": "6780629820"
+    },
+    {
+      "id": "subscriptions.images.recommended",
+      "severity": "warning",
+      "message": "Subscription \"Premium Monthly 9.99\" (com.useprocess.monthly999) has no subscription promotional image",
+      "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+      "field": "images",
+      "resourceType": "subscription",
+      "resourceId": "6798429065"
+    },
+    {
+      "id": "subscriptions.images.recommended",
+      "severity": "warning",
+      "message": "Subscription \"Premium Weekly 8.99\" (com.useprocess.weekly899) has no subscription promotional image",
+      "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+      "field": "images",
+      "resourceType": "subscription",
+      "resourceId": "6798428127"
+    },
+    {
+      "id": "metadata.keywords.overlap_name",
+      "severity": "warning",
+      "message": "keyword field repeats one or more localized app-name terms",
+      "remediation": "Avoid repeating app-name terms inside the keyword field",
+      "locale": "en-US",
+      "field": "keywords",
+      "resourceType": "appStoreVersionLocalization",
+      "resourceId": "0c9c9ef1-f17e-4f8e-970b-86be221d6a10"
+    },
+    {
+      "id": "metadata.keywords.overlap_subtitle",
+      "severity": "warning",
+      "message": "keyword field repeats one or more localized subtitle terms",
+      "remediation": "Avoid repeating subtitle terms inside the keyword field",
+      "locale": "en-US",
+      "field": "keywords",
+      "resourceType": "appStoreVersionLocalization",
+      "resourceId": "0c9c9ef1-f17e-4f8e-970b-86be221d6a10"
+    },
+    {
+      "id": "privacy.publish_state.unverified",
+      "severity": "info",
+      "message": "App Privacy publish state is not verifiable via the public App Store Connect API and may still block submission",
+      "remediation": "Confirm App Privacy is published in App Store Connect before submitting: https://appstoreconnect.apple.com/apps/6753808143/appPrivacy",
+      "resourceType": "appPrivacy",
+      "resourceId": "6753808143"
+    }
+  ]
+}

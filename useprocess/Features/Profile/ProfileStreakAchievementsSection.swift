@@ -39,8 +39,8 @@ struct ProfileStreakAchievementsSection: View {
     var onClose: (() -> Void)?
 
     @Environment(\.appTheme) private var theme
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
+    private var colorScheme: ColorScheme { theme.isDark ? .dark : .light }
     @Bindable private var streakStore = ProcessStreakStore.shared
     @Bindable private var planStore = WelcomePlanStore.shared
     @Bindable private var planProgressStore = ProcessPlanProgressStore.shared
@@ -366,7 +366,7 @@ struct ProfileStreakAchievementsSection: View {
         Group {
             if day.isFuture {
                 Circle()
-                    .strokeBorder(Color.white.opacity(theme.isDark ? 0.18 : 0.22), lineWidth: 1.5)
+                    .strokeBorder(theme.primaryText.opacity(theme.isDark ? 0.18 : 0.22), lineWidth: 1.5)
                     .frame(width: 28, height: 28)
             } else if day.isComplete {
                 ZStack {
@@ -566,16 +566,19 @@ private struct ProfileStreakHeroGlow: View {
 struct ProfileMiniFlameIcon: View {
     var size: CGFloat = ProcessAppHeaderControlMetrics.size
 
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.appTheme) private var theme
+    private var colorScheme: ColorScheme { theme.isDark ? .dark : .light }
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.processTabIsActive) private var isTabActive
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let sourceHeight: CGFloat = 248
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: scenePhase != .active)) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !isTabActive || scenePhase != .active || reduceMotion)) { timeline in
             ProfileAnimatedFlameView(
                 time: timeline.date.timeIntervalSinceReferenceDate,
-                isActive: scenePhase == .active,
+                isActive: isTabActive && scenePhase == .active && !reduceMotion,
                 colorScheme: colorScheme
             )
         }

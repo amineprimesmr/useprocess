@@ -1,0 +1,799 @@
+[
+  {
+    "id": "affiliateAdminApprove",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 30,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": [
+      "AFFILIATE_ADMIN_SECRET"
+    ]
+  },
+  {
+    "id": "affiliateAdminCreate",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 30,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": [
+      "AFFILIATE_ADMIN_SECRET"
+    ]
+  },
+  {
+    "id": "affiliateAdminListPending",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 30,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": [
+      "AFFILIATE_ADMIN_SECRET"
+    ]
+  },
+  {
+    "id": "affiliateAdminMarkPaid",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 60,
+    "availableMemoryMb": 512,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": [
+      "AFFILIATE_ADMIN_SECRET"
+    ]
+  },
+  {
+    "id": "affiliateAdminProvisionAuth",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 30,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": [
+      "AFFILIATE_ADMIN_SECRET"
+    ]
+  },
+  {
+    "id": "affiliateApply",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 30,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "affiliateDashboard",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 20,
+    "availableMemoryMb": 512,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 40,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_REGION",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "affiliateLeaderboard",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 20,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_REGION",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "affiliateLibrary",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 30,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "affiliateMcp",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 60,
+    "availableMemoryMb": 512,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "affiliatePortalHandoff",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 15,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_REGION",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "affiliatePortalHandoffRedeem",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 15,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_REGION",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "affiliatePreparePasswordless",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 20,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "affiliateRegister",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 30,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_REGION",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "affiliateReleaseHeldCommissions",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 120,
+    "availableMemoryMb": 512,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": [
+      "AFFILIATE_ADMIN_SECRET"
+    ]
+  },
+  {
+    "id": "affiliateResolveCode",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 20,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "affiliateRevenueCatWebhook",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 60,
+    "availableMemoryMb": 512,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_REGION",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": [
+      "REVENUECAT_WEBHOOK_SECRET"
+    ]
+  },
+  {
+    "id": "affiliateSendLoginEmail",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 30,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_REGION",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": [
+      "PROCESS_SMTP_PASSWORD"
+    ]
+  },
+  {
+    "id": "affiliateSetLoginEmail",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 20,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_REGION",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "affiliateSyncProfile",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 30,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "affiliateTikTokOAuthCallback",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 30,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "affiliateTikTokStudio",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 30,
+    "availableMemoryMb": 512,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "affiliateTrackFunnel",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 15,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_REGION",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "affiliateTrackLink",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 15,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "affiliateValidateLoginEmail",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 15,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_REGION",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "appleBillingNotifications",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 60,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 10,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "appleSignInRegisterToken",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 60,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": [
+      "APPLE_SIGNIN_KEY_ID",
+      "APPLE_SIGNIN_PRIVATE_KEY",
+      "APPLE_SIGNIN_TEAM_ID"
+    ]
+  },
+  {
+    "id": "coachComplete",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 120,
+    "availableMemoryMb": 512,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": [
+      "ANTHROPIC_API_KEY",
+      "REVENUECAT_SECRET_API_KEY"
+    ]
+  },
+  {
+    "id": "coachStream",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 180,
+    "availableMemoryMb": 512,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": [
+      "ANTHROPIC_API_KEY",
+      "REVENUECAT_SECRET_API_KEY"
+    ]
+  },
+  {
+    "id": "deleteUserAccount",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 180,
+    "availableMemoryMb": 1024,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": [
+      "APPLE_SIGNIN_KEY_ID",
+      "APPLE_SIGNIN_PRIVATE_KEY",
+      "APPLE_SIGNIN_TEAM_ID"
+    ]
+  },
+  {
+    "id": "referralConfirmSubscription",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 60,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": [
+      "REVENUECAT_SECRET_API_KEY"
+    ]
+  },
+  {
+    "id": "referralDashboard",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 45,
+    "availableMemoryMb": 512,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "referralRegister",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 30,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "referralRevenueCatWebhook",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 60,
+    "availableMemoryMb": 512,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_REGION",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": [
+      "REVENUECAT_SECRET_API_KEY",
+      "REVENUECAT_WEBHOOK_SECRET"
+    ]
+  },
+  {
+    "id": "referralSyncProgram",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 30,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 20,
+    "concurrency": 80,
+    "state": "ACTIVE",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  },
+  {
+    "id": "supportSendMessage",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "platform": "gcfv2",
+    "timeoutSeconds": 60,
+    "availableMemoryMb": 256,
+    "cpu": 1,
+    "maxInstances": 2,
+    "concurrency": 80,
+    "state": "DEPLOYING",
+    "environment_variable_names": [
+      "EVENTARC_CLOUD_EVENT_SOURCE",
+      "FIREBASE_CONFIG",
+      "FUNCTION_SIGNATURE_TYPE",
+      "FUNCTION_TARGET",
+      "GCLOUD_PROJECT",
+      "LOG_EXECUTION_ID"
+    ],
+    "secret_names": []
+  }
+]

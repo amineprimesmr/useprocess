@@ -1,0 +1,28 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-125233548-442282278/StaggeredAnimation/StaggeredAnimation/ContentView.swift": "5372abae6987cf472aa72acbb25e7d3f14f66f356d4dbe7dfd10d8dd0eaca10a",
+    "content/source-projects/design-source-125233548-442282278/StaggeredAnimation/StaggeredAnimation/Helpers/StaggeredView.swift": "793cf423e60fee967a921719f9b904d756fcccccb8524299c2aa87f33a8d00e2",
+    "content/source-projects/design-source-125233548-442282278/StaggeredAnimation/StaggeredAnimation/StaggeredAnimationApp.swift": "b5dd934e9ffa511ccbe874833162291aea316a64017aa99576f13ddf5029cf3a"
+  },
+  "mirrorMatchesInventory": true,
+  "build": "passed",
+  "visual": "host-only; original comparison unverified",
+  "motion": "unverified",
+  "recordedAt": "2026-10-08T03:01:09.738686+00:00",
+  "unitTests": {
+    "tests": 122,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 31
+  },
+  "hostUi": "parity/host-render/validation.json",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "TenKStaggeredGallery.kt": "098b1c0d3675615612fe02c65eac4e47da1f9f82d99d42406870f500701bd341",
+    "TenKStaggeredColumn.kt": "c7e00af315508fca8f2f5359dac21a41846103d20d58066d00b3ad767f6ccdf9"
+  }
+}

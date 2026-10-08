@@ -1,0 +1,86 @@
+{
+  "status": "passed",
+  "files": 1175,
+  "errors": [],
+  "private_configs_excluded": [
+    {
+      "path": "firebase/functions/src/appleSignIn.ts",
+      "reason": "private credential pattern; review required"
+    },
+    {
+      "path": "firebase/functions/test/appleSignIn.test.js",
+      "reason": "private credential pattern; review required"
+    },
+    {
+      "path": "useprocess/.DS_Store",
+      "reason": "generated or personal state"
+    },
+    {
+      "path": "useprocess/Analytics/PostHogSecrets.plist",
+      "reason": "live client configuration supplied separately"
+    },
+    {
+      "path": "useprocess/Assets.xcassets/.DS_Store",
+      "reason": "generated or personal state"
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Brand/.DS_Store",
+      "reason": "generated or personal state"
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Onboarding/.DS_Store",
+      "reason": "generated or personal state"
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/.DS_Store",
+      "reason": "generated or personal state"
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Cardio/.DS_Store",
+      "reason": "generated or personal state"
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Cardio/cardio_tapis_incline.imageset/.DS_Store",
+      "reason": "generated or personal state"
+    },
+    {
+      "path": "useprocess/Assets.xcassets/Training/Routines/.DS_Store",
+      "reason": "generated or personal state"
+    },
+    {
+      "path": "useprocess/Assets.xcassets/UI/.DS_Store",
+      "reason": "generated or personal state"
+    },
+    {
+      "path": "useprocess/GoogleService-Info.plist",
+      "reason": "live client configuration supplied separately"
+    },
+    {
+      "path": "useprocess/Resources/LymphCircuit/.gitkeep",
+      "reason": "hidden local state"
+    },
+    {
+      "path": "useprocess/Subscriptions/RevenueCatSecrets.plist",
+      "reason": "live client configuration supplied separately"
+    },
+    {
+      "path": "useprocess.xcodeproj/project.xcworkspace/xcuserdata/amine.xcuserdatad/UserInterfaceState.xcuserstate",
+      "reason": "generated or personal state"
+    },
+    {
+      "path": "useprocess.xcodeproj/xcuserdata/amine.xcuserdatad/xcschemes/xcschememanagement.plist",
+      "reason": "generated or personal state"
+    }
+  ],
+  "account_client_key_transformed": [
+    {
+      "path": "useprocess/Analytics/AppsFlyerConfiguration.swift",
+      "reason": "account-scoped AppsFlyer client key replaced in snapshot only"
+    }
+  ],
+  "media_rights_pending": 311,
+  "archive_sha256": "1d0de6179b37e052c8bdc7b53f4f52c1ca71c32697fd364f3aa49abc21c42d1a",
+  "restore_exercised": false,
+  "physical_app_test": false,
+  "approved_for_delivery": false
+}

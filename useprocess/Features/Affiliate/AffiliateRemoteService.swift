@@ -9,14 +9,14 @@ enum AffiliateRemoteError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notAuthenticated:
-            return AppCopy.tSync("Connecte-toi pour utiliser le programme clipper.", en: "Sign in to use the clipper program.")
+            return AppCopy.tSync("Connecte-toi pour utiliser le parrainage.", en: "Sign in to use the referral program.")
         case .missingBaseURL:
-            return AppCopy.tSync("Service clipper indisponible.", en: "Clipper service unavailable.")
+            return AppCopy.tSync("Service parrainage indisponible.", en: "Referral service unavailable.")
         case .httpError(let code, _):
             if code == 404 {
-                return AppCopy.tSync("Code clipper introuvable.", en: "Clipper code not found.")
+                return AppCopy.tSync("Code parrainage introuvable.", en: "Referral code not found.")
             }
-            return AppCopy.tSync("Erreur clipper (\(code)).", en: "Clipper error (\(code)).")
+            return AppCopy.tSync("Erreur parrainage (\(code)).", en: "Referral error (\(code)).")
         }
     }
 }
@@ -47,71 +47,6 @@ enum AffiliateRemoteService {
             affiliateId: json["affiliateId"] as? String,
             referrerUserId: json["referrerUserId"] as? String
         )
-    }
-
-    static func registerAffiliate(code: String, displayName: String?) async throws {
-        _ = try await post(
-            function: "affiliateRegister",
-            payload: [
-                "affiliateCode": code,
-                "displayName": displayName ?? ""
-            ]
-        )
-    }
-
-    static func trackFunnel(event: String, code: String) async {
-        let normalized = ProcessAffiliateLink.normalizeCode(code)
-        guard !normalized.isEmpty else { return }
-
-        let payload: [String: Any] = [
-            "event": event,
-            "code": normalized,
-            "visitorId": AffiliateService.visitorId
-        ]
-        let requiresAuth = Auth.auth().currentUser != nil
-        do {
-            _ = try await post(
-                function: "affiliateTrackFunnel",
-                payload: payload,
-                requiresAuth: requiresAuth
-            )
-        } catch {
-            if requiresAuth {
-                _ = try? await post(
-                    function: "affiliateTrackFunnel",
-                    payload: payload,
-                    requiresAuth: false
-                )
-            }
-        }
-    }
-
-    static func apply(displayName: String, code: String?, email: String?) async throws {
-        var payload: [String: Any] = ["displayName": displayName]
-        if let code, !code.isEmpty { payload["code"] = code }
-        if let email, !email.isEmpty { payload["email"] = email }
-        _ = try await post(function: "affiliateApply", payload: payload)
-    }
-
-    static func syncProfile(displayName: String? = nil) async throws {
-        var payload: [String: Any] = [:]
-        if let displayName, !displayName.isEmpty { payload["displayName"] = displayName }
-        _ = try await post(function: "affiliateSyncProfile", payload: payload)
-    }
-
-    /// One-time code that opens the web portal already signed in — no email round-trip.
-    static func portalHandoff() async throws -> String {
-        let json = try await post(function: "affiliatePortalHandoff", payload: [:])
-        guard let code = json["code"] as? String, !code.isEmpty else {
-            throw AffiliateRemoteError.httpError(-1, "missing_handoff_code")
-        }
-        return code
-    }
-
-    static func dashboard() async throws -> ProcessAffiliateDashboardResponse {
-        let json = try await post(function: "affiliateDashboard", payload: [:])
-        let data = try JSONSerialization.data(withJSONObject: json)
-        return try JSONDecoder().decode(ProcessAffiliateDashboardResponse.self, from: data)
     }
 
     private static func post(

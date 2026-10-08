@@ -1,0 +1,13 @@
+{
+  "recordedAt": "2026-10-08T02:12:53.426937+00:00",
+  "packageName": "com.process.android",
+  "request": "Google Play reviews.list (read-only)",
+  "tokenAvailable": true,
+  "httpStatus": 403,
+  "accessible": false,
+  "status": "PERMISSION_DENIED",
+  "reasons": [],
+  "detailReasons": [
+    "ACCESS_TOKEN_SCOPE_INSUFFICIENT"
+  ]
+}

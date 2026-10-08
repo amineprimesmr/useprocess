@@ -1,0 +1,16 @@
+VALIDATION DU 4 OCTOBRE 2026
+Retrait Crisp : SDK/no-op, config, widget et code API supprimés. Assistance email contact@useprocess.xyz.
+Webhooks supportCrispWebhook et supportCrispPoll supprimés. Aucun scheduler restant dans us-central1. supportSendMessage retourne HTTP 410 et email, aucun secret attaché, aucun stockage de nouveau message. Anciennes conversations conservées ; règles de refus d’accès à crispSessions maintenues pour protéger les données historiques. Secrets historiques dans Secret Manager non détruits, hors pack.
+40 tests backend passent. Predeploy TypeScript exécuté par Firebase. Site Vite compilé et déployé en production ; page support publiée avec contact@useprocess.xyz et sans chat.
+Build Debug iPhone 14 Pro Max uniquement, nice 15 / jobs 1, réussi. Installation et lancement consignés dans les logs locaux.
+Nouvelles chaînes support FR/EN et 5 langues additionnelles traduites. Audit global : 140 chaînes statiques, 20 templates et 372 chaînes web encore manquants (backlog du projet, pas une couverture complète).
+
+AVANT REMISE CONTRACTUELLE
+- Tester manuellement l’ouverture email support sur l’iPhone et les achats/restaurations sandbox.
+- Publier une mise à jour App Store pour distribuer le nouveau support ; la version publique existante peut afficher erreur 410 en tentant d’envoyer un ancien message.
+- Terminer accès/facturation AppsFlyer (session affiche identifiants invalides), factures annuelles Apple Developer et GitHub, attribution exacte de la clé Anthropic.
+- Libérer suffisamment d’espace puis copier les 10 médias statiques Storage (431.32 MiB). Ils sont seulement inventoriés ici.
+- Régler les réserves du PLAN_CESSION : consentements, traductions restantes, droits vidéos/témoignages, sauvegarde Auth/Firestore et essai de restauration, validation Release/App Review.
+- Acheteur non choisi : comptes, contrat, inventaire des droits, clés et transferts pas encore réalisés. Conserver les comptes personnels multiapps et transférer seulement les projets concernés.
+- WhatsApp/Telegram et emails personnels résiduels identifiés dans le plan : adapter aux coordonnées de l’acheteur au transfert, sans supprimer des accès utiles avant relais.
+Ce pack est une préparation interne vérifiée sur ce périmètre, pas une certification d’absence de tous bugs ni une exportation des données clients.

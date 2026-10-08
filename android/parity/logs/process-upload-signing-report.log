@@ -1,0 +1,34 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.13/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Task :app:signingReport
+Variant: debug
+Config: debug
+Store: /Users/amine/.android/debug.keystore
+Alias: AndroidDebugKey
+MD5: 3A:C8:1A:60:80:76:9A:25:E2:6F:54:28:47:8E:BD:03
+SHA1: 91:29:D1:1A:F1:64:44:BE:95:02:72:91:8E:9A:CA:5D:43:A4:29:83
+SHA-256: 4D:AA:D6:65:BD:41:A5:CC:D0:40:FD:FA:D1:5A:3A:36:93:A7:5A:21:01:D9:2D:95:DF:74:5F:3D:5A:8E:D6:B6
+Valid until: samedi 26 février 2056
+----------
+Variant: release
+Config: upload
+Store: /Users/amine/Library/Application Support/Process Android Signing/process-upload.p12
+Alias: process-upload
+MD5: 8E:2E:41:11:E4:9C:37:7D:E3:31:0D:B2:AB:7B:D7:AD
+SHA1: CA:E5:3F:28:83:13:46:A8:CE:A5:4D:8F:42:84:BD:01:7D:02:1E:B9
+SHA-256: B1:2A:9D:68:83:1F:31:0C:92:22:4D:72:0F:D1:8F:13:59:F1:72:3B:67:68:1A:62:B1:63:F0:26:40:85:3C:4E
+Valid until: lundi 23 février 2054
+----------
+Variant: debugAndroidTest
+Config: debug
+Store: /Users/amine/.android/debug.keystore
+Alias: AndroidDebugKey
+MD5: 3A:C8:1A:60:80:76:9A:25:E2:6F:54:28:47:8E:BD:03
+SHA1: 91:29:D1:1A:F1:64:44:BE:95:02:72:91:8E:9A:CA:5D:43:A4:29:83
+SHA-256: 4D:AA:D6:65:BD:41:A5:CC:D0:40:FD:FA:D1:5A:3A:36:93:A7:5A:21:01:D9:2D:95:DF:74:5F:3D:5A:8E:D6:B6
+Valid until: samedi 26 février 2056
+----------
+
+BUILD SUCCESSFUL in 6s
+1 actionable task: 1 executed

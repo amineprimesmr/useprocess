@@ -1,0 +1,36 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-122420875-422985983/AnimatedKeyPad/AnimatedKeyPad/ContentView.swift": "696ed2ab2eb5a183b818cbc8e2079a9464723289daf194eda87abcff4efa7480",
+    "content/source-projects/design-source-122420875-422985983/AnimatedKeyPad/AnimatedKeyPad/AnimatedTextView.swift": "792aa7d16768bb4967734d5835eabcce05fd53f886f5c15c68426fa14a28f076",
+    "content/source-projects/design-source-122420875-422985983/AnimatedKeyPad/AnimatedKeyPad/AnimatedKeyPadApp.swift": "6ea7768a5610066e501abe5f5ea354b616f3877d71f276a256b9dee696e71e95"
+  },
+  "mirrorMatchesInventory": true,
+  "build": "passed",
+  "visual": "host-only; iOS comparison unverified",
+  "motion": "unverified",
+  "recoveredAsset": {
+    "archive": "/Users/amine/Downloads/AnimatedKeyPad.zip",
+    "member": "AnimatedKeyPad/AnimatedKeyPad/Assets.xcassets/Pic.imageset/Pic.jpg",
+    "sha256": "10ce7947d14030fd5127048c9231c826ae31d7f3bfeda2a9cc40f9af6b4a4ea5",
+    "originalBytesPreserved": true,
+    "swiftSourcesMatchInventory": true
+  },
+  "recordedAt": "2026-10-08T03:13:17.753690+00:00",
+  "unitTests": {
+    "tests": 124,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 31
+  },
+  "hostUi": "11tests passed;12PNGs inspected; held delete and release cancellation verified on host",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "TenKAnimatedKeypadGallery.kt": "a826d355e524ce7d6602e1880d0ce84dfd83d381ad5f68bf2f02a0768c18806a",
+    "AnimatedKeypadModel.kt": "6f155116160e87c676a5a3d3c4cdb42e8483553389c0be85ac33f6f4b3ff8f4e",
+    "TenKAnimatedKeypad.kt": "71b1bc8be228ace555be72909580f2d34fecafdae221aa7a0720612d4485d150"
+  }
+}

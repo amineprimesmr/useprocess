@@ -19,7 +19,7 @@ struct OnboardingPostPaymentThankYouView: View {
     @State private var errorMessage: String?
 
     private var needsAppleSignIn: Bool {
-        AppConfiguration.firebaseConfigured && AuthUser.current == nil
+        AppConfiguration.firebaseConfigured && (AuthUser.current == nil || AuthUser.isAnonymous)
     }
 
     private var appleButtonBackground: Color {
@@ -137,9 +137,6 @@ struct OnboardingPostPaymentThankYouView: View {
                 } else {
                     FaceIDContinueButton {
                         HapticManager.shared.impact(.medium)
-                        if needsAppleSignIn {
-                            ProcessAnalytics.trackAppleSignInSkipped(source: "onboarding_post_payment")
-                        }
                         onComplete()
                     }
                 }
@@ -177,6 +174,9 @@ struct OnboardingPostPaymentThankYouView: View {
             HapticManager.shared.notification(.success)
             isSigningIn = false
             onComplete()
+        } catch AppleSignInError.cancelled {
+            // Fermeture volontaire de la feuille Apple : ni alerte ni échec dans le funnel.
+            isSigningIn = false
         } catch {
             ProcessAnalytics.trackAppleSignInFailed(
                 source: "onboarding_post_payment",

@@ -1,0 +1,33 @@
+---
+description: UGC video cost lock — one paid generation per clip, no tweak passes, no Atlas/Higgsfield credit burn
+alwaysApply: true
+---
+
+# UGC video — one paid job (locked 31 Aug 2026)
+
+Atlas / Higgsfield / Seedance credits are expensive. **One source clip = one paid generation.** Deliver that file. The user decides if a redo is worth it.
+
+## Allowed (free)
+
+Decompose locally (`ffprobe`, frames, shot list). Strip audio with ffmpeg. Upload refs + silent source **once**. One balance check. Poll until the job is terminal. Download, metadata-strip, open.
+
+## Paid job — exactly one
+
+- Recreate / generate → **one** Omni Edit (or one I2V), `count: 1`.
+- Pick resolution **once** from the balance check: native `1080p` if it fits; else `1080p-sr` or `720p`. Never 1080p-then-retry-cheaper after a **completed** video.
+- Prompt must already include: identity lock, no captions, no zoom, cuts, duration. Do not “fix it in a second pass”.
+- Reuse identity `media_id` / Atlas `download_url` already uploaded **this session**. Do not re-upload Prime refs for a second job.
+
+## Forbidden (burns money)
+
+- Second generation on a **completed** clip to strip captions, tweak zoom, swap clothes, “improve identity”, or A/B. Report leftovers; stop.
+- `count` 2–4, parallel variants, Higgsfield **and** Atlas for the same clip.
+- Probing expired Higgsfield MCP when the user asked Atlas (or the other way around).
+- `get_cost` spam. Motion-control + Omni on the same clip.
+- Starting a new paid job while one is still `processing`.
+
+## Retry (max 1, and only if there is no output file)
+
+The submit **failed** or the job died with no video: NSFW, TikTok-audio copyright, HTTP 402 hold. Fix that one cause (silence audio, cheaper res) and resubmit **once**. Then stop.
+
+A finished MP4 — even with leftover captions or a small identity miss — is **not** a retry. Ask before spending again.

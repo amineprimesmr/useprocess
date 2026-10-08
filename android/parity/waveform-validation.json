@@ -1,0 +1,39 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-124935335-440211495/AudioScrubber/AudioScrubber/ContentView.swift": "23d7ccc38539bd864ff3c8efdefe1a991367f3f9ec5427ac83102cee9e97967a",
+    "content/source-projects/design-source-124935335-440211495/AudioScrubber/AudioScrubber/AudioScrubberApp.swift": "938fd78864e3cf3be134c7bb69dc89274aa926158d2661cc98d908e726a586e0",
+    "content/source-projects/design-source-124935335-440211495/AudioScrubber/AudioScrubber/Helpers/WaveformScrubber.swift": "dbf4bb65b9b0b958a8b5329755f8bd9251c4ab2ac9c671edf710df681fb138dc"
+  },
+  "mirrorMatchesInventory": true,
+  "contract": "Supply first-channel FloatArray samples, controlled progress and onProgressChange; host owns playback. Original positive-peak downsampling,discarded remainder,2dp bar/2dp gap,1dp minimum and relative drag are preserved. This is not RMS/absolute amplitude. onGestureActive reports gesture end/cancel/disposal. Accessible progress action supported. loadLocalWaveform reads local RIFF WAV PCM16/24/32 or IEEE float32,first channel,64MiB maximum; malformed/compressed/extensible/RF64 require a host decoder. Duration uses precise fractional seconds; resizing recomputes bar count; custom spacing applies consistently, fixing original hardcoded shape geometry. Original archive has no Audio.wav; gallery explicitly labels its synthetic signal and can choose a local WAV. No playback/recording/network request. Original bouncy/numeric transitions,compressed decoding and physical/iOS comparison remain pending.",
+  "nativeFiles": [
+    "WaveformModel.kt",
+    "TenKWaveformScrubber.kt",
+    "TenKWaveformGallery.kt"
+  ],
+  "recordedAt": "2026-10-08T07:26:47.681347+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 132,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 31
+  },
+  "visual": "host render inspected; iOS comparison unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "WaveformModel.kt": "4297a2c60ea8a69bb720bc656430d660f9fa517e7dfa48ee97af7e6aa397642c",
+    "TenKWaveformScrubber.kt": "050f7d265773ea5c07dff60aa71e19a15f082ca7ff879d831fee8da85fee8fd2",
+    "TenKWaveformGallery.kt": "e9ce04d0a127c411926249f35c7dfa1c60a4dbff763273144e0dbfdb912190c5"
+  },
+  "remaining": [
+    "Compressed/extensible/RF64 decoder remains host supplied",
+    "Original Audio.wav absent; gallery labels synthetic sample",
+    "Swift bouncy/numeric transition and physical comparison"
+  ]
+}

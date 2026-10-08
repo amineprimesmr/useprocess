@@ -1,0 +1,25 @@
+/* Wallet : boutons seuls, sans carte (v2 + succès /fidelity) */
+
+.fidelity-v2-wallet-row {
+  padding: 0 1rem 0.85rem;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.fidelity-v2-main .fidelity-cta-pill--wallet-single {
+  outline: 2px solid rgba(34, 197, 94, 0.38);
+  outline-offset: 2px;
+}
+
+.fidelity-v2-main .fidelity-cta-pill--wallet-equal {
+  outline: none;
+  opacity: 1;
+}
+
+.fidelity-success .fidelity-btn--wallet-single {
+  box-shadow: 0 4px 22px rgba(0, 0, 0, 0.24);
+}
+
+.fidelity-success .fidelity-btn--wallet-equal {
+  opacity: 1;
+}

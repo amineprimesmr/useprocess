@@ -25,38 +25,11 @@ class OnboardingCoordinator {
             return
         }
 
-        if profileService.currentProfile == nil {
-            var newProfile = UnifiedUserProfile(
-                userId: userId,
-                firstName: OnboardingViewModel.isRealUserFirstName(viewModel.firstName) ? viewModel.firstName : "",
-                birthDate: Calendar.current.date(byAdding: .year, value: -viewModel.selectedAge, to: Date()) ?? Date(),
-                gender: viewModel.selectedGender ?? .male,
-                height: viewModel.selectedHeight,
-                weight: OnboardingViewModel.isPlausibleWeight(viewModel.selectedWeight) ? viewModel.selectedWeight : 0,
-                idealWeight: OnboardingViewModel.isPlausibleWeight(viewModel.idealWeightValue) ? viewModel.idealWeightValue : nil
-            )
-
-            newProfile.sports = Self.resolvedSports()
-            newProfile.onboardingDebloatDrivers = viewModel.onboardingDebloatDrivers.sorted {
-                $0.rawValue < $1.rawValue
-            }
-            applyPlanDefaults(to: &newProfile)
-
-            try await profileService.saveProfile(newProfile)
-
-            if let referralCode = Self.resolvedAcquisitionCode(from: viewModel), !referralCode.isEmpty {
-                await AcquisitionCodeService.registerIfPresent(
-                    code: referralCode,
-                    referredUserId: userId,
-                    displayName: newProfile.firstName.isEmpty ? newProfile.username : newProfile.firstName
-                )
-                ProcessReferralAttribution.clearPending()
-                ProcessAffiliateAttribution.clearPending()
-            }
-        } else {
-            guard var currentProfile = profileService.currentProfile else {
-                return
-            }
+        // Un seul chemin : profil existant ou profil vierge, puis on applique TOUTES les réponses.
+        // (L'ancienne branche « nouveau profil » perdait objectif, rythme, nutrition, sommeil, activité.)
+        do {
+            var currentProfile = profileService.currentProfile
+                ?? UnifiedUserProfile(userId: userId, firstName: "")
 
             if OnboardingViewModel.isRealUserFirstName(viewModel.firstName) {
                 currentProfile.firstName = viewModel.firstName
@@ -110,8 +83,7 @@ class OnboardingCoordinator {
 
             try await profileService.saveProfile(currentProfile)
 
-            if let referralCode = Self.resolvedAcquisitionCode(from: viewModel), !referralCode.isEmpty,
-               let userId = AuthUser.current?.uid {
+            if let referralCode = Self.resolvedAcquisitionCode(from: viewModel), !referralCode.isEmpty {
                 await AcquisitionCodeService.registerIfPresent(
                     code: referralCode,
                     referredUserId: userId,

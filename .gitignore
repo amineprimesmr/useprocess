@@ -48,3 +48,6 @@ content/tiktok/posted/**/*
 !content/tiktok/**/.gitkeep
 !content/tiktok/**/*.md
 !content/tiktok/**/*.example.json
+
+# Archives App Store générées par asc
+.asc/artifacts/

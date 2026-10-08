@@ -19,8 +19,6 @@ final class OnboardingProfileChatViewModel {
     var isGlowUpResultsPresented = false
     var currentQuestion: OnboardingProfileChatQuestion?
 
-    /// Après relance : rouvrir les résultats scan si déjà fait.
-    private(set) var pendingDedicatedResultsReopen: FaceScanResult?
     /// Après relance : chat terminé → enchaîner.
     private(set) var shouldAutoFinishAfterResume = false
 
@@ -42,13 +40,12 @@ final class OnboardingProfileChatViewModel {
     private var currentIndex = 0
     private var hasStarted = false
     private var didFinish = false
-    private var lastDedicatedScanResult: FaceScanResult?
+    /// Incrémenté à chaque retour arrière : invalide les tâches async lancées avant le rewind.
+    private var rewindGeneration = 0
 
     func bind(
         _ viewModel: OnboardingViewModel,
-        engine: MossConversationEngine,
-        healthManager _: HealthManager,
-        permissionsManager _: PermissionsManager
+        engine: MossConversationEngine
     ) {
         conversationEngine = engine
         onboardingViewModel = viewModel
@@ -114,7 +111,14 @@ final class OnboardingProfileChatViewModel {
         glowUpPendingQuestion = nil
         ProcessAnalytics.trackMossAction(page: .glowUpResults, action: "continued")
         setGlowUpResultsPresented(false)
+        let generation = rewindGeneration
         try? await Task.sleep(nanoseconds: glowUpResultsCoverDelayNanoseconds)
+
+        // Retour arrière pendant la fermeture du cover : ne pas valider `intro_next` par-dessus le rewind.
+        guard generation == rewindGeneration, currentQuestion?.id == "intro_next" else {
+            isCompletingGlowUpResults = false
+            return
+        }
 
         isSubmittingAnswer = true
         await recordAnswer(
@@ -188,110 +192,33 @@ final class OnboardingProfileChatViewModel {
             ]
         )
 
-        onboardingViewModel?.dashboardPreviewPresentation = .firstScanPending
         onboardingViewModel?.isWeightMotivationCompleted = true
         markQuestionCompleted(question.id)
         shouldFinish = true
     }
 
-    // MARK: - Face scan (compat callbacks dashboard / fullScreenCover)
-
-    func submitFaceScanLater() async {
-        let isFaceScanStep = currentQuestion == nil
-            || currentQuestion?.id == "face_scan_offer"
-            || currentQuestion?.id == "profile_summary"
-            || currentQuestion?.kind == .profileSummary
-            || onboardingViewModel?.presentedOnboardingFaceScan != nil
-        guard !isSubmittingAnswer else { return }
-        guard isFaceScanStep || !(onboardingViewModel?.isFaceAnalysisCompleted ?? false) else { return }
-        isSubmittingAnswer = true
-        onboardingViewModel?.isFaceAnalysisCompleted = true
-        onboardingViewModel?.onboardingFaceMesh = nil
-        onboardingViewModel?.onboardingFaceMarkers = nil
-        markQuestionCompleted("profile_summary")
-        markQuestionCompleted("face_scan_offer")
-        ProcessAnalytics.trackMossAction(
-            page: .faceScanOffer,
-            action: "skipped",
-            answerDisplay: OnboardingCopy.t("Faire mon scan plus tard", en: "I’ll scan later"),
-            extra: [
-                "question_id": "face_scan_offer",
-                "question_index": currentIndex,
-                "questions_total": questions.count
-            ]
-        )
-        let scanLaterLabel = OnboardingCopy.t("Faire mon scan plus tard", en: "I’ll scan later")
-        if conversationEngine.messages.last?.sender != .user
-            || conversationEngine.messages.last?.text != scanLaterLabel {
-            conversationEngine.userReplied(scanLaterLabel)
+    /// `true` si la navigation a bien eu lieu. `nextStep` est ignoré pendant le verrou de
+    /// transition du host : dans ce cas on ne se marque pas terminé, pour pouvoir réessayer.
+    @discardableResult
+    func finish(onComplete: () -> Void) -> Bool {
+        guard !didFinish else { return true }
+        // Tâche de réessai encore vivante alors qu'on a déjà quitté le chat : ne pas avancer une autre étape.
+        guard OnboardingStep(rawValue: onboardingViewModel?.currentStep ?? 0) == .weightMotivation else {
+            didFinish = true
+            return true
         }
-        currentQuestion = nil
-        isQuestionReadyForAnswers = false
-        shouldFinish = true
-        isSubmittingAnswer = false
-    }
-
-    func adoptDedicatedFaceScanResult(_ result: FaceScanResult) {
-        lastDedicatedScanResult = result
-        onboardingViewModel?.onboardingFaceMesh = OnboardingFaceMarkersStore.loadMesh()
-        onboardingViewModel?.onboardingFaceMarkers = result.markers
-        onboardingViewModel?.isFaceAnalysisCompleted = true
-        markQuestionCompleted("profile_summary")
-        markQuestionCompleted("face_scan_offer")
-    }
-
-    func restoreFaceScanOfferAnswers() {
-        guard currentQuestion?.kind == .profileSummary
-            || currentQuestion?.id == "face_scan_offer",
-              !shouldFinish else { return }
-        isSubmittingAnswer = false
-        isQuestionReadyForAnswers = true
-        ProcessAnalytics.lastMossPageName = nil
-        trackCurrentChatQuestionViewed()
-        ProcessAnalytics.trackMossAction(page: .faceScanOffer, action: "returned_from_scan")
-    }
-
-    func finishAfterDedicatedFaceAnalysis() {
-        if let result = lastDedicatedScanResult {
-            onboardingViewModel?.onboardingFaceMesh = OnboardingFaceMarkersStore.loadMesh()
-            onboardingViewModel?.onboardingFaceMarkers = result.markers
-            onboardingViewModel?.isFaceAnalysisCompleted = true
-            markQuestionCompleted("profile_summary")
-            markQuestionCompleted("face_scan_offer")
-        }
-        ProcessAnalytics.trackMossAction(page: .faceScanResults, action: "continued")
-        currentQuestion = nil
-        isQuestionReadyForAnswers = false
-        shouldFinish = true
-    }
-
-    func faceScanDidSkip() {
-        Task { @MainActor in
-            // Ne jamais no-op silencieux : si le chat a changé d’étape, on force quand même le skip.
-            if isSubmittingAnswer {
-                isSubmittingAnswer = false
-            }
-            await submitFaceScanLater()
-            if !shouldFinish {
-                onboardingViewModel?.isFaceAnalysisCompleted = true
-                onboardingViewModel?.onboardingFaceMesh = nil
-                onboardingViewModel?.onboardingFaceMarkers = nil
-                markQuestionCompleted("profile_summary")
-                markQuestionCompleted("face_scan_offer")
-                shouldFinish = true
-            }
-        }
-    }
-
-    func finish(onComplete: () -> Void) {
-        guard !didFinish else { return }
-        didFinish = true
-        conversationEngine.reset()
         prepareAnswersForAuthentication()
         onboardingViewModel?.isWeightMotivationCompleted = true
-        onboardingViewModel?.commitPendingStepAnswers()
-        onboardingViewModel?.saveProgress()
         onComplete()
+
+        let didNavigate = OnboardingStep(rawValue: onboardingViewModel?.currentStep ?? 0) != .weightMotivation
+        didFinish = didNavigate
+        return didNavigate
+    }
+
+    /// Navigation impossible après plusieurs essais : on rend la main à l'utilisateur.
+    func cancelPendingFinish() {
+        shouldFinish = false
     }
 
     func prepareAnswersForAuthentication() {
@@ -323,9 +250,6 @@ final class OnboardingProfileChatViewModel {
             return true
         }
 
-        conversationEngine.reset()
-        isSubmittingAnswer = false
-
         let orderedIDs = questions.map(\.id)
         let orderedCompleted = orderedIDs.filter { viewModel.completedProfileChatQuestionIDs.contains($0) }
 
@@ -333,6 +257,11 @@ final class OnboardingProfileChatViewModel {
               let targetIndex = orderedIDs.firstIndex(of: targetID) else {
             return false
         }
+
+        rewindGeneration += 1
+        conversationEngine.reset()
+        isSubmittingAnswer = false
+        didFinish = false
 
         viewModel.rewindProfileChat(from: targetID, orderedQuestionIDs: orderedIDs)
         clearSideEffectsIfNeeded(rewindingFrom: targetID)
@@ -354,41 +283,6 @@ final class OnboardingProfileChatViewModel {
         return true
     }
 
-    // MARK: - Resume / restore
-
-    func restoredFaceScanResultIfAvailable() -> FaceScanResult? {
-        guard onboardingViewModel?.isFaceAnalysisCompleted == true else { return nil }
-
-        if let latest = FaceScanHistoryStore.shared.latestResult {
-            return latest
-        }
-
-        guard let markers = onboardingViewModel?.onboardingFaceMarkers ?? OnboardingFaceMarkersStore.load() else {
-            return nil
-        }
-
-        return FaceScanResult(
-            id: "onboarding-restored-scan",
-            userId: UserScopedStorage.currentUserId() ?? "local-user",
-            markers: markers,
-            source: .onboarding
-        )
-    }
-
-    func consumePendingDedicatedResultsReopen() -> FaceScanResult? {
-        let result = pendingDedicatedResultsReopen
-        pendingDedicatedResultsReopen = nil
-        return result
-    }
-
-    func prepareForFaceScanResultsReopen() {
-        didFinish = false
-        shouldFinish = false
-        shouldAutoFinishAfterResume = false
-        conversationEngine.reset()
-        isSubmittingAnswer = false
-    }
-
     // MARK: - Private
 
     private func restoreConversationFromSavedProgress() {
@@ -404,10 +298,6 @@ final class OnboardingProfileChatViewModel {
     private func resumeFromSavedProgress() async {
         guard let viewModel = onboardingViewModel else { return }
 
-        if viewModel.shouldReopenFaceScanResultsAfterBack || viewModel.presentedOnboardingFaceScan != nil {
-            return
-        }
-
         let allQuestionIDs = Set(questions.map(\.id))
         let completed = OnboardingProfileChatQuestionBank.normalizedCompletedQuestionIDs(
             Set(viewModel.completedProfileChatQuestionIDs)
@@ -417,13 +307,6 @@ final class OnboardingProfileChatViewModel {
             currentQuestion = nil
             isQuestionReadyForAnswers = false
 
-            if AuthUser.current == nil, let result = restoredFaceScanResultIfAvailable() {
-                lastDedicatedScanResult = result
-                pendingDedicatedResultsReopen = result
-                return
-            }
-
-            viewModel.dashboardPreviewPresentation = .firstScanPending
             shouldAutoFinishAfterResume = true
             return
         }
@@ -473,7 +356,10 @@ final class OnboardingProfileChatViewModel {
             return
         }
 
+        let generation = rewindGeneration
         await speakMossLines(lines)
+        // Un retour arrière a déjà re-présenté une autre question : ne pas toucher à son état.
+        guard generation == rewindGeneration else { return }
         isQuestionReadyForAnswers = true
     }
 
@@ -541,10 +427,11 @@ final class OnboardingProfileChatViewModel {
         case "cardio_frequency":
             onboardingViewModel?.selectedTrainingFrequency = nil
             onboardingViewModel?.isTrainingFrequencySelected = false
+            onboardingViewModel?.hasSportActivity = nil
         case "face_scan_offer", "profile_summary":
             onboardingViewModel?.onboardingFaceMarkers = nil
+            onboardingViewModel?.onboardingFaceMesh = nil
             onboardingViewModel?.isFaceAnalysisCompleted = false
-            lastDedicatedScanResult = nil
         default:
             break
         }

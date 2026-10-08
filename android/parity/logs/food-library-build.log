@@ -1,0 +1,144 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.13/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :design-typewriter-onboarding:preBuild UP-TO-DATE
+> Task :design-typewriter-onboarding:preDebugBuild UP-TO-DATE
+> Task :design-typewriter-onboarding:checkDebugAarMetadata UP-TO-DATE
+> Task :design-typewriter-onboarding:mergeDebugJniLibFolders UP-TO-DATE
+> Task :design-typewriter-onboarding:mergeDebugNativeLibs NO-SOURCE
+> Task :design-typewriter-onboarding:stripDebugDebugSymbols NO-SOURCE
+> Task :design-typewriter-onboarding:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :design-typewriter-onboarding:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :design-typewriter-onboarding:generateDebugResValues UP-TO-DATE
+> Task :design-typewriter-onboarding:generateDebugResources UP-TO-DATE
+> Task :design-typewriter-onboarding:packageDebugResources UP-TO-DATE
+> Task :design-typewriter-onboarding:processDebugNavigationResources UP-TO-DATE
+> Task :design-typewriter-onboarding:parseDebugLocalResources UP-TO-DATE
+> Task :design-typewriter-onboarding:generateDebugRFile UP-TO-DATE
+> Task :design-typewriter-onboarding:compileDebugKotlin
+> Task :design-typewriter-onboarding:extractDebugAnnotations
+> Task :design-typewriter-onboarding:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :design-typewriter-onboarding:mergeDebugShaders UP-TO-DATE
+> Task :design-typewriter-onboarding:compileDebugShaders NO-SOURCE
+> Task :design-typewriter-onboarding:generateDebugAssets UP-TO-DATE
+> Task :design-typewriter-onboarding:mergeDebugAssets UP-TO-DATE
+> Task :design-typewriter-onboarding:javaPreCompileDebug UP-TO-DATE
+> Task :design-typewriter-onboarding:compileDebugJavaWithJavac NO-SOURCE
+> Task :design-typewriter-onboarding:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :design-typewriter-onboarding:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :design-typewriter-onboarding:prepareDebugArtProfile UP-TO-DATE
+> Task :design-typewriter-onboarding:prepareLintJarForPublish UP-TO-DATE
+> Task :design-typewriter-onboarding:processDebugManifest UP-TO-DATE
+> Task :design-typewriter-onboarding:processDebugJavaRes UP-TO-DATE
+> Task :design-typewriter-onboarding:mergeDebugJavaResource UP-TO-DATE
+> Task :design-typewriter-onboarding:syncDebugLibJars UP-TO-DATE
+> Task :design-typewriter-onboarding:writeDebugAarMetadata UP-TO-DATE
+> Task :design-typewriter-onboarding:bundleDebugAar UP-TO-DATE
+> Task :design-typewriter-onboarding:assembleDebug UP-TO-DATE
+> Task :process-food-catalog:preBuild UP-TO-DATE
+> Task :process-food-catalog:preDebugBuild UP-TO-DATE
+> Task :process-food-catalog:checkDebugAarMetadata
+> Task :process-food-catalog:mergeDebugJniLibFolders
+> Task :process-food-catalog:mergeDebugNativeLibs NO-SOURCE
+> Task :process-food-catalog:stripDebugDebugSymbols NO-SOURCE
+> Task :process-food-catalog:copyDebugJniLibsProjectAndLocalJars
+> Task :process-food-catalog:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :process-food-catalog:generateDebugResValues
+> Task :process-food-catalog:generateDebugResources
+> Task :process-food-catalog:packageDebugResources
+> Task :process-food-catalog:processDebugNavigationResources
+> Task :process-food-catalog:parseDebugLocalResources
+> Task :process-food-catalog:generateDebugRFile
+
+> Task :process-food-catalog:compileDebugKotlin
+w: file:///Users/amine/Library/Caches/10kdesign-device/android-package-validation/process-food-catalog/src/main/java/com/tenkdesign/components/foodcatalog/ProcessFoodCatalogPage.kt:53:36 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+
+> Task :process-food-catalog:extractDebugAnnotations
+> Task :process-food-catalog:extractDeepLinksForAarDebug
+> Task :process-food-catalog:mergeDebugShaders
+> Task :process-food-catalog:compileDebugShaders NO-SOURCE
+> Task :process-food-catalog:generateDebugAssets UP-TO-DATE
+> Task :process-food-catalog:mergeDebugAssets
+> Task :process-food-catalog:javaPreCompileDebug
+> Task :process-food-catalog:compileDebugJavaWithJavac NO-SOURCE
+> Task :process-food-catalog:mergeDebugGeneratedProguardFiles
+> Task :process-food-catalog:mergeDebugConsumerProguardFiles
+> Task :process-food-catalog:prepareDebugArtProfile
+> Task :process-food-catalog:prepareLintJarForPublish
+> Task :process-food-catalog:processDebugManifest
+> Task :process-food-catalog:processDebugJavaRes
+> Task :process-food-catalog:mergeDebugJavaResource
+> Task :process-food-catalog:syncDebugLibJars
+> Task :process-food-catalog:writeDebugAarMetadata
+> Task :process-food-catalog:bundleDebugAar
+> Task :process-food-catalog:assembleDebug
+> Task :process-hydration-bottle:preBuild UP-TO-DATE
+> Task :process-hydration-bottle:preDebugBuild UP-TO-DATE
+> Task :process-hydration-bottle:checkDebugAarMetadata UP-TO-DATE
+> Task :process-hydration-bottle:mergeDebugJniLibFolders UP-TO-DATE
+> Task :process-hydration-bottle:mergeDebugNativeLibs NO-SOURCE
+> Task :process-hydration-bottle:stripDebugDebugSymbols NO-SOURCE
+> Task :process-hydration-bottle:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :process-hydration-bottle:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :process-hydration-bottle:generateDebugResValues UP-TO-DATE
+> Task :process-hydration-bottle:generateDebugResources UP-TO-DATE
+> Task :process-hydration-bottle:packageDebugResources UP-TO-DATE
+> Task :process-hydration-bottle:processDebugNavigationResources UP-TO-DATE
+> Task :process-hydration-bottle:parseDebugLocalResources UP-TO-DATE
+> Task :process-hydration-bottle:generateDebugRFile UP-TO-DATE
+> Task :process-hydration-bottle:compileDebugKotlin
+> Task :process-hydration-bottle:extractDebugAnnotations
+> Task :process-hydration-bottle:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :process-hydration-bottle:mergeDebugShaders UP-TO-DATE
+> Task :process-hydration-bottle:compileDebugShaders NO-SOURCE
+> Task :process-hydration-bottle:generateDebugAssets UP-TO-DATE
+> Task :process-hydration-bottle:mergeDebugAssets UP-TO-DATE
+> Task :process-hydration-bottle:javaPreCompileDebug UP-TO-DATE
+> Task :process-hydration-bottle:compileDebugJavaWithJavac NO-SOURCE
+> Task :process-hydration-bottle:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :process-hydration-bottle:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :process-hydration-bottle:prepareDebugArtProfile UP-TO-DATE
+> Task :process-hydration-bottle:prepareLintJarForPublish UP-TO-DATE
+> Task :process-hydration-bottle:processDebugManifest UP-TO-DATE
+> Task :process-hydration-bottle:processDebugJavaRes UP-TO-DATE
+> Task :process-hydration-bottle:mergeDebugJavaResource UP-TO-DATE
+> Task :process-hydration-bottle:syncDebugLibJars UP-TO-DATE
+> Task :process-hydration-bottle:writeDebugAarMetadata UP-TO-DATE
+> Task :process-hydration-bottle:bundleDebugAar UP-TO-DATE
+> Task :process-hydration-bottle:assembleDebug UP-TO-DATE
+> Task :process-onboarding-gender:preBuild UP-TO-DATE
+> Task :process-onboarding-gender:preDebugBuild UP-TO-DATE
+> Task :process-onboarding-gender:checkDebugAarMetadata UP-TO-DATE
+> Task :process-onboarding-gender:mergeDebugJniLibFolders UP-TO-DATE
+> Task :process-onboarding-gender:mergeDebugNativeLibs NO-SOURCE
+> Task :process-onboarding-gender:stripDebugDebugSymbols NO-SOURCE
+> Task :process-onboarding-gender:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :process-onboarding-gender:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :process-onboarding-gender:generateDebugResValues UP-TO-DATE
+> Task :process-onboarding-gender:generateDebugResources UP-TO-DATE
+> Task :process-onboarding-gender:packageDebugResources UP-TO-DATE
+> Task :process-onboarding-gender:processDebugNavigationResources UP-TO-DATE
+> Task :process-onboarding-gender:parseDebugLocalResources UP-TO-DATE
+> Task :process-onboarding-gender:generateDebugRFile UP-TO-DATE
+> Task :process-onboarding-gender:compileDebugKotlin
+> Task :process-onboarding-gender:extractDebugAnnotations
+> Task :process-onboarding-gender:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :process-onboarding-gender:mergeDebugShaders UP-TO-DATE
+> Task :process-onboarding-gender:compileDebugShaders NO-SOURCE
+> Task :process-onboarding-gender:generateDebugAssets UP-TO-DATE
+> Task :process-onboarding-gender:mergeDebugAssets UP-TO-DATE
+> Task :process-onboarding-gender:javaPreCompileDebug UP-TO-DATE
+> Task :process-onboarding-gender:compileDebugJavaWithJavac NO-SOURCE
+> Task :process-onboarding-gender:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :process-onboarding-gender:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :process-onboarding-gender:prepareDebugArtProfile UP-TO-DATE
+> Task :process-onboarding-gender:prepareLintJarForPublish UP-TO-DATE
+> Task :process-onboarding-gender:processDebugManifest UP-TO-DATE
+> Task :process-onboarding-gender:processDebugJavaRes UP-TO-DATE
+> Task :process-onboarding-gender:mergeDebugJavaResource UP-TO-DATE
+> Task :process-onboarding-gender:syncDebugLibJars UP-TO-DATE
+> Task :process-onboarding-gender:writeDebugAarMetadata UP-TO-DATE
+> Task :process-onboarding-gender:bundleDebugAar UP-TO-DATE
+> Task :process-onboarding-gender:assembleDebug UP-TO-DATE
+
+BUILD SUCCESSFUL in 17s
+100 actionable tasks: 31 executed, 69 up-to-date

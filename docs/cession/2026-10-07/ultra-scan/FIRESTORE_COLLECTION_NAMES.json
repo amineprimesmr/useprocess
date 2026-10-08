@@ -1,0 +1,20 @@
+{
+  "collectionIds": [
+    "affiliateClickBudget",
+    "affiliateCodes",
+    "affiliatePortalHandoffs",
+    "affiliates",
+    "appleBillingNotifications",
+    "appleExternalPurchaseTokens",
+    "appleReportDeliveries",
+    "billingConfiguration",
+    "clippingPosts",
+    "crispSessions",
+    "referralCodes",
+    "stripeCustomers",
+    "stripeSandboxCustomers",
+    "stripeSandboxOrders",
+    "usernames",
+    "users"
+  ]
+}

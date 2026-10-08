@@ -1,0 +1,28 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-146010903-581752683/TruncationEffect/TruncationEffect/ContentView.swift": "60b2410c990b8ec449d0636617adf1c57f20a517397002661a37124265812b40",
+    "content/source-projects/design-source-146010903-581752683/TruncationEffect/TruncationEffect/TruncationEffectApp.swift": "18c38a348ef44c54b00b67b5fe056098f015e12e9522a371ee05f207e3e3f5a3",
+    "content/source-projects/design-source-146010903-581752683/TruncationEffect/TruncationEffect/Helpers/TextTruncationEffect.swift": "c2aae1246c5dd487ed498df2a382035c7c1f36c4778a1626281ecefea295957e"
+  },
+  "mirrorMatchesInventory": true,
+  "build": "passed",
+  "visual": "host-only; original comparison unverified",
+  "motion": "unverified",
+  "recordedAt": "2026-10-08T02:57:06.758376+00:00",
+  "unitTests": {
+    "tests": 122,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 31
+  },
+  "hostUi": "parity/host-render/validation.json",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "TenKExpandableTextGallery.kt": "78356ce972711a98ab741c85f3b4896b9eb46a6f7822031d239c4cf56a903989",
+    "TenKExpandableText.kt": "d351bf4caa842b7f12810e3af1ce496b60cb3583aa6415c990de8334bcefa818"
+  }
+}

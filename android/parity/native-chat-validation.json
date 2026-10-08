@@ -1,0 +1,59 @@
+{
+  "recordedAt": "2026-10-08T01:00:23.945039+00:00",
+  "status": "development-preview",
+  "build": "passed",
+  "unitTests": {
+    "tests": 47,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 21
+  },
+  "apkSha256": "093ac41238d1b6f6b6c02f6cfad9973f6773151cd2149f5c4a5ae7b367f64dd8",
+  "runtime": "unverified \u2014 shared emulator is actively used by V2 chat",
+  "sourceSha256": {
+    "app/src/main/java/com/process/android/MossTimeline.kt": "57256ba9919e662e0161a2572fb79b83df79eec41c2b1db457a051483fe7d29d",
+    "app/src/main/java/com/process/android/ProcessProfileChatModel.kt": "9925a7ec1d941d1b2a80f4338c15b9147f5e95cc22ba9896b1cbaaa47e5e7e72",
+    "app/src/main/java/com/process/android/ProfileChatStore.kt": "32b0cc67c224bde90f581abd0a0aa5ce252fe0161f936209b40753cb61673817",
+    "app/src/main/java/com/process/android/ProcessProfileChat.kt": "76cec37d7ae382967ac0e07b9095ea9cc592a5b284e7a2647fdc1bfbfdefacff",
+    "app/src/main/java/com/process/android/ProcessTrackingExplainer.kt": "b8d5cc08cbdbab1ed89e771329965ca507bac2d0df8279208a4edc5ccdd268ed",
+    "app/src/main/java/com/process/android/ProcessMotionPreferences.kt": "5f62c13457fb14a4db1e32f7095cc3b929bdde001e26bd4e1de74fd35a943462",
+    "app/src/main/java/com/process/android/ProcessFaceLeverageIntro.kt": "a1648dee918e2207a602f0dc74b32d16e7b9205e8ce5fce0793c3a87d2e55525",
+    "app/src/main/java/com/process/android/MainActivity.kt": "3987248fe86abe263cf5bcc86cc22f0173b39fb4f75edc9af687af46be992cac",
+    "app/src/main/res/drawable-nodpi/avaprime.png": "e4f516eaf6b610f25829e2a30faf878f344cd9a284e35b7adf07c75dd470788c",
+    "app/src/main/res/drawable-nodpi/mannyprime_leverage.png": "719e5a7e4ce319cff61bb354b65c75cc52a556a65fbcfcee4ccab96da0e286bd"
+  },
+  "originalSourceSha256": {
+    "Steps/FaceLeverageIntroStepView.swift": "14a8beb79e44d306e10befcc08a2bf476fa16c5aa170447ab8a8bfda7a340af3",
+    "Steps/TransformationPreviewStepView.swift": "22debbd9b948a5ab12130a5a24149046a1b411561c13069a33cf0a33d15c9bec",
+    "Steps/OnboardingGlowUpResultsStepView.swift": "91c66bdb55b66d93c8d3d70ab44f02e7472e342507fa317f57c3e746f8e638e8",
+    "ProfileChat/OnboardingProfileChatModels.swift": "dbc342ff9fb439dcb847b7f55c01d09d3fe449a575e2b2e7fbac6ef91d35f779",
+    "ProfileChat/OnboardingProfileChatViewModel.swift": "77da0f7a8673c0ca84a3fbba85b3916ce06d8d1e57dd9fd2787436b540d3b741",
+    "ProfileChat/OnboardingProfileSummaryBuilder.swift": "b61c01a7e651800473df2efa1ea8e0776808dba0c963904767523947202b6c31",
+    "Moss/MossConversationEngine.swift": "536f76663b5742977faf6820178a28c2d8cd77a330e103de637177c7f8c52d4d",
+    "Moss/MossChat.swift": "82887138da879efe7dd93d502145749af87e752744d8dd74b70614c55bb8b821",
+    "Moss/OnboardingMossChatHelpers.swift": "7934bd64f2a9dd0ca551f2c8d741207c773b8f6c610c42996482fae5d8ffbe0a"
+  },
+  "remaining": [
+    "physical/pixel/motion validation",
+    "real backend profile save/auth/navigation",
+    "exact SF symbols and liquid glass",
+    "CoreHaptics waveform equivalence",
+    "below-Android-12 blur fallback",
+    "per-chip stagger and exact cover transition",
+    "summary chip flow wrapping"
+  ],
+  "catalogSourceDifferences": [
+    "Process live Oct7 removed face introduction testimonials/ratings/avatars; Android preserves current live version",
+    "Process live intro_causes and intro_next changed compared with Sep23 catalog snapshot",
+    "Process live glow-up now opens a text tracking explainer; Android preserves that current version; old catalog before/after video is not reproduced",
+    "Android platform copy intentionally says Version Android"
+  ],
+  "dataDifferences": [
+    "corrupt progress is truncated to first invalid/unanswered question instead of blindly trusting completed IDs",
+    "rewind removes answers for invalidated later questions to prevent stale derived profile data"
+  ]
+}

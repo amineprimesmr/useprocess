@@ -77,12 +77,10 @@ final class UserSessionCoordinator {
                     await AcquisitionCodeService.retryPendingRemoteRegistration(
                         displayName: profile.firstName.isEmpty ? profile.username : profile.firstName
                     )
-                    await ProcessAffiliateStore.shared.reload()
                 }
                 guard !Task.isCancelled, !AppSession.shared.isAccountWipeInProgress else { return }
 
                 await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
-                ProcessCrispSupport.syncUser()
                 if AppSession.shared.hasCompletedOnboarding,
                    !AuthenticationManager.shared.isInOnboarding {
                     await FaceScanHistoryStore.shared.syncFromRemote()
@@ -104,7 +102,6 @@ final class UserSessionCoordinator {
         SocialProfileStore.shared.bind(unified: nil)
         BodyScanHistoryStore.shared.clearForUser(userId: nil)
         FaceScanHistoryStore.shared.clearForUser(userId: nil)
-        ProcessCrispSupport.resetSession()
         Task { await SubscriptionService.shared.logOutAfterAccountDeletion() }
     }
 
@@ -112,8 +109,6 @@ final class UserSessionCoordinator {
         activeUserId = nil
         UnifiedProfileService.shared.clearLocalProfile()
         SocialProfileStore.shared.bind(unified: nil)
-        ProcessAffiliateStore.shared.clearForSignOut()
-        ProcessCrispSupport.resetSession()
         Task { await SubscriptionService.shared.logOutAfterAccountDeletion() }
     }
 }

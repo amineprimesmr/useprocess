@@ -1,0 +1,21 @@
+[
+  {
+    "appEngineIntegrationMode": "DISABLED",
+    "concurrencyMode": "PESSIMISTIC",
+    "createTime": "2026-06-13T13:16:24.990068Z",
+    "databaseEdition": "STANDARD",
+    "deleteProtectionState": "DELETE_PROTECTION_DISABLED",
+    "earliestVersionTime": "2026-10-06T22:01:10.749853Z",
+    "etag": "IK2R48u/ppcDMMbvuZKohJUD",
+    "freeTier": true,
+    "keyPrefix": "e",
+    "locationId": "eur3",
+    "name": "projects/useprocess-d4385/databases/(default)",
+    "pointInTimeRecoveryEnablement": "POINT_IN_TIME_RECOVERY_DISABLED",
+    "realtimeUpdatesMode": "REALTIME_UPDATES_MODE_ENABLED",
+    "type": "FIRESTORE_NATIVE",
+    "uid": "75fbfefd-dcd3-4f61-9792-e27f7e1ca9a2",
+    "updateTime": "2026-06-13T13:16:24.990068Z",
+    "versionRetentionPeriod": "3600s"
+  }
+]

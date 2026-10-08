@@ -1,0 +1,55 @@
+{
+  "recordedAt": "2026-10-08T01:27:26.171769+00:00",
+  "status": "development-preview",
+  "build": "passed",
+  "unitTests": {
+    "tests": 78,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 22
+  },
+  "apkSha256": "d82b3a1853f0eadd1e56da3c8a29c13e70cf56b4959133f63196575aba876daa",
+  "runtime": "unverified; shared emulator remains in active V2 use",
+  "visual": "unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "sourceSha256": {
+    "ProcessStreakFlame": "ad1d8f4f65cda473661167efcfdc399c97bce71eeb7679324f414516c01e1f42",
+    "ProcessStreakModel": "4f08c84e6683919fa86af2845c1b40012f76e9c187d7d436a86586aa4235bfbf",
+    "ProcessStreakPage": "2df9c3fc3d08510d8ccea6e843965ee3a2344e4c2ee717f11882e45dd8d279b1",
+    "CommitHoldModel": "0994dcd373b72c311b92957b6e9d1560a6f16e185e653741ad14f58a483f8784",
+    "ProcessCommitHold": "0c4b1231c5944ebf0d028588c3c9decc0de224a4f410f410dcd53cf603734e3c",
+    "CommitSliderModel": "ce77417e7b41c50792e12f2c97be17c6f682c735e5cdcdc11a194518db6e3054",
+    "ProcessCommitSlider": "190b7b862fa7ee4d2ecb56bd74cce266dda251b7f2d234539e0c3eb41cf3537c",
+    "ProcessEstimationModel": "b7a7f3c5b8a7804c256f7f5ccbc06baa0358764191ccbca4840902a6388e5b32",
+    "ProcessEstimation": "8bdb3033a7e9df38b811fd12b71c17d661d057e2e9094daccebc8177efe3fb38"
+  },
+  "originalSourceSha256": {
+    "Features/Profile/ProfileStreakAchievementsSection.swift": "77e3997b87c8546d5a93b24c8f2d00df8885240d539cf7a19994e37705a9658a",
+    "Engagement/ProcessStreakModels.swift": "c8431498dfd9a1ef671e7b5a05aea2f068d1616619c2c2bd579fd802f2db224e",
+    "Engagement/ProcessStreakStore.swift": "d51c712fd9c20c1775607a03bbd650cd0b1e070be2573b5569802823c5c927a0",
+    "Sport/Onboarding/Steps/BiometricAuthStepView.swift": "36f1905e148fe9c6deb56e106c874817a7889e492f21788d3ffcb20afd5ec315",
+    "Sport/Onboarding/Steps/DreamFaceCommitStepView.swift": "222768c086fed49e818896b5233336960a2a459f19598fad47497758f3b8f9ff",
+    "Sport/Onboarding/Steps/OnboardingEstimationStepView.swift": "a39312fdee457cb3dabaaad21f302778b3fab34667115214b8659defa517a2e1",
+    "WelcomePlan/PlanDurationPersonalizer.swift": "e5429c90d0d03123bfd0d2738cbc3b1278efe52e0ca6b864e1d39ebe882a70de"
+  },
+  "remaining": [
+    "Physical screenshots and timing comparisons",
+    "Flame software Canvas blur compositing and 30fps performance; broad page glow not implemented",
+    "Original rounded fonts, SF symbols, material, shadows and numeric transitions",
+    "Commitment native haptics approximate CoreHaptics crescendo",
+    "Slider system notification permission process-restoration; host callback defaults to false without a real request",
+    "Estimation separate weight-goal timeline/old graph not included; current live UI removes predicted-result graph",
+    "Full authenticated production navigation, scan, payment, signing and Play release"
+  ],
+  "latestValidation": "APK assemble and lint after allocation/offset fixes; prior78 logic tests unchanged",
+  "optimizations": [
+    "Frame paints, shaders, rectangles, matrices and blur filters allocated once or on theme changes instead of in onDraw",
+    "Streak range offset reads state in placement lambda",
+    "Original Manny image bytes preserved under correct JPEG extension (source misleadingly named PNG)"
+  ]
+}

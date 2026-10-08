@@ -23,7 +23,7 @@ enum PrimaryGoal: String, Codable, CaseIterable {
         case .improveSleep: return AppCopy.t("Mieux dormir pour dégonfler", en: "Sleep better to debloat")
         case .increaseRecovery: return AppCopy.t("Réduire cernes et fatigue", en: "Reduce under-eyes & fatigue")
         case .boostPerformance: return AppCopy.t("Activer drainage et définition", en: "Activate drainage & definition")
-        case .optimizeEnergy: return AppCopy.t("Limiter le cortisol facial", en: "Limit facial cortisol")
+        case .optimizeEnergy: return AppCopy.t("Soutenir une routine régulière", en: "Support a regular routine")
         case .manageWeight: return AppCopy.t("Dégonfler mon visage", en: "Debloat my face")
         case .reduceStress: return AppCopy.t("Réduire rétention et inflammation", en: "Reduce retention & inflammation")
         case .improveFitness: return AppCopy.t("Affiner mâchoire et ovale", en: "Refine jawline & face oval")
@@ -62,8 +62,8 @@ enum PrimaryGoal: String, Codable, CaseIterable {
             )
         case .optimizeEnergy:
             return AppCopy.t(
-                "Stabiliser l’énergie pour limiter le cortisol facial",
-                en: "Stabilize energy to limit facial cortisol"
+                "Organiser une routine adaptée à ton énergie",
+                en: "Organize a routine suited to your energy"
             )
         case .manageWeight:
             return AppCopy.t(

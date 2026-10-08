@@ -1,7 +1,8 @@
 import StoreKit
 import SwiftUI
 
-/// Moments où StoreKit peut afficher le prompt natif — jamais pendant l’onboarding.
+/// Moments où StoreKit peut afficher le prompt natif dans l'app principale.
+/// L'onboarding a son propre point d'entrée : `presentDuringOnboardingIfNeeded`.
 enum ProcessAppStoreReviewOpportunity: String {
     case improvedScan = "improved_scan"
     case streak7 = "streak_7"
@@ -58,6 +59,26 @@ enum ProcessAppStoreReviewPrompt {
 
         markPresented(source: opportunity.rawValue)
         ProcessAnalytics.trackAppStoreReviewPrompted(source: opportunity.rawValue)
+        requestReview()
+    }
+
+    /// Prompt 5 étoiles de l'onboarding (écran témoignages) — une seule fois par installation.
+    /// Ne consomme pas la version en cours : après le cooldown, un vrai win peut redemander.
+    static func presentDuringOnboardingIfNeeded(requestReview: RequestReviewAction) async {
+        guard !isPresenting,
+              !UserDefaults.standard.bool(forKey: legacyOnboardingKey) else { return }
+
+        isPresenting = true
+        defer { isPresenting = false }
+
+        // Laisser la page se poser : un prompt pendant la transition est ignoré par StoreKit.
+        try? await Task.sleep(for: .milliseconds(900))
+        guard !Task.isCancelled else { return }
+
+        UserDefaults.standard.set(true, forKey: legacyOnboardingKey)
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: lastDateKey)
+        UserDefaults.standard.set("onboarding_transformation_preview", forKey: lastSourceKey)
+        ProcessAnalytics.trackAppStoreReviewPrompted(source: "onboarding_transformation_preview")
         requestReview()
     }
 

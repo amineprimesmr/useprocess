@@ -1,0 +1,12 @@
+Process uses Apple's In-App Purchases exclusively. No Stripe checkout, Apple Pay merchant payment, external purchase link or external purchase entitlement is included in this build.
+
+Current plans:
+- Monthly: com.useprocess.monthly999
+- Yearly: com.useprocess.annual3499
+- Lifetime non-consumable offer: com.useprocess.lifetime
+
+The yearly plan does not offer a free trial. The lifetime offer is a one-time purchase without renewal. Restore Purchases is available from the paywall and subscription management uses Apple's system sheet.
+
+Existing Apple subscribers and previously purchased premium products remain supported. Premium server features validate the RevenueCat entitlement associated with the signed-in user.
+
+Before submission: attach the newly validated distribution build and preserve the existing reviewer access instructions in App Store Connect.

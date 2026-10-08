@@ -1,0 +1,54 @@
+{
+  "verified_at": "2026-10-06T22:46:05.257533+00:00",
+  "checks": [
+    {
+      "path": "/",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 5059
+    },
+    {
+      "path": "/app",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 5059
+    },
+    {
+      "path": "/support",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 4446
+    },
+    {
+      "path": "/cgu",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 6082
+    },
+    {
+      "path": "/confidentialite",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 16513
+    },
+    {
+      "path": "/mentions-legales",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 3548
+    },
+    {
+      "path": "/sources-sante",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 3721
+    },
+    {
+      "path": "/.well-known/apple-app-site-association",
+      "status": 200,
+      "content_type": "application/json",
+      "bytes": 223,
+      "contains_app_id": true
+    }
+  ]
+}

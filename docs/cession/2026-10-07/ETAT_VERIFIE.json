@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-07",
+  "scope": "Process Debloat seulement",
+  "git_head": "2563680ee08613fe1ed641746ec97867f4b26064",
+  "git_status_count": 166,
+  "content_file_extensions": {
+    "(sans extension)": 20,
+    ".mp4": 16,
+    ".png": 130,
+    ".yaml": 1,
+    ".md": 5,
+    ".json": 6,
+    ".py": 3,
+    ".jpg": 142,
+    ".txt": 6,
+    ".heic": 4,
+    ".webp": 1
+  },
+  "firestore": {
+    "deleteProtectionState": "DELETE_PROTECTION_DISABLED",
+    "earliestVersionTime": "2026-10-06T21:12:08.920696Z",
+    "locationId": "eur3",
+    "name": "projects/useprocess-d4385/databases/(default)",
+    "pointInTimeRecoveryEnablement": "POINT_IN_TIME_RECOVERY_DISABLED",
+    "type": "FIRESTORE_NATIVE"
+  },
+  "backup_schedules": [],
+  "backups_eur3": [],
+  "firebase_auth": {
+    "authorizedDomains": [
+      "localhost",
+      "useprocess-d4385.firebaseapp.com",
+      "useprocess-d4385.web.app",
+      "useprocess.xyz",
+      "www.useprocess.xyz",
+      "join.useprocess.xyz"
+    ],
+    "signInProviderNames": [
+      "email",
+      "anonymous",
+      "hashConfig"
+    ]
+  }
+}

@@ -45,6 +45,12 @@ struct FaceScanStudioFramingEditor: View {
                     .padding(.bottom, 28)
             }
         }
+        .task(id: "\(result.id)-\(result.snapshotFilename ?? "")") {
+            snapshot = nil
+            let image = await FaceScanImageStore.preview(scanId: result.id, filename: result.snapshotFilename, maxPixelSize: 1600)
+            guard !Task.isCancelled else { return }
+            snapshot = image
+        }
         .onAppear {
             framing = initialFraming.clamped()
             refreshMedia()
@@ -181,10 +187,6 @@ struct FaceScanStudioFramingEditor: View {
     private func refreshMedia() {
         let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
         resolvedVideoURL = FaceScanImageStore.resolvedVideoURL(for: reconciled)
-        if let filename = FaceScanImageStore.resolvedSnapshotFilename(for: reconciled) {
-            snapshot = FaceScanImageStore.load(filename: filename)
-        } else {
-            snapshot = nil
-        }
+
     }
 }

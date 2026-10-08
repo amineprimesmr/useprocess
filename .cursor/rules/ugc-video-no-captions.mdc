@@ -1,0 +1,25 @@
+---
+description: UGC video generation/recreation — never burn captions, subtitles, or text overlays so clips stay reusable
+alwaysApply: true
+---
+
+# UGC video — never burn text (locked 31 Aug 2026)
+
+Applies to **every** video job in this workspace, any session: Atlas Omni Edit, Higgsfield, Seedance, Kling, I2V, from-scratch, source-TikTok recreation, “1:1”, “same as the original”.
+
+Clips must stay reusable on other posts. Burned-in captions cannot be toggled off.
+
+## Hard lock
+
+- **Never** add, keep, restyle, or recreate subtitles, captions, titles, lower-thirds, TikTok UI, watermarks, or word overlays.
+- Source has text → **strip it**. “1:1” / “recreate exactly” means motion, cuts, duration, camera, person swap — **not** the overlays.
+- Prompts must say explicitly: remove ALL burned-in captions; fill with real background; do not add new text.
+- `generate_audio: false` stays. Do not burn lyrics or karaoke either.
+
+## Override
+
+Only if the user writes **in that same message** that they want burned-in text (e.g. “garde les textes” / “burn the captions”). Silence, “1:1”, or “comme l’original” is **not** an override.
+
+## QA before deliver
+
+Read output frames (and a top-band crop if needed). If leftover letters remain, **report it** and stop. Do **not** spend another Atlas/Higgsfield pass to clean text unless the user asks. Same rule as `ugc-video-cost.mdc`: a completed MP4 is not a free “one more try”.

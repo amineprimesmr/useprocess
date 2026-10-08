@@ -552,41 +552,19 @@ struct CoachChatView: View {
                     }
                 )
             } else if let imageMessageId = CoachChatImageMessageMarker.messageId(from: message.text) {
-                let images = CoachChatAttachmentImageStore.load(messageId: imageMessageId)
-                if !images.isEmpty {
-                    CoachChatImageUserMessageView(
-                        message: message,
-                        images: images,
-                        profile: profileService.currentProfile,
-                        font: messageFont,
-                        lineSpacing: messageLineSpacing,
-                        bubbleColor: theme.coachUserBubble,
-                        textColor: theme.primaryText,
-                        onLongPress: { frame in
-                            isInputFocused = false
-                            messageContextMenu = CoachUserMessageContextState(
-                                message: message,
-                                bubbleFrame: frame
-                            )
-                        }
-                    )
-                } else {
-                    CoachUserMessageBubbleView(
-                        message: message,
-                        profile: profileService.currentProfile,
-                        font: messageFont,
-                        lineSpacing: messageLineSpacing,
-                        bubbleColor: theme.coachUserBubble,
-                        textColor: theme.primaryText,
-                        onLongPress: { frame in
-                            isInputFocused = false
-                            messageContextMenu = CoachUserMessageContextState(
-                                message: message,
-                                bubbleFrame: frame
-                            )
-                        }
-                    )
-                }
+                CoachStoredImageMessageView(
+                    message: message,
+                    messageId: imageMessageId,
+                    profile: profileService.currentProfile,
+                    font: messageFont,
+                    lineSpacing: messageLineSpacing,
+                    bubbleColor: theme.coachUserBubble,
+                    textColor: theme.primaryText,
+                    onLongPress: { frame in
+                        isInputFocused = false
+                        messageContextMenu = CoachUserMessageContextState(message: message, bubbleFrame: frame)
+                    }
+                )
             } else {
                 CoachUserMessageBubbleView(
                     message: message,

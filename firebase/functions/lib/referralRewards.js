@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.referralRevenueCatWebhook = exports.referralConfirmSubscription = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
-const affiliateShared_1 = require("./affiliateShared");
 const revenueCat_1 = require("./revenueCat");
 const referralShared_1 = require("./referralShared");
 const revenueCatSecretKey = (0, params_1.defineSecret)("REVENUECAT_SECRET_API_KEY");
@@ -79,24 +78,8 @@ exports.referralRevenueCatWebhook = (0, https_1.onRequest)({
             res.status(200).json({ ok: true, skipped: "NO_APP_USER_ID" });
             return;
         }
-        if (eventType === "REFUND") {
-            const affiliate = await (0, affiliateShared_1.clawbackAffiliateCommission)({
-                inviteeUid: appUserId,
-                event,
-            });
-            res.status(200).json({ ok: true, affiliate });
-            return;
-        }
-        if (eventType === "CANCELLATION" || eventType === "EXPIRATION") {
-            await (0, affiliateShared_1.markAffiliateAttributionChurned)(appUserId);
-            res.status(200).json({ ok: true, status: eventType });
-            return;
-        }
-        // A trial start is not a referral reward event, so it would exit below without
-        // ever being counted. Record it first — it is the clipper's actual output.
-        const trial = await (0, affiliateShared_1.recordAffiliateTrialStart)({ inviteeUid: appUserId, event });
         if (!isReferralRewardEvent(eventType, event)) {
-            res.status(200).json({ ok: true, trial, skipped: eventType || "UNKNOWN_EVENT" });
+            res.status(200).json({ ok: true, skipped: eventType || "UNKNOWN_EVENT" });
             return;
         }
         let referral = { skipped: "NOT_ATTEMPTED" };
@@ -116,11 +99,7 @@ exports.referralRevenueCatWebhook = (0, https_1.onRequest)({
                 throw error;
             }
         }
-        const affiliate = await (0, affiliateShared_1.accrueAffiliateCommission)({
-            inviteeUid: appUserId,
-            event,
-        });
-        res.status(200).json({ ok: true, trial, referral, affiliate });
+        res.status(200).json({ ok: true, referral });
     }
     catch (error) {
         const message = error?.message ?? "Unknown error";

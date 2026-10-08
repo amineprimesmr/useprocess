@@ -1,0 +1,29 @@
+.process-final-cta {
+  background: #09090b;
+  padding: clamp(3.5rem, 9vw, 6rem) clamp(1.25rem, 4vw, 2rem);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.process-final-cta__inner {
+  max-width: 36rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.process-final-cta__title {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: clamp(1.85rem, 5.5vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: #f8fafc;
+}
+
+.process-final-cta__lead {
+  margin: 1rem auto 1.75rem;
+  max-width: 28rem;
+  font-size: clamp(0.92rem, 2.2vw, 1.02rem);
+  line-height: 1.55;
+  color: #94a3b8;
+}

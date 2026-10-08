@@ -1,0 +1,43 @@
+{
+  "recordedAt": "2026-10-08T01:58:48.289859+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 103,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 27
+  },
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/FlipTransitionModel.kt": "a6664ac82d5845e3a8c4d2173f567da3ac6b0d0dc250a5404d8904d99b5e2929",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/TenKFlipTransition.kt": "cc377fbea1912fa17d0b003f8060482ccb15782f1079be1d3928b8e24576deb2",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/NetworkStatusModel.kt": "16145a86a086b1d4ec6f020bb6721fa993f29a715abd917efa96f1b58410626c",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/TenKNetworkMonitor.kt": "e2ed438a89dba68d6f589cd08450f94d5f46c45221c8f220537a204be3fe5932",
+    "/Users/amine/Developer/10kdesign-device.nosync/content/components/design-flip-transition/TenKFWTransitionDemo.swift": "0eef9487f44b0e2e2437c2150b409c36d91e93cb55dfc3dd505e63d24a5a8925",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-126809708-453030866/InternetConnectivity/InternetConnectivity/InternetConnectivityApp.swift": "2e5f6dcffad3913684d6d9f1db22a51c817f734979eb6e7cc6af7cf0263656ae",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-126809708-453030866/InternetConnectivity/InternetConnectivity/ContentView.swift": "cb2d579b5b221d58a91c396e03d82e6c802347ecf81074cf5687aa19db1639e0",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-126809708-453030866/InternetConnectivity/InternetConnectivity/Helpers/NetworkMonitor.swift": "2ea27c9e9e890e3600ad99349d992ff9f9cda072a0bc2cd7322ad07a8c93dd26"
+  },
+  "runtime": "unverified",
+  "visual": "unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "remaining": {
+    "design-flip-transition": [
+      "PixelCopy actual runtime capture and source/destination inset alignment",
+      "Native exact spring/perspective and liquid glass",
+      "Context actions, cancellation, rotation, Back and physical accessibility checks",
+      "Full original three-card demo layout"
+    ],
+    "design-source-126809708-453030866": [
+      "Real default-network transitions, airplane mode, captive portal and callback lifecycle checks",
+      "SF icon shapes/native sheet material and exact animation",
+      "Blur fallback on Android API28-30 is unavailable",
+      "Physical large-font, TalkBack and non-dismissible offline modal behavior"
+    ]
+  },
+  "buildLog": "/tmp/process-network-monitor-build.log"
+}

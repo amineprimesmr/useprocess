@@ -1,0 +1,48 @@
+ACTUALISATION — 7 OCTOBRE 2026
+Le propriétaire n’a pas son iPhone. Les corrections analytics ajoutées après le build 39 nécessitent le build 40, une nouvelle archive et des tests physiques. Le build 39 reste une preuve antérieure, pas la livraison finale. Aucun upload ni soumission Apple.
+PostHog audité : 2 clés personnelles All access, 4 apps OAuth, essai annuel A/B actif ; forfait gratuit affiché. AppsFlyer console reportée à la demande du propriétaire.
+373 comptes Auth exportés en privé ; intégrité vérifiée, restauration complète non testée. Compte Stripe clôturé selon confirmation propriétaire.
+
+PROCESS DEBLOAT — PASSATION EN PRÉPARATION
+
+1. Site indépendant
+Source : website-process ; projet Vercel process-debloat.
+Domaine : processdebloat.com ; www.processdebloat.com.
+Projet ID : prj_ow6ypWUcsJeC9RicSd4ejZtZGf6c.
+Registrar Hostinger ; les serveurs de noms Hostinger restent inchangés.
+DNS A racine : 216.150.1.1 et 216.150.16.1, TTL 300.
+CNAME www : processdebloat.com, TTL 300.
+Le site useprocess.xyz et le projet Vercel website restent au vendeur.
+Build : npm ci puis npm run build. Déploiement : vercel deploy --prod --cwd website-process.
+Variables client VITE_FIREBASE_* et VITE_FUNCTIONS_BASE_URL ; aucun secret studio/TikTok copié.
+contact@processdebloat.com active ; aliases support@ et hello@. SMTP/IMAP et auto-test reçu. MX/SPF/DKIM configurés ; DMARC surveillance. Facturation email : mise à niveau encore en traitement chez Hostinger.
+
+2. Application
+Apple app 6753808143 ; bundle com.useprocess ; version préparée 1.13, build 39.
+Conserver les anciens domaines dans les liens entrants pendant la migration des versions installées.
+Avant transfert Apple : obtenir Team ID acheteur, Account Holder et compte Apple Developer actif, préparer migration Sign in with Apple, reconfigurer RevenueCat et notifications serveur.
+Ne jamais transmettre un compte Apple personnel ou une clé multi-apps.
+
+3. Services
+Firebase useprocess-d4385 reste le backend actuel. Transférer uniquement le projet et sa facturation selon le contrat ; préserver les comptes utilisateurs, droits premium, webhooks et historique réel.
+RevenueCat : remettre le seul projet Process et reconfigurer les credentials Apple après transfert.
+Anthropic, SMTP, analytics, attribution, GitHub et comptes sociaux : ouvrir ou transférer les accès propres à Process avec le destinataire identifié.
+L’envoi des liens email utilise contact@processdebloat.com et le portail processdebloat.com/clipping. La fonction accepte les anciens et nouveaux domaines HTTPS pour compatibilité. Le secret SMTP est conservé dans Secret Manager, jamais dans le pack de cession.
+
+4. Contrôles avant remise
+Scan réel, création/connexion compte, annulation et achat Apple sandbox, restauration, achat pending, fermeture d’offre, liens et support, suppression de compte et consentement IA.
+Cas Apple : bouton Claim my offer bloqué sur iPad Air M4. Interface remplacée ; validation réelle du comportement iPad restant à établir.
+Aucune soumission Apple avant nouvel accord explicite du propriétaire. Publication Apple obligatoire avant remise. L’installation Debug sur iPhone ne suffit pas à cette condition.
+Droits des médias et coûts vérifiés ; ne pas vendre une statistique estimée comme un résultat financier certifié.
+
+5. Remise finale
+Contrat avec actifs inclus/exclus, passifs, assistance et calendrier. Domaine au compte Hostinger acquéreur, hébergement dédié, boîte dédiée, code filtré sans secrets personnels.
+Rotation progressive après tests ; révocation du vendeur uniquement après confirmation de continuité.
+La version publiée et le manifeste de livraison doivent correspondre au code remis. Régénérer les empreintes après toute modification.
+
+6. Ordre de transition
+Avant vente : validation produit et publication avec accord propriétaire, droit des contenus, coûts/engagements rapprochés.
+Après choix acheteur : comptes de destination et accès dédiés ; transfert domaine et hébergement puis backend/RevenueCat/identité selon dépendances.
+Transfert Apple : migration Sign in with Apple et credentials abonnements/webhooks, suivi d’une vérification des droits existants.
+Après tests acquéreur : rotation des secrets dédiés et retrait progressif des accès vendeur. Les anciennes URLs restent temporairement compatibles pour les versions installées.
+Ne pas remettre les sauvegardes privées contenant configuration personnelle et données clients comme archive commerciale.

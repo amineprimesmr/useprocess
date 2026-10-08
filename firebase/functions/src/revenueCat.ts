@@ -15,6 +15,7 @@ export type RevenueCatDuration =
 const ANNUAL_PRODUCT_IDS = new Set([
   "com.useprocess.annual",
   "com.useprocess.annual3499",
+  "com.useprocess.annual3499trial",
   "com.useprocess.annual4999",
 ]);
 
@@ -60,6 +61,7 @@ export async function fetchSubscriber(
       Authorization: `Bearer ${secretKey}`,
       "Content-Type": "application/json",
     },
+    signal: AbortSignal.timeout(10000),
   });
 
   if (!response.ok) {

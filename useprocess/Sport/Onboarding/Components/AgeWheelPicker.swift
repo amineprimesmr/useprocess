@@ -2,29 +2,13 @@
 //  AgeWheelPicker.swift
 //  Process
 //
-//  Roulette personnalisée ultra fluide pour la sélection d'âge
-//  Scroll vertical avec animations incroyables
+//  Roulette d'âge verticale. Tout le défilement est natif : aimantation par
+//  `scrollTargetBehavior(.viewAligned)`, sélection par `scrollPosition(id:)`,
+//  et l'effet de profondeur passe par `visualEffect` — calculé au rendu, sans
+//  jamais écrire dans du `@State` pendant le scroll.
 //
 
 import SwiftUI
-
-// MARK: - PreferenceKey pour les positions des items
-struct ItemPositionPreferenceKey: PreferenceKey {
-    static var defaultValue: [Int: CGFloat] = [:]
-
-    static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat]) {
-        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
-    }
-}
-
-/// Offset vertical du contenu du `ScrollView` (coordonnées nommées `"scroll"`).
-struct ScrollOffsetPreferenceKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
 
 struct AgeWheelPicker: View {
     @Binding var selectedAge: Int
@@ -32,286 +16,121 @@ struct AgeWheelPicker: View {
     let maxAge: Int
     let onAgeChanged: ((Int) -> Void)?
 
-    @State private var scrollOffset: CGFloat = 0
-    @State private var isScrolling: Bool = false
-    @State private var dragVelocity: CGFloat = 0
-    @State private var lastDragTime: Date = Date()
-    @State private var scrollTask: Task<Void, Never>?
-    @State private var itemPositions: [Int: CGFloat] = [:] // Stocker les positions Y de chaque âge
-    @State private var lastVibratedAge: Int? // Pour éviter les vibrations répétées
-    @State private var hasInitialized: Bool = false // ✅ Pour éviter les changements automatiques au démarrage
+    /// Âge centré, piloté par le ScrollView lui-même.
+    @State private var centeredAge: Int?
 
-    // Constantes pour le design
-    private let itemHeight: CGFloat = 80
-    private let visibleItems: Int = 5 // Nombre d'items visibles (impair pour avoir un centre)
+    private let itemHeight: CGFloat = 92
+    private let visibleItems: Int = 5 // impair : un item au centre
+
+    private var wheelHeight: CGFloat { CGFloat(visibleItems) * itemHeight }
+
+    init(
+        selectedAge: Binding<Int>,
+        minAge: Int,
+        maxAge: Int,
+        onAgeChanged: ((Int) -> Void)? = nil
+    ) {
+        _selectedAge = selectedAge
+        self.minAge = minAge
+        self.maxAge = maxAge
+        self.onAgeChanged = onAgeChanged
+        _centeredAge = State(initialValue: min(max(selectedAge.wrappedValue, minAge), maxAge))
+    }
 
     var body: some View {
-        GeometryReader { geometry in
-            let centerY = geometry.size.height / 2
-
-            ZStack {
-                // ScrollView avec les âges
-                ScrollViewReader { proxy in
-                    ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: 0) {
-                            // Espace en haut pour centrer le premier item
-                            Spacer()
-                                .frame(height: centerY - itemHeight / 2)
-
-                            // Items d'âge
-                            ForEach(minAge...maxAge, id: \.self) { age in
-                                AgeItem(
-                                    age: age,
-                                    isSelected: age == selectedAge,
-                                    itemHeight: itemHeight,
-                                    centerY: centerY,
-                                    scrollOffset: scrollOffset
-                                )
-                                .id(age)
-                            }
-
-                            // Espace en bas pour centrer le dernier item
-                            Spacer()
-                                .frame(height: centerY - itemHeight / 2)
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 0) {
+                ForEach(minAge...maxAge, id: \.self) { age in
+                    AgeItem(age: age, itemHeight: itemHeight)
+                        .id(age)
+                        .onTapGesture {
+                            withAnimation(.snappy(duration: 0.3)) { centeredAge = age }
                         }
-                        .background(
-                            GeometryReader { scrollGeometry in
-                                Color.clear
-                                    .preference(
-                                        key: ScrollOffsetPreferenceKey.self,
-                                        value: scrollGeometry.frame(in: .named("scroll")).minY
-                                    )
-                            }
-                        )
-                    }
-                    .coordinateSpace(name: "scroll")
-                    .mask {
-                        LinearGradient(
-                            stops: [
-                                .init(color: .clear, location: 0),
-                                .init(color: .black, location: 0.20),
-                                .init(color: .black, location: 0.80),
-                                .init(color: .clear, location: 1)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    }
-                    .scrollDismissesKeyboard(.never)
-                    .onPreferenceChange(ItemPositionPreferenceKey.self) { positions in
-                        // Mettre à jour toutes les positions
-                        // Les positions sont dans le coordinate space "scroll"
-                        // Le centre du ScrollView dans ce coordinate space est aussi à centerY
-                        itemPositions = positions
-                        // Mettre à jour l'âge sélectionné
-                        updateSelectedAgeFromPositions(centerY: centerY)
-                    }
-                    .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
-                        let now = Date()
-                        let timeDelta = now.timeIntervalSince(lastDragTime)
-                        if timeDelta > 0 {
-                            dragVelocity = (value - scrollOffset) / CGFloat(timeDelta)
-                        }
-                        scrollOffset = value
-                        lastDragTime = now
-
-                        // Annuler la tâche précédente de snap
-                        scrollTask?.cancel()
-
-                        // Mettre à jour l'âge sélectionné en temps réel basé sur les positions
-                        updateSelectedAgeFromPositions(centerY: centerY)
-
-                        // Si la vitesse est très faible, snap immédiatement
-                        if abs(dragVelocity) < 50 {
-                            // Snap immédiat si on bouge très lentement
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                                snapToNearestAge(proxy: proxy, centerY: centerY)
-                            }
-                        } else {
-                            // Programmer un snap après l'arrêt du scroll
-                            scrollTask = Task {
-                                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms après l'arrêt
-                                if !Task.isCancelled {
-                                    snapToNearestAge(proxy: proxy, centerY: centerY)
-                                }
-                            }
-                        }
-                    }
-                    .onAppear {
-                        let initialAge = min(max(selectedAge, minAge), maxAge)
-
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                            scrollToAge(initialAge, proxy: proxy, animated: false)
-
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                hasInitialized = true
-                            }
-                        }
-                    }
-                    .onChange(of: selectedAge) { _, newValue in
-                        if !isScrolling {
-                            scrollToAge(newValue, proxy: proxy, animated: true)
-                        }
-                    }
                 }
             }
+            .scrollTargetLayout()
         }
-        .frame(height: CGFloat(visibleItems) * itemHeight)
-    }
-
-    private func scrollToAge(_ age: Int, proxy: ScrollViewProxy, animated: Bool) {
-        if animated {
-            withAnimation(.onboardingTransition) {
-                proxy.scrollTo(age, anchor: .center)
+        .scrollTargetBehavior(.viewAligned)
+        .scrollPosition(id: $centeredAge, anchor: .center)
+        // Marges = le premier et le dernier âge peuvent atteindre le centre.
+        .contentMargins(.vertical, (wheelHeight - itemHeight) / 2, for: .scrollContent)
+        .scrollDismissesKeyboard(.never)
+        .frame(height: wheelHeight)
+        .mask {
+            LinearGradient(
+                stops: [
+                    .init(color: .clear, location: 0),
+                    .init(color: .black, location: 0.20),
+                    .init(color: .black, location: 0.80),
+                    .init(color: .clear, location: 1)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+        .onChange(of: centeredAge) { _, newValue in
+            guard let newValue, newValue != selectedAge else { return }
+            selectedAge = newValue
+            HapticManager.shared.selection()
+            onAgeChanged?(newValue)
+        }
+        .onChange(of: selectedAge) { _, newValue in
+            // Changement venu de l'extérieur (valeur restaurée, etc.).
+            let clamped = min(max(newValue, minAge), maxAge)
+            guard clamped != centeredAge else { return }
+            centeredAge = clamped
+        }
+        .accessibilityElement()
+        .accessibilityLabel(OnboardingCopy.t("Âge", en: "Age"))
+        .accessibilityValue("\(selectedAge)")
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: selectedAge = min(selectedAge + 1, maxAge)
+            case .decrement: selectedAge = max(selectedAge - 1, minAge)
+            @unknown default: break
             }
-        } else {
-            proxy.scrollTo(age, anchor: .center)
-        }
-    }
-
-    private func updateSelectedAgeFromPositions(centerY: CGFloat) {
-        // ✅ IGNORER les changements automatiques avant l'initialisation complète
-        if !hasInitialized {
-            return
-        }
-
-        // Trouver l'âge le plus proche du centre en utilisant les positions réelles
-        var nearestAge: Int?
-        var minDistance: CGFloat = .infinity
-
-        for (age, position) in itemPositions {
-            let distance = abs(position - centerY)
-            if distance < minDistance {
-                minDistance = distance
-                nearestAge = age
-            }
-        }
-
-        guard let age = nearestAge, age >= minAge && age <= maxAge else { return }
-
-        // ✅ PROTECTION: Ne JAMAIS remplacer 25 par des valeurs suspectes
-        let invalidDefaultAges: Set<Int> = [minAge, 13, 16, 21]
-        if selectedAge == 25 && invalidDefaultAges.contains(age) {
-            // Si on est à 25 et que le scroll détecte une valeur par défaut, ignorer complètement
-            return
-        }
-
-        if age != selectedAge {
-            isScrolling = true
-            selectedAge = age
-
-            // Vibration incroyable quand on scroll et qu'un nouvel âge est sélectionné
-            if lastVibratedAge != age {
-                HapticManager.shared.selection()
-                lastVibratedAge = age
-            }
-
-            onAgeChanged?(age)
-
-            // Réinitialiser le flag après un court délai
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                isScrolling = false
-            }
-        }
-    }
-
-    private func snapToNearestAge(proxy: ScrollViewProxy, centerY: CGFloat) {
-        // Trouver l'âge le plus proche du centre
-        var nearestAge: Int?
-        var minDistance: CGFloat = .infinity
-
-        for (age, position) in itemPositions {
-            let distance = abs(position - centerY)
-            if distance < minDistance {
-                minDistance = distance
-                nearestAge = age
-            }
-        }
-
-        guard let age = nearestAge, age >= minAge && age <= maxAge else {
-            // Si pas de positions, utiliser scrollToAge directement avec l'âge actuel
-            scrollToAge(selectedAge, proxy: proxy, animated: true)
-            return
-        }
-
-        // TOUJOURS snap vers l'âge le plus proche, même si c'est déjà sélectionné
-        // Cela garantit que la roulette est toujours parfaitement centrée sur un chiffre
-        // Ne pas mettre à jour selectedAge si c'est déjà le bon pour éviter les boucles
-        if age != selectedAge {
-            isScrolling = true
-            selectedAge = age
-            onAgeChanged?(age)
-        }
-
-        // TOUJOURS faire le scroll pour centrer parfaitement, même si l'âge est déjà sélectionné
-        scrollToAge(age, proxy: proxy, animated: true)
-
-        // Réinitialiser le flag après l'animation
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            isScrolling = false
         }
     }
 }
 
 // MARK: - Item d'âge individuel avec effet de distance
-struct AgeItem: View {
+private struct AgeItem: View {
     let age: Int
-    let isSelected: Bool
     let itemHeight: CGFloat
-    let centerY: CGFloat
-    let scrollOffset: CGFloat
 
-    // Calculer la distance depuis le centre pour l'effet de perspective
-    // On utilise GeometryReader pour obtenir la position réelle
     var body: some View {
-        GeometryReader { geometry in
-            let itemCenter = geometry.frame(in: .named("scroll")).midY
-            let distanceFromCenter = abs(itemCenter - centerY)
-            let maxDistance = itemHeight * 2.5
-            let normalizedDistance = min(1.0, distanceFromCenter / maxDistance)
-
-            let scale = 1.0 - (normalizedDistance * 0.35) // Réduire jusqu'à 65% de la taille
-            let opacity = 1.0 - (normalizedDistance * 0.7) // Réduire jusqu'à 30% d'opacité
-
-            Text("\(age)")
-                .font(.system(size: isSelected ? 100 : 56, weight: .bold, design: .default))
-                .foregroundStyle(
-                    isSelected ?
-                    LinearGradient(
-                        colors: [
-                            OnboardingTheme.primaryText,
-                            OnboardingTheme.primaryText.opacity(0.95),
-                            Color.gray.opacity(0.6)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ) :
-                    LinearGradient(
-                        colors: [
-                            OnboardingTheme.primaryText.opacity(0.6),
-                            OnboardingTheme.primaryText.opacity(0.5),
-                            Color.gray.opacity(0.4)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+        Text("\(age)")
+            // Taille fixe : seule une transformation GPU varie au scroll,
+            // jamais la mise en page du texte.
+            .font(.system(size: 88, weight: .bold))
+            // Pas de `monospacedDigit` : il écarte les chiffres (« 2 0 »). Tracking serré.
+            .tracking(-3)
+            .foregroundStyle(
+                LinearGradient(
+                    colors: [
+                        OnboardingTheme.primaryText,
+                        OnboardingTheme.primaryText.opacity(0.95),
+                        Color.gray.opacity(0.6)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
                 )
-                .scaleEffect(scale)
-                .opacity(opacity)
-                .frame(maxWidth: .infinity)
-                .frame(height: itemHeight)
-                .contentShape(Rectangle())
-                .animation(.onboardingTransition, value: isSelected)
-                .background(
-                    GeometryReader { itemGeometry in
-                        Color.clear
-                            .preference(
-                                key: ItemPositionPreferenceKey.self,
-                                value: [age: itemGeometry.frame(in: .named("scroll")).midY]
-                            )
-                    }
-                )
-        }
-        .frame(height: itemHeight)
+            )
+            .fixedSize()
+            .frame(maxWidth: .infinity)
+            .frame(height: itemHeight)
+            .contentShape(Rectangle())
+            .visualEffect { [itemHeight] content, proxy in
+                let viewport = proxy.bounds(of: .scrollView(axis: .vertical)) ?? .zero
+                let midY = proxy.frame(in: .scrollView(axis: .vertical)).midY
+                // 0 au centre, 1 à un item de distance, plafonné à 2,5 items.
+                let distance = abs(midY - viewport.height / 2) / itemHeight
+                let near = min(distance, 1)
+                let far = min(max(distance - 1, 0), 1.5) / 1.5
+
+                return content
+                    .scaleEffect(1 - near * 0.44 - far * 0.16)
+                    .opacity(1 - near * 0.5 - far * 0.3)
+            }
     }
 }

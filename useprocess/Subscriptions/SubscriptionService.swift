@@ -29,6 +29,7 @@ final class SubscriptionService: NSObject, ObservableObject {
     var monthlyProduct: Product? { monthlyStoreProduct }
 
     private var isConfigured = false
+    private var transactionUpdatesTask: Task<Void, Never>?
     private var syncedRevenueCatUserID: String?
     private var weeklyPackage: Package?
     private var monthlyPackage: Package?
@@ -169,6 +170,17 @@ final class SubscriptionService: NSObject, ObservableObject {
     // MARK: - Setup
 
     func configure() {
+        if transactionUpdatesTask == nil {
+            transactionUpdatesTask = Task { [weak self] in
+                for await result in StoreKit.Transaction.updates {
+                    guard let self, !self.isConfigured,
+                          case .verified(let transaction) = result,
+                          SubscriptionConfiguration.allPremiumProductIDs.contains(transaction.productID) else { continue }
+                    await self.checkSubscriptionStatus()
+                    await transaction.finish()
+                }
+            }
+        }
         guard !isConfigured else { return }
         RevenueCatConfiguration.logConfigurationStatus()
 
@@ -218,7 +230,10 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     func syncAppUserID(_ userID: String?) async {
-        guard isConfigured else { return }
+        guard isConfigured else {
+            await checkSubscriptionStatus()
+            return
+        }
 
         guard let userID, !userID.isEmpty else {
             syncedRevenueCatUserID = nil
@@ -241,6 +256,14 @@ final class SubscriptionService: NSObject, ObservableObject {
             await loadSubscriptions()
         } catch {
             return
+        }
+    }
+
+    /// Preserve an Apple purchase when the paid onboarding guest links an Apple account.
+    func syncPurchasesAfterAccountLink() async {
+        guard isConfigured else { return }
+        if let info = try? await Purchases.shared.syncPurchases() {
+            applyCustomerInfo(info)
         }
     }
 
@@ -318,6 +341,7 @@ final class SubscriptionService: NSObject, ObservableObject {
     // MARK: - Catalog
 
     func loadSubscriptions() async {
+        guard !isLoading else { return }
         isLoading = true
         defer { isLoading = false }
 
@@ -482,12 +506,13 @@ final class SubscriptionService: NSObject, ObservableObject {
                 customerInfo = result.customerInfo
                 userCancelled = result.userCancelled
             } else {
-                throw SubscriptionError.productNotFound
+                try await purchaseWithStoreKit(plan: plan)
+                return
             }
 
             if userCancelled { throw SubscriptionError.userCancelled }
             applyCustomerInfo(customerInfo)
-            await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
+            Task { await ReferralService.shared.confirmSubscriptionRewardsIfNeeded() }
         } catch let error as ErrorCode where error == .purchaseCancelledError {
             throw SubscriptionError.userCancelled
         } catch let error as SubscriptionError {
@@ -530,7 +555,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         let result = try await Purchases.shared.purchase(product: lifetime)
         if result.userCancelled { throw SubscriptionError.userCancelled }
         applyCustomerInfo(result.customerInfo)
-        await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
+        Task { await ReferralService.shared.confirmSubscriptionRewardsIfNeeded() }
         return true
     }
 
@@ -556,7 +581,7 @@ final class SubscriptionService: NSObject, ObservableObject {
             } else {
                 await checkStoreKitSubscriptionStatus()
             }
-            await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
+            Task { await ReferralService.shared.confirmSubscriptionRewardsIfNeeded() }
         case .userCancelled:
             throw SubscriptionError.userCancelled
         case .pending:
@@ -577,7 +602,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         let info = try await Purchases.shared.restorePurchases()
         applyCustomerInfo(info)
         guard subscriptionStatus.isActive else { throw SubscriptionError.noActiveSubscription }
-        await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
+        Task { await ReferralService.shared.confirmSubscriptionRewardsIfNeeded() }
     }
 
     /// Ouvre la feuille Apple « Gérer les abonnements » (écran où s’affiche la Retention Messaging API).
@@ -815,12 +840,8 @@ final class SubscriptionService: NSObject, ObservableObject {
             return typed
         }
 
-        switch fallbackType {
-        case .weekly: return offering.weekly
-        case .monthly: return offering.monthly
-        case .annual: return offering.annual
-        default: return nil
-        }
+        // Never substitute another SKU: the displayed offer must be the purchased offer.
+        return nil
     }
 
     private func applyPackageDisplay(_ package: Package?, plan: SubscriptionBillingPlan) {
@@ -845,11 +866,6 @@ final class SubscriptionService: NSObject, ObservableObject {
 
     private func makeDisplay(from product: StoreProduct, plan: SubscriptionBillingPlan) -> SubscriptionProductDisplay {
         let currency = product.currencyCode
-
-        // Paywall FR + storefront USD (sandbox / compte US) → prix marketing EUR, jamais $.
-        if SubscriptionConfiguration.shouldUseEuroPaywallDisplay(storeCurrencyCode: currency) {
-            return .fallback(for: plan)
-        }
 
         let price = SubscriptionConfiguration.formatPaywallPrice(
             decimal: product.price as Decimal,
@@ -905,10 +921,6 @@ final class SubscriptionService: NSObject, ObservableObject {
 
     private func makeDisplay(from product: Product, plan: SubscriptionBillingPlan) -> SubscriptionProductDisplay {
         let currency = storeKitCurrencyCode(from: product)
-
-        if SubscriptionConfiguration.shouldUseEuroPaywallDisplay(storeCurrencyCode: currency) {
-            return .fallback(for: plan)
-        }
 
         let price = SubscriptionConfiguration.formatPaywallPrice(
             decimal: product.price,
@@ -979,8 +991,13 @@ final class SubscriptionService: NSObject, ObservableObject {
         case .success(let verification):
             let transaction = try verified(verification)
             await transaction.finish()
-            await checkStoreKitSubscriptionStatus()
-            await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
+            if isConfigured {
+                _ = try? await Purchases.shared.syncPurchases()
+                await checkSubscriptionStatus()
+            } else {
+                await checkStoreKitSubscriptionStatus()
+            }
+            Task { await ReferralService.shared.confirmSubscriptionRewardsIfNeeded() }
         case .userCancelled:
             throw SubscriptionError.userCancelled
         case .pending:

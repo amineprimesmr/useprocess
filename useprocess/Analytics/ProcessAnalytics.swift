@@ -33,8 +33,8 @@ enum ProcessAnalytics {
         config.captureApplicationLifecycleEvents = true
         config.captureScreenViews = true
         config.personProfiles = .identifiedOnly
-        config.captureElementInteractions = true
-        config.sessionReplay = true
+        config.captureElementInteractions = false
+        config.sessionReplay = false
         config.sessionReplayConfig.maskAllTextInputs = true
         config.sessionReplayConfig.maskAllImages = true
         config.sessionReplayConfig.screenshotMode = true
@@ -44,6 +44,9 @@ enum ProcessAnalytics {
         #endif
 
         PostHogSDK.shared.setup(config)
+        // Clear names persisted as super-properties by earlier releases.
+        PostHogSDK.shared.unregister("first_name")
+        PostHogSDK.shared.unregister("name")
         didConfigure = true
 
         capture("analytics_ready", properties: [
@@ -59,17 +62,11 @@ enum ProcessAnalytics {
     static func identify(userId: String?, properties: [String: Any] = [:]) {
         guard isReady, let userId, !userId.isEmpty else { return }
         var props = properties
-        // Attache le prénom au person profile dès l'identify (différencier les users dans PostHog).
-        if props["first_name"] == nil,
-           let name = resolvedFirstName(from: UnifiedProfileService.shared.currentProfile?.firstName) {
-            props["first_name"] = name
-            props["name"] = name
-            registerFirstNameSuperProperties(name)
-        }
         for (key, value) in ProcessAcquisitionAttribution.analyticsProperties() {
             if props[key] == nil { props[key] = value }
         }
-        PostHogSDK.shared.identify(userId, userProperties: props.isEmpty ? nil : props)
+        let permitted = permittedProperties(props)
+        PostHogSDK.shared.identify(userId, userProperties: permitted.isEmpty ? nil : permitted)
         ProcessAppsFlyer.shared.setCustomerUserID(userId)
         ProcessAcquisitionAttribution.syncToAnalytics(emitResolvedEvent: false)
     }
@@ -117,9 +114,9 @@ enum ProcessAnalytics {
             }
         }
         if let userProperties, !userProperties.isEmpty {
-            PostHogSDK.shared.capture(event, properties: props, userProperties: userProperties)
+            PostHogSDK.shared.capture(event, properties: permittedProperties(props), userProperties: permittedProperties(userProperties))
         } else {
-            PostHogSDK.shared.capture(event, properties: props)
+            PostHogSDK.shared.capture(event, properties: permittedProperties(props))
         }
     }
 
@@ -133,7 +130,7 @@ enum ProcessAnalytics {
             }
         }
         guard !supers.isEmpty else { return }
-        PostHogSDK.shared.register(supers)
+        PostHogSDK.shared.register(permittedProperties(supers))
     }
 
     static func setPersonProperties(_ properties: [String: Any]) {
@@ -141,13 +138,13 @@ enum ProcessAnalytics {
         PostHogSDK.shared.capture(
             "$set",
             properties: ["app": "process"],
-            userProperties: properties
+            userProperties: permittedProperties(properties)
         )
     }
 
     static func screen(_ name: String, properties: [String: Any] = [:]) {
         guard isReady else { return }
-        PostHogSDK.shared.screen(name, properties: properties)
+        PostHogSDK.shared.screen(name, properties: permittedProperties(properties))
     }
 
     // MARK: - App
@@ -338,7 +335,6 @@ enum ProcessAnalytics {
         capture("paywall_viewed", properties: withPricingVariant(["source": source]))
         screen("paywall")
         trackFunnelScreen(.paywall, extra: ["source": source])
-        Task { await AffiliateService.shared.trackPaywallReached() }
     }
 
     static func trackPaywallPlanSelected(plan: String, source: String = "paywall") {
@@ -758,6 +754,27 @@ enum ProcessAnalytics {
 
     // MARK: - Helpers
 
+    /// Only technical/funnel/purchase metadata may leave through product analytics.
+    /// New properties are excluded until explicitly reviewed; raw answers, scan scores,
+    /// names, health measurements, free text and error messages are never allowed.
+    private static func permittedProperties(_ properties: [String: Any]) -> [String: Any] {
+        let allowed: Set<String> = [
+            "app", "host", "step", "step_raw", "step_index", "funnel_version",
+            "screen", "screen_id", "screen_name", "screen_label_fr", "funnel_phase",
+            "app_language", "has_completed_onboarding", "page", "from_page",
+            "from_moss_page", "action", "trigger", "source", "kind", "variant",
+            "offering_id", "package_id", "product_id", "plan", "offer", "paywall_id",
+            "placement", "is_active", "period", "price", "revenue", "currency", "status",
+            "error_code", "current_version", "available_version", "forced",
+            "referral_code", "has_referral_code"
+        ]
+        return properties.filter { key, _ in
+            allowed.contains(key) || key.hasPrefix("acquisition_")
+                || key.hasPrefix("asa_") || key.hasPrefix("appsflyer_")
+        }
+    }
+
+
     private static func stepProperties(_ step: OnboardingStep?) -> [String: Any] {
         guard let step else { return [:] }
         var props: [String: Any] = [
@@ -785,21 +802,7 @@ enum ProcessAnalytics {
         source: String,
         emitEvent: Bool
     ) {
-        guard let name = resolvedFirstName(from: raw) else { return }
-
-        registerFirstNameSuperProperties(name)
-        setPersonProperties([
-            "first_name": name,
-            "name": name
-        ])
-
-        guard emitEvent, lastTrackedFirstName != name else { return }
-        lastTrackedFirstName = name
-        capture("first_name_set", properties: [
-            "first_name": name,
-            "first_name_length": name.count,
-            "source": source
-        ])
+        // Personal names are not sent to product analytics.
     }
 
     private static func purchaseStoreProduct(for plan: String) -> Product? {
@@ -828,12 +831,7 @@ enum ProcessAnalytics {
     }
 
     private static func registerFirstNameSuperProperties(_ name: String) {
-        guard isReady else { return }
-        // Super properties → first_name présent sur tous les events suivants (paywall, purchase…).
-        PostHogSDK.shared.register([
-            "first_name": name,
-            "name": name
-        ])
+        // Personal names are not sent to product analytics.
     }
 }
 

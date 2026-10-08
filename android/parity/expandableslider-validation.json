@@ -1,0 +1,38 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-115628640-376278603/ExpandableSlider/ExpandableSlider/ContentView.swift": "1a271b6e5480bcb14c5524f3525cd3528e37f57fa0c4cb815af41bb6c0f31166",
+    "content/source-projects/design-source-115628640-376278603/ExpandableSlider/ExpandableSlider/ExpandableSliderApp.swift": "f58a8bb20e72417ec33e16a5d707251df1890bd50f2e576d18e7e250572bac73",
+    "content/source-projects/design-source-115628640-376278603/ExpandableSlider/ExpandableSlider/Helpers/CustomSlider.swift": "894316e2c348b71f90574c2fc689036e8e4c7c8c734e7ae7e099634a306d691a"
+  },
+  "mirrorMatchesInventory": true,
+  "contract": "Supply controlled value,onValueChange,positive range and overlay(Color). Original fill and translation divide/multiply by upperBound rather than range span; nonzero lower-bound behavior is intentionally preserved. Values are clamped; invalid empty/negative/nonfinite ranges are rejected. External values become the next gesture baseline, fixing the source stale lastStoredValue. Layout always reserves20dp+25dp; visible mask expands20to45,15radius. Overlay fades in300ms after120ms; out150ms. Relative drag starts without touch slop; lifecycle/cancellation emits gesture-end and prevents late changes. Accessible progress action supported. Demo starts30/70with black/red fill and never changes device settings. Swift snappy mask,variable SFsymbols and physical/iOS pixel comparison remain unverified.",
+  "nativeFiles": [
+    "ExpandableSliderModel.kt",
+    "TenKExpandableSlider.kt",
+    "TenKExpandableSliderGallery.kt"
+  ],
+  "recordedAt": "2026-10-08T08:15:00.364584+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 143,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 46
+  },
+  "visual": "host render inspected; iOS comparison unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "ExpandableSliderModel.kt": "a17dd745420fc35b9775f47a6332cff1ce31b9a662988131e58f6b7700b1240a",
+    "TenKExpandableSlider.kt": "bafeebec97d0c3568fac0d516816255e82555da171a03200bc3bf720cfe0453d",
+    "TenKExpandableSliderGallery.kt": "17c7852ccac7798ddf3dcd03d8dbbea1908d70af9decd8de0625c6ed15bd829b"
+  },
+  "remaining": [
+    "Native glass,typography,exact springs/scroll/GPU motion and physical/iOS paired comparison remain unverified",
+    "Host integrations and component-specific limitations are detailed in the integration contract"
+  ]
+}

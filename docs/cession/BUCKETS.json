@@ -1,0 +1,14 @@
+[
+  {
+    "location": "US-CENTRAL1",
+    "name": "gcf-v2-sources-3107027616-us-central1"
+  },
+  {
+    "location": "US-CENTRAL1",
+    "name": "gcf-v2-uploads-3107027616.us-central1.cloudfunctions.appspot.com"
+  },
+  {
+    "location": "US-EAST1",
+    "name": "useprocess-d4385.firebasestorage.app"
+  }
+]

@@ -53,10 +53,9 @@ struct LanguageSelectorView: View {
         let isActive = appLanguage.code == language
         return Button {
             HapticManager.shared.selection()
-            Task {
-                await applyLanguage(language)
-                showsMenu = false
-            }
+            // Fermer avant l'écriture réseau : hors ligne, le popover restait ouvert sur une page déjà recréée.
+            showsMenu = false
+            Task { await applyLanguage(language) }
         } label: {
             HStack(spacing: 12) {
                 Text(language.flag)

@@ -1,0 +1,2117 @@
+{
+  "source": "useprocess/WelcomePlan/Food/DebloatFoodCatalog.swift",
+  "sha256": "a4ec0dad4921c68c301dee28e7a36c954872e1171d7cb791ee715d977ad90f7e",
+  "count": 139,
+  "foods": [
+    {
+      "id": "concombre",
+      "name": "Concombre",
+      "category": "legumes",
+      "tier": "hero",
+      "k": 147,
+      "na": 2,
+      "mg": 13,
+      "why": "N°1 anti-gonflement : eau + K, quasi zéro sodium.",
+      "tags": [
+        "soir-safe",
+        "high-K",
+        "drainant"
+      ],
+      "portion": "1/2 à 1 concombre"
+    },
+    {
+      "id": "courgette",
+      "name": "Courgette",
+      "category": "legumes",
+      "tier": "hero",
+      "k": 261,
+      "na": 8,
+      "mg": 18,
+      "why": "Légume drainant, parfait le soir pour un visage plus net.",
+      "tags": [
+        "soir-safe",
+        "high-K"
+      ],
+      "portion": "200 g cuite"
+    },
+    {
+      "id": "asperge",
+      "name": "Asperge",
+      "category": "legumes",
+      "tier": "prefer",
+      "k": 202,
+      "na": 2,
+      "mg": 14,
+      "why": "Diurétique naturel, aide à évacuer l’eau en excès.",
+      "tags": [
+        "soir-safe",
+        "drainant"
+      ],
+      "portion": "1 botte"
+    },
+    {
+      "id": "celeri",
+      "name": "Céleri branche",
+      "category": "legumes",
+      "tier": "prefer",
+      "k": 260,
+      "na": 80,
+      "mg": 11,
+      "why": "Croquant drainant — garde le sodium bas en le mangeant nature.",
+      "tags": [
+        "soir-safe",
+        "drainant"
+      ],
+      "portion": "2–3 branches"
+    },
+    {
+      "id": "fenouil",
+      "name": "Fenouil",
+      "category": "legumes",
+      "tier": "prefer",
+      "k": 414,
+      "na": 52,
+      "mg": 17,
+      "why": "Riche en K, digeste, excellent pour limiter la rétention.",
+      "tags": [
+        "soir-safe",
+        "high-K"
+      ],
+      "portion": "1 bulbe"
+    },
+    {
+      "id": "artichaut",
+      "name": "Artichaut",
+      "category": "legumes",
+      "tier": "prefer",
+      "k": 370,
+      "na": 94,
+      "mg": 60,
+      "why": "Soutient le drainage et apporte du magnésium utile.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "1 artichaut"
+    },
+    {
+      "id": "poireau",
+      "name": "Poireau",
+      "category": "legumes",
+      "tier": "prefer",
+      "k": 180,
+      "na": 20,
+      "mg": 28,
+      "why": "Base soupe anti-rétention, faible en sodium si non salée.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "1 poireau"
+    },
+    {
+      "id": "epinards",
+      "name": "Épinards",
+      "category": "legumes",
+      "tier": "hero",
+      "k": 558,
+      "na": 79,
+      "mg": 79,
+      "why": "Triple levier : potassium + magnésium + volume drainant.",
+      "tags": [
+        "soir-safe",
+        "high-K"
+      ],
+      "portion": "150 g cuits"
+    },
+    {
+      "id": "blettes",
+      "name": "Blettes",
+      "category": "legumes",
+      "tier": "prefer",
+      "k": 379,
+      "na": 213,
+      "mg": 81,
+      "why": "Feuilles riches en K/Mg — rincer et cuire sans sel.",
+      "tags": [
+        "high-K"
+      ],
+      "portion": "200 g"
+    },
+    {
+      "id": "tomate",
+      "name": "Tomate",
+      "category": "legumes",
+      "tier": "prefer",
+      "k": 237,
+      "na": 5,
+      "mg": 11,
+      "why": "Fraîche ou concentrée nature : boost K sans sel ajouté.",
+      "tags": [
+        "soir-safe",
+        "high-K"
+      ],
+      "swaps": [
+        "tomate-concentree"
+      ],
+      "portion": "2 tomates"
+    },
+    {
+      "id": "tomate-concentree",
+      "name": "Tomate concentrée nature",
+      "category": "potassium",
+      "tier": "hero",
+      "k": 1014,
+      "na": 58,
+      "mg": 68,
+      "why": "Concentrateur de potassium — choisir sans sel ajouté.",
+      "tags": [
+        "high-K",
+        "soir-safe"
+      ],
+      "portion": "2 c. à s."
+    },
+    {
+      "id": "poivron",
+      "name": "Poivron",
+      "category": "legumes",
+      "tier": "prefer",
+      "k": 211,
+      "na": 4,
+      "mg": 12,
+      "why": "Couleur, croquant, sodium quasi nul.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "1 poivron"
+    },
+    {
+      "id": "radis-noir",
+      "name": "Radis noir",
+      "category": "legumes",
+      "tier": "prefer",
+      "k": 233,
+      "na": 39,
+      "mg": 25,
+      "why": "Drainant classique, utile en cure courte visage.",
+      "tags": [
+        "drainant"
+      ],
+      "portion": "quelques tranches"
+    },
+    {
+      "id": "aubergine",
+      "name": "Aubergine",
+      "category": "legumes",
+      "tier": "prefer",
+      "k": 229,
+      "na": 2,
+      "mg": 14,
+      "why": "Cuite sans sel : volume satiating et K correct.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "1 aubergine"
+    },
+    {
+      "id": "carotte",
+      "name": "Carotte",
+      "category": "legumes",
+      "tier": "prefer",
+      "k": 320,
+      "na": 69,
+      "mg": 12,
+      "why": "Base stable, utile en soupe ou râpée sans vinaigrette salée.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "2 carottes"
+    },
+    {
+      "id": "brocoli",
+      "name": "Brocoli",
+      "category": "legumes",
+      "tier": "prefer",
+      "k": 316,
+      "na": 33,
+      "mg": 21,
+      "why": "K + fibres — portions modérées si digestion sensible.",
+      "tags": [
+        "soir-safe",
+        "high-K"
+      ],
+      "portion": "200 g"
+    },
+    {
+      "id": "choux-bruxelles",
+      "name": "Choux de Bruxelles",
+      "category": "legumes",
+      "tier": "prefer",
+      "k": 389,
+      "na": 25,
+      "mg": 23,
+      "why": "Potassium solide ; vapeur + herbes plutôt que beurre salé.",
+      "tags": [
+        "high-K"
+      ],
+      "portion": "150 g"
+    },
+    {
+      "id": "haricots-verts",
+      "name": "Haricots verts",
+      "category": "legumes",
+      "tier": "prefer",
+      "k": 211,
+      "na": 6,
+      "mg": 25,
+      "why": "Accompagnement soir-safe, sodium négligeable.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "200 g"
+    },
+    {
+      "id": "roquette",
+      "name": "Roquette",
+      "category": "legumes",
+      "tier": "prefer",
+      "k": 369,
+      "na": 27,
+      "mg": 47,
+      "why": "Salade high-K ; citron + huile, zéro sel.",
+      "tags": [
+        "soir-safe",
+        "high-K"
+      ],
+      "portion": "1 bol"
+    },
+    {
+      "id": "mache",
+      "name": "Mâche",
+      "category": "legumes",
+      "tier": "prefer",
+      "k": 459,
+      "na": 4,
+      "mg": 22,
+      "why": "Feuille douce très riche en potassium.",
+      "tags": [
+        "soir-safe",
+        "high-K"
+      ],
+      "portion": "1 bol"
+    },
+    {
+      "id": "betterave",
+      "name": "Betterave",
+      "category": "legumes",
+      "tier": "prefer",
+      "k": 325,
+      "na": 78,
+      "mg": 23,
+      "why": "Cuite nature (pas en vinaigrette industrielle).",
+      "tags": [
+        "high-K"
+      ],
+      "portion": "1 betterave"
+    },
+    {
+      "id": "champignons",
+      "name": "Champignons",
+      "category": "legumes",
+      "tier": "prefer",
+      "k": 318,
+      "na": 5,
+      "mg": 9,
+      "why": "Goût umami sans sel — allié anti-rétention.",
+      "tags": [
+        "soir-safe",
+        "high-K"
+      ],
+      "portion": "150 g"
+    },
+    {
+      "id": "pasteque",
+      "name": "Pastèque",
+      "category": "fruits",
+      "tier": "hero",
+      "k": 112,
+      "na": 1,
+      "mg": 10,
+      "why": "Eau + K : effet drainant rapide sur le visage.",
+      "tags": [
+        "soir-safe",
+        "high-K",
+        "tiktok-trend"
+      ],
+      "portion": "2 parts"
+    },
+    {
+      "id": "melon",
+      "name": "Melon",
+      "category": "fruits",
+      "tier": "hero",
+      "k": 267,
+      "na": 16,
+      "mg": 12,
+      "why": "Fruit drainant dense en potassium.",
+      "tags": [
+        "soir-safe",
+        "high-K"
+      ],
+      "portion": "1/2 melon"
+    },
+    {
+      "id": "ananas",
+      "name": "Ananas",
+      "category": "fruits",
+      "tier": "hero",
+      "k": 109,
+      "na": 1,
+      "mg": 12,
+      "why": "Bromélaïne + drainage — frais ou jus 100 % modéré.",
+      "tags": [
+        "soir-safe",
+        "tiktok-trend",
+        "high-K"
+      ],
+      "portion": "2 parts"
+    },
+    {
+      "id": "citron",
+      "name": "Citron",
+      "category": "fruits",
+      "tier": "prefer",
+      "k": 138,
+      "na": 2,
+      "mg": 8,
+      "why": "Remplace le sel : acidité + rituels eau citronnée.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "1/2 citron"
+    },
+    {
+      "id": "orange",
+      "name": "Orange",
+      "category": "fruits",
+      "tier": "prefer",
+      "k": 181,
+      "na": 0,
+      "mg": 10,
+      "why": "Hydratation et K sans sodium.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "1 orange"
+    },
+    {
+      "id": "pamplemousse",
+      "name": "Pamplemousse",
+      "category": "fruits",
+      "tier": "prefer",
+      "k": 135,
+      "na": 0,
+      "mg": 9,
+      "why": "Léger, drainant, utile le matin.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "1/2 fruit"
+    },
+    {
+      "id": "citron-vert",
+      "name": "Citron vert",
+      "category": "fruits",
+      "tier": "prefer",
+      "k": 102,
+      "na": 2,
+      "mg": 6,
+      "why": "Assaisonnement anti-sel pour bols et poissons.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "1/2 fruit"
+    },
+    {
+      "id": "kiwi",
+      "name": "Kiwi",
+      "category": "fruits",
+      "tier": "prefer",
+      "k": 312,
+      "na": 3,
+      "mg": 17,
+      "why": "Potassium élevé dans un petit volume.",
+      "tags": [
+        "soir-safe",
+        "high-K"
+      ],
+      "portion": "2 kiwis"
+    },
+    {
+      "id": "fraises",
+      "name": "Fraises",
+      "category": "fruits",
+      "tier": "prefer",
+      "k": 153,
+      "na": 1,
+      "mg": 13,
+      "why": "Fruit eau + K, collation visage-friendly.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "150 g"
+    },
+    {
+      "id": "framboises",
+      "name": "Framboises",
+      "category": "fruits",
+      "tier": "prefer",
+      "k": 151,
+      "na": 1,
+      "mg": 22,
+      "why": "Fibres + K, peu de sodium.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "125 g"
+    },
+    {
+      "id": "myrtilles",
+      "name": "Myrtilles",
+      "category": "fruits",
+      "tier": "prefer",
+      "k": 77,
+      "na": 1,
+      "mg": 6,
+      "why": "Antioxydants utiles, sodium négligeable.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "125 g"
+    },
+    {
+      "id": "mures",
+      "name": "Mûres",
+      "category": "fruits",
+      "tier": "prefer",
+      "k": 162,
+      "na": 1,
+      "mg": 20,
+      "why": "Baies drainantes, snack simple.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "125 g"
+    },
+    {
+      "id": "banane",
+      "name": "Banane",
+      "category": "fruits",
+      "tier": "hero",
+      "k": 358,
+      "na": 1,
+      "mg": 27,
+      "why": "Source K star — idéale post-sport / matin.",
+      "tags": [
+        "high-K"
+      ],
+      "portion": "1 banane"
+    },
+    {
+      "id": "avocat",
+      "name": "Avocat",
+      "category": "fruits",
+      "tier": "hero",
+      "k": 485,
+      "na": 7,
+      "mg": 29,
+      "why": "K très élevé, remplace les sauces salées.",
+      "tags": [
+        "high-K",
+        "soir-safe"
+      ],
+      "portion": "1/2 avocat"
+    },
+    {
+      "id": "pomme",
+      "name": "Pomme",
+      "category": "fruits",
+      "tier": "prefer",
+      "k": 107,
+      "na": 1,
+      "mg": 5,
+      "why": "Base neutre, utile en collation sans sel.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "1 pomme"
+    },
+    {
+      "id": "figue",
+      "name": "Figue",
+      "category": "fruits",
+      "tier": "prefer",
+      "k": 232,
+      "na": 1,
+      "mg": 17,
+      "why": "Fraîche ou sèche non sucrée : boost K.",
+      "tags": [
+        "high-K"
+      ],
+      "portion": "2–3 figues"
+    },
+    {
+      "id": "abricot",
+      "name": "Abricot",
+      "category": "fruits",
+      "tier": "prefer",
+      "k": 259,
+      "na": 1,
+      "mg": 10,
+      "why": "Frais ou sec non sucré — potassium concentré.",
+      "tags": [
+        "high-K"
+      ],
+      "swaps": [
+        "abricots-secs"
+      ],
+      "portion": "3 abricots"
+    },
+    {
+      "id": "abricots-secs",
+      "name": "Abricots secs",
+      "category": "potassium",
+      "tier": "hero",
+      "k": 1162,
+      "na": 10,
+      "mg": 32,
+      "why": "Concentrateur K — portion petite, non sucrés.",
+      "tags": [
+        "high-K"
+      ],
+      "portion": "4–5 pièces"
+    },
+    {
+      "id": "peche",
+      "name": "Pêche / nectarine",
+      "category": "fruits",
+      "tier": "prefer",
+      "k": 190,
+      "na": 0,
+      "mg": 9,
+      "why": "Fruit eau de saison, sodium nul.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "1–2 fruits"
+    },
+    {
+      "id": "raisins-secs",
+      "name": "Raisins secs",
+      "category": "potassium",
+      "tier": "prefer",
+      "k": 749,
+      "na": 11,
+      "mg": 32,
+      "why": "K dense — éviter les versions salées/enrobées.",
+      "tags": [
+        "high-K"
+      ],
+      "portion": "une poignée"
+    },
+    {
+      "id": "dattes",
+      "name": "Dattes",
+      "category": "potassium",
+      "tier": "prefer",
+      "k": 656,
+      "na": 1,
+      "mg": 43,
+      "why": "K + Mg ; portion contrôlée, non fourrées.",
+      "tags": [
+        "high-K"
+      ],
+      "portion": "2 dattes"
+    },
+    {
+      "id": "patate-douce",
+      "name": "Patate douce",
+      "category": "potassium",
+      "tier": "hero",
+      "k": 337,
+      "na": 55,
+      "mg": 25,
+      "why": "Féculent high-K : vapeur/four, peau si possible.",
+      "tags": [
+        "high-K",
+        "soir-safe"
+      ],
+      "swaps": [
+        "pain-baguette"
+      ],
+      "portion": "1 moyenne"
+    },
+    {
+      "id": "pomme-de-terre",
+      "name": "Pomme de terre",
+      "category": "potassium",
+      "tier": "hero",
+      "k": 421,
+      "na": 6,
+      "mg": 23,
+      "why": "Avec peau, vapeur/four : bombe potassium anti-rétention.",
+      "tags": [
+        "high-K",
+        "soir-safe"
+      ],
+      "swaps": [
+        "pain-baguette"
+      ],
+      "portion": "1–2 pommes de terre"
+    },
+    {
+      "id": "lentilles",
+      "name": "Lentilles",
+      "category": "potassium",
+      "tier": "prefer",
+      "k": 369,
+      "na": 2,
+      "mg": 36,
+      "why": "K + protéines ; rincer si conserve.",
+      "tags": [
+        "high-K"
+      ],
+      "portion": "150 g cuites"
+    },
+    {
+      "id": "haricots-blancs",
+      "name": "Haricots blancs",
+      "category": "potassium",
+      "tier": "prefer",
+      "k": 561,
+      "na": 2,
+      "mg": 63,
+      "why": "Très haut K/Mg — version nature rincée.",
+      "tags": [
+        "high-K"
+      ],
+      "portion": "150 g cuits"
+    },
+    {
+      "id": "haricots-rouges",
+      "name": "Haricots rouges",
+      "category": "potassium",
+      "tier": "prefer",
+      "k": 403,
+      "na": 2,
+      "mg": 45,
+      "why": "Légumineuse high-K, rincer les conserves.",
+      "tags": [
+        "high-K"
+      ],
+      "portion": "150 g cuits"
+    },
+    {
+      "id": "pois-chiches",
+      "name": "Pois chiches",
+      "category": "potassium",
+      "tier": "prefer",
+      "k": 291,
+      "na": 7,
+      "mg": 48,
+      "why": "Base bowl sans sel ; houmous maison sans bicarbonate salé.",
+      "tags": [
+        "high-K"
+      ],
+      "portion": "150 g cuits"
+    },
+    {
+      "id": "pois-casses",
+      "name": "Pois cassés",
+      "category": "potassium",
+      "tier": "prefer",
+      "k": 362,
+      "na": 2,
+      "mg": 35,
+      "why": "Soupe maison non salée = drainage progressif.",
+      "tags": [
+        "high-K"
+      ],
+      "portion": "150 g cuits"
+    },
+    {
+      "id": "amandes",
+      "name": "Amandes non salées",
+      "category": "magnesium",
+      "tier": "prefer",
+      "k": 733,
+      "na": 1,
+      "mg": 270,
+      "why": "Mg + K — collation anti-rétention (non salées).",
+      "tags": [
+        "high-K"
+      ],
+      "swaps": [
+        "cacahuetes-salees"
+      ],
+      "portion": "20–25 g"
+    },
+    {
+      "id": "pistaches",
+      "name": "Pistaches non salées",
+      "category": "magnesium",
+      "tier": "prefer",
+      "k": 1025,
+      "na": 1,
+      "mg": 121,
+      "why": "K exceptionnel si non salées.",
+      "tags": [
+        "high-K"
+      ],
+      "swaps": [
+        "cacahuetes-salees"
+      ],
+      "portion": "20 g"
+    },
+    {
+      "id": "graines-courge",
+      "name": "Graines de courge",
+      "category": "magnesium",
+      "tier": "hero",
+      "k": 809,
+      "na": 7,
+      "mg": 592,
+      "why": "Meilleur levier Mg alimentaire pour l’équilibre hydrique.",
+      "tags": [
+        "high-K"
+      ],
+      "portion": "20 g"
+    },
+    {
+      "id": "noix-cajou",
+      "name": "Noix de cajou",
+      "category": "magnesium",
+      "tier": "prefer",
+      "k": 660,
+      "na": 12,
+      "mg": 292,
+      "why": "Mg dense — version nature uniquement.",
+      "tags": [],
+      "swaps": [
+        "cacahuetes-salees"
+      ],
+      "portion": "20 g"
+    },
+    {
+      "id": "noix-bresil",
+      "name": "Noix du Brésil",
+      "category": "magnesium",
+      "tier": "prefer",
+      "k": 659,
+      "na": 3,
+      "mg": 376,
+      "why": "Mg + sélénium ; 2–3 noix suffisent.",
+      "tags": [],
+      "portion": "2–3 noix"
+    },
+    {
+      "id": "chia",
+      "name": "Graines de chia",
+      "category": "magnesium",
+      "tier": "prefer",
+      "k": 407,
+      "na": 16,
+      "mg": 335,
+      "why": "Mg + fibres ; pudding nature sans sirop.",
+      "tags": [],
+      "portion": "15 g"
+    },
+    {
+      "id": "lin",
+      "name": "Graines de lin",
+      "category": "magnesium",
+      "tier": "prefer",
+      "k": 813,
+      "na": 30,
+      "mg": 392,
+      "why": "Mg utile ; moudre pour assimilation.",
+      "tags": [],
+      "portion": "1 c. à s."
+    },
+    {
+      "id": "sesame",
+      "name": "Graines de sésame",
+      "category": "magnesium",
+      "tier": "prefer",
+      "k": 468,
+      "na": 11,
+      "mg": 351,
+      "why": "Mg sur salades — non salé.",
+      "tags": [],
+      "portion": "1 c. à s."
+    },
+    {
+      "id": "tournesol",
+      "name": "Graines de tournesol",
+      "category": "magnesium",
+      "tier": "prefer",
+      "k": 645,
+      "na": 9,
+      "mg": 325,
+      "why": "Collation Mg si non salées.",
+      "tags": [],
+      "portion": "20 g"
+    },
+    {
+      "id": "chocolat-noir",
+      "name": "Chocolat noir ≥ 70 %",
+      "category": "magnesium",
+      "tier": "prefer",
+      "k": 559,
+      "na": 20,
+      "mg": 228,
+      "why": "Mg plaisir contrôlé — éviter lait/sucré.",
+      "tags": [],
+      "swaps": [
+        "chocolat-lait"
+      ],
+      "portion": "20 g"
+    },
+    {
+      "id": "cacao",
+      "name": "Cacao non sucré",
+      "category": "magnesium",
+      "tier": "prefer",
+      "k": 1524,
+      "na": 21,
+      "mg": 499,
+      "why": "Mg ultra-dense en poudre nature.",
+      "tags": [
+        "high-K"
+      ],
+      "portion": "1 c. à s."
+    },
+    {
+      "id": "flocons-avoine",
+      "name": "Flocons d’avoine",
+      "category": "magnesium",
+      "tier": "prefer",
+      "k": 429,
+      "na": 2,
+      "mg": 177,
+      "why": "Petit-déj Mg ; nature, pas sachets aromatisés.",
+      "tags": [],
+      "swaps": [
+        "pain-mie"
+      ],
+      "portion": "40–50 g"
+    },
+    {
+      "id": "quinoa",
+      "name": "Quinoa",
+      "category": "magnesium",
+      "tier": "prefer",
+      "k": 563,
+      "na": 5,
+      "mg": 197,
+      "why": "Alternative pain/riz blanc : K + Mg.",
+      "tags": [
+        "high-K"
+      ],
+      "swaps": [
+        "pain-baguette"
+      ],
+      "portion": "80 g crus"
+    },
+    {
+      "id": "sarrasin",
+      "name": "Sarrasin",
+      "category": "magnesium",
+      "tier": "prefer",
+      "k": 460,
+      "na": 1,
+      "mg": 231,
+      "why": "Sans gluten, bon Mg, cuisson sans sel.",
+      "tags": [],
+      "swaps": [
+        "pain-baguette"
+      ],
+      "portion": "80 g crus"
+    },
+    {
+      "id": "noisettes",
+      "name": "Noisettes",
+      "category": "magnesium",
+      "tier": "prefer",
+      "k": 680,
+      "na": 0,
+      "mg": 163,
+      "why": "Mg + K, collation non salée.",
+      "tags": [],
+      "portion": "20 g"
+    },
+    {
+      "id": "poulet",
+      "name": "Poulet (sans peau)",
+      "category": "protein",
+      "tier": "prefer",
+      "k": 256,
+      "na": 74,
+      "mg": 25,
+      "why": "Protéine propre — rôti froid > charcuterie.",
+      "tags": [
+        "soir-safe"
+      ],
+      "swaps": [
+        "jambon-blanc",
+        "saucisson"
+      ],
+      "portion": "150–180 g"
+    },
+    {
+      "id": "dinde",
+      "name": "Dinde (sans peau)",
+      "category": "protein",
+      "tier": "prefer",
+      "k": 242,
+      "na": 49,
+      "mg": 24,
+      "why": "Alternative blanche low-Na à la charcuterie.",
+      "tags": [
+        "soir-safe"
+      ],
+      "swaps": [
+        "jambon-blanc"
+      ],
+      "portion": "150 g"
+    },
+    {
+      "id": "oeufs",
+      "name": "Œufs",
+      "category": "protein",
+      "tier": "prefer",
+      "k": 138,
+      "na": 142,
+      "mg": 12,
+      "why": "Protéine stable ; cuisson sans sel.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "2 œufs"
+    },
+    {
+      "id": "saumon",
+      "name": "Saumon (frais)",
+      "category": "protein",
+      "tier": "hero",
+      "k": 363,
+      "na": 59,
+      "mg": 29,
+      "why": "K + oméga-3 — frais, jamais fumé pour le visage.",
+      "tags": [
+        "high-K",
+        "soir-safe"
+      ],
+      "swaps": [
+        "saumon-fume"
+      ],
+      "portion": "140 g"
+    },
+    {
+      "id": "sardines",
+      "name": "Sardines (nature)",
+      "category": "protein",
+      "tier": "prefer",
+      "k": 397,
+      "na": 100,
+      "mg": 39,
+      "why": "K solide ; choisir nature à l’eau/huile, égoutter.",
+      "tags": [
+        "high-K"
+      ],
+      "swaps": [
+        "anchois"
+      ],
+      "portion": "1 boîte nature"
+    },
+    {
+      "id": "maquereau",
+      "name": "Maquereau",
+      "category": "protein",
+      "tier": "prefer",
+      "k": 314,
+      "na": 90,
+      "mg": 33,
+      "why": "Poisson gras utile ; éviter versions fumées.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "140 g"
+    },
+    {
+      "id": "thon",
+      "name": "Thon (nature)",
+      "category": "protein",
+      "tier": "prefer",
+      "k": 237,
+      "na": 50,
+      "mg": 30,
+      "why": "Nature à l’eau rincé ; skip sauce soja.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "120 g"
+    },
+    {
+      "id": "poisson-blanc",
+      "name": "Poisson blanc",
+      "category": "protein",
+      "tier": "prefer",
+      "k": 350,
+      "na": 78,
+      "mg": 28,
+      "why": "Cabillaud/lieu : protéine soir-safe low-Na.",
+      "tags": [
+        "soir-safe",
+        "high-K"
+      ],
+      "portion": "160 g"
+    },
+    {
+      "id": "yaourt-nature",
+      "name": "Yaourt nature",
+      "category": "protein",
+      "tier": "prefer",
+      "k": 255,
+      "na": 70,
+      "mg": 19,
+      "why": "K lacté doux — nature, pas aromatisé sucré.",
+      "tags": [
+        "soir-safe",
+        "high-K"
+      ],
+      "swaps": [
+        "fromage-affine"
+      ],
+      "portion": "1 pot"
+    },
+    {
+      "id": "fromage-blanc",
+      "name": "Fromage blanc",
+      "category": "protein",
+      "tier": "prefer",
+      "k": 141,
+      "na": 40,
+      "mg": 11,
+      "why": "Texture satiante, sodium modéré si nature 0%.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "150 g"
+    },
+    {
+      "id": "kefir",
+      "name": "Kéfir nature",
+      "category": "protein",
+      "tier": "prefer",
+      "k": 164,
+      "na": 40,
+      "mg": 14,
+      "why": "Option fermentée douce — nature uniquement.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "200 ml"
+    },
+    {
+      "id": "tofu",
+      "name": "Tofu",
+      "category": "protein",
+      "tier": "prefer",
+      "k": 237,
+      "na": 7,
+      "mg": 58,
+      "why": "Protéine végétale ; nature, pas mariné salé.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "150 g"
+    },
+    {
+      "id": "tempeh",
+      "name": "Tempeh",
+      "category": "protein",
+      "tier": "prefer",
+      "k": 412,
+      "na": 9,
+      "mg": 81,
+      "why": "K/Mg intéressants — cuisson herbes/citron.",
+      "tags": [
+        "high-K"
+      ],
+      "portion": "120 g"
+    },
+    {
+      "id": "persil",
+      "name": "Persil",
+      "category": "herbs",
+      "tier": "hero",
+      "k": 554,
+      "na": 56,
+      "mg": 50,
+      "why": "Diurétique star — frais en fin de plat.",
+      "tags": [
+        "drainant",
+        "soir-safe",
+        "tiktok-trend"
+      ],
+      "portion": "1/2 bouquet"
+    },
+    {
+      "id": "gingembre",
+      "name": "Gingembre",
+      "category": "herbs",
+      "tier": "prefer",
+      "k": 415,
+      "na": 13,
+      "mg": 43,
+      "why": "Anti-rétention + digestion ; infusion ou râpé.",
+      "tags": [
+        "soir-safe",
+        "tiktok-trend"
+      ],
+      "portion": "1 cm frais"
+    },
+    {
+      "id": "cumin",
+      "name": "Cumin",
+      "category": "herbs",
+      "tier": "prefer",
+      "k": 1788,
+      "na": 168,
+      "mg": 366,
+      "why": "Remplace une partie du sel par la chaleur aromatique.",
+      "tags": [],
+      "portion": "1 c. à c."
+    },
+    {
+      "id": "ail",
+      "name": "Ail",
+      "category": "herbs",
+      "tier": "prefer",
+      "k": 401,
+      "na": 17,
+      "mg": 25,
+      "why": "Goût fort sans saler — modérer si digestion fragile.",
+      "tags": [],
+      "portion": "1 gousse"
+    },
+    {
+      "id": "oignon",
+      "name": "Oignon",
+      "category": "herbs",
+      "tier": "prefer",
+      "k": 146,
+      "na": 4,
+      "mg": 10,
+      "why": "Base aromatique ; portions modérées si ballonnements.",
+      "tags": [],
+      "portion": "1/2 oignon"
+    },
+    {
+      "id": "basilic",
+      "name": "Basilic",
+      "category": "herbs",
+      "tier": "prefer",
+      "k": 295,
+      "na": 4,
+      "mg": 64,
+      "why": "Fraîcheur anti-sel sur tomates et poissons.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "quelques feuilles"
+    },
+    {
+      "id": "thym",
+      "name": "Thym",
+      "category": "herbs",
+      "tier": "prefer",
+      "k": 609,
+      "na": 55,
+      "mg": 160,
+      "why": "Assaisonnement Mg/K — oublié le cube de bouillon.",
+      "tags": [
+        "soir-safe"
+      ],
+      "swaps": [
+        "bouillon-cube"
+      ],
+      "portion": "1 pincée"
+    },
+    {
+      "id": "origan",
+      "name": "Origan",
+      "category": "herbs",
+      "tier": "prefer",
+      "k": 1260,
+      "na": 15,
+      "mg": 270,
+      "why": "Aromate puissant pour oublier le sel.",
+      "tags": [],
+      "portion": "1 pincée"
+    },
+    {
+      "id": "menthe",
+      "name": "Menthe",
+      "category": "herbs",
+      "tier": "prefer",
+      "k": 458,
+      "na": 30,
+      "mg": 63,
+      "why": "Eau concombre-menthe : rituel drainant.",
+      "tags": [
+        "soir-safe",
+        "tiktok-trend"
+      ],
+      "portion": "quelques feuilles"
+    },
+    {
+      "id": "herbes-provence",
+      "name": "Herbes de Provence",
+      "category": "herbs",
+      "tier": "prefer",
+      "k": 900,
+      "na": 40,
+      "mg": 200,
+      "why": "Mélange anti-sel pour viandes et légumes.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "1 c. à c."
+    },
+    {
+      "id": "vinaigre-cidre",
+      "name": "Vinaigre de cidre",
+      "category": "herbs",
+      "tier": "prefer",
+      "k": 73,
+      "na": 5,
+      "mg": 5,
+      "why": "Acidité modérée en vinaigrette sans sel.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "1 c. à s."
+    },
+    {
+      "id": "eau-plate",
+      "name": "Eau plate",
+      "category": "drinks",
+      "tier": "hero",
+      "k": 0,
+      "na": 2,
+      "mg": 2,
+      "why": "Base absolue : 1,5–2,5 L/jour pour drainer.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "2 L / jour"
+    },
+    {
+      "id": "hepar",
+      "name": "Hépar",
+      "category": "drinks",
+      "tier": "prefer",
+      "k": 0,
+      "na": 14,
+      "mg": 119,
+      "why": "Eau minérale riche Mg, pauvre Na — alliée visage.",
+      "tags": [
+        "soir-safe",
+        "tiktok-trend"
+      ],
+      "portion": "1 bouteille"
+    },
+    {
+      "id": "contrex",
+      "name": "Contrex",
+      "category": "drinks",
+      "tier": "prefer",
+      "k": 0,
+      "na": 9,
+      "mg": 84,
+      "why": "Mg élevé / Na bas — drainage minéral.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "1 bouteille"
+    },
+    {
+      "id": "rozana",
+      "name": "Rozana",
+      "category": "drinks",
+      "tier": "prefer",
+      "k": 0,
+      "na": 8,
+      "mg": 160,
+      "why": "Profil Mg fort, sodium bas.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "1 bouteille"
+    },
+    {
+      "id": "courmayeur",
+      "name": "Courmayeur",
+      "category": "drinks",
+      "tier": "prefer",
+      "k": 0,
+      "na": 1,
+      "mg": 52,
+      "why": "Eau très pauvre en sodium.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "1 bouteille"
+    },
+    {
+      "id": "the-vert",
+      "name": "Thé vert",
+      "category": "drinks",
+      "tier": "prefer",
+      "k": 27,
+      "na": 1,
+      "mg": 3,
+      "why": "Diurétique doux — éviter après 15 h si sommeil fragile.",
+      "tags": [
+        "drainant"
+      ],
+      "portion": "2 tasses"
+    },
+    {
+      "id": "tisane-ortie",
+      "name": "Tisane d’ortie",
+      "category": "drinks",
+      "tier": "hero",
+      "k": 40,
+      "na": 2,
+      "mg": 8,
+      "why": "Tendance drainante visage — cure courte.",
+      "tags": [
+        "drainant",
+        "tiktok-trend",
+        "soir-safe"
+      ],
+      "portion": "2 tasses"
+    },
+    {
+      "id": "tisane-queues-cerise",
+      "name": "Tisane queues de cerise",
+      "category": "drinks",
+      "tier": "hero",
+      "k": 30,
+      "na": 1,
+      "mg": 5,
+      "why": "Classique anti-rétention (effet diurétique).",
+      "tags": [
+        "drainant",
+        "tiktok-trend",
+        "soir-safe"
+      ],
+      "portion": "2 tasses"
+    },
+    {
+      "id": "tisane-pissenlit",
+      "name": "Tisane de pissenlit",
+      "category": "drinks",
+      "tier": "prefer",
+      "k": 25,
+      "na": 1,
+      "mg": 4,
+      "why": "Drainage doux, utile en phase visage gonflé.",
+      "tags": [
+        "drainant",
+        "soir-safe"
+      ],
+      "portion": "1–2 tasses"
+    },
+    {
+      "id": "tisane-prele",
+      "name": "Tisane de prêle",
+      "category": "drinks",
+      "tier": "prefer",
+      "k": 20,
+      "na": 1,
+      "mg": 4,
+      "why": "Support drainage — ne pas abuser.",
+      "tags": [
+        "drainant"
+      ],
+      "portion": "1 tasse"
+    },
+    {
+      "id": "tisane-bouleau",
+      "name": "Tisane de bouleau",
+      "category": "drinks",
+      "tier": "prefer",
+      "k": 22,
+      "na": 1,
+      "mg": 3,
+      "why": "Tradition anti-rétention.",
+      "tags": [
+        "drainant",
+        "soir-safe"
+      ],
+      "portion": "1–2 tasses"
+    },
+    {
+      "id": "tisane-fenouil",
+      "name": "Tisane de fenouil",
+      "category": "drinks",
+      "tier": "prefer",
+      "k": 18,
+      "na": 1,
+      "mg": 3,
+      "why": "Digestion + légèreté après repas.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "1 tasse"
+    },
+    {
+      "id": "tisane-hibiscus",
+      "name": "Tisane d’hibiscus",
+      "category": "drinks",
+      "tier": "prefer",
+      "k": 20,
+      "na": 1,
+      "mg": 3,
+      "why": "Boisson colorée low-Na, utile froid.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "1–2 tasses"
+    },
+    {
+      "id": "tisane-reine-pres",
+      "name": "Tisane reine-des-prés",
+      "category": "drinks",
+      "tier": "prefer",
+      "k": 15,
+      "na": 1,
+      "mg": 2,
+      "why": "Option drainage douce.",
+      "tags": [
+        "drainant"
+      ],
+      "portion": "1 tasse"
+    },
+    {
+      "id": "tisane-camomille",
+      "name": "Camomille",
+      "category": "drinks",
+      "tier": "prefer",
+      "k": 9,
+      "na": 1,
+      "mg": 1,
+      "why": "Soir : calme + rituel sans caféine.",
+      "tags": [
+        "soir-safe"
+      ],
+      "portion": "1 tasse le soir"
+    },
+    {
+      "id": "eau-citronnee",
+      "name": "Eau citronnée",
+      "category": "drinks",
+      "tier": "prefer",
+      "k": 20,
+      "na": 1,
+      "mg": 2,
+      "why": "Rituel simple : hydration + signal anti-sel.",
+      "tags": [
+        "soir-safe",
+        "tiktok-trend"
+      ],
+      "portion": "1 L"
+    },
+    {
+      "id": "eau-concombre-menthe",
+      "name": "Eau concombre-menthe-gingembre",
+      "category": "drinks",
+      "tier": "hero",
+      "k": 40,
+      "na": 2,
+      "mg": 4,
+      "why": "Infusion froide drainante — tendance + efficace.",
+      "tags": [
+        "soir-safe",
+        "tiktok-trend",
+        "drainant"
+      ],
+      "portion": "1 carafe"
+    },
+    {
+      "id": "jus-ananas",
+      "name": "Jus d’ananas 100 %",
+      "category": "drinks",
+      "tier": "prefer",
+      "k": 130,
+      "na": 2,
+      "mg": 12,
+      "why": "Modéré : bromélaïne, sans sucre ajouté.",
+      "tags": [
+        "tiktok-trend"
+      ],
+      "portion": "150 ml"
+    },
+    {
+      "id": "eau-coco",
+      "name": "Eau de coco nature",
+      "category": "drinks",
+      "tier": "hero",
+      "k": 250,
+      "na": 105,
+      "mg": 25,
+      "why": "K tendance TikTok — nature, pas aromatisée sucrée.",
+      "tags": [
+        "high-K",
+        "tiktok-trend"
+      ],
+      "portion": "250 ml"
+    },
+    {
+      "id": "pain-complet",
+      "name": "Pain complet",
+      "category": "avoidOther",
+      "tier": "moderate",
+      "k": 250,
+      "na": 450,
+      "mg": 50,
+      "why": "Mieux que blanc mais encore salé — portions courtes.",
+      "tags": [
+        "evening-risk"
+      ],
+      "swaps": [
+        "quinoa",
+        "patate-douce"
+      ],
+      "portion": "1 tranche"
+    },
+    {
+      "id": "fromage-frais",
+      "name": "Fromages frais",
+      "category": "avoidOther",
+      "tier": "moderate",
+      "k": 100,
+      "na": 300,
+      "mg": 10,
+      "why": "Vérifier le sel ; préférer nature nature.",
+      "tags": [],
+      "swaps": [
+        "yaourt-nature"
+      ],
+      "portion": "30–40 g"
+    },
+    {
+      "id": "yaourt-aromatise",
+      "name": "Yaourt aromatisé",
+      "category": "avoidOther",
+      "tier": "moderate",
+      "k": 180,
+      "na": 60,
+      "mg": 15,
+      "why": "Sucres + parfois additifs — le nature gagne pour le visage.",
+      "tags": [],
+      "swaps": [
+        "yaourt-nature"
+      ],
+      "portion": "1 pot"
+    },
+    {
+      "id": "chocolat-lait",
+      "name": "Chocolat au lait",
+      "category": "avoidOther",
+      "tier": "moderate",
+      "k": 340,
+      "na": 80,
+      "mg": 50,
+      "why": "Moins de Mg utile que le noir ≥70 %.",
+      "tags": [],
+      "swaps": [
+        "chocolat-noir"
+      ],
+      "portion": "20 g"
+    },
+    {
+      "id": "fruits-secs-sales",
+      "name": "Fruits secs salés",
+      "category": "avoidOther",
+      "tier": "moderate",
+      "k": 600,
+      "na": 400,
+      "mg": 150,
+      "why": "Le sel annule le bénéfice K/Mg.",
+      "tags": [
+        "evening-risk"
+      ],
+      "swaps": [
+        "amandes",
+        "pistaches"
+      ],
+      "portion": "éviter"
+    },
+    {
+      "id": "algues",
+      "name": "Algues (non rincées)",
+      "category": "avoidOther",
+      "tier": "moderate",
+      "k": 200,
+      "na": 900,
+      "mg": 100,
+      "why": "Souvent très Na — rincer longuement ou éviter.",
+      "tags": [
+        "evening-risk"
+      ],
+      "swaps": [
+        "roquette"
+      ],
+      "portion": "petite portion rincée"
+    },
+    {
+      "id": "sel-table",
+      "name": "Sel de table / fleur de sel",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 0,
+      "na": 38700,
+      "mg": 0,
+      "why": "Cause n°1 de rétention faciale — remplacer par herbes + citron.",
+      "tags": [
+        "evening-risk",
+        "ultra-processed"
+      ],
+      "swaps": [
+        "herbes-provence",
+        "citron",
+        "cumin"
+      ]
+    },
+    {
+      "id": "jambon-blanc",
+      "name": "Jambon (cru ou blanc)",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 280,
+      "na": 900,
+      "mg": 18,
+      "why": "Charcuterie = sodium massif → visage gonflé.",
+      "tags": [
+        "evening-risk",
+        "ultra-processed"
+      ],
+      "swaps": [
+        "poulet",
+        "dinde"
+      ]
+    },
+    {
+      "id": "saucisson",
+      "name": "Saucisson / salami",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 300,
+      "na": 1800,
+      "mg": 20,
+      "why": "Bombes de sel — à exclure en phase visage.",
+      "tags": [
+        "evening-risk",
+        "ultra-processed"
+      ],
+      "swaps": [
+        "poulet"
+      ]
+    },
+    {
+      "id": "lardons",
+      "name": "Lardons / bacon",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 250,
+      "na": 1500,
+      "mg": 15,
+      "why": "Sodium + transformation = rétention.",
+      "tags": [
+        "evening-risk",
+        "ultra-processed"
+      ],
+      "swaps": [
+        "champignons"
+      ]
+    },
+    {
+      "id": "pate-rillettes",
+      "name": "Pâté / rillettes",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 150,
+      "na": 800,
+      "mg": 12,
+      "why": "Charcuterie salée — swap protéine fraîche.",
+      "tags": [
+        "evening-risk",
+        "ultra-processed"
+      ],
+      "swaps": [
+        "poulet"
+      ]
+    },
+    {
+      "id": "chorizo",
+      "name": "Chorizo",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 280,
+      "na": 1600,
+      "mg": 18,
+      "why": "Très salé + épicé transformé.",
+      "tags": [
+        "evening-risk",
+        "ultra-processed"
+      ],
+      "swaps": [
+        "poulet"
+      ]
+    },
+    {
+      "id": "fromage-affine",
+      "name": "Fromages affinés / salés",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 100,
+      "na": 1200,
+      "mg": 25,
+      "why": "Roquefort, feta, parmesan, bleu… sodium dominant.",
+      "tags": [
+        "evening-risk"
+      ],
+      "swaps": [
+        "yaourt-nature",
+        "fromage-blanc"
+      ]
+    },
+    {
+      "id": "pain-baguette",
+      "name": "Pain (baguette / mie / biscottes)",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 110,
+      "na": 650,
+      "mg": 25,
+      "why": "1er contributeur de sel en France — swap féculent K.",
+      "tags": [
+        "evening-risk",
+        "ultra-processed"
+      ],
+      "swaps": [
+        "patate-douce",
+        "pomme-de-terre",
+        "quinoa"
+      ]
+    },
+    {
+      "id": "pain-mie",
+      "name": "Pain de mie / biscottes",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 120,
+      "na": 500,
+      "mg": 20,
+      "why": "Sel caché + ultra-transformé.",
+      "tags": [
+        "evening-risk",
+        "ultra-processed"
+      ],
+      "swaps": [
+        "flocons-avoine",
+        "quinoa"
+      ]
+    },
+    {
+      "id": "saumon-fume",
+      "name": "Saumon fumé",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 350,
+      "na": 1200,
+      "mg": 25,
+      "why": "Fumé = sodium élevé ; choisir saumon frais.",
+      "tags": [
+        "evening-risk"
+      ],
+      "swaps": [
+        "saumon"
+      ]
+    },
+    {
+      "id": "anchois",
+      "name": "Anchois / poissons salés",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 200,
+      "na": 3600,
+      "mg": 40,
+      "why": "Salaison extrême — rétention assurée.",
+      "tags": [
+        "evening-risk"
+      ],
+      "swaps": [
+        "sardines",
+        "poisson-blanc"
+      ]
+    },
+    {
+      "id": "olives-saumure",
+      "name": "Olives / cornichons / câpres",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 80,
+      "na": 1550,
+      "mg": 10,
+      "why": "Saumure = piège sodium sur la table.",
+      "tags": [
+        "evening-risk"
+      ],
+      "swaps": [
+        "concombre",
+        "tomate"
+      ]
+    },
+    {
+      "id": "chips",
+      "name": "Chips / apéritifs salés",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 1200,
+      "na": 500,
+      "mg": 40,
+      "why": "Sel + ultra-transformé : double peine visage.",
+      "tags": [
+        "evening-risk",
+        "ultra-processed"
+      ],
+      "swaps": [
+        "concombre",
+        "amandes"
+      ]
+    },
+    {
+      "id": "cacahuetes-salees",
+      "name": "Cacahuètes salées",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 600,
+      "na": 400,
+      "mg": 160,
+      "why": "Le sel annule le Mg — version nature seulement.",
+      "tags": [
+        "evening-risk"
+      ],
+      "swaps": [
+        "amandes",
+        "graines-courge"
+      ]
+    },
+    {
+      "id": "plats-prepares",
+      "name": "Plats préparés / traiteur",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 200,
+      "na": 900,
+      "mg": 20,
+      "why": "Pizza, lasagnes, quiches… sodium industriel.",
+      "tags": [
+        "evening-risk",
+        "ultra-processed"
+      ],
+      "swaps": [
+        "poulet",
+        "courgette"
+      ]
+    },
+    {
+      "id": "sauce-soja",
+      "name": "Sauce soja / ketchup / mayo / moutarde",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 180,
+      "na": 5500,
+      "mg": 30,
+      "why": "Sauces = sel concentré. Citron + herbes.",
+      "tags": [
+        "evening-risk",
+        "ultra-processed"
+      ],
+      "swaps": [
+        "citron",
+        "herbes-provence"
+      ]
+    },
+    {
+      "id": "bouillon-cube",
+      "name": "Bouillons cubes / fonds",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 50,
+      "na": 8000,
+      "mg": 5,
+      "why": "Sel caché massif dans les soupes.",
+      "tags": [
+        "evening-risk",
+        "ultra-processed"
+      ],
+      "swaps": [
+        "thym",
+        "ail"
+      ]
+    },
+    {
+      "id": "conserves-non-rincees",
+      "name": "Conserves non rincées",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 200,
+      "na": 400,
+      "mg": 20,
+      "why": "Rincer = geste visage immédiat.",
+      "tags": [
+        "evening-risk"
+      ],
+      "swaps": [
+        "haricots-blancs"
+      ]
+    },
+    {
+      "id": "viennoiseries",
+      "name": "Viennoiseries / biscuits industriels",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 100,
+      "na": 400,
+      "mg": 15,
+      "why": "Sel + sucre + UT → rétention et inflammation.",
+      "tags": [
+        "evening-risk",
+        "ultra-processed"
+      ],
+      "swaps": [
+        "banane",
+        "yaourt-nature"
+      ]
+    },
+    {
+      "id": "alcool",
+      "name": "Alcool (surtout le soir)",
+      "category": "avoidOther",
+      "tier": "avoid",
+      "k": 0,
+      "na": 5,
+      "mg": 5,
+      "why": "Vasodilatation + rétention — visage gonflé au réveil.",
+      "tags": [
+        "evening-risk"
+      ],
+      "swaps": [
+        "eau-plate",
+        "tisane-camomille"
+      ]
+    },
+    {
+      "id": "cafeine-tardive",
+      "name": "Café / thé noir après 15 h",
+      "category": "avoidOther",
+      "tier": "avoid",
+      "k": 50,
+      "na": 5,
+      "mg": 5,
+      "why": "La caféine tardive peut perturber le sommeil ; observe ta sensibilité personnelle.",
+      "tags": [
+        "evening-risk"
+      ],
+      "swaps": [
+        "tisane-camomille",
+        "tisane-fenouil"
+      ]
+    },
+    {
+      "id": "sodas",
+      "name": "Sodas / jus industriels",
+      "category": "avoidOther",
+      "tier": "avoid",
+      "k": 10,
+      "na": 20,
+      "mg": 2,
+      "why": "Sucres rapides + inflammation.",
+      "tags": [
+        "evening-risk",
+        "ultra-processed"
+      ],
+      "swaps": [
+        "eau-coco",
+        "eau-citronnee"
+      ]
+    },
+    {
+      "id": "beurre-sale",
+      "name": "Beurre salé / margarine salée",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 20,
+      "na": 600,
+      "mg": 2,
+      "why": "Sel ajouté inutile — huile + herbes.",
+      "tags": [
+        "evening-risk"
+      ],
+      "swaps": [
+        "avocat"
+      ]
+    },
+    {
+      "id": "eaux-sodees",
+      "name": "Eaux riches en sodium (Badoit, Vichy…)",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 0,
+      "na": 170,
+      "mg": 10,
+      "why": "Gazeuses très Na en quantité = rétention.",
+      "tags": [
+        "evening-risk"
+      ],
+      "swaps": [
+        "hepar",
+        "contrex",
+        "eau-plate"
+      ]
+    },
+    {
+      "id": "fast-food",
+      "name": "Fast-food / livraisons salées",
+      "category": "avoidSodium",
+      "tier": "avoid",
+      "k": 300,
+      "na": 1200,
+      "mg": 30,
+      "why": "Combo sel + UT : ennemi direct du visage net.",
+      "tags": [
+        "evening-risk",
+        "ultra-processed"
+      ],
+      "swaps": [
+        "poulet",
+        "roquette"
+      ]
+    }
+  ]
+}

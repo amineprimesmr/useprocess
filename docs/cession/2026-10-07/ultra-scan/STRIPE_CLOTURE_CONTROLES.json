@@ -1,0 +1,21 @@
+{
+  "account_id": "acct_1U6V0h3yrYjpyuOy",
+  "account_name": "Process Debloat",
+  "organization_to_preserve": "Process",
+  "closure_executed": false,
+  "balance_eur": {
+    "available": 0,
+    "pending": 0
+  },
+  "active_subscription": {
+    "product": "ScrollShow",
+    "monthly_eur": 19.99,
+    "scheduled_cancellation": "2026-10-09",
+    "id": "sub_1UCiS03yrYjpyuOyI1mDTX4n"
+  },
+  "closure_button_found": true,
+  "blocker": "Active ScrollShow subscription; preserve other projects. Final financial account closure requires user handoff.",
+  "closure_reported_by_user": true,
+  "closure_independently_verified": false,
+  "closure_executed_by": "user"
+}

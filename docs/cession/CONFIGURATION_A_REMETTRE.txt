@@ -1,0 +1,25 @@
+CONFIGURATION — NOMS UNIQUEMENT, AUCUNE VALEUR
+
+Secrets attachés aux fonctions déployées :
+AFFILIATE_ADMIN_SECRET
+ANTHROPIC_API_KEY
+APPLE_SIGNIN_KEY_ID
+APPLE_SIGNIN_PRIVATE_KEY
+APPLE_SIGNIN_TEAM_ID
+PROCESS_SMTP_PASSWORD
+REVENUECAT_SECRET_API_KEY
+REVENUECAT_WEBHOOK_SECRET
+
+Variables déployées :
+EVENTARC_CLOUD_EVENT_SOURCE
+FIREBASE_CONFIG
+FUNCTION_REGION
+FUNCTION_SIGNATURE_TYPE
+FUNCTION_TARGET
+GCLOUD_PROJECT
+LOG_EXECUTION_ID
+
+Fichiers client à configurer séparément : PostHogSecrets.plist, RevenueCatSecrets.plist ; exemples dans sources. GoogleService-Info.plist est une configuration Firebase client, pas une clé privée serveur.
+Les clés Apple doivent correspondre aux équipes pendant la migration. Ne pas remplacer prématurément les clés embarquées nécessaires à 1.12.
+
+Crisp : secrets historiques non attachés, aucune valeur incluse ; ne pas transférer le compte personnel.

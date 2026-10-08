@@ -803,19 +803,14 @@ private struct PlanProgramCalendarScanThumb: View {
             .frame(width: side, height: side)
             .clipped()
         }
-        .onAppear(perform: loadSnapshot)
-        .onChange(of: scan.id) { _, _ in
-            loadSnapshot()
-        }
+        .task(id: "\(scan.id)-\(scan.snapshotFilename ?? "")") { await loadSnapshot() }
     }
 
-    private func loadSnapshot() {
-        let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: scan)
-        if let filename = FaceScanImageStore.resolvedSnapshotFilename(for: reconciled) {
-            snapshot = FaceScanImageStore.load(filename: filename)
-        } else {
-            snapshot = nil
-        }
+    private func loadSnapshot() async {
+        snapshot = nil
+        let image = await FaceScanImageStore.preview(scanId: scan.id, filename: scan.snapshotFilename, maxPixelSize: 240)
+        guard !Task.isCancelled else { return }
+        snapshot = image
     }
 }
 

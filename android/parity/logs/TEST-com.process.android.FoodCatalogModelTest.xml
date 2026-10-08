@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.process.android.FoodCatalogModelTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-10-08T00:06:58.255Z" hostname="Mac.lan" time="0.019">
+  <properties/>
+  <testcase name="searchSupportsAccentTagsEnglishAndEmptyResults" classname="com.process.android.FoodCatalogModelTest" time="0.01"/>
+  <testcase name="shoppingUsesAnAvailableSwapAndKeepsTheOriginalQuantity" classname="com.process.android.FoodCatalogModelTest" time="0.001"/>
+  <testcase name="missingPreferenceIdsCannotInventFoods" classname="com.process.android.FoodCatalogModelTest" time="0.003"/>
+  <testcase name="localizedFoodAndPortionCopyComesFromOriginalCatalog" classname="com.process.android.FoodCatalogModelTest" time="0.0"/>
+  <testcase name="storageScopesSeparateUsersAndKeepAnonymousStable" classname="com.process.android.FoodCatalogModelTest" time="0.003"/>
+  <testcase name="preferenceTransitionsAreReversibleAndMutuallyExclusive" classname="com.process.android.FoodCatalogModelTest" time="0.0"/>
+  <testcase name="shoppingDeduplicatesUncheckedEntriesButAllowsRepurchaseAfterChecking" classname="com.process.android.FoodCatalogModelTest" time="0.001"/>
+  <testcase name="shoppingKeepsOnlyNewestEightyEntries" classname="com.process.android.FoodCatalogModelTest" time="0.001"/>
+  <testcase name="originalTierAndCategoryOrderingIsPreserved" classname="com.process.android.FoodCatalogModelTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

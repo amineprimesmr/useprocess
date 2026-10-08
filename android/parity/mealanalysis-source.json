@@ -1,0 +1,13 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/useprocess/Features/MealScan/MealScanAnalyzingView.swift": "15fd299b6ad6ac4cbad5ef99abfcd007ef2dd9aa967997cdb7443adda8274035",
+    "/Users/amine/Developer/useprocess/useprocess/Features/MealScan/MealScanAnalysisProgressDirector.swift": "96aa54356cca4380fedade1672ebbef27d47b5a6b6a96c825476df0647f8b570"
+  },
+  "nativeFiles": [
+    "MealAnalysisState.kt",
+    "ProcessMealAnalyzing.kt",
+    "ProcessSurfacePalette.kt",
+    "ProcessMotionPreferences.kt"
+  ],
+  "contract": "Native six-step meal-analysis waiting screen,not a nutrition analyzer. Host provides request-scoped contextKey,actual isAnalysisComplete,onRevealReady,optional photo,failure and retry. Visual stages preserve source order,850ms holds,additional180ms for completed-backend nonfinal stages,and320ms reveal delay. Final stage never completes before actual backend completion; earlier row checks represent visual choreography only. Failure pauses progress and prevents reveal; retry should create a new contextKey. Stale requests cancel and notify at most once. RESUMED lifecycle suspends background work; an interrupted active hold restarts after resume. Source152dp original photo slot,26radius,48dp sweep/1.8seconds,320dp ambient glow/2.4seconds,22/15sp text,22radius checklist and34dp status circles adapted. Reduced motion disables ambient/sweep/spinners. Gallery uses the original chicken-salad photo and an explicit fictitious result button; no food analysis,network request or persistence. Exact source checkmark springs,blur/blend/shadow,font/SFsymbol matching and physical/iOS paired motion and pixel comparisons remain unverified."
+}

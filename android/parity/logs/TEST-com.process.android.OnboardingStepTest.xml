@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.process.android.OnboardingStepTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-08T00:06:58.277Z" hostname="Mac.lan" time="0.001">
+  <properties/>
+  <testcase name="liveIdsRoundTripAndAreUnique" classname="com.process.android.OnboardingStepTest" time="0.0"/>
+  <testcase name="unpaidResumeAvoidsReplayingPurchase" classname="com.process.android.OnboardingStepTest" time="0.0"/>
+  <testcase name="legacyMigrationsPreserveResumeDestination" classname="com.process.android.OnboardingStepTest" time="0.001"/>
+  <testcase name="visibleNavigationSkipsTechnicalFinalizationAndOptionalReferral" classname="com.process.android.OnboardingStepTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

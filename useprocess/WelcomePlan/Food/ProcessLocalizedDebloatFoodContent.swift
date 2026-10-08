@@ -404,7 +404,7 @@ enum ProcessLocalizedDebloatFoodContent {
         "conserves-non-rincees": "Rinse = instant face-friendly move.",
         "viennoiseries": "Salt + sugar + UP → retention and inflammation.",
         "alcool": "Vasodilation + retention — puffy face on waking.",
-        "cafeine-tardive": "Late excess → sleep ↓ → cortisol → puffy face.",
+        "cafeine-tardive": "Late caffeine may affect sleep; observe your own sensitivity.",
         "sodas": "Fast sugars + inflammation.",
         "beurre-sale": "Useless added salt — oil + herbs.",
         "eaux-sodees": "Very high-Na sparkling in volume = retention.",

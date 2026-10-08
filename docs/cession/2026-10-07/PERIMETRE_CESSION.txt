@@ -1,0 +1,14 @@
+PROCESS DEBLOAT — PÉRIMÈTRE À ANNEXER À L’ACCORD DE CESSION
+Préparation du 7 octobre 2026 ; acheteur et prix non renseignés. Aucun contrat signé ni garantie de propriété créée par ce document.
+
+INCLUS À CONFIRMER PAR PREUVES
+Application App Store 6753808143, Bundle ID com.useprocess, code iOS et widgets, Shared et packages verrouillés ; backend Firebase useprocess-d4385 ; site dédié website-process / Vercel process-debloat ; domaine processdebloat.com ; marque commerciale Process Debloat et éléments graphiques dont les droits sont prouvés ; projet RevenueCat Process ; analytics/attribution propres à l’application ; comptes TikTok exacts à identifier ; documentation et processus support/affiliation.
+Données clients : pas dans l’archive source ; reprise uniquement via transfert contrôlé des services et obligations correspondantes.
+
+EXCLUS
+useprocess.xyz et ses sous-domaines ; ancien projet Vercel website ; ScrollShow, 10KDesign, version 2.0 et tous autres projets ; comptes personnels Apple, Google, Hostinger, Anthropic, GitHub, Vercel, Stripe ; moyens de paiement et identités personnelles ; clés multi-apps ; sauvegardes privées ; historique Git non expurgé ; toute licence non transmissible ou contenu sans preuve de droits.
+Les anciens liens entrants restent temporairement compatibles pour les utilisateurs installés : durée et responsabilités à convenir, aucun transfert de propriété de useprocess.xyz.
+
+INFORMATIONS À COMPLÉTER À LA VENTE
+Identités et capacité des parties, société/coordonnées acquéreur, comptes de destination et Team ID Apple ; prix et étapes de paiement ; date de bascule ; liste des droits et fichiers exacts ; engagements clients/affiliés ; droits des tiers ; données personnelles et notifications nécessaires ; durée et limites de l’assistance ; critères de recette et traitement des anomalies ; inventaire des exclusions ; responsabilités avant/après bascule. Adapter et faire valider l’accord avant signature.
+Aucune statistique, résultat médical, propriété intellectuelle ou revenu non vérifié ne doit être présenté comme acquis.

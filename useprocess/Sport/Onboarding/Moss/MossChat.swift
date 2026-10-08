@@ -119,14 +119,14 @@ struct MossAppIconRow: View {
                     image.resizable().scaledToFill()
                 } placeholder: {
                     RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
-                        .fill(Color.white.opacity(0.08))
+                        .fill(Color.primary.opacity(0.08))
                 }
                 .frame(width: size, height: size)
                 .clipShape(RoundedRectangle(cornerRadius: size * 0.24,
                                             style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.15), lineWidth: 0.5)
+                        .strokeBorder(Color.primary.opacity(0.15), lineWidth: 0.5)
                 }
             }
         }
@@ -166,7 +166,7 @@ struct MossChip: View {
         .fixedSize(horizontal: true, vertical: false)
         .overlay {
             if isSelected {
-                shape.strokeBorder(Color.white.opacity(0.22), lineWidth: 1)
+                shape.strokeBorder(Color.primary.opacity(0.22), lineWidth: 1)
             }
         }
         .opacity(isSelected ? 1 : 0.88)
@@ -184,7 +184,7 @@ struct MossChip: View {
                     image.resizable().scaledToFit()
                 } placeholder: {
                     RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(Color.white.opacity(0.10))
+                        .fill(Color.primary.opacity(0.10))
                 }
                 .frame(width: MossAnswerChipMetrics.iconSide, height: MossAnswerChipMetrics.iconSide)
                 .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))

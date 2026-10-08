@@ -1,0 +1,26 @@
+{
+  "recordedAt": "2026-10-08T01:52:49.640316+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 98,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/SleepSliderModel.kt": "fc126e8ed8567ebe4399c74f4056cb4656cb4ae6df901a2cc912482f16780047",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/TenKSleepSlider.kt": "b931dc8276bf6b096b75357a2fb5d3ce16b81e9dea8a970e953193565b9be9d3",
+    "/Users/amine/Developer/10kdesign-device.nosync/content/components/design-circular-sleep-slider/TenKBTSliderDemo.swift": "9373d076f6e7a5c9cd74481fc569e924b1a907875924a2b00023a80bfda3cb9d"
+  },
+  "runtime": "unverified",
+  "visual": "unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "remaining": [
+    "Original bed/alarm SF symbols and rounded clock typography",
+    "Exact system material/shadow and clock label positioning",
+    "Physical drag mapping, both-handle rotation and accessibility actions",
+    "Compact screen and custom-center rendering validation"
+  ],
+  "buildLog": "/tmp/process-sleep-slider-build.log"
+}

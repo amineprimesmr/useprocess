@@ -2,10 +2,10 @@ import Foundation
 import UIKit
 
 /// Images jointes aux messages utilisateur du coach (fichiers locaux).
-enum CoachChatAttachmentImageStore {
+nonisolated enum CoachChatAttachmentImageStore {
     private static let suffix = ".jpg"
 
-    private static var directoryURL: URL {
+    private static let directoryURL: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         let folder = base.appendingPathComponent("CoachChatAttachments", isDirectory: true)
         if !FileManager.default.fileExists(atPath: folder.path) {
@@ -13,7 +13,7 @@ enum CoachChatAttachmentImageStore {
         }
         protectLocalURL(folder, isDirectory: true)
         return folder
-    }
+    }()
 
     static func filename(for messageId: UUID, index: Int) -> String {
         "\(messageId.uuidString)_\(index)\(suffix)"
@@ -44,6 +44,18 @@ enum CoachChatAttachmentImageStore {
             guard FileManager.default.isReadableFile(atPath: url.path),
                   let data = try? Data(contentsOf: url),
                   let image = UIImage(data: data) else { break }
+            images.append(image)
+            index += 1
+        }
+        return images
+    }
+
+    static func previews(messageId: UUID) async -> [UIImage] {
+        var images: [UIImage] = []
+        var index = 0
+        while !Task.isCancelled {
+            let url = directoryURL.appendingPathComponent(filename(for: messageId, index: index))
+            guard let image = await ProcessLocalImageDecoder.shared.image(at: [url], maxPixelSize: 900) else { break }
             images.append(image)
             index += 1
         }

@@ -17,7 +17,6 @@ final class ProcessAppDelegate: NSObject, UIApplicationDelegate {
         // Avant le 1er frame — sinon le tap notif cold-start est perdu
         // et l’app reprend l’onboarding (dashboard preview).
         UNUserNotificationCenter.current().delegate = CoachNotificationCenterDelegate.shared
-        ProcessCrispSupport.configure()
         ProcessAppsFlyer.shared.configure()
 
         // Fallback sans UIScene (peu probable avec SwiftUI App).
@@ -26,17 +25,7 @@ final class ProcessAppDelegate: NSObject, UIApplicationDelegate {
             return false
         }
 
-        ProcessCrispSupport.registerForRemoteNotificationsIfAllowed()
         return true
-    }
-
-    func application(
-        _ application: UIApplication,
-        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
-    ) {
-        Task { @MainActor in
-            ProcessCrispSupport.setDeviceToken(deviceToken)
-        }
     }
 
     func application(
@@ -87,7 +76,13 @@ struct useprocessApp: App {
         FirebaseBootstrap.configure()
         ProcessAnalytics.configure()
         ProcessAppsFlyer.shared.configure()
-        ProcessCrispSupport.configure()
+        #if DEBUG && targetEnvironment(simulator)
+        if ProcessInfo.processInfo.arguments.contains("--catalog-hydration-capture") {
+            PlanHomeTutorialStore.shared.suppressPresentationForPreview(true)
+            WelcomePlanStore.shared.refreshEphemeralPreviewPlan(profile: UnifiedProfileService.shared.currentProfile)
+            ProcessDebloatTrajectoryStore.shared.sync(from: WelcomePlanStore.shared.plan)
+        }
+        #endif
     }
 
     var body: some Scene {
@@ -98,7 +93,6 @@ struct useprocessApp: App {
                     FirebaseBootstrap.configure()
                     ProcessAnalytics.configure()
                     ProcessAppsFlyer.shared.configure()
-                    ProcessCrispSupport.configure()
                     ProcessMetricKitMonitor.shared.start()
 
                     await PermissionsManager.shared.clearAppBadge()

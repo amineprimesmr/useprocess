@@ -16,8 +16,8 @@ import UIKit
 //     (longer after emotional reflections);
 //   · a felt typewriter — a low-intensity haptic texture synchronized with
 //     the visible glyphs (MossTypeHaptics below), never keyboard clicks;
-//   · a tap completes the CURRENT line only: never skips a screen, fires a
-//     CTA, starts the next message, or selects an answer underneath;
+//   · a tap completes the whole remaining batch so answers appear immediately;
+//     it never skips a screen, fires a CTA, or selects an answer underneath;
 //   · answer controls arrive gently after the question has landed;
 //   · layout is reserved before animation — glyphs reveal inside a stable
 //     text frame, nothing reflows, nothing jumps;
@@ -110,6 +110,8 @@ final class MossConversationEngine {
     private var currentStarted: Date?
     /// Set when the user tap-completes the in-flight line.
     private var completeRequested = false
+    /// Un tap skippe tout le batch restant — pas une ligne à la fois.
+    private var skipRemainingLines = false
     /// The next batch waits this long before its first glyph (set when the
     /// previous event was a user reply).
     private var pendingLeadIn = 0
@@ -149,11 +151,11 @@ final class MossConversationEngine {
                                 iconURLs: icons))
     }
 
-    /// Tap-to-complete: finishes the current line immediately. Never skips
-    /// queued lines; never performs any other action.
+    /// Tap-to-complete: finishes the current line and the rest of the batch.
     func completeCurrent() {
         guard isTyping else { return }
         completeRequested = true
+        skipRemainingLines = true
     }
 
     /// Stop the typewriter so an answer can land immediately.
@@ -172,6 +174,7 @@ final class MossConversationEngine {
         isTyping = false
         controlsVisible = true
         completeRequested = false
+        skipRemainingLines = false
         pendingLeadIn = 0
         let done = batchDone
         batchDone = nil
@@ -186,7 +189,13 @@ final class MossConversationEngine {
         messages.removeAll()
         isTyping = false
         controlsVisible = false
+        completeRequested = false
+        skipRemainingLines = false
+        pendingLeadIn = 0
+        // Toujours reprendre l'appelant en attente (continuation), sinon sa tâche reste bloquée à vie.
+        let done = batchDone
         batchDone = nil
+        done?()
     }
 
     // MARK: Pump
@@ -194,6 +203,8 @@ final class MossConversationEngine {
     private func startPumpIfNeeded() {
         guard pump == nil else { return }
         isTyping = true
+        skipRemainingLines = false
+        completeRequested = false
         // A reply just landed — let it sit before Moss answers.
         if messages.last?.sender == .user { pendingLeadIn = Self.postReplyMillis }
         pump = Task { [weak self] in
@@ -207,14 +218,25 @@ final class MossConversationEngine {
             pendingLeadIn = 0
         }
         while !queue.isEmpty, !Task.isCancelled {
+            if skipRemainingLines {
+                flushRemainingLinesInstantly()
+                break
+            }
             let line = queue.removeFirst()
             await type(line)
+            if skipRemainingLines {
+                flushRemainingLinesInstantly()
+                break
+            }
             // The conversation breathes after every line, longer after an
             // emotional one; the final line's breath runs before controls
             // become interactive, keeping the landing unhurried.
             let breath = line.emotional ? Self.emotionalBreathMillis : Self.breathMillis
             try? await Task.sleep(for: .milliseconds(breath))
         }
+        // Pump annulé (reset / stopSpeaking) : un nouveau batch peut déjà tourner, ne pas écraser son état.
+        if Task.isCancelled { return }
+        skipRemainingLines = false
         pump = nil
         isTyping = false
         finishBatch()
@@ -246,6 +268,7 @@ final class MossConversationEngine {
                 completedByTap = true
                 break
             }
+            guard isLive(index, line) else { return }
             message.revealed = position + 1
             messages[index] = message
             // The glyph and its pulse arrive together — the felt typewriter.
@@ -261,6 +284,8 @@ final class MossConversationEngine {
             }
         }
 
+        // `messages` a pu être reconstruit (retour arrière) pendant le dernier délai.
+        guard !Task.isCancelled, isLive(index, line) else { return }
         message.revealed = characters.count
         message.done = true
         messages[index] = message
@@ -270,6 +295,10 @@ final class MossConversationEngine {
         MossAnalytics.log(
             completedByTap ? "typewriter_completed_by_tap" : "typewriter_completed_naturally",
             ["message": line.id, "latency_ms": "\(latency)"])
+    }
+
+    private func isLive(_ index: Int, _ line: MossLine) -> Bool {
+        messages.indices.contains(index) && messages[index].id == line.id
     }
 
     /// Speak the batch through VoiceOver, one line at a time, high
@@ -285,7 +314,23 @@ final class MossConversationEngine {
         }
     }
 
+    private func flushRemainingLinesInstantly() {
+        while !queue.isEmpty {
+            let line = queue.removeFirst()
+            messages.append(
+                Message(
+                    id: line.id,
+                    text: line.text,
+                    sender: .moss,
+                    revealed: line.text.count,
+                    done: true
+                )
+            )
+        }
+    }
+
     private func finishBatch() {
+        skipRemainingLines = false
         controlsVisible = true
         let done = batchDone
         batchDone = nil

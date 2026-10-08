@@ -30,7 +30,6 @@ struct AgeSelectionStepView: View {
                     minAge: minAge,
                     maxAge: maxAge,
                     onAgeChanged: { newAge in
-                        HapticManager.shared.selection()
                         onValidationChanged?(true)
 
                         Task {

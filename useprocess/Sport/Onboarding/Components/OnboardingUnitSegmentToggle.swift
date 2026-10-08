@@ -28,8 +28,10 @@ struct OnboardingUnitSegmentToggle: View {
                     y: 3
                 )
         )
-        .frame(width: ScreenMetrics.width - 80)
+        // Largeur relative au conteneur (plafonné à 640 pt sur iPad), pas à l'écran.
+        .frame(maxWidth: .infinity)
         .frame(height: 56)
+        .padding(.horizontal, 40)
     }
 
     private func segmentButton(

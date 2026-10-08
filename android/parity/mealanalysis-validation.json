@@ -1,0 +1,38 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/useprocess/Features/MealScan/MealScanAnalyzingView.swift": "15fd299b6ad6ac4cbad5ef99abfcd007ef2dd9aa967997cdb7443adda8274035",
+    "/Users/amine/Developer/useprocess/useprocess/Features/MealScan/MealScanAnalysisProgressDirector.swift": "96aa54356cca4380fedade1672ebbef27d47b5a6b6a96c825476df0647f8b570"
+  },
+  "nativeFiles": [
+    "MealAnalysisState.kt",
+    "ProcessMealAnalyzing.kt",
+    "ProcessSurfacePalette.kt",
+    "ProcessMotionPreferences.kt"
+  ],
+  "contract": "Native six-step meal-analysis waiting screen,not a nutrition analyzer. Host provides request-scoped contextKey,actual isAnalysisComplete,onRevealReady,optional photo,failure and retry. Visual stages preserve source order,850ms holds,additional180ms for completed-backend nonfinal stages,and320ms reveal delay. Final stage never completes before actual backend completion; earlier row checks represent visual choreography only. Failure pauses progress and prevents reveal; retry should create a new contextKey. Stale requests cancel and notify at most once. RESUMED lifecycle suspends background work; an interrupted active hold restarts after resume. Source152dp original photo slot,26radius,48dp sweep/1.8seconds,320dp ambient glow/2.4seconds,22/15sp text,22radius checklist and34dp status circles adapted. Reduced motion disables ambient/sweep/spinners. Gallery uses the original chicken-salad photo and an explicit fictitious result button; no food analysis,network request or persistence. Exact source checkmark springs,blur/blend/shadow,font/SFsymbol matching and physical/iOS paired motion and pixel comparisons remain unverified.",
+  "recordedAt": "2026-10-08T09:44:05.690814+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 175,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 39
+  },
+  "visual": "host only",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "MealAnalysisState.kt": "437772718fc0b6add9f080629c09c5f4cbf36bc65fb85eb1a1906f8d451cf0e0",
+    "ProcessMealAnalyzing.kt": "7156c35798fb3b15ac75508b0dffea180707e5fcd3da193848c8aaf521566987",
+    "ProcessSurfacePalette.kt": "2ca843a0a032026cb1f6fc2f8811f765f3c632a4ac372e23742e2d4c259bd32a",
+    "ProcessMotionPreferences.kt": "5f62c13457fb14a4db1e32f7095cc3b929bdde001e26bd4e1de74fd35a943462"
+  },
+  "remaining": [
+    "Real analyzer and production host integration",
+    "Exact checkmark springs,glow,fonts/SF symbols and physical/iOS paired comparison"
+  ]
+}

@@ -1,0 +1,60 @@
+NOUVEAU PÉRIMÈTRE : useprocess.xyz et ses emails restent à l’entreprise. Leurs tarifs ci-dessous sont historiques/corporate ; ils ne chiffrent pas processdebloat.fr ou sa nouvelle boîte, non encore achetés.
+
+PROCESS — FRAIS ET ABONNEMENTS
+Relevé du 4 octobre 2026. Montants inconnus laissés inconnus.
+Ne pas additionner des périodes différentes ni attribuer les comptes partagés à Process.
+
+Firebase / Google Cloud — useprocess-d4385
+25.68 EUR ; septembre 2026, mois de facturation
+verified_project_row : 30.08 EUR utilisation, -4.40 EUR autres remises ; sous-total 25.68 EUR, TVA non incluse dans cette ligne
+
+Anthropic — clé nommée useproces
+11.27 USD ; 30 derniers jours au 4 octobre 2026
+verified_key_label : Tous modèles ; attribution par libellé, correspondance avec secret Firebase non certifiée
+
+Anthropic — clé nommée process
+0 USD ; même fenêtre de 30 jours
+verified_key_label : Ne prouve pas que toute l’app coûte zéro
+
+RevenueCat — compte propriétaire partagé / projet Process Pro
+Montant non confirmé en USD ; consultation 4 octobre 2026
+no_invoices_displayed : Aucune facture affichée ; ne pas assimiler à gratuité future garantie
+
+Vercel — équipe partagée Amine’s projects
+30 USD ; prochaine facture, cycle 12 sept.–12 oct. 2026
+verified_shared_upcoming : Pas coût exclusif Process ; crédit infrastructure utilisé 10.03/20 USD, consommation facturable supplémentaire affichée zéro
+
+Crisp — workspace Process
+0 USD ; mensuel affiché
+verified_current_inactive : Plan Essentials inactif, aucun propriétaire de facture ni moyen de paiement ; tarif de réactivation affiché 95 USD/mois
+
+Hostinger domaine — useprocess.xyz
+18.99 EUR ; renouvellement 12 mois, prélèvement 23 août 2027
+verified_renewal_ex_tax : Taxes/frais affichés 4 EUR ; total 22.99 EUR ; expiration 19 septembre 2027 ; auto-renouvellement actif
+
+Hostinger email — Starter Business Email useprocess.xyz
+19.08 EUR ; renouvellement 12 mois, prélèvement 5 décembre 2026
+verified_renewal_ex_tax : Taxes/frais 3.82 EUR ; total 22.90 EUR ; expiration 19 décembre 2026 ; auto-renouvellement actif
+
+PostHog — projet EU 240558
+Montant et période non confirmés
+Relevé complété ci-dessous : forfait Free confirmé et funnel documenté dans CONVERSIONS_POSTHOG.txt.
+
+AppsFlyer — app Apple 6753808143
+Montant et période non confirmés
+login_required : SDK présent ; coût, plan et transférabilité non vérifiés
+
+Apple Developer — compte personnel multiapps
+Montant non confirmé ; annuel
+invoice_required : Abonnement du vendeur exclu du transfert ; l’acheteur a besoin de son propre compte
+
+GitHub — amineprimesmr/useprocess
+Montant et période non confirmés
+invoice_required : Ne pas céder le compte GitHub personnel ; remettre un dépôt filtré
+
+Anthropic compte partagé : consommation globale 11.31 USD sur la fenêtre, solde crédit 14.20 USD. Factures payées visibles : 12.04 USD le 1 octobre, 12.11 USD le 6 septembre, 18.04 USD le 8 juillet. Les crédits achetés et les consommations ne doivent pas être additionnés comme deux dépenses distinctes.
+PostHog : organisation Free sans carte, 0 USD ; cycle 3 octobre–2 novembre. 7.41K événements utilisés / 1M gratuits ; projection 186K. Mobile replay 99 / 2.5K ; flags 303 / 1M. AppsFlyer reste sur connexion invalide, frais inconnus.
+Vercel : dernière facture payée le 12 septembre 24 USD ; Observability Plus 0 USD ; équipe partagée.
+Crisp : déconnecté de Process ; historique conservé.
+Source : tableaux de bord connectés, lecture seule.
+Sources : https://platform.claude.com/cost ; https://platform.claude.com/settings/billing ; https://app.revenuecat.com/settings/billing/invoices ; https://console.cloud.google.com/billing/01436D-4E4D6D-149BDB/reports?project=useprocess-d4385 ; https://vercel.com/amines-projects-00de692e/~/settings/billing ; https://app.crisp.chat/settings/billing/plans/ ; https://hpanel.hostinger.com/

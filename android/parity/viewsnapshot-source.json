@@ -1,0 +1,12 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-114995887-372210041/ViewSnapshot/ViewSnapshot/ContentView.swift": "3b4958ff541c0527682fc664e239d03171d00befe011de70b008744f3cd5289d",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-114995887-372210041/ViewSnapshot/ViewSnapshot/ViewSnapshotApp.swift": "45b50e028d7982cb1d2c3d5d339326724da99ebfbc46285be4d065f5b2e76596",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-114995887-372210041/ViewSnapshot/ViewSnapshot/Helpers/Snapshot.swift": "3e20e57471973b965240d6f88c7872f15bce8ecc608f35fbdf8c0505e0d91508"
+  },
+  "nativeFiles": [
+    "ViewSnapshotModel.kt",
+    "TenKViewSnapshot.kt"
+  ],
+  "contract": "Wrap actual Compose content and toggle trigger; initial composition/context reset does not capture. Default WINDOW_PIXELS uses PixelCopy on the hosting Activity or Compose Dialog window,after a frame,with1500ms timeout. Clamps to measured visible window bounds and16million pixels. FLAG_SECURE always rejects capture,including explicit SOFTWARE_VIEW mode. Source/context changes cancel pending requests; late PixelCopy buffers are recycled. Host owns returned bitmap; no file,media permission or upload. SOFTWARE_VIEW is explicit fallback/test strategy using decorView.draw andreports its method; not evidence of hardware/window capture. Source sample normal/navigation/tab layouts adapted; native bars/globe glyph differ. Dialog/window coordinate cases,SurfaceView/GL content,offscreen content and physical PixelCopy/iOS parity remain unverified. Host tests verify cropped software pixels,secure rejection and context reset only."
+}

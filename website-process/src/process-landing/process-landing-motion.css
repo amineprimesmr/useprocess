@@ -1,0 +1,45 @@
+html:has(.fk-page) {
+  scroll-behavior: smooth;
+  scroll-padding-top: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:has(.fk-page) {
+    scroll-behavior: auto;
+  }
+}
+
+
+.fk-faq-q svg {
+  transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fk-faq-item.is-open .fk-faq-q svg {
+  transform: rotate(180deg);
+}
+
+.fk-faq-a {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  transition: grid-template-rows 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fk-faq-item.is-open .fk-faq-a {
+  grid-template-rows: 1fr;
+}
+
+.fk-faq-a-inner {
+  overflow: hidden;
+}
+
+.fk-faq-a-inner p {
+  margin: 0 0 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fk-faq-q svg,
+  .fk-faq-a {
+    transition: none;
+  }
+}

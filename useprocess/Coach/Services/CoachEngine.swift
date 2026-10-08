@@ -172,7 +172,9 @@ enum CoachEngine {
         profile: UnifiedUserProfile?,
         history: [CoachMessage]
     ) async throws -> CoachMessage {
-        let jpegs = images.compactMap { $0.jpegData(compressionQuality: 0.72) }
+        let jpegs = await Task.detached(priority: .userInitiated) {
+            images.compactMap { $0.jpegData(compressionQuality: 0.72) }
+        }.value
         guard !jpegs.isEmpty else {
             throw ClaudeAPIError.invalidResponse
         }
@@ -332,13 +334,13 @@ enum CoachEngine {
     private static var faceScanSystemPrompt: String {
         if !ProcessAppLanguage.usesFrenchCopy {
             return """
-            You are the Process coach — face analysis (water retention, fatigue, cortisol, jaw/cervical tension).
+            You describe visible appearance and capture quality only. All supplied indices are experimental visual heuristics, not biological measurements. Never infer hormones, cortisol, fluid amounts, fat, inflammation, disease, or the cause of a change. Do not establish causal links with nutrition or promise improvement. Compare only captures in similar conditions; state uncertainty.
             Address ONE person (you). Never “guys”. No medical diagnosis.
             \(replyLanguageLock) Every user-visible sentence must follow it.
             """
         }
         return """
-        Tu es le coach Process — analyse visage (rétention d'eau, fatigue, cortisol, tension mâchoire/cervicales).
+        Tu décris uniquement l’apparence visible et la qualité de capture. Tous les indices fournis sont des heuristiques visuelles expérimentales, pas des mesures biologiques. N’infère jamais hormones, cortisol, quantité d’eau, graisse, inflammation, maladie ou cause d’un changement. N’établis pas de lien causal avec l’alimentation et ne promets pas d’amélioration. Compare uniquement des captures similaires et explique l’incertitude.
         Tu t'adresses à UNE personne (tu). Jamais « les gars ». Pas de diagnostic médical.
         """
     }
@@ -370,27 +372,27 @@ enum CoachEngine {
         \(AppCopy.tSync(
             """
             Règle critique : ne juge jamais la forme naturelle du visage. Un visage large, fin, asymétrique ou avec traits marqués n'est jamais un défaut.
-            Interprète uniquement les variations d'état du jour : rétention d'eau, fatigue visible, tension, qualité de scan, tendance vs baseline personnelle.
+            Décris seulement les variations d’apparence et de qualité de capture, sensibles à la lumière et à la pose.
             Base ton analyse sur les FAITS ci-dessous — ne les recopie pas mot pour mot, mais respecte leur direction (hausse/baisse/persistance).
 
-            Scores locaux (0-100). Plus haut = signal plus marqué pour rétention, récupération, charge stress ; plus haut = mieux pour peau et définition :
-            - Rétention d'eau : \(markers.puffinessScore)
+            Scores locaux (0-100). Ces indices décrivent l’apparence ou la qualité de capture, sans mesure biologique :
+            - Aspect gonflé apparent : \(markers.puffinessScore)
             - Récupération (cernes / fatigue) : \(markers.underEyeFatigueScore)
-            - Peau : \(markers.skinClarityScore)
+            - Qualité de capture : \(markers.skinClarityScore)
             - Définition (mâchoire / pommettes) : \(definitionScore)
-            - Charge stress (cortisol estimé) : \(stressLoad)
+            - Indice visuel expérimental, sans mesure hormonale : \(stressLoad)
             """,
             en: """
             Critical rule: never judge the natural shape of the face. A wide, slim, asymmetric, or strongly featured face is never a flaw.
-            Interpret only today’s state changes: water retention, visible fatigue, tension, scan quality, trend vs personal baseline.
+            Describe only appearance and capture-quality changes, sensitive to lighting and pose.
             Base your analysis on the FACTS below — do not copy them word for word, but respect their direction (up/down/persisting).
 
-            Local scores (0-100). Higher = stronger signal for retention, recovery, stress load; higher = better for skin and definition:
-            - Water retention: \(markers.puffinessScore)
+            Local scores (0-100). These indices describe appearance or capture quality, not biology:
+            - Apparent puffiness: \(markers.puffinessScore)
             - Recovery (under-eyes / fatigue): \(markers.underEyeFatigueScore)
-            - Skin: \(markers.skinClarityScore)
+            - Capture quality: \(markers.skinClarityScore)
             - Definition (jaw / cheekbones): \(definitionScore)
-            - Stress load (estimated cortisol): \(stressLoad)
+            - Experimental visual index, no hormone measurement: \(stressLoad)
             """
         ))
 
@@ -403,12 +405,10 @@ enum CoachEngine {
         \(AppCopy.tSync(
             """
             Règles obligatoires :
-            - Si la rétention est encore haute ou en hausse, dis explicitement "tu as encore de la rétention d'eau" ou "rétention en hausse".
-            - Si la rétention baisse, dis explicitement "la rétention descend" et ne dramatise pas.
-            - Si rétention persistante sur plusieurs scans, mentionne la persistance et propose une action DIFFÉRENTE des actions récentes listées.
-            - Pour rétention : actions possibles = eau régulière, sodium/produits salés modérés, potassium alimentaire (banane, pomme de terre, épinards, avocat), marche douce.
-            - Si données nutrition hier disponibles, relie-les à la rétention (sodium/potassium).
-            - Ne parle jamais de diagnostic, pathologie, traitement, diurétique ou supplément potassium.
+            - Aucun indice ne prouve une rétention d’eau, une fatigue biologique ou un niveau de stress.
+            - Décris l’apparence avec prudence et la comparabilité des captures ; n’attribue pas les changements à un aliment ou une hormone.
+            - Si les captures ne sont pas comparables, signale l’incertitude plutôt qu’une évolution certaine.
+            - Propose seulement des actions de suivi : capture sous une lumière similaire, noter ses habitudes ; pas de diagnostic ni traitement.
 
             Analyse cette photo + faits évolutifs. Format EXACT (labels inchangés, contenu en français) :
 
@@ -419,12 +419,10 @@ enum CoachEngine {
             """,
             en: """
             Mandatory rules:
-            - If retention is still high or rising, say explicitly "you still have water retention" or "retention is rising".
-            - If retention is falling, say explicitly "retention is coming down" and do not dramatize.
-            - If retention has persisted across several scans, mention the persistence and propose an action DIFFERENT from the recent actions listed.
-            - For retention: possible actions = steady water, moderate sodium/salty foods, food potassium (banana, potato, spinach, avocado), easy walk.
-            - If yesterday’s nutrition data is available, link it to retention (sodium/potassium).
-            - Never mention diagnosis, pathology, treatment, diuretics, or potassium supplements.
+            - No index proves water retention, biological fatigue or a stress level.
+            - Describe appearance and capture comparability cautiously; never attribute changes to a food or hormone.
+            - If captures are not comparable, state uncertainty rather than a definite trend.
+            - Suggest tracking actions only: similar lighting, recording habits; no diagnosis or treatment.
 
             Analyze this photo + evolution facts. EXACT format (keep these labels, write VALUES in the required language):
 
@@ -437,13 +435,11 @@ enum CoachEngine {
         """
 
         do {
-            let jpeg: Data?
-            if let filename = result.snapshotFilename,
-               let image = FaceScanImageStore.load(filename: filename) {
-                jpeg = image.jpegData(compressionQuality: 0.78)
-            } else {
-                jpeg = nil
-            }
+            let filename = result.snapshotFilename
+            let jpeg = await Task.detached(priority: .userInitiated) { () -> Data? in
+                guard let filename, let image = FaceScanImageStore.load(filename: filename) else { return nil }
+                return image.jpegData(compressionQuality: 0.78)
+            }.value
 
             let raw = try await CoachAPITransport.complete(
                 task: .faceScanVision,
@@ -517,7 +513,7 @@ enum CoachEngine {
             - Score relatif visage du jour : \(result.resolvedFaceDayScore)/100
             - Confiance scan : \(confidence)/100 (\(FaceWellnessScore.confidenceLabel(for: confidence)))
             - Baseline : \(signals.localizedBaselineLabel), \(baselineCount) scan(s)
-            - Delta rétention vs baseline : \(signed(signals.puffinessDelta))
+            - Variation d’aspect gonflé apparent vs baseline : \(signed(signals.puffinessDelta))
             - Delta récupération vs baseline : \(signed(signals.underEyeFatigueDelta))
             - Delta peau vs baseline : \(signed(signals.skinClarityDelta))
             - Delta définition vs baseline : \(signed(signals.faceDefinitionDelta ?? 0))
@@ -530,7 +526,7 @@ enum CoachEngine {
             - Baseline: \(signals.localizedBaselineLabel), \(baselineCount) scan(s)
             - Retention delta vs baseline: \(signed(signals.puffinessDelta))
             - Recovery delta vs baseline: \(signed(signals.underEyeFatigueDelta))
-            - Skin delta vs baseline: \(signed(signals.skinClarityDelta))
+            - Capture-quality delta vs baseline: \(signed(signals.skinClarityDelta))
             - Definition delta vs baseline: \(signed(signals.faceDefinitionDelta ?? 0))
             - Stress-load delta vs baseline: \(signed(signals.stressLoadDelta ?? 0))
             """

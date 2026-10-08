@@ -14,9 +14,6 @@ struct OnboardingProfileChatView: View {
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverOn
 
     @ObservedObject var onboardingViewModel: OnboardingViewModel
-    @EnvironmentObject private var healthManager: HealthManager
-    @EnvironmentObject private var permissionsManager: PermissionsManager
-    @EnvironmentObject private var profileService: UnifiedProfileService
     var onComplete: () -> Void
 
     @State private var mossEngine = MossConversationEngine()
@@ -51,57 +48,27 @@ struct OnboardingProfileChatView: View {
         }
         .onChange(of: chatViewModel.shouldFinish) { _, should in
             guard should else { return }
-            chatViewModel.finish(onComplete: onComplete)
+            Task { await finishWhenNavigationUnlocked() }
         }
         .task(id: onboardingViewModel.currentStep) {
+            // `.task(id:)` se relance aussi sur la vue sortante pendant la transition.
+            guard OnboardingStep(rawValue: onboardingViewModel.currentStep) == .weightMotivation else { return }
+
             mossEngine.reduceMotion = reduceMotion
             mossEngine.assistiveVoice = voiceOverOn
 
-            chatViewModel.bind(
-                onboardingViewModel,
-                engine: mossEngine,
-                healthManager: healthManager,
-                permissionsManager: permissionsManager
-            )
+            chatViewModel.bind(onboardingViewModel, engine: mossEngine)
             onboardingViewModel.profileChatBackHandler = { [chatViewModel] in
                 chatViewModel.goBackInDiscussion()
-            }
-            onboardingViewModel.onOnboardingFaceScanCancel = { [chatViewModel] in
-                chatViewModel.isSubmittingAnswer = false
-                if chatViewModel.currentQuestion?.kind == .profileSummary
-                    || chatViewModel.currentQuestion?.id == "face_scan_offer" {
-                    chatViewModel.restoreFaceScanOfferAnswers()
-                }
-            }
-            onboardingViewModel.onOnboardingFaceScanSkip = { [chatViewModel] in
-                chatViewModel.faceScanDidSkip()
-            }
-            onboardingViewModel.onOnboardingFaceScanResult = { [chatViewModel] result in
-                chatViewModel.adoptDedicatedFaceScanResult(result)
-            }
-            onboardingViewModel.onOnboardingFaceScanContinue = {
-                Task { await completeFaceScanOnboarding() }
             }
             onboardingViewModel.syncInferredWeightGoal()
             await chatViewModel.startIfNeeded()
 
-            if onboardingViewModel.presentedOnboardingFaceScan == nil {
-                if onboardingViewModel.shouldReopenFaceScanResultsAfterBack,
-                   let restored = chatViewModel.restoredFaceScanResultIfAvailable() {
-                    onboardingViewModel.shouldReopenFaceScanResultsAfterBack = false
-                    chatViewModel.prepareForFaceScanResultsReopen()
-                    onboardingViewModel.presentOnboardingFaceScan(initialResult: restored)
-                } else if let restored = chatViewModel.consumePendingDedicatedResultsReopen() {
-                    onboardingViewModel.presentOnboardingFaceScan(initialResult: restored)
-                } else if chatViewModel.shouldAutoFinishAfterResume,
-                          !onboardingViewModel.suppressProfileChatAutoFinish {
-                    chatViewModel.finish(onComplete: onComplete)
-                }
+            if chatViewModel.shouldAutoFinishAfterResume,
+               !onboardingViewModel.suppressProfileChatAutoFinish {
+                await finishWhenNavigationUnlocked()
             }
-
-            if onboardingViewModel.suppressProfileChatAutoFinish {
-                onboardingViewModel.suppressProfileChatAutoFinish = false
-            }
+            onboardingViewModel.suppressProfileChatAutoFinish = false
         }
         .onChange(of: reduceMotion) { _, value in
             mossEngine.reduceMotion = value
@@ -111,9 +78,7 @@ struct OnboardingProfileChatView: View {
         }
         .onDisappear {
             onboardingViewModel.profileChatHeaderProgress = nil
-            if onboardingViewModel.profileChatBackHandler != nil {
-                onboardingViewModel.profileChatBackHandler = nil
-            }
+            onboardingViewModel.profileChatBackHandler = nil
         }
         .onChange(of: chatHeaderProgressRefreshKey) { _, _ in
             refreshChatHeaderProgress()
@@ -204,7 +169,7 @@ struct OnboardingProfileChatView: View {
                    let question = chatViewModel.currentQuestion {
                     mossAnswerControls(for: question)
                         .opacity(engine.controlsVisible && !engine.isTyping ? 1 : 0)
-                        .allowsHitTesting(profileSummaryHitsEnabled(question, engine: engine))
+                        .allowsHitTesting(engine.controlsVisible && !engine.isTyping)
                         .id("controls.\(question.id)")
                         .transition(.asymmetric(
                             insertion: .opacity.combined(with: .offset(y: 10)),
@@ -216,6 +181,11 @@ struct OnboardingProfileChatView: View {
             .id("inlineAnswer")
         }
         .padding(.horizontal, Theme.margin)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard mossEngine.isTyping else { return }
+            mossEngine.completeCurrent()
+        }
         .animation(reduceMotion ? nil : .smooth(duration: 0.18), value: messages.count)
         .animation(reduceMotion ? nil : .smooth(duration: 0.18), value: engine.controlsVisible)
     }
@@ -227,15 +197,6 @@ struct OnboardingProfileChatView: View {
             return 0
         }
         return 16
-    }
-
-    /// Les contrôles ne reçoivent le tap qu’après la fin du typewriter.
-    private func profileSummaryHitsEnabled(
-        _ question: OnboardingProfileChatQuestion,
-        engine: MossConversationEngine
-    ) -> Bool {
-        guard engine.controlsVisible, !engine.isTyping else { return false }
-        return true
     }
 
     private func scrollToLatestMessage(proxy: ScrollViewProxy) {
@@ -303,10 +264,17 @@ struct OnboardingProfileChatView: View {
         .padding(.top, Theme.Space.s)
     }
 
+    /// Le host ignore `nextStep` pendant son verrou de transition (~0,4 s) : on réessaie
+    /// au lieu de laisser l'utilisateur devant un chat terminé sans aucun contrôle.
     @MainActor
-    private func completeFaceScanOnboarding() async {
-        chatViewModel.finishAfterDedicatedFaceAnalysis()
-        onboardingViewModel.dismissOnboardingFaceScan()
-        chatViewModel.finish(onComplete: onComplete)
+    private func finishWhenNavigationUnlocked() async {
+        for _ in 0..<6 {
+            // Retour arrière pendant l'attente : l'utilisateur ne veut plus terminer.
+            guard chatViewModel.shouldFinish || chatViewModel.shouldAutoFinishAfterResume else { return }
+            if chatViewModel.finish(onComplete: onComplete) { return }
+            try? await Task.sleep(for: .milliseconds(200))
+            if Task.isCancelled { return }
+        }
+        chatViewModel.cancelPendingFinish()
     }
 }

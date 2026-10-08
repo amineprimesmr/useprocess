@@ -291,8 +291,8 @@ enum PostureIntelligenceGuide {
         }
         if choice("mouth_breathing", in: answers) == "yes" {
             checks.append(AppCopy.tSync(
-                "Respiration nasale en permanence — réduit gonflement et cortisol",
-                en: "Nasal breathing at all times — reduces puffiness and cortisol"
+                "Respiration confortable à ton rythme ; ne force pas la respiration nasale",
+                en: "Breathe comfortably at your own pace; do not force nasal breathing"
             ))
         }
         checks.append(barefootDetail)

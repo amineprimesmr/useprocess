@@ -1,0 +1,73 @@
+{
+  "recordedAt": "2026-10-08T00:46:51.340232+00:00",
+  "status": "development-preview",
+  "build": "passed",
+  "finalApkSha256": "1cd4149e49c2b3b36475d12125ea29ad46264249e9854f3d2090e1a7996f60f6",
+  "unitTests": {
+    "tests": 36,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 17
+  },
+  "runtime": {
+    "device": "emulator-5580",
+    "passed": [
+      "age initially centers 25 with original distance scale/alpha formula",
+      "age swipe centers 26 and debounced local preference stores 26",
+      "height starts 170cm; FT toggle shows 5 feet 7 inches",
+      "ruler swipe selects 186cm and local preference stores 186",
+      "186cm restored after force-stop/relaunch",
+      "height screen and value preserved across system dark-theme recreation",
+      "age and height expose SeekBar accessibility nodes"
+    ],
+    "notTested": [
+      "physical device",
+      "precise pixel/motion comparison",
+      "accessibility increment action execution",
+      "age dark-theme runtime",
+      "large font and compact viewport",
+      "backend profile save"
+    ],
+    "limitation": "Runtime captures precede final host-only background fix. Final APK compiled/tests/lint passed but not installed, because a V2 task was concurrently issuing adb gestures to the same emulator. Avoid simultaneous UI actions. System night setting restored to no.",
+    "hostIssue": "Dark input screen originally had white safe-area background with white status icons. Final host paints full-window adaptive background before safeDrawingPadding; runtime recheck pending.",
+    "differences": [
+      "native Compose scroll physics are not certified identical to SwiftUI",
+      "height numeric glyph transition/glow not yet ported",
+      "leaving composition cancels pending debounce; host Continue and Back persist immediately",
+      "age wheel reduces viewport height on small screens"
+    ]
+  },
+  "sourceSha256": {
+    "app/src/main/java/com/process/android/OnboardingPickerRules.kt": "ce2b5650409b21a3516913f27b5a7c39d26c6ade24931caf8acf9c27773e92e7",
+    "app/src/main/java/com/process/android/OnboardingInputTheme.kt": "5b91a25c38bd8bf0cd041963989e1791a745113350af5cce881fb38d51ccfdb8",
+    "app/src/main/java/com/process/android/ProcessAgeSelection.kt": "dd9cbaaf336742d9c5be7336152dd12cc48d5fd2da5861bab3aa8282ecede36e",
+    "app/src/main/java/com/process/android/ProcessHeightSelection.kt": "cc075f028bc12f5d61daac29e9ee59adbe20d3a11aca831327336284b300a37e",
+    "app/src/main/java/com/process/android/MainActivity.kt": "3ec568faf8391a35af60e22cf3157906135ac08032ac05e170552925e5c8f95c",
+    "app/src/test/java/com/process/android/OnboardingPickerRulesTest.kt": "5913b823e2f1648f3960d3c59b32b93f91f030236accf3c3de712f49cd707803"
+  },
+  "originalSourceSha256": {
+    "Steps/AgeSelectionStepView.swift": "2afdf2c79605fb1dde7f56786a0db104af4da63a182971c7dab838ab969d09c0",
+    "Steps/HeightStepView.swift": "853f107ddadc181fb3b844593c3273233ad707c68243bbd668817746a9dc9e2a",
+    "Components/AgeWheelPicker.swift": "b999f3ffa0dcbc19c1747509e19c588add913b904c20e27a9bf98716a42aff53",
+    "Components/TickPicker.swift": "cc3dca11e0321c338d95b805434e72a86ee7449cf5730581a14d62377fa464dc",
+    "Components/OnboardingTheme.swift": "dcdc1ad66579172246ead6267a1f330fc82ea4564df33cf5e76e0bdffaf0badd",
+    "Components/OnboardingStandardStepLayout.swift": "5664b9a57c91c1243d3e947452f4eb1534d5e9655841a2a4843624ab1af42ef9"
+  },
+  "evidence": {
+    "age-initial.png": "fe65c2c745835eac997ba0361e94b8c04489c3ae585460970adee1d8964e2a49",
+    "age-initial-ui.xml": "fb315d5fa6a0f576a009b33c69e2b30c842612b9d96eec9499dc1492f1d4ac25",
+    "age-scrolled.png": "059c6b195a4008fb7782fe54115d4f8897c21513222cbf5d849fde12f9c8fbec",
+    "height-initial.png": "ecacf00c6308fb1d4e490a1ea84858e67950adc4722c2c4384167cf2070036ce",
+    "height-initial-ui.xml": "0057fde381cfb4da87a9d29dfa5bdfce132134ef2b18219797eee9f6b6be2e9f",
+    "height-ft-ui.xml": "3c178c8cdcbffcdfc583934cebf32584f9ad9c5f7e104e3f10e74b42018ae0c8",
+    "height-scrolled.png": "06386381eeddb4df159436fc57c7240eb6e87f928b7da8d984993d2a2466cc10",
+    "height-scrolled-ui.xml": "46cde283b088f944028dfc257ee8db46e120f27d5ce62442392e46eec9cc1419",
+    "height-relaunch-ui.xml": "46cde283b088f944028dfc257ee8db46e120f27d5ce62442392e46eec9cc1419",
+    "height-dark.png": "7f1cb7d7e7105a62ec6d30d4b037caf1ee0450e8c0f8611512282097556f05b8",
+    "height-dark-ui.xml": "46cde283b088f944028dfc257ee8db46e120f27d5ce62442392e46eec9cc1419"
+  }
+}

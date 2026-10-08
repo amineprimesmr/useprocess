@@ -5,17 +5,6 @@
 
 import Foundation
 
-// MARK: - Validation de disponibilité d'étape
-
-func validateOnboardingStepAvailability(step: OnboardingStep, viewModel: OnboardingViewModel) -> Bool {
-    switch step {
-    case .faceLeverageIntro:
-        return !viewModel.firstName.isEmpty
-    default:
-        return true
-    }
-}
-
 // MARK: - Reprise 1er dashboard preview
 
 /// Étapes réelles après le 1er dashboard (scan) et avant le paywall.
@@ -64,6 +53,7 @@ func bestMidOnboardingResumeStep(viewModel: OnboardingViewModel) -> Int {
 
 func reconcileFirstDashboardPreviewResumeIfNeeded(viewModel: OnboardingViewModel) {
     guard !AppSession.shared.hasCompletedOnboarding else { return }
+    guard SubscriptionService.shared.hasResolvedInitialSubscriptionStatus else { return }
     if SubscriptionService.shared.subscriptionStatus.isActive { return }
     let step = OnboardingStep.resolved(from: viewModel.currentStep)
 
@@ -104,37 +94,6 @@ func reconcileFirstDashboardPreviewResumeIfNeeded(viewModel: OnboardingViewModel
     OnboardingProgressService.shared.saveCurrentStep(target)
 }
 
-func findLastValidOnboardingStepIndex(visitedSteps: [Int], viewModel: OnboardingViewModel) -> Int {
-    for stepValue in visitedSteps.reversed() {
-        guard let step = OnboardingStep(rawValue: stepValue) else { continue }
-        if validateOnboardingStepAvailability(step: step, viewModel: viewModel) {
-            return stepValue
-        }
-    }
-    return OnboardingStep.genderSelection.rawValue
-}
-
-func buildOnboardingProgressFlowPath(
-    viewModel: OnboardingViewModel,
-    navigationEngine: OnboardingNavigationEngine
-) -> [Int] {
-    let activePath = navigationEngine.buildActiveFlowPath()
-    var progressPath: [Int] = []
-
-    for rawStep in activePath {
-        let step = OnboardingStep.resolved(from: rawStep)
-        if step == .firstNameInput {
-            progressPath.append(rawStep)
-            break
-        }
-        if isAfterQuestionnairePhase(step) { break }
-        if step.isTransientSkippedStep { continue }
-        progressPath.append(rawStep)
-    }
-
-    return progressPath
-}
-
 func isAfterQuestionnairePhase(_ step: OnboardingStep) -> Bool {
     switch step {
     case .programCreation, .weightEstimation, .biometricAuth, .transformationPreview,
@@ -164,103 +123,43 @@ func isAfterFirstNameProgressPhase(_ step: OnboardingStep) -> Bool {
     }
 }
 
-private func progressCount(
-    in path: [Int],
-    viewModel: OnboardingViewModel
-) -> Int {
-    guard !path.isEmpty else { return 1 }
-
-    if let index = path.firstIndex(of: viewModel.currentStep) {
-        return index + 1
-    }
-
-    let step = OnboardingStep.resolved(from: viewModel.currentStep)
-    if isAfterFirstNameProgressPhase(step) || isAfterQuestionnairePhase(step) {
-        return path.count
-    }
-
-    let stack = normalizeOnboardingVisitedStack(
-        visitedSteps: viewModel.visitedSteps,
-        currentStep: viewModel.currentStep
-    )
-
-    let matchedIndices = stack.compactMap { path.firstIndex(of: $0) }
-    if let bestMatched = matchedIndices.max() {
-        return bestMatched + 1
-    }
-
-    return 1
-}
+/// La barre de progression ne couvre que le questionnaire initial (genre → prénom).
+private let onboardingProgressBarSteps: [OnboardingStep] = [
+    .genderSelection, .ageSelection, .height, .weight, .firstNameInput
+]
 
 func onboardingFlowMetrics(
-    viewModel: OnboardingViewModel,
-    navigationEngine: OnboardingNavigationEngine
+    currentStep: Int
 ) -> (progress: Double, totalSteps: Int, glowProgressCount: Int) {
-    let path = buildOnboardingProgressFlowPath(
-        viewModel: viewModel,
-        navigationEngine: navigationEngine
-    )
-    guard !path.isEmpty else {
-        return (progress: 0, totalSteps: 1, glowProgressCount: 1)
-    }
+    let totalSteps = onboardingProgressBarSteps.count
+    let current = OnboardingStep.resolved(from: currentStep)
 
-    let totalSteps = max(path.count, 1)
-    let current = OnboardingStep.resolved(from: viewModel.currentStep)
-
-    if isAfterQuestionnairePhase(current) || isAfterFirstNameProgressPhase(current) {
+    guard let index = onboardingProgressBarSteps.firstIndex(of: current) else {
         return (progress: 1.0, totalSteps: totalSteps, glowProgressCount: totalSteps)
     }
 
-    let count = progressCount(in: path, viewModel: viewModel)
+    let count = index + 1
     return (
-        progress: min(1.0, Double(count) / Double(totalSteps)),
+        progress: Double(count) / Double(totalSteps),
         totalSteps: totalSteps,
         glowProgressCount: count
     )
 }
 
-func reconcileVisitedStepsForRestore(
-    viewModel: OnboardingViewModel,
-    navigationEngine: OnboardingNavigationEngine
-) {
-    let expectedPrefix = rebuildVisitedStepsPrefix(
-        to: viewModel.currentStep,
-        viewModel: viewModel,
-        navigationEngine: navigationEngine
-    )
-    let normalized = normalizeOnboardingVisitedStack(
-        visitedSteps: viewModel.visitedSteps,
-        currentStep: viewModel.currentStep
-    )
-
-    let needsRebuild = normalized.isEmpty
-        || normalized.last != viewModel.currentStep
-        || normalized.count != expectedPrefix.count
-        || normalized != expectedPrefix
-
-    viewModel.visitedSteps = needsRebuild ? expectedPrefix : normalized
+/// Le parcours est linéaire : la pile « retour » est toujours le préfixe du flow jusqu'à l'étape courante.
+func reconcileVisitedStepsForRestore(viewModel: OnboardingViewModel) {
+    let expected = visitedStepsPrefix(to: viewModel.currentStep)
+    if viewModel.visitedSteps != expected {
+        viewModel.visitedSteps = expected
+    }
 }
 
-func rebuildVisitedStepsPrefix(
-    to targetStep: Int,
-    viewModel: OnboardingViewModel,
-    navigationEngine: OnboardingNavigationEngine
-) -> [Int] {
-    let path = navigationEngine.buildActiveFlowPath()
-    let visiblePath = path.filter {
-        !OnboardingStep.resolved(from: $0).isTransientSkippedStep
-    }
-
-    if let index = visiblePath.firstIndex(of: targetStep) {
-        return Array(visiblePath.prefix(index + 1))
-    }
-
-    let step = OnboardingStep.resolved(from: targetStep)
-    if !step.isTransientSkippedStep {
+func visitedStepsPrefix(to targetStep: Int) -> [Int] {
+    let flow = OnboardingStep.visibleFlow.map(\.rawValue)
+    guard let index = flow.firstIndex(of: targetStep) else {
         return [targetStep]
     }
-
-    return visiblePath.isEmpty ? [OnboardingStep.genderSelection.rawValue] : [visiblePath[0]]
+    return Array(flow.prefix(index + 1))
 }
 
 func normalizeOnboardingVisitedStack(

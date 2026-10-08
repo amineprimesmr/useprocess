@@ -8,7 +8,6 @@ struct ProcessAppUpdateSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @Environment(\.appTheme) private var theme
-    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         VStack(spacing: 18) {
@@ -55,11 +54,11 @@ struct ProcessAppUpdateSheet: View {
                 } label: {
                     Text(AppCopy.t("Mettre à jour", en: "Update"))
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(colorScheme == .light ? Color.white : theme.primaryText)
+                        .foregroundStyle(!theme.isDark ? Color.white : theme.primaryText)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                         .background(
-                            colorScheme == .light ? Color.black : theme.primaryText.opacity(0.14),
+                            !theme.isDark ? Color.black : theme.primaryText.opacity(0.14),
                             in: Capsule()
                         )
                 }

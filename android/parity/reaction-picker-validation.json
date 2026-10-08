@@ -1,0 +1,25 @@
+{
+  "recordedAt": "2026-10-08T01:39:40.058580+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 87,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "runtime": "unverified",
+  "visual": "unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/ReactionPickerModel.kt": "5dcae914de05f3f4d877cc82dcda4e1b83ec3ae1238a6abec12a19b48dca165e",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/TenKReactionPicker.kt": "a2c2f5a97b627e72300f0b48d82407eb2df7c527f057cbd3f0a12039f13e8fa8",
+    "/Users/amine/Developer/10kdesign-device.nosync/content/components/design-reaction-picker/TenKAMReactionViewDemo.swift": "32e1f15c7feb9c2d7c62f9f6e73704f5c5485bd871a574120743fde37860152d"
+  },
+  "buildLog": "/tmp/process-reaction-picker-build.log",
+  "remaining": [
+    "physical runtime selection, popup dismissal and narrow-screen checks",
+    "original glass, zoom/blur transitions and emoji rendering",
+    "haptic, accessibility and exact spring comparison"
+  ]
+}

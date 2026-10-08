@@ -704,10 +704,5 @@ struct FaceIDContinueButton: View {
         }
         .buttonStyle(.processPlain)
         .contentShape(Capsule())
-        .highPriorityGesture(
-            TapGesture().onEnded {
-                action()
-            }
-        )
     }
 }

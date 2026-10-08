@@ -16,7 +16,7 @@ enum OnboardingAppleAuth {
             return
         }
 
-        if AuthUser.current == nil {
+        if AuthUser.current == nil || Auth.auth().currentUser?.isAnonymous == true {
             try await signInWithApple(
                 authManager: authManager,
                 profileService: profileService

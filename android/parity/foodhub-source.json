@@ -1,0 +1,92 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/useprocess/WelcomePlan/Food/DebloatFoodHubView.swift": "60e7bd5be6968518cfd619905aae01c4dead0a428dc709a89db20a9da2f49a36"
+  },
+  "assets": [
+    {
+      "id": "epinards",
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/FoodIcons/food_spinach.imageset/food_spinach.png",
+      "resource": "hub_food_spinach.png",
+      "sha256": "51992ebe17b34221126a392bff6b00c1a2996f35c848361d9f3a25b3160bc3b4"
+    },
+    {
+      "id": "concombre",
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/FoodIcons/food_cucumber.imageset/food_cucumber.png",
+      "resource": "hub_food_cucumber.png",
+      "sha256": "a747f82004279017c4846b60da10b9657ceaccafdd12e15fb1ac52c79aedecb5"
+    },
+    {
+      "id": "tomate",
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/FoodIcons/food_tomato.imageset/food_tomato.png",
+      "resource": "hub_food_tomato.png",
+      "sha256": "28b0185a5d70b67eddc9ce4e66f6309bd23b04c7b66f878517059161d56e446f"
+    },
+    {
+      "id": "carotte",
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/FoodIcons/food_carrot.imageset/food_carrot.png",
+      "resource": "hub_food_carrot.png",
+      "sha256": "c9d075da8efbc7e177e7d58efed24b1c7c6d17cd55b01bf89601ee0eb85d9a49"
+    },
+    {
+      "id": "fraises",
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/FoodIcons/food_strawberry.imageset/food_strawberry.png",
+      "resource": "hub_food_strawberry.png",
+      "sha256": "3c56a41919b8b6d6666bbeb3d332bb05338c023bbbd2cbbcfc3d00f88b11960a"
+    },
+    {
+      "id": "brocoli",
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/FoodIcons/food_broccoli.imageset/food_broccoli.png",
+      "resource": "hub_food_broccoli.png",
+      "sha256": "c2f4db4110b93838c78759232137253fb9d7b4313c5729a9c837db9743d55201"
+    },
+    {
+      "id": "kiwi",
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/FoodIcons/food_kiwi.imageset/food_kiwi.png",
+      "resource": "hub_food_kiwi.png",
+      "sha256": "a250428ba965ca96ab178e3f567d9fbad112cd07cdcf3430ab574b7f942b943c"
+    },
+    {
+      "id": "aubergine",
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/FoodIcons/food_eggplant.imageset/food_eggplant.png",
+      "resource": "hub_food_eggplant.png",
+      "sha256": "940d4f6dd5d9f4d6913de3d33c602e95f031d2f4f375633f77f03a53672a0235"
+    },
+    {
+      "id": "pasteque",
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/FoodIcons/food_watermelon.imageset/food_watermelon.png",
+      "resource": "hub_food_watermelon.png",
+      "sha256": "1bf219fa8855545ebce7a702a8c508f2d056efab00414a6117ed779463ec9e2a"
+    },
+    {
+      "id": "citron",
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/FoodIcons/food_lemon.imageset/food_lemon.png",
+      "resource": "hub_food_lemon.png",
+      "sha256": "dd8bdaa67ab33db1df5ac085e5a90c79aecb6c774b3b9b012b54266fbba3ae4e"
+    },
+    {
+      "id": "avocat",
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/FoodIcons/food_avocado.imageset/food_avocado.png",
+      "resource": "hub_food_avocado.png",
+      "sha256": "d70beebe73b400fab224cb0b2635a69104de83e200eb1eb40c732d4b5b2e5fff"
+    },
+    {
+      "id": "banane",
+      "source": "/Users/amine/Developer/useprocess/useprocess/Assets.xcassets/FoodIcons/food_banana.imageset/food_banana.png",
+      "resource": "hub_food_banana.png",
+      "sha256": "9cb85ce37b96ad50a433e3ba615d9cbe453258b4060ea6ce7d068fa7bcc7173a"
+    }
+  ],
+  "contract": "Supply host callbacks for food,recipe,all-foods,hydration and scan navigation,configured meal slots,today meals and optional avatar/assessment provider. The hub includes139curated food records,18original recipes,12original food illustrations and18original recipe images. Original illustrated-food order,category/score ordering,first matching recipe section,today-first selection and independent duplicate identities are preserved. Source search state was unused; Android deliberately filters food names with accent/case folding,including French names in English mode. Missing plan data never invents today entries; unknown assessments show no fabricated score. Source48dpavatar,44dphydration,48dpscan,24spheading,68dppictures,212x270recipe tiles,38dpsection gap andview-start snapping are adapted. Host owns identity-checked persistence,scanner,assessment computation and latest-scan media. Native glass,SFsymbols,exact glyph/edge-transition/press spring and physical/iOS comparison remain incomplete.",
+  "nativeFiles": [
+    "FoodHubModel.kt",
+    "FoodHubAssets.kt",
+    "ProcessFoodHub.kt",
+    "ProcessSurfacePalette.kt",
+    "RecipeModel.kt",
+    "ProcessRecipeCatalog.kt",
+    "ProcessRecipeScore.kt",
+    "DebloatFood.kt",
+    "DebloatFoods.kt",
+    "FoodCopy.kt"
+  ]
+}

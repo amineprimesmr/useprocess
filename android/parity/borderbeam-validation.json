@@ -1,0 +1,37 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-156996243-655369276/BorderBeam/BorderBeam/ContentView.swift": "a76d7ef0045d2097559975061181f2bbb93f1ece0020c062b5c78dbcaa999080",
+    "content/source-projects/design-source-156996243-655369276/BorderBeam/BorderBeam/BorderBeamApp.swift": "2d025b51ef602cd05ce6b7dec48e863a866c940dcba541a2893d06134a4a4ddb",
+    "content/source-projects/design-source-156996243-655369276/BorderBeam/BorderBeam/Helpers/BorderBeamEffect.swift": "a2adea9b7aa39ab60ec1d3291a68051e849d191f3fd1d14ad1d6ed8ea140a760"
+  },
+  "mirrorMatchesInventory": true,
+  "contract": "Wrap content in TenKBorderBeam. Original2.5second linear revolution,140to270degree angular window,0.6dp stroke,0.5dp inset,diagonal beam colors,inverse blurred interior and beamBlur/1.5mask are adapted with native Android Canvas shaders. Empty beam colors keep only the border; enabled=false removes the effect but retains content. Reduced motion displays a static phase; animation pauses when lifecycle stops. Software layer provides blur on API28; exact Swift blur compositing/tertiary opacity/adaptive colors and physical frame performance remain unverified. Original icon-only controls/precise gallery UI are not fully reproduced.",
+  "nativeFiles": [
+    "TenKBorderBeam.kt",
+    "TenKBorderBeamGallery.kt"
+  ],
+  "recordedAt": "2026-10-08T08:38:05.938418+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 153,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 33
+  },
+  "visual": "host render inspected; iOS comparison unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "TenKBorderBeam.kt": "61c51d18e5458ac4a5be71c3f096c52a642d8e54060c9e43ea45ef84ee1aa19a",
+    "TenKBorderBeamGallery.kt": "3634f5af33b2c5d5d3a053866c826561515348c6959fe90a4c7451c4d7eaa45a"
+  },
+  "remaining": [
+    "Native glass,typography,exact springs/scroll/GPU motion and physical/iOS paired comparison remain unverified",
+    "Host integrations and component-specific limitations are detailed in the integration contract"
+  ],
+  "allocationRefactor": "Shaders,paints,masks,blend modes,rectangles and color arrays cached outside per-frame drawing; static host PNG SHA unchanged. Physical performance remains unverified."
+}

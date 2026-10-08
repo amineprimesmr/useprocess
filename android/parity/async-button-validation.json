@@ -1,0 +1,29 @@
+{
+  "recordedAt": "2026-10-08T01:37:37.546336+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 84,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "runtime": "unverified",
+  "visual": "unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/AsyncButtonModel.kt": "2fad7e897c67923160137bc945659e1b24e27b1fad71ed78bd23bb6c1d109f63",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/TenKAsyncButton.kt": "6de89d7c87a93434fcdd0fda0cb84778fbf4f477a35876c39777e0f3d8518131",
+    "content/source-projects/design-source-124654955-438247026/AnimatedStateButton/AnimatedStateButton/ContentView.swift": "c556fe6825bbc17fb82aeb8bb221c786df7c4868a7013a33c2a140b86b845e72",
+    "content/source-projects/design-source-124654955-438247026/AnimatedStateButton/AnimatedStateButton/AnimatedStateButtonApp.swift": "ece3efab5be30730c77f2165ff634f74dbf7550713b01f395c2569886cfdcd33",
+    "content/source-projects/design-source-124654955-438247026/AnimatedStateButton/AnimatedStateButton/Helpers/Spinner.swift": "9649fb6c4b644ce0263c2f221afa5665547ea0233908a244743b09f900d30460",
+    "content/source-projects/design-source-124654955-438247026/AnimatedStateButton/AnimatedStateButton/Helpers/AnimatedButton.swift": "693a595daec8c86f086457441f984c0c5b1e813bb9ae63e061af0e438b198c47"
+  },
+  "buildLog": "/tmp/process-async-button-build.log",
+  "remaining": [
+    "SwiftUI blurReplace/interpolate/symbolEffect and native font rendering",
+    "exact system gradient and spinner speed-delay comparison",
+    "original complete demo layout, Apple symbol and outcome icons",
+    "physical runtime interactions, cancellation and accessibility checks"
+  ]
+}

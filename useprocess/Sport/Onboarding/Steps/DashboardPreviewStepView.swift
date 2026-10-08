@@ -6,7 +6,9 @@
 //
 
 import AVFoundation
+import Combine
 import SwiftUI
+import UIKit
 
 struct DashboardPreviewStepView: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -16,23 +18,22 @@ struct DashboardPreviewStepView: View {
     var hasCompletedFirstScan: Bool = false
     var onFirstScanResult: ((FaceScanResult) -> Void)? = nil
     var onFirstScanContinue: (() -> Void)? = nil
-    var onBeginFirstScan: (() -> Void)? = nil
     var onFirstScanSkipLater: (() -> Void)? = nil
     var initialScanPersistedState: OnboardingDashboardScanPersistedState? = nil
     var pendingScanResult: FaceScanResult? = nil
     var onScanPersistedStateChange: ((OnboardingDashboardScanPersistedState?) -> Void)? = nil
 
-    @State private var carouselStep = 0
+    @State private var activeSlot: Int? = 0
+    @State private var scanCardFrame: CGRect = .zero
+
+    private var carouselStep: Int {
+        get { min(max(activeSlot ?? 0, 0), slides.count - 1) }
+        nonmutating set { activeSlot = min(max(newValue, 0), slides.count - 1) }
+    }
     @State private var didBootstrapPreview = false
+    @State private var didRestoreSession = false
     @State private var isScanPageInteractive = false
-    @State private var scanExpandProgress: CGFloat = 0
-    @State private var revealsPreviewContent = false
-    @State private var showsTourChrome = false
-    @State private var showsSideCards = false
-    @State private var hasSettledCardScale = false
-    @State private var entranceTask: Task<Void, Never>?
     @State private var firstScanLaunchTask: Task<Void, Never>?
-    @State private var isAdvancingSlide = false
     @State private var embeddedScanResult: FaceScanResult?
     @State private var preservedScanSession: DashboardPreviewScanSessionSnapshot?
 
@@ -46,7 +47,6 @@ struct DashboardPreviewStepView: View {
         hasCompletedFirstScan: Bool = false,
         onFirstScanResult: ((FaceScanResult) -> Void)? = nil,
         onFirstScanContinue: (() -> Void)? = nil,
-        onBeginFirstScan: (() -> Void)? = nil,
         onFirstScanSkipLater: (() -> Void)? = nil,
         initialScanPersistedState: OnboardingDashboardScanPersistedState? = nil,
         pendingScanResult: FaceScanResult? = nil,
@@ -55,7 +55,6 @@ struct DashboardPreviewStepView: View {
         self.hasCompletedFirstScan = hasCompletedFirstScan
         self.onFirstScanResult = onFirstScanResult
         self.onFirstScanContinue = onFirstScanContinue
-        self.onBeginFirstScan = onBeginFirstScan
         self.onFirstScanSkipLater = onFirstScanSkipLater
         self.initialScanPersistedState = initialScanPersistedState
         self.pendingScanResult = pendingScanResult
@@ -64,7 +63,7 @@ struct DashboardPreviewStepView: View {
     }
 
     private var logicalSlideIndex: Int {
-        carouselStep % slides.count
+        carouselStep
     }
 
     private var isLastSlide: Bool {
@@ -72,41 +71,41 @@ struct DashboardPreviewStepView: View {
     }
 
     var body: some View {
-        ZStack {
-            tourOrHiddenBackground
-            resultsOverlay
-            if isScanPageInteractive, embeddedScanResult == nil {
-                interactiveScanOverlay
-                    .transition(.opacity)
-                    .zIndex(80)
+        GeometryReader { geometry in
+            ZStack {
+                OnboardingTheme.screenBackground.ignoresSafeArea().allowsHitTesting(false)
+                tourOrHiddenBackground
+                if embeddedScanResult == nil, isLastSlide || isScanPageInteractive {
+                    liveScanPage(in: geometry.size)
+                }
+                resultsOverlay
             }
+            .coordinateSpace(name: "dashboardTour")
+            .onPreferenceChange(DashboardScanCardFrameKey.self) { scanCardFrame = $0 }
         }
-        .animation(OnboardingScanFlowMotion.animation, value: embeddedScanResult?.id)
-        .animation(.easeInOut(duration: 0.2), value: isScanPageInteractive)
-        .environment(\.onboardingDashboardScanSession, dashboardFirstScanSession)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
-            restorePersistedSessionIfNeeded()
+            if !didRestoreSession {
+                didRestoreSession = true
+                restorePersistedSessionIfNeeded()
+            }
             bootstrapPreviewIfNeeded()
-            startEntranceIfNeeded()
         }
         .onDisappear {
-            entranceTask?.cancel()
-            firstScanLaunchTask?.cancel()
+            if !isScanPageInteractive { firstScanLaunchTask?.cancel() }
             PlanHomeTutorialStore.shared.suppressPresentationForPreview(true)
         }
         .onChange(of: scenePhase) { _, phase in
             handleScenePhaseChange(phase)
         }
-        .processRestoreOpaqueUIKitHostingBackground(OnboardingTheme.hostingBackgroundUIColor)
     }
 
-    /// Scan hors `scaleEffect` du carousel — sinon le bouton « plus tard » ne reçoit pas les taps.
+    /// One camera view is retained while its card expands to the full screen.
     @ViewBuilder
     private var interactiveScanOverlay: some View {
         DashboardPreviewEmbeddedFaceScanSession(
-            isTabActive: true,
-            isCaptureEnabled: true,
+            isTabActive: (isLastSlide || isScanPageInteractive) && scenePhase == .active,
+            isCaptureEnabled: isScanPageInteractive,
             onCancel: {
                 dashboardFirstScanSession?.onCancel()
             },
@@ -124,14 +123,36 @@ struct DashboardPreviewStepView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
         .background(ProcessBackgroundPalette.base(for: colorScheme).ignoresSafeArea())
+
     }
 
     @ViewBuilder
     private var tourOrHiddenBackground: some View {
-        dashboardTourLayer
-            // Pendant le scan interactif, l’overlay plein écran prend le relais (évite double caméra + taps morts).
-            .opacity(embeddedScanResult == nil && !isScanPageInteractive ? 1 : 0)
-            .allowsHitTesting(embeddedScanResult == nil && !isScanPageInteractive)
+        // Les tâches de captures de vignettes sont annulées pendant le vrai scan.
+        if embeddedScanResult == nil {
+            dashboardTourLayer
+                .opacity(isScanPageInteractive ? 0 : 1)
+                .allowsHitTesting(!isScanPageInteractive)
+                .accessibilityHidden(isScanPageInteractive)
+        }
+    }
+
+    private func liveScanPage(in size: CGSize) -> some View {
+        let expanded = isScanPageInteractive
+        let card = scanCardFrame.isEmpty
+            ? CGRect(x: size.width * 0.3, y: size.height * 0.28, width: size.width * 0.4, height: size.height * 0.4)
+            : scanCardFrame
+        let scale = expanded ? 1 : card.width / max(size.width, 1)
+        return interactiveScanOverlay
+            .frame(width: size.width, height: size.height)
+            .clipShape(RoundedRectangle(cornerRadius: expanded ? 0 : 28 / max(scale, 0.01)))
+            .scaleEffect(scale)
+            .position(x: expanded ? size.width / 2 : card.midX,
+                      y: expanded ? size.height / 2 : card.midY)
+            .allowsHitTesting(expanded)
+            .accessibilityHidden(!expanded)
+            .animation(reduceMotion ? nil : .spring(response: 0.48, dampingFraction: 0.9), value: expanded)
+            .zIndex(40)
     }
 
     @ViewBuilder
@@ -164,61 +185,56 @@ struct DashboardPreviewStepView: View {
         }
     }
 
-    @ViewBuilder
+    // Same layout as V2: copy, carousel and CTA occupy separate layout regions.
+    // The button never depends on entrance animations or snapshot readiness.
     private var dashboardTourLayer: some View {
-        GeometryReader { screen in
-            let compactCardWidth = min(screen.size.width * 0.54, 242)
-            let expandScale = 1 + (screen.size.width / max(compactCardWidth, 1) - 1) * scanExpandProgress
-
-            ZStack {
-                OnboardingTheme.screenBackground
-                    .ignoresSafeArea()
-
-                carousel
-                    .frame(width: screen.size.width, height: screen.size.height)
-                    .scaleEffect(hasSettledCardScale ? 1 : 0.975, anchor: .center)
-                    .scaleEffect(expandScale, anchor: .center)
-                    .offset(y: hasSettledCardScale ? 0 : 14)
-                    .opacity(hasSettledCardScale ? 1 : 0)
-                    .clipped()
-
-                VStack(spacing: 0) {
-                    VStack(spacing: 0) {
-                        titleBlock
-                            .padding(.horizontal, 28)
-                            .padding(.top, OnboardingConstants.safeAreaTop + 40)
-                            .padding(.bottom, 8)
-
-                        subtitleBlock
-                            .padding(.horizontal, 28)
-                            .padding(.bottom, 18)
-                    }
-
-                    Spacer(minLength: 0)
-
-                    bottomChrome
-                        .padding(.horizontal, 34)
-                        .padding(.top, 12)
-                        .padding(.bottom, 50)
+        VStack(spacing: 0) {
+            stackedCopy { copy in
+                VStack(spacing: 4) {
+                    (Text(copy.titlePrefix) + Text(copy.titleAccent).foregroundStyle(accent))
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundStyle(OnboardingTheme.primaryText)
+                        .accessibilityLabel(copy.titleAccessibilityLabel)
+                    Text(copy.subtitle)
+                        .font(.system(size: 16))
+                        .foregroundStyle(OnboardingTheme.mutedText)
                 }
-                .opacity(showsTourChrome ? (1 - scanExpandProgress) : 0)
-                .offset(y: showsTourChrome ? 0 : 10)
-                .allowsHitTesting(
-                    showsTourChrome
-                        && scanExpandProgress < 0.02
-                        && !isAdvancingSlide
-                )
             }
-            .frame(width: screen.size.width, height: screen.size.height)
+            .padding(.horizontal, 28)
+            .padding(.top, OnboardingConstants.titleTopPaddingFromScreenTop)
+            .padding(.bottom, 8)
+
+            DashboardPreviewCarousel(slides: slides, activeSlot: $activeSlot, onScanSelected: beginFirstScanLaunch)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            bottomChrome
+                .padding(.horizontal, 34)
+                .padding(.top, 8)
+                .padding(.bottom, 50)
+                .zIndex(1)
         }
+        .background(OnboardingTheme.screenBackground.ignoresSafeArea())
+    }
+
+    private func stackedCopy<Content: View>(
+        @ViewBuilder _ content: @escaping (DashboardPreviewTourCopy) -> Content
+    ) -> some View {
+        ZStack {
+            ForEach(slides.indices, id: \.self) { index in
+                content(slides[index].tourCopy)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .opacity(index == logicalSlideIndex ? 1 : 0)
+                    .accessibilityHidden(index != logicalSlideIndex)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: logicalSlideIndex)
     }
 
     private func restorePersistedSessionIfNeeded() {
         if let result = pendingScanResult {
             embeddedScanResult = result
-            revealsPreviewContent = true
-            hasSettledCardScale = true
-            showsTourChrome = true
             return
         }
 
@@ -228,16 +244,23 @@ struct DashboardPreviewStepView: View {
 
     private func applyPersistedScanState(_ state: OnboardingDashboardScanPersistedState) {
         carouselStep = min(max(0, state.carouselStep), max(0, slides.count - 1))
-        scanExpandProgress = CGFloat(state.scanExpandProgress)
-        isScanPageInteractive = state.isScanPageInteractive
-        showsSideCards = state.showsSideCards
-        showsTourChrome = state.showsTourChrome
-        revealsPreviewContent = true
-        hasSettledCardScale = true
+        if state.isScanPageInteractive {
+            isScanPageInteractive = true
+            // Tué pendant l'alerte caméra : le consentement n'avait pas encore été enregistré.
+            if !ProcessPrivacyConsentStore.shared.canCaptureFaceScan {
+                ProcessPrivacyConsentStore.shared.acceptFaceScanCapture()
+            }
+        } else {
+            // État « étendu mais sans capture » (ancien bug de persistance sur l'écran résultats) :
+            // carte agrandie sans aucun contrôle. On retombe sur le carrousel normal.
+            isScanPageInteractive = false
+            onScanPersistedStateChange?(nil)
+        }
     }
 
     private func syncPersistedScanState() {
-        guard isScanSessionExpanded else {
+        // Seule une capture en cours se reprend ; sur l'écran résultats, le résultat est restauré à part.
+        guard isScanPageInteractive, embeddedScanResult == nil else {
             onScanPersistedStateChange?(nil)
             return
         }
@@ -245,10 +268,10 @@ struct DashboardPreviewStepView: View {
         onScanPersistedStateChange?(
             OnboardingDashboardScanPersistedState(
                 carouselStep: carouselStep,
-                scanExpandProgress: Double(scanExpandProgress),
+                scanExpandProgress: 1,
                 isScanPageInteractive: isScanPageInteractive,
-                showsSideCards: showsSideCards,
-                showsTourChrome: showsTourChrome
+                showsSideCards: false,
+                showsTourChrome: false
             )
         )
     }
@@ -256,13 +279,11 @@ struct DashboardPreviewStepView: View {
     private func bootstrapPreviewIfNeeded() {
         guard !didBootstrapPreview else { return }
         didBootstrapPreview = true
-        Task { @MainActor in
-            Self.preparePreviewSession()
-        }
+        Self.preparePreviewSession()
     }
 
     @MainActor
-    private static func preparePreviewSession() {
+    static func preparePreviewSession() {
         PlanHomeTutorialStore.shared.suppressPresentationForPreview(true)
         let profile = UnifiedProfileService.shared.currentProfile
         if WelcomePlanStore.shared.plan == nil {
@@ -273,56 +294,19 @@ struct DashboardPreviewStepView: View {
         ProcessDebloatTrajectoryStore.shared.sync(from: WelcomePlanStore.shared.plan)
     }
 
-    private var currentSlide: DashboardPreviewSlide {
-        slides[logicalSlideIndex]
-    }
-
-    private var titleBlock: some View {
-        let copy = currentSlide.tourCopy
-        return DashboardPreviewStepContent(stepIndex: logicalSlideIndex) {
-            (
-                Text(copy.titlePrefix)
-                + Text(copy.titleAccent)
-                    .foregroundStyle(accent)
-            )
-            .font(.system(size: 28, weight: .bold))
-            .foregroundStyle(OnboardingTheme.primaryText)
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
-            .accessibilityLabel(copy.titleAccessibilityLabel)
-        }
-    }
-
-    private var subtitleBlock: some View {
-        DashboardPreviewStepContent(stepIndex: logicalSlideIndex) {
-            Text(currentSlide.tourCopy.subtitle)
-                .font(.system(size: 16, weight: .regular))
-                .foregroundStyle(OnboardingTheme.mutedText)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
     private var footerCaption: some View {
-        let copy = currentSlide.tourCopy
-        return DashboardPreviewStepContent(stepIndex: logicalSlideIndex) {
+        stackedCopy { copy in
             Group {
                 if let percent = copy.footerPercent {
-                    (
-                        Text(copy.footerPrefix)
-                        + Text(percent)
-                            .foregroundStyle(accent)
-                            .fontWeight(.semibold)
-                        + Text(copy.footerSuffix)
-                    )
+                    Text(copy.footerPrefix)
+                    + Text(percent).foregroundStyle(accent).fontWeight(.semibold)
+                    + Text(copy.footerSuffix)
                 } else {
                     Text(copy.footer)
                 }
             }
             .font(.system(size: 16, weight: .medium))
             .foregroundStyle(OnboardingTheme.primaryText)
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -356,24 +340,15 @@ struct DashboardPreviewStepView: View {
             }
             .onboardingPrimaryActionStyle()
             .accessibilityLabel(ctaTitle)
+            .accessibilityIdentifier("dashboardTour.continue")
         }
-    }
-
-    private var carousel: some View {
-        DashboardPreviewCarousel(
-            slides: slides,
-            step: carouselStep,
-            revealsContent: revealsPreviewContent,
-            showsSideCards: showsSideCards,
-            expandProgress: scanExpandProgress,
-            isScanInteractive: false
-        )
     }
 
     private var dashboardFirstScanSession: OnboardingDashboardScanSession? {
         OnboardingDashboardScanSession(
             onResult: { result in
                 firstScanLaunchTask?.cancel()
+                preservedScanSession = nil
                 isScanPageInteractive = false
                 embeddedScanResult = result
                 onFirstScanResult?(result)
@@ -392,7 +367,6 @@ struct DashboardPreviewStepView: View {
     }
 
     private func handleContinue() {
-        guard !isAdvancingSlide else { return }
         HapticManager.shared.impact(.medium)
         if isLastSlide {
             if hasCompletedFirstScan {
@@ -403,58 +377,17 @@ struct DashboardPreviewStepView: View {
             return
         }
 
-        isAdvancingSlide = true
-        carouselStep = min(carouselStep + 1, slides.count - 1)
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(360))
-            isAdvancingSlide = false
-        }
-    }
-
-    private func startEntranceIfNeeded() {
-        guard !revealsPreviewContent, !showsTourChrome else { return }
-        guard initialScanPersistedState == nil, pendingScanResult == nil else { return }
-        entranceTask?.cancel()
-
-        if reduceMotion {
-            revealsPreviewContent = true
-            hasSettledCardScale = true
-            showsTourChrome = true
-            showsSideCards = true
-            return
-        }
-
-        entranceTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(320))
-            guard !Task.isCancelled else { return }
-            withAnimation(DashboardPreviewCarouselMotion.cardSettle) {
-                hasSettledCardScale = true
-                revealsPreviewContent = true
-                showsSideCards = true
-            }
-
-            try? await Task.sleep(for: .milliseconds(140))
-            guard !Task.isCancelled else { return }
-            withAnimation(DashboardPreviewCarouselMotion.entrance) {
-                showsTourChrome = true
-            }
+        withAnimation(reduceMotion ? nil : DashboardPreviewCarouselMotion.advance) {
+            carouselStep += 1
         }
     }
 
     private func beginFirstScanLaunch() {
         guard !isScanPageInteractive else { return }
 
-        onBeginFirstScan?()
         firstScanLaunchTask?.cancel()
 
-        // Plein écran direct — le scaleEffect du carousel cassait les taps sur « plus tard ».
-        var hideSides = Transaction()
-        hideSides.disablesAnimations = true
-        withTransaction(hideSides) {
-            showsSideCards = false
-            scanExpandProgress = 1
-            isScanPageInteractive = true
-        }
+        isScanPageInteractive = true
         syncPersistedScanState()
 
         firstScanLaunchTask = Task { @MainActor in
@@ -464,15 +397,15 @@ struct DashboardPreviewStepView: View {
 
     @MainActor
     private func requestFirstScanPermissionAndTrack() async {
+        if !ProcessPrivacyConsentStore.shared.canCaptureFaceScan {
+            ProcessPrivacyConsentStore.shared.acceptFaceScanCapture()
+        }
+
         let granted = await AVCaptureDevice.requestAccess(for: .video)
         if granted {
             ProcessAnalytics.trackCameraAuthorized(source: "onboarding_dashboard_first_scan")
         } else {
             ProcessAnalytics.trackCameraDenied(source: "onboarding_dashboard_first_scan")
-        }
-
-        if !ProcessPrivacyConsentStore.shared.canCaptureFaceScan {
-            ProcessPrivacyConsentStore.shared.acceptFaceScanCapture()
         }
 
         ProcessAnalytics.trackMossAction(
@@ -483,38 +416,19 @@ struct DashboardPreviewStepView: View {
 
     private func dismissFirstScanSession() {
         firstScanLaunchTask?.cancel()
-        embeddedScanResult = nil
-        isScanPageInteractive = false
-        withAnimation(DashboardPreviewCarouselMotion.expandScan) {
-            scanExpandProgress = 0
-            showsSideCards = true
-        }
-        onScanPersistedStateChange?(nil)
-    }
-
-    private func resetFirstScanPresentation() {
-        firstScanLaunchTask?.cancel()
-        embeddedScanResult = nil
-        isScanPageInteractive = false
-        scanExpandProgress = 0
-        showsSideCards = true
         preservedScanSession = nil
+        embeddedScanResult = nil
+        isScanPageInteractive = false
         onScanPersistedStateChange?(nil)
     }
 
     private var isScanSessionExpanded: Bool {
-        isScanPageInteractive || scanExpandProgress > 0.01
+        isScanPageInteractive
     }
 
     private func preserveScanSessionIfNeeded() {
-        guard isScanSessionExpanded else { return }
-        preservedScanSession = DashboardPreviewScanSessionSnapshot(
-            carouselStep: carouselStep,
-            scanExpandProgress: scanExpandProgress,
-            isScanPageInteractive: isScanPageInteractive,
-            showsSideCards: showsSideCards,
-            showsTourChrome: showsTourChrome
-        )
+        guard isScanSessionExpanded, embeddedScanResult == nil else { return }
+        preservedScanSession = DashboardPreviewScanSessionSnapshot(carouselStep: carouselStep)
         syncPersistedScanState()
     }
 
@@ -522,17 +436,8 @@ struct DashboardPreviewStepView: View {
         guard let snapshot = preservedScanSession else { return }
         preservedScanSession = nil
 
-        let animation = reduceMotion
-            ? Animation.linear(duration: 0.01)
-            : DashboardPreviewCarouselMotion.expandScan
-
-        withAnimation(animation) {
-            carouselStep = min(max(0, snapshot.carouselStep), max(0, slides.count - 1))
-            scanExpandProgress = snapshot.scanExpandProgress
-            isScanPageInteractive = snapshot.isScanPageInteractive
-            showsSideCards = snapshot.showsSideCards
-            showsTourChrome = snapshot.showsTourChrome
-        }
+        carouselStep = snapshot.carouselStep
+        isScanPageInteractive = true
         syncPersistedScanState()
     }
 
@@ -549,31 +454,10 @@ struct DashboardPreviewStepView: View {
 
 private struct DashboardPreviewScanSessionSnapshot {
     let carouselStep: Int
-    let scanExpandProgress: CGFloat
-    let isScanPageInteractive: Bool
-    let showsSideCards: Bool
-    let showsTourChrome: Bool
 }
 
 private enum DashboardPreviewCarouselMotion {
-    static let advance = Animation.spring(response: 0.38, dampingFraction: 0.92)
-    static let copy = Animation.easeOut(duration: 0.16)
-    static let expandScan = Animation.easeOut(duration: 0.32)
-    static let cardSettle = Animation.smooth(duration: 0.44, extraBounce: 0)
-    static let entrance = Animation.smooth(duration: 0.36, extraBounce: 0)
-    static let contentReveal = Animation.spring(response: 0.36, dampingFraction: 0.94)
-}
-
-private struct DashboardPreviewStepContent<Content: View>: View {
-    let stepIndex: Int
-    @ViewBuilder var content: () -> Content
-
-    var body: some View {
-        content()
-            .id(stepIndex)
-            .transition(.opacity)
-            .animation(DashboardPreviewCarouselMotion.copy, value: stepIndex)
-    }
+    static let advance = Animation.spring(response: 0.42, dampingFraction: 0.9)
 }
 
 private struct DashboardPreviewTourProgressBar: View {
@@ -611,316 +495,176 @@ private struct DashboardPreviewTourProgressBar: View {
     }
 }
 
-private enum DashboardPreviewCarouselLayout {
-    static func cardHeight(
-        for pageKind: DashboardPreviewPageKind,
-        cardWidth: CGFloat,
-        screenSize: CGSize
-    ) -> CGFloat {
-        let screenAspect = screenSize.height / max(screenSize.width, 1)
-        switch pageKind {
-        case .faceScanCapture:
-            return cardWidth * screenAspect
-        case .appTab:
-            return min(screenSize.height * 0.90, cardWidth * 2.05)
-        }
-    }
-
-    static func tallestCardHeight(
-        slides: [DashboardPreviewSlide],
-        cardWidth: CGFloat,
-        screenSize: CGSize
-    ) -> CGFloat {
-        slides
-            .map { cardHeight(for: $0.pageKind, cardWidth: cardWidth, screenSize: screenSize) }
-            .max() ?? (cardWidth * (screenSize.height / max(screenSize.width, 1)))
-    }
-
-    static func slide(at index: Int, in slides: [DashboardPreviewSlide]) -> DashboardPreviewSlide {
-        slides[index]
-    }
-}
-
+/// V2 cover-flow: one scroll position shared by swipes, cards and Continue.
+/// Only bitmaps are transformed; app screens are mounted once for their capture.
 private struct DashboardPreviewCarousel: View {
     let slides: [DashboardPreviewSlide]
-    let step: Int
-    var revealsContent: Bool = true
-    var showsSideCards: Bool = true
-    var expandProgress: CGFloat = 0
-    var isScanInteractive: Bool = false
-
-    @State private var activeIndex: Int?
-    @State private var previewPagesReady = false
+    @Binding var activeSlot: Int?
+    var onScanSelected: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.locale) private var locale
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ObservedObject private var cache = DashboardPreviewSnapshotStore.shared
 
     var body: some View {
         GeometryReader { geo in
-            let screenSize = geo.size
-            let compactCardWidth = min(screenSize.width * 0.54, 242)
-            let scrollCardHeight = DashboardPreviewCarouselLayout.tallestCardHeight(
-                slides: slides,
-                cardWidth: compactCardWidth,
-                screenSize: screenSize
-            )
-            let focusedIndex = activeIndex ?? step
-            let hideNeighbors = expandProgress > 0.02
-
-            ProcessCoverFlow(
-                config: ProcessCoverFlowConfig(
-                    cardWidth: compactCardWidth,
-                    cardHeight: scrollCardHeight,
-                    rotation: hideNeighbors ? 0 : 30,
-                    offsetFactor: 2.05,
-                    sideOpacity: showsSideCards && !hideNeighbors ? 0.52 : 0,
-                    sideScaleMinimum: 0.68,
-                    cardSpacing: 22,
-                    sideSpread: 12,
-                    maxSideVisibleProgress: showsSideCards && !hideNeighbors ? 1.08 : 0.02
-                ),
-                activeIndex: $activeIndex,
-                itemCount: slides.count
-            ) { index, isFocused in
-                let slide = DashboardPreviewCarouselLayout.slide(at: index, in: slides)
-                let cardHeight = DashboardPreviewCarouselLayout.cardHeight(
-                    for: slide.pageKind,
-                    cardWidth: compactCardWidth,
-                    screenSize: screenSize
-                )
-                let itemCardSize = CGSize(width: compactCardWidth, height: cardHeight)
-                let shouldLoadLivePreview: Bool = {
-                    if slide.pageKind == .faceScanCapture {
-                        return isFocused
+            let aspect = UIScreen.main.bounds.height / max(UIScreen.main.bounds.width, 1)
+            let width = min(min(geo.size.width * 0.46, 196), max(geo.size.height * 0.86, 1) / aspect)
+            let stride = width + 14
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 14) {
+                    ForEach(slides.indices, id: \.self) { slot in
+                        let slide = slides[slot]
+                        previewCard(slide)
+                            .frame(width: width, height: width * aspect)
+                            .background {
+                                if slide.pageKind == .faceScanCapture {
+                                    GeometryReader { card in
+                                        Color.clear.preference(key: DashboardScanCardFrameKey.self,
+                                                               value: card.frame(in: .named("dashboardTour")))
+                                    }
+                                }
+                            }
+                            .frame(height: geo.size.height)
+                            .visualEffect { content, proxy in
+                                let progress = proxy.frame(in: .scrollView(axis: .horizontal)).minX / stride
+                                let side = min(abs(progress), 1)
+                                let capped = max(-1, min(1, progress))
+                                return content
+                                    .scaleEffect(1 - side * 0.2)
+                                    .brightness(-side * 0.18)
+                                    .rotation3DEffect(.degrees(-capped * 22), axis: (x: 0, y: 1, z: 0),
+                                                      anchor: capped < 0 ? .leading : .trailing, perspective: 1)
+                                    .offset(x: -progress * width * 0.33)
+                            }
+                            .zIndex(slot == activeSlot ? 1 : 0)
+                            .onTapGesture {
+                                if slide.pageKind == .faceScanCapture, activeSlot == slot {
+                                    onScanSelected()
+                                    return
+                                }
+                                withAnimation(reduceMotion ? nil : DashboardPreviewCarouselMotion.advance) {
+                                    activeSlot = slot
+                                }
+                            }
+                            .accessibilityLabel(slide.tourCopy.titleAccessibilityLabel)
+                            .accessibilityIdentifier("dashboardTour.card.\(slot)")
                     }
-                    return isFocused || (!hideNeighbors && abs(index - focusedIndex) <= 1)
-                }()
-
-                DashboardPreviewCard(
-                    pageKind: slide.pageKind,
-                    cardSize: itemCardSize,
-                    screenSize: screenSize,
-                    previewPagesReady: previewPagesReady,
-                    shouldLoadLivePreview: shouldLoadLivePreview,
-                    isSidePreview: !isFocused,
-                    isPageActive: isFocused,
-                    revealsContent: revealsContent,
-                    expandProgress: isFocused ? expandProgress : 0,
-                    isInteractive: isScanInteractive && isFocused && slide.pageKind == .faceScanCapture
-                )
+                }
+                .scrollTargetLayout()
             }
+            .safeAreaPadding(.horizontal, max(0, (geo.size.width - width) / 2))
+            .scrollPosition(id: $activeSlot, anchor: .center)
+            .scrollTargetBehavior(.viewAligned(limitBehavior: .alwaysByOne))
+            .scrollClipDisabled()
         }
-        .allowsHitTesting(isScanInteractive)
-        .environmentObject(UnifiedProfileService.shared)
-        .environmentObject(HealthManager.shared)
-        .environmentObject(AuthenticationManager.shared)
-        .onAppear {
-            activeIndex = min(step, slides.count - 1)
-            ensurePreviewPlanReady()
-            previewPagesReady = true
-        }
-        .onChange(of: step) { _, newStep in
-            let clamped = min(max(newStep, 0), slides.count - 1)
-            withAnimation(DashboardPreviewCarouselMotion.advance) {
-                activeIndex = clamped
-            }
-        }
-        .onChange(of: activeIndex) { _, newValue in
-            guard expandProgress > 0.02 || isScanInteractive else { return }
-            let locked = min(step, slides.count - 1)
-            if newValue != locked {
-                activeIndex = locked
-            }
+        .clipped()
+        .task(id: "\(colorScheme)-\(locale.identifier)") {
+            await cache.prepare(colorScheme: colorScheme, locale: locale)
         }
     }
 
-    private func ensurePreviewPlanReady() {
-        guard WelcomePlanStore.shared.plan == nil else { return }
+    private func previewCard(_ slide: DashboardPreviewSlide) -> some View {
+        let previewScheme = slide.pageKind.previewColorScheme(in: colorScheme)
+        return ZStack {
+            ProcessBackgroundPalette.base(for: previewScheme)
+            if let image = cache.snapshots[slide.pageKind] {
+                Image(uiImage: image).resizable().interpolation(.high)
+            } else if slide.pageKind == .faceScanCapture {
+                Color.clear
+            } else {
+                // A complete preview is available from the first frame, even on a direct resume.
+                GeometryReader { card in
+                    let size = UIScreen.main.bounds.size
+                    DashboardPreviewAppPage(pageKind: slide.pageKind, isPageActive: false)
+                        .environmentObject(UnifiedProfileService.shared)
+                        .environmentObject(HealthManager.shared)
+                        .environmentObject(AuthenticationManager.shared)
+                        .environment(\.processTabIsActive, false)
+                        .environment(\.colorScheme, previewScheme)
+                        .environment(\.appTheme, AppTheme(appearance: .system, colorScheme: previewScheme))
+                        .frame(width: size.width, height: size.height)
+                        .scaleEffect(card.size.width / max(size.width, 1), anchor: .topLeading)
+                        .transaction { $0.disablesAnimations = true }
+                }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.10), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(colorScheme == .dark ? 0.45 : 0.15), radius: 14, y: 8)
+        .contentShape(RoundedRectangle(cornerRadius: 28))
+    }
+
+}
+
+private struct DashboardScanCardFrameKey: PreferenceKey {
+    static let defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) { value = nextValue() }
+}
+
+@MainActor
+final class DashboardPreviewSnapshotStore: ObservableObject {
+    static let shared = DashboardPreviewSnapshotStore()
+    @Published fileprivate var snapshots: [DashboardPreviewPageKind: UIImage] = [:]
+    private var preparedKey: String?
+    private var preparing = false
+
+    func prepare(colorScheme: ColorScheme, locale: Locale) async {
+        let size = UIScreen.main.bounds.size
         let profile = UnifiedProfileService.shared.currentProfile
-        WelcomePlanStore.shared.refreshEphemeralPreviewPlan(profile: profile)
-        ProcessDebloatTrajectoryStore.shared.sync(from: WelcomePlanStore.shared.plan)
-    }
-}
-
-private struct DashboardPreviewCard: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    let pageKind: DashboardPreviewPageKind
-    let cardSize: CGSize
-    var screenSize: CGSize
-    var previewPagesReady: Bool
-    var shouldLoadLivePreview: Bool = true
-    var isSidePreview: Bool = false
-    var isPageActive: Bool = false
-    var revealsContent: Bool = true
-    var expandProgress: CGFloat = 0
-    var isInteractive: Bool = false
-
-    @State private var mountsLivePage = false
-    @State private var liveMountTask: Task<Void, Never>?
-
-    private var cornerRadius: CGFloat { 32 * (1 - expandProgress) }
-
-    private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-    }
-
-    var body: some View {
-        ZStack {
-            DashboardPreviewEmptyScreen()
-
-            if previewPagesReady {
-                Group {
-                    if mountsLivePage {
-                        DashboardPreviewScaledLivePage(
-                            pageKind: pageKind,
-                            size: cardSize,
-                            screenSize: screenSize,
-                            isPageActive: isPageActive,
-                            isInteractive: isInteractive
-                        )
-                    } else {
-                        DashboardPreviewFrozenSlide(pageKind: pageKind)
-                    }
-                }
-                .opacity(revealsContent ? 1 : 0)
+        let key = "home-dark-v1-\(colorScheme)-\(locale.identifier)-\(size)-\(profile?.userId ?? "")-\(profile?.firstName ?? "")"
+        guard preparedKey != key, !preparing else { return }
+        snapshots = [:]
+        preparing = true
+        defer { preparing = false }
+        DashboardPreviewStepView.preparePreviewSession()
+        var result: [DashboardPreviewPageKind: UIImage] = [:]
+        for slide in DashboardPreviewSlide.firstScanCatalog where slide.pageKind != .faceScanCapture {
+            guard !Task.isCancelled else { return }
+            if let image = await capture(slide.pageKind, colorScheme: colorScheme, locale: locale) {
+                result[slide.pageKind] = image
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        .background {
-            shape.fill(
-                colorScheme == .dark
-                    ? ProcessBackgroundPalette.darkBase
-                    : ProcessBackgroundPalette.lightBase
-            )
-        }
-        .clipShape(shape)
-        .overlay {
-            if isSidePreview {
-                shape.fill(
-                    Color.black.opacity(colorScheme == .dark ? 0.18 : 0.10)
-                )
-            }
-        }
-        .overlay {
-            shape.strokeBorder(
-                Color.white.opacity(
-                    (colorScheme == .dark ? 0.10 : 0.55) * (1 - expandProgress)
-                ),
-                lineWidth: 1
-            )
-        }
-        .shadow(
-            color: Color.black.opacity(
-                (previewPagesReady && !isSidePreview
-                    ? (colorScheme == .dark ? 0.55 : 0.16)
-                    : (colorScheme == .dark ? 0.30 : 0.08)) * (1 - expandProgress)
-            ),
-            radius: (previewPagesReady && !isSidePreview ? (colorScheme == .dark ? 22 : 18) : 10)
-                * (1 - 0.55 * expandProgress),
-            y: (previewPagesReady && !isSidePreview ? 10 : 4) * (1 - expandProgress)
-        )
-        .frame(width: cardSize.width, height: cardSize.height, alignment: .top)
-        .animation(DashboardPreviewCarouselMotion.contentReveal, value: revealsContent)
-        .allowsHitTesting(isInteractive)
-        .accessibilityHidden(!isInteractive)
-        .onAppear {
-            syncLiveMountState()
-        }
-        .onChange(of: shouldLoadLivePreview) { _, _ in
-            syncLiveMountState()
-        }
-        .onChange(of: isPageActive) { _, _ in
-            syncLiveMountState()
-        }
-        .onChange(of: revealsContent) { _, _ in
-            syncLiveMountState()
-        }
-        .onDisappear {
-            liveMountTask?.cancel()
-            mountsLivePage = false
-        }
+        guard !Task.isCancelled else { return }
+        snapshots = result
+        if result.count == 3 { preparedKey = key }
     }
 
-    private func syncLiveMountState() {
-        liveMountTask?.cancel()
-        guard shouldLoadLivePreview || expandProgress > 0.01 else {
-            mountsLivePage = false
-            return
+    private func capture(_ kind: DashboardPreviewPageKind, colorScheme: ColorScheme, locale: Locale) async -> UIImage? {
+        guard let window = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene }).flatMap(\.windows)
+            .first(where: \.isKeyWindow) else { return nil }
+        let previewScheme = kind.previewColorScheme(in: colorScheme)
+        let page = DashboardPreviewAppPage(pageKind: kind, isPageActive: false)
+            .environmentObject(UnifiedProfileService.shared)
+            .environmentObject(HealthManager.shared)
+            .environmentObject(AuthenticationManager.shared)
+            .environment(\.processTabIsActive, false)
+            .environment(\.colorScheme, previewScheme)
+            .environment(\.appTheme, AppTheme(appearance: .system, colorScheme: previewScheme))
+            .environment(\.locale, locale)
+            .transaction { $0.disablesAnimations = true }
+        let host = UIHostingController(rootView: page)
+        host.overrideUserInterfaceStyle = previewScheme == .dark ? .dark : .light
+        host.view.backgroundColor = UIColor(ProcessBackgroundPalette.base(for: previewScheme))
+        host.view.frame = window.bounds
+        host.view.isUserInteractionEnabled = false
+        window.insertSubview(host.view, at: 0)
+        defer { host.view.removeFromSuperview() }
+        await Task.yield()
+        guard !Task.isCancelled else { return nil }
+        host.view.layoutIfNeeded()
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = window.screen.scale * min(1, 220 / max(window.bounds.width, 1))
+        format.opaque = true
+        var rendered = false
+        let image = UIGraphicsImageRenderer(bounds: host.view.bounds, format: format).image { _ in
+            rendered = host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
         }
-
-        let mountDelay: Duration = .zero
-        liveMountTask = Task { @MainActor in
-            if mountDelay > .zero {
-                try? await Task.sleep(for: mountDelay)
-            }
-            guard !Task.isCancelled, shouldLoadLivePreview else { return }
-            mountsLivePage = true
-        }
-    }
-}
-
-private struct DashboardPreviewEmptyScreen: View {
-    var body: some View {
-        ProcessScreenBackground()
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .accessibilityHidden(true)
-    }
-}
-
-/// Aperçu statique pour les cartes latérales — évite 4 vraies pages + caméras en parallèle.
-private struct DashboardPreviewFrozenSlide: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    let pageKind: DashboardPreviewPageKind
-
-    var body: some View {
-        ZStack(alignment: .top) {
-            ProcessScreenBackground()
-
-            if pageKind == .faceScanCapture {
-                faceScanCapturePlaceholder
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityHidden(true)
-    }
-
-    private var faceScanCapturePlaceholder: some View {
-        VStack(spacing: 10) {
-            Spacer(minLength: 28)
-
-            FaceScanOnboardingOvalShape()
-                .fill(Color(red: 0.09, green: 0.09, blue: 0.10))
-                .overlay {
-                    FaceScanOnboardingOvalShape()
-                        .stroke(Color.white.opacity(colorScheme == .dark ? 0.10 : 0.14), lineWidth: 0.75)
-                }
-                .frame(width: 92, height: 120)
-
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.08))
-                .frame(width: 118, height: 10)
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 12)
-    }
-}
-
-private struct DashboardPreviewScaledLivePage: View {
-    let pageKind: DashboardPreviewPageKind
-    let size: CGSize
-    var screenSize: CGSize
-    var isPageActive: Bool
-    var isInteractive: Bool = false
-
-    var body: some View {
-        let scale = size.width / max(screenSize.width, 1)
-
-        DashboardPreviewAppPage(pageKind: pageKind, isPageActive: isPageActive, isInteractive: isInteractive)
-            .environment(\.onboardingScanPreviewPaused, !isPageActive)
-            .frame(width: screenSize.width, height: screenSize.height, alignment: .top)
-            .scaleEffect(scale, anchor: .topLeading)
-            .frame(width: size.width, height: size.height, alignment: .topLeading)
-            .clipped()
+        return rendered ? image : nil
     }
 }
 
@@ -954,10 +698,7 @@ private struct DashboardPreviewAppPage: View {
         Group {
             switch pageKind {
             case .faceScanCapture:
-                DashboardPreviewFaceScanCapturePage(
-                    isTabActive: effectiveTabActive,
-                    isInteractive: isInteractive
-                )
+                ProcessScreenBackground()
             case .appTab:
                 ProcessIGTabShell(
                     selectedSection: lockedSection,
@@ -977,6 +718,11 @@ private struct DashboardPreviewAppPage: View {
             deactivateTask?.cancel()
             if active {
                 runtimeActive = true
+                return
+            }
+            if pageKind == .faceScanCapture {
+                // Libérer la caméra tout de suite pour la capture plein écran.
+                runtimeActive = false
                 return
             }
             deactivateTask = Task { @MainActor in
@@ -1014,36 +760,6 @@ private struct DashboardPreviewAppPage: View {
     }
 }
 
-/// Aperçu caméra de la 4ᵉ carte — même instance que la capture après zoom.
-private struct DashboardPreviewFaceScanCapturePage: View {
-    var isTabActive: Bool
-    var isInteractive: Bool = false
-
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.onboardingDashboardScanSession) private var scanSession
-    @EnvironmentObject private var profileService: UnifiedProfileService
-
-    var body: some View {
-        Group {
-            if let session = scanSession {
-                DashboardPreviewEmbeddedFaceScanSession(
-                    isTabActive: isTabActive,
-                    isCaptureEnabled: isInteractive,
-                    onCancel: session.onCancel,
-                    onSkipLater: session.onSkipLater,
-                    onResultReady: session.onResult,
-                    onContinueAfterResults: session.onContinue
-                )
-                .environmentObject(profileService)
-            } else {
-                ProcessScreenBackground()
-            }
-        }
-        .processClearUIKitHostingBackground()
-        .background(ProcessBackgroundPalette.base(for: colorScheme))
-    }
-}
-
 /// Capture → analyse → résultats, zoom plein écran depuis le dashboard.
 private struct DashboardPreviewEmbeddedFaceScanSession: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -1070,13 +786,8 @@ private struct DashboardPreviewEmbeddedFaceScanSession: View {
 
     private var skipHandler: (() -> Void)? {
         // Toujours exposer le skip dès que la session existe — même pendant l’anim d’expand.
-        {
-            ProcessAnalytics.trackMossAction(
-                page: ProcessAnalytics.MossPage.faceScanCapture,
-                action: "skipped_later"
-            )
-            onSkipLater()
-        }
+        // Le tracking « skipped_later » est fait une seule fois, dans `skipDashboardFaceScanForLater`.
+        { onSkipLater() }
     }
 
     var body: some View {
@@ -1134,7 +845,6 @@ private struct DashboardPreviewEmbeddedFaceScanSession: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .processClearUIKitHostingBackground()
         .background(sessionBackground)
         .animation(OnboardingScanFlowMotion.animation, value: captureInput?.payload.scanId)
         .onAppear {
@@ -1172,6 +882,10 @@ private struct DashboardPreviewEmbeddedFaceScanSession: View {
 private enum DashboardPreviewPageKind: Hashable {
     case appTab(ProcessMainSection)
     case faceScanCapture
+
+    func previewColorScheme(in surroundingScheme: ColorScheme) -> ColorScheme {
+        self == .appTab(.plan) ? .dark : surroundingScheme
+    }
 
     var tabSection: ProcessMainSection? {
         if case .appTab(let section) = self { return section }

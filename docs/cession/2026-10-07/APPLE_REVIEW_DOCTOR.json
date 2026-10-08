@@ -1,0 +1,127 @@
+{
+  "appId": "6753808143",
+  "version": {
+    "id": "5f9b5a51-12cb-43cd-a862-4e2d0db5a970",
+    "version": "1.13",
+    "platform": "IOS",
+    "state": "REJECTED",
+    "createdDate": "2026-10-01T16:57:55-07:00"
+  },
+  "reviewDetailConfigured": true,
+  "reviewDetailId": "22fdbdaf-6c4d-4d7e-ac25-253b1e72b8a0",
+  "latestSubmission": {
+    "id": "1860acb3-23c9-4bc1-b933-75312df78cba",
+    "state": "UNRESOLVED_ISSUES",
+    "platform": "IOS",
+    "submittedDate": "2026-10-02T00:02:35.477Z"
+  },
+  "reviewState": "UNRESOLVED_ISSUES",
+  "summary": {
+    "errors": 1,
+    "warnings": 9,
+    "infos": 1,
+    "blocking": 1
+  },
+  "nextAction": "Resolve the outstanding App Review issues in App Store Connect, then resubmit if needed.",
+  "blockingChecks": [
+    {
+      "id": "review.submission.unresolved_issues",
+      "severity": "error",
+      "message": "Latest review submission has unresolved issues in App Review",
+      "remediation": "Resolve the outstanding App Review issues in App Store Connect, then resubmit if needed."
+    }
+  ],
+  "warningChecks": [
+    {
+      "id": "metadata.keywords.overlap_name",
+      "severity": "warning",
+      "message": "keyword field repeats one or more localized app-name terms",
+      "remediation": "Avoid repeating app-name terms inside the keyword field",
+      "locale": "en-US",
+      "field": "keywords",
+      "resourceType": "appStoreVersionLocalization",
+      "resourceId": "0c9c9ef1-f17e-4f8e-970b-86be221d6a10"
+    },
+    {
+      "id": "metadata.keywords.overlap_subtitle",
+      "severity": "warning",
+      "message": "keyword field repeats one or more localized subtitle terms",
+      "remediation": "Avoid repeating subtitle terms inside the keyword field",
+      "locale": "en-US",
+      "field": "keywords",
+      "resourceType": "appStoreVersionLocalization",
+      "resourceId": "0c9c9ef1-f17e-4f8e-970b-86be221d6a10"
+    },
+    {
+      "id": "subscriptions.images.recommended",
+      "severity": "warning",
+      "message": "Subscription \"annual\" (com.useprocess.annual) has no subscription promotional image",
+      "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+      "field": "images",
+      "resourceType": "subscription",
+      "resourceId": "6755552317"
+    },
+    {
+      "id": "subscriptions.images.recommended",
+      "severity": "warning",
+      "message": "Subscription \"Premium Yearly 34.99\" (com.useprocess.annual3499) has no subscription promotional image",
+      "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+      "field": "images",
+      "resourceType": "subscription",
+      "resourceId": "6798429081"
+    },
+    {
+      "id": "subscriptions.images.recommended",
+      "severity": "warning",
+      "message": "Subscription \"Premium Yearly 34.99 Trial\" (com.useprocess.annual3499trial) has no subscription promotional image",
+      "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+      "field": "images",
+      "resourceType": "subscription",
+      "resourceId": "6803672506"
+    },
+    {
+      "id": "subscriptions.images.recommended",
+      "severity": "warning",
+      "message": "Subscription \"Premium Yearly 49.99\" (com.useprocess.annual4999) has no subscription promotional image",
+      "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+      "field": "images",
+      "resourceType": "subscription",
+      "resourceId": "6798429517"
+    },
+    {
+      "id": "subscriptions.images.recommended",
+      "severity": "warning",
+      "message": "Subscription \"mensuel\" (com.useprocess.monthly) has no subscription promotional image",
+      "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+      "field": "images",
+      "resourceType": "subscription",
+      "resourceId": "6780629820"
+    },
+    {
+      "id": "subscriptions.images.recommended",
+      "severity": "warning",
+      "message": "Subscription \"Premium Monthly 9.99\" (com.useprocess.monthly999) has no subscription promotional image",
+      "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+      "field": "images",
+      "resourceType": "subscription",
+      "resourceId": "6798429065"
+    },
+    {
+      "id": "subscriptions.images.recommended",
+      "severity": "warning",
+      "message": "Subscription \"Premium Weekly 8.99\" (com.useprocess.weekly899) has no subscription promotional image",
+      "remediation": "Upload a unique promotional image if you plan to promote this subscription on the App Store, support offer-code redemption pages, or run win-back offers; the App Review screenshot is separate and review-only",
+      "field": "images",
+      "resourceType": "subscription",
+      "resourceId": "6798428127"
+    }
+  ],
+  "coverageWarnings": [
+    {
+      "id": "review.coverage.app_store_regulations_and_permits",
+      "status": "NOT_CHECKED",
+      "message": "App Store Regulations and Permits declarations, including the personal-service declaration, are managed on the App Store Connect website and are not checked by asc review doctor.",
+      "remediation": "Run `asc web apps declarations list --app \"6753808143\"` with a web session, then answer outstanding requirements in App Store Connect or with `asc web apps medical-device set --app \"6753808143\" --declared false`."
+    }
+  ]
+}

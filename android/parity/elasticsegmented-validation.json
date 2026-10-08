@@ -1,0 +1,38 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-164175256-701042983/ElasticSC/ElasticSC/ContentView.swift": "c2a2f3977e4575c46d6b706c81705db0155bea6426bfba3e686757711f646993",
+    "content/source-projects/design-source-164175256-701042983/ElasticSC/ElasticSC/ElasticSCApp.swift": "40cb195e9a6dd9ffc97858cf09839070f4a3d49c29bf147c4ce3163c2eb4c35f",
+    "content/source-projects/design-source-164175256-701042983/ElasticSC/ElasticSC/Helpers/ElasticSegmentedControl.swift": "b7ecbae999e2dc534a0ff8311224598048ff9708b4397938a81ed8b1b3133835"
+  },
+  "mirrorMatchesInventory": true,
+  "contract": "Supply unique ordered tabs, controlled selection,onSelection and a pure composable label using LocalContentColor. Original35dp content,5dp outer padding,directional capsule extension,20percent shrink factor,strict edge guard,under5dp tap threshold and nearest-index drag release are preserved. Inactive and masked active label copies are drawn; duplicate semantics are hidden. Accessible radio actions and selection haptic supported. Pass reduceMotion. Native translucent capsule,gradient and200ms curve approximate Swift liquid glass/snappy; source icon-only sample,exact spring/haptic/color/font and physical comparison remain unfinished.",
+  "nativeFiles": [
+    "ElasticSegmentedModel.kt",
+    "TenKElasticSegmentedControl.kt",
+    "TenKElasticGallery.kt"
+  ],
+  "recordedAt": "2026-10-08T08:15:00.364584+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 143,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 46
+  },
+  "visual": "host render inspected; iOS comparison unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "ElasticSegmentedModel.kt": "90babccb48e30e122f61ab5478181cc56da17b1acf9d8360e5376d7467f68e7d",
+    "TenKElasticSegmentedControl.kt": "e7edc63be0711dc195c454f002e694da8f57df3cf29f0201866ed583beb2a4e9",
+    "TenKElasticGallery.kt": "5339862cdc2ecd38b5b479d9778769ee701af6d28776881b70360ab5e648e381"
+  },
+  "remaining": [
+    "Native glass,typography,exact springs/scroll/GPU motion and physical/iOS paired comparison remain unverified",
+    "Host integrations and component-specific limitations are detailed in the integration contract"
+  ]
+}

@@ -94,63 +94,114 @@
     },
     {
       "source": "/:path*",
-      "has": [{ "type": "host", "value": "get.useprocess.xyz" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "get.useprocess.xyz"
+        }
+      ],
       "destination": "https://useprocess.xyz/app",
       "permanent": true
     }
   ],
   "rewrites": [
-    { "source": "/api/mcp", "destination": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateMcp" },
-    { "source": "/api/mcp/", "destination": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateMcp" },
-    { "source": "/app", "destination": "/app.html" },
-    { "source": "/join/(.*)", "destination": "/index.html" },
-    { "source": "/clipping", "destination": "/clipping.html" },
-    { "source": "/clipping/", "destination": "/clipping.html" },
-    { "source": "/(.*)", "destination": "/index.html", "has": [{ "type": "host", "value": "join.useprocess.xyz" }] },
-    { "source": "/((?!api|assets|cgu|confidentialite|mentions-legales|support|sources-sante|\\.well-known).*)", "destination": "/index.html" }
+    {
+      "source": "/app",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/join/(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/clipping",
+      "destination": "/clipping.html"
+    },
+    {
+      "source": "/clipping/",
+      "destination": "/clipping.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "join.useprocess.xyz"
+        }
+      ]
+    },
+    {
+      "source": "/((?!api|assets|cgu|confidentialite|mentions-legales|support|sources-sante|\\.well-known).*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
       "source": "/.well-known/apple-app-site-association",
       "headers": [
-        { "key": "Content-Type", "value": "application/json" }
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
       ]
     },
     {
       "source": "/clipping",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
       ]
     },
     {
       "source": "/clipping.html",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
       ]
     },
     {
       "source": "/index.html",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
       ]
     },
     {
       "source": "/app.html",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
       ]
     },
     {
       "source": "/assets/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     },
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
       ]
     }
   ]

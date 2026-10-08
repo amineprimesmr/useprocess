@@ -5,7 +5,21 @@ nonisolated enum AppConfiguration {
         infoString(for: "CFBundleDisplayName") ?? "Process"
     }
 
-    static let supportEmail = "hello@useprocess.xyz"
+    /// Bascule configurée seulement après validation DNS, site, emails et liens.
+    /// La valeur de migration prévue est https://processdebloat.com.
+    static var websiteOrigin: String {
+        let candidate = infoString(for: "ProcessWebsiteOrigin") ?? "https://processdebloat.com"
+        guard let url = URL(string: candidate), url.scheme == "https",
+              let host = url.host,
+              ["useprocess.xyz", "processdebloat.com"].contains(host) else {
+            return "https://processdebloat.com"
+        }
+        return "https://\(host)"
+    }
+
+    static var supportEmail: String {
+        infoString(for: "ProcessSupportEmail") ?? "contact@processdebloat.com"
+    }
 
     static var firebaseConfigured: Bool {
         Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil

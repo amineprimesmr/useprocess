@@ -208,7 +208,7 @@ struct LymphCircuitExerciseDetailView: View {
             .fill(theme.isDark ? Color.white.opacity(0.06) : theme.cardBackgroundStrong)
             .overlay {
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(Color.white.opacity(theme.isDark ? 0.08 : 0.12), lineWidth: 0.5)
+                    .strokeBorder(theme.cardStroke, lineWidth: 0.5)
             }
     }
 
@@ -233,13 +233,13 @@ struct LymphCircuitExerciseDetailView: View {
                     Text(title)
                         .font(.system(size: 17, weight: .bold))
                 }
-                .foregroundStyle(Color.black.opacity(0.88))
+                .foregroundStyle(theme.inverseText)
                 .frame(maxWidth: .infinity)
                 .frame(height: 54)
-                .background(Capsule(style: .continuous).fill(Color.white))
+                .background(Capsule(style: .continuous).fill(theme.inverseBackground))
                 .overlay {
                     Capsule(style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.25), lineWidth: 0.5)
+                        .strokeBorder(theme.primaryText.opacity(0.12), lineWidth: 0.5)
                 }
             }
             .buttonStyle(.processPlain)

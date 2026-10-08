@@ -6,22 +6,15 @@
 //
 
 import SwiftUI
-import LocalAuthentication
 
 struct BiometricAuthStepView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @EnvironmentObject var profileService: UnifiedProfileService
 
     let onComplete: () -> Void
-    let onBack: (() -> Void)?
 
-    @State private var isAuthenticating = false
     @State private var isAuthenticated = false
-    @State private var showError = false
-    @State private var errorMessage = ""
     @State private var progress: Double = 0.0
     @State private var isPressed = false
-    @State private var pressStartTime: Date?
 
     /// 0 = ghost visible · 1 = engagement confirmé visuellement
     @State private var commitmentFillProgress: [Double] = [0, 0, 0]
@@ -40,9 +33,8 @@ struct BiometricAuthStepView: View {
         ]
     }
 
-    init(onComplete: @escaping () -> Void, onBack: (() -> Void)? = nil) {
+    init(onComplete: @escaping () -> Void) {
         self.onComplete = onComplete
-        self.onBack = onBack
     }
 
     var body: some View {
@@ -86,16 +78,12 @@ struct BiometricAuthStepView: View {
             }
             .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
         }
-        .alert(OnboardingCopy.t("Erreur", en: "Error"), isPresented: $showError) {
-            Button(AppCopy.t("OK", en: "OK")) {
-                isAuthenticating = false
-                progress = 0.0
-            }
-        } message: {
-            Text(errorMessage)
-        }
         .onAppear {
             ProcessAnalytics.trackCommitmentShown(source: "onboarding")
+        }
+        .onDisappear {
+            stopPressTask()
+            HapticManager.shared.endEngagementHoldCrescendo()
         }
     }
 
@@ -213,6 +201,13 @@ struct BiometricAuthStepView: View {
                 },
                 onRelease: endPress
             )
+            // L'appui long UIKit est invisible pour VoiceOver / Contrôle de sélection : sans action
+            // d'accessibilité, ces utilisateurs restaient bloqués sur cet écran sans retour.
+            .accessibilityElement()
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel(OnboardingCopy.t("Je m'engage", en: "I commit"))
+            .accessibilityHint(OnboardingCopy.t("Maintenir 4 secondes, ou activer pour valider", en: "Hold for 4 seconds, or activate to confirm"))
+            .accessibilityAction { completeAuthentication() }
         }
         .frame(height: 380)
     }
@@ -223,9 +218,7 @@ struct BiometricAuthStepView: View {
         guard !isPressed && !isAuthenticated else { return }
 
         isPressed = true
-        pressStartTime = Date()
         progress = 0.0
-        isAuthenticating = true
         hapticMilestonesFired = []
 
         HapticManager.shared.beginEngagementHoldCrescendo()
@@ -260,13 +253,11 @@ struct BiometricAuthStepView: View {
         guard isPressed else { return }
 
         isPressed = false
-        pressStartTime = nil
         stopPressTask()
         HapticManager.shared.endEngagementHoldCrescendo()
         hapticMilestonesFired = []
 
         if !isAuthenticated {
-            isAuthenticating = false
             if progress > 0.12 {
                 ProcessAnalytics.trackCommitmentAbandoned(progress: progress, source: "onboarding")
             }

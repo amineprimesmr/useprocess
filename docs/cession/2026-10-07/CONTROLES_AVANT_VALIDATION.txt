@@ -1,0 +1,46 @@
+ACTUALISATION — 7 OCTOBRE 2026
+Le propriétaire n’a pas son iPhone. Les corrections analytics ajoutées après le build 39 nécessitent le build 40, une nouvelle archive et des tests physiques. Le build 39 reste une preuve antérieure, pas la livraison finale. Aucun upload ni soumission Apple.
+PostHog audité : 2 clés personnelles All access, 4 apps OAuth, essai annuel A/B actif ; forfait gratuit affiché. AppsFlyer console reportée à la demande du propriétaire.
+373 comptes Auth exportés en privé ; intégrité vérifiée, restauration complète non testée. Compte Stripe clôturé selon confirmation propriétaire.
+
+PROCESS DEBLOAT — CONDITIONS DE VALIDATION ET DE REMISE
+État au 7 octobre 2026. Périmètre exclusif : Process Debloat.
+
+DÉCISION DU PROPRIÉTAIRE
+Ne pas soumettre l’application à Apple avant son nouvel accord explicite. Le retour visuel positif sur l’iPhone n’autorise ni soumission ni publication.
+
+PRÉPARATION EFFECTUÉE
+- Domaine acheté, DNS ciblé et site HTTPS indépendant. useprocess.xyz conservé par le vendeur.
+- Nouvelle boîte contact@ et aliases support@/hello@ actifs ; test SMTP/IMAP et réception effectué. Secret côté serveur, absent du dossier commercial.
+- Métadonnées 1.13 FR/EN corrigées et enregistrées dans la version en préparation Apple. Build 39 installé et lancé sur iPhone physique.
+- Roue et gains simulés, urgence artificielle, scores onboarding forcés et faux témoignages retirés des parcours concernés. Anciennes consignes coach, conseils sur cortisol et graphiques profil corrigés ; FAQ photo/consentement IA précisée. Indices visuels explicitement expérimentaux ; aucun dosage hormonal/eau/graisse prétendu.
+- Sauvegarde locale privée, export Firestore de 4 568 documents et copie médias réalisés. 40 tests backend réussis. Audit npm nouveau site : zéro vulnérabilité connue au contrôle.
+
+VALIDATION PRODUIT À CONSIGNER
+[ ] Compte neuf et existant : connexion Apple, déconnexion/reconnexion, premium conservé.
+[ ] Scan réel : autorisation/refus caméra, capture interrompue, mauvaises conditions, résultat et historique.
+[ ] Coach : consentement avant envoi IA ; photo volontaire distincte du scan local ; erreur réseau gérée.
+[ ] Paiements sandbox : produits/prix Apple réels, annulation, pending, réussite, restauration, expiration, indisponibilité réseau. Aucun paiement réel pour ces vérifications.
+[ ] Cas rejet Apple : Claim my offer sur iPad Air M4 / iPadOS 27.0, bouton répondant et aucun blocage. Aucun simulateur autorisé ; prévoir validation sur appareil réel.
+[ ] Suppression du compte et données associées vérifiée dans un compte de test disposable, jamais un compte client.
+[ ] Liens confidentialité/EULA/support dans chaque parcours, nouvel email visible et adresse de récupération indépendante.
+[ ] Revue éditoriale finale de tous les écrans et captures App Store. Les corrections déjà faites ne constituent pas une certification scientifique des heuristiques.
+[ ] Captures App Store correspondant réellement au build final ; notes pour reviewer et compte de démonstration si nécessaire.
+[x] Archive Release et IPA signé locaux préparés ; versions app/widget 1.13 (39), signature vérifiée, empreinte enregistrée dans RELEASE_PREPARATION.json.
+[ ] Nouvel accord propriétaire avant toute soumission ; figer une nouvelle archive si les tests entraînent des corrections.
+
+SERVICES ET VENTE À FINALISER
+[ ] Forfait email Hostinger : rapprochement facture/durée après traitement de mise à niveau.
+[ ] Coûts réels : exports par service et période, frais Apple/RevenueCat/Firebase/IA/hébergement/mail ; distinguer coûts variables, essais gratuits et offres personnelles. Aucune estimation présentée comme facture.
+[ ] Médias, musiques, polices, code et marque : justificatifs des droits et liste exacte d’actifs cédés. Nettoyer les contenus sociaux trompeurs avant remise.
+[ ] Statistiques de vente : rapprocher revenu brut/net, remboursements, renouvellements et pays avec exports datés ; pas de faux chiffre.
+[ ] Contrat : actifs exclus/inclus, utilisateurs/abonnements, obligations affiliés, aide à la transition, prix et paiement à déterminer avec acquéreur choisi.
+[ ] Identité acquéreur, compte Apple Developer et Team ID, comptes Hostinger/Vercel/RevenueCat/Google de destination.
+[ ] Migration Sign in with Apple et credentials RevenueCat/webhooks selon transfert Apple ; ne pas céder de clé multi-apps ou compte personnel.
+[ ] TikTok/OAuth : maintenir callback existant jusqu’à validation de sa configuration ; comptes sociaux et autorisations propres à Process à transférer.
+[ ] Firebase : projet et facturation propres à Process, données clients conservées ; IAM/recovery et secrets rotatés seulement après validation de continuité.
+[ ] Sauvegarde Auth et exercice de restauration à compléter ; export Firestore seul ne couvre pas toute l’identité.
+[ ] Pack source final filtré sans secrets, .DS_Store, archives personnelles, autres projets ou données clients ; manifeste régénéré après dernière correction.
+[ ] Publication Apple approuvée, services vérifiés côté acquéreur, passation effectuée puis révocation graduelle vendeur.
+
+La sortie totale du vendeur ne peut être déclarée terminée tant que le destinataire n’est pas choisi et les transferts effectifs ne sont pas vérifiés.

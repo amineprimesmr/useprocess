@@ -92,11 +92,11 @@ struct PlanDashboardView: View {
                 if let plan = livePlan {
                     selectedPlanDate = OriginPlanPresenter.preferredHomeDate(in: plan)
                 }
+                guard !isOnboardingPreview else { return }
                 refreshPlanHealthMetrics()
                 Task {
                     await OnboardingProgressService.shared.savePendingDataIfNeeded(to: profileService)
                 }
-                guard !isOnboardingPreview else { return }
                 tutorialStore.noteHomeSurfaceMounted(true)
                 tutorialStore.reload()
                 tutorialStore.schedulePresentationIfNeeded(

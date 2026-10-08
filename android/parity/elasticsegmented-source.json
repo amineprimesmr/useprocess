@@ -1,0 +1,14 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-164175256-701042983/ElasticSC/ElasticSC/ContentView.swift": "c2a2f3977e4575c46d6b706c81705db0155bea6426bfba3e686757711f646993",
+    "content/source-projects/design-source-164175256-701042983/ElasticSC/ElasticSC/ElasticSCApp.swift": "40cb195e9a6dd9ffc97858cf09839070f4a3d49c29bf147c4ce3163c2eb4c35f",
+    "content/source-projects/design-source-164175256-701042983/ElasticSC/ElasticSC/Helpers/ElasticSegmentedControl.swift": "b7ecbae999e2dc534a0ff8311224598048ff9708b4397938a81ed8b1b3133835"
+  },
+  "mirrorMatchesInventory": true,
+  "contract": "Supply unique ordered tabs, controlled selection,onSelection and a pure composable label using LocalContentColor. Original35dp content,5dp outer padding,directional capsule extension,20percent shrink factor,strict edge guard,under5dp tap threshold and nearest-index drag release are preserved. Inactive and masked active label copies are drawn; duplicate semantics are hidden. Accessible radio actions and selection haptic supported. Pass reduceMotion. Native translucent capsule,gradient and200ms curve approximate Swift liquid glass/snappy; source icon-only sample,exact spring/haptic/color/font and physical comparison remain unfinished.",
+  "nativeFiles": [
+    "ElasticSegmentedModel.kt",
+    "TenKElasticSegmentedControl.kt",
+    "TenKElasticGallery.kt"
+  ]
+}

@@ -12,6 +12,7 @@ const REVENUECAT_API = "https://api.revenuecat.com/v1";
 const ANNUAL_PRODUCT_IDS = new Set([
     "com.useprocess.annual",
     "com.useprocess.annual3499",
+    "com.useprocess.annual3499trial",
     "com.useprocess.annual4999",
 ]);
 const LIFETIME_PRODUCT_ID = "com.useprocess.lifetime";
@@ -52,6 +53,7 @@ async function fetchSubscriber(appUserId, secretKey) {
             Authorization: `Bearer ${secretKey}`,
             "Content-Type": "application/json",
         },
+        signal: AbortSignal.timeout(10000),
     });
     if (!response.ok) {
         const body = await response.text();

@@ -1,0 +1,21 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/useprocess/Features/Profile/EditProfileView.swift": "36a8e0a2269bec5de572c4d8fe5fa7a95ac3616d9ba285619d5b451bf66f475f",
+    "/Users/amine/Developer/useprocess/useprocess/Features/Profile/ProfileEditComponents.swift": "6ed2c677dce20263b2b22a94706d101364a992d38fbc591df2bd33f19f19d985",
+    "/Users/amine/Developer/useprocess/useprocess/Features/Profile/ProfileSettingsSections.swift": "227aae02864c84c1f60680af6b19123f3c396538c758efb43eb4f0a6d9078e34",
+    "/Users/amine/Developer/useprocess/useprocess/Features/Profile/ProcessSettingsScrollToolBar.swift": "f99a472e60a2012ec76fd78603a463d62ba3aeaf1c660a9cfe7b2863b5fea66c",
+    "/Users/amine/Developer/useprocess/useprocess/Components/ProcessSoundPlayer.swift": "20372356418f22b80ee28d1ecdeb9a4ae2b4b65318c35b7298f65e40fea33b83",
+    "/Users/amine/Developer/useprocess/Shared/ProcessLanguageCode.swift": "9fd14946222d6964b57d7a0c5d24c59160781f4681f39bc7c386d0b7bdefdc06"
+  },
+  "sourceBasis": "Current live Process",
+  "contract": "Supply ProcessSettingsState, preference callbacks and onAction for account, health, billing/support/social navigation. Source section order,28dp cards,46dp rows plus9dp vertical padding,26dp avatar and optional creator-studio row retained. Appearance preview resolves system/dark/light; the host must apply and persist it app-wide. The7source language codes/native names/flags are preserved in order; page copy is currently FR/EN only,remaining localization is host work. Selecting the active choice does not emit writes or feedback.280ms highlight and0.28/0.9spring follow source; original revolut_pay clip holds280ms then fades140ms in8steps,with cancellation on stop/disposal and no stale replay. rememberProcessNotificationsEnabled reads actual system state on resume; openProcessNotificationSettings opens platform controls without granting permission. Unknown health/notifications display unavailable. Host owns profile identity checks, scan-avatar media, durable preferences and all external destinations. SF symbols, exact scroll-title/glass/typography, account editors and physical comparison remain incomplete.",
+  "nativeFiles": [
+    "SettingsModel.kt",
+    "ProcessSettingsHub.kt",
+    "ProcessSettingsChrome.kt",
+    "ProcessSettingsFeedback.kt",
+    "ProcessNotificationSettings.kt",
+    "ProcessMotionPreferences.kt"
+  ],
+  "resources": {}
+}

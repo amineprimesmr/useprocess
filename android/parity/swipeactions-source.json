@@ -1,0 +1,46 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-121515870-416833518/MailSwipeActions/MailSwipeActions/ContentView.swift": "e814347be955034bae35c946a7567f62a58e741a0936cb70c6ea0ab0e9c602c8",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-121515870-416833518/MailSwipeActions/MailSwipeActions/Helpers/PanGesture.swift": "94e94da738d5fdead46737c7ea463dcec381cb7c513bc3144cb0cd6ed4b2a4f8",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-121515870-416833518/MailSwipeActions/MailSwipeActions/MailSwipeActionsApp.swift": "326365065cc33355753effbecb7e94ce08b90986a13d090ed31e3aee075bc5bf",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-121515870-416833518/MailSwipeActions/MailSwipeActions/Helpers/CustomSwipeAction.swift": "296d90c9587044d35a1bce2f87dbc5a47fb3c66f4e8edc4c51d63abe507e708c"
+  },
+  "assets": [
+    {
+      "archive": "/Users/amine/Downloads/MailSwipeActions.zip",
+      "member": "MailSwipeActions/MailSwipeActions/Assets.xcassets/Pic1.imageset/Pic.jpg",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/swipe_pic1.jpg",
+      "sha256": "10ce7947d14030fd5127048c9231c826ae31d7f3bfeda2a9cc40f9af6b4a4ea5"
+    },
+    {
+      "archive": "/Users/amine/Downloads/MailSwipeActions.zip",
+      "member": "MailSwipeActions/MailSwipeActions/Assets.xcassets/Pic2.imageset/p1.jpg",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/swipe_pic2.jpg",
+      "sha256": "531efed9f8b5f93c9b19976a70cd3ab3b05fe9ace75d4c8542212124a996d161"
+    },
+    {
+      "archive": "/Users/amine/Downloads/MailSwipeActions.zip",
+      "member": "MailSwipeActions/MailSwipeActions/Assets.xcassets/Pic3.imageset/Pic3.jpg",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/swipe_pic3.jpg",
+      "sha256": "33dca4436c62887a01e62405b00ed8d49470f265591acf31accc7742f62a6797"
+    },
+    {
+      "archive": "/Users/amine/Downloads/MailSwipeActions.zip",
+      "member": "MailSwipeActions/MailSwipeActions/Assets.xcassets/Pic4.imageset/Pic4.jpg",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/swipe_pic4.jpg",
+      "sha256": "9ef933a637da07c296b4856a8c3c0573d37c43079605525153e7a18d57e0ac64"
+    },
+    {
+      "archive": "/Users/amine/Downloads/MailSwipeActions.zip",
+      "member": "MailSwipeActions/MailSwipeActions/Assets.xcassets/Pic5.imageset/Pic5.jpg",
+      "native": "/Users/amine/Developer/useprocess/android/app/src/main/res/drawable-nodpi/swipe_pic5.jpg",
+      "sha256": "2fed5d3f4019ec5f6e96f5186a78eb63b282d747686f244d7ea8d88969dbd3fc"
+    }
+  ],
+  "archiveSourceDifference": "ContentView greeting changed from Hi Kavsoft !!! to Hi TenK !!!; all other bytes identical after this explicit branding substitution",
+  "nativeFiles": [
+    "SwipeActionsModel.kt",
+    "TenKSwipeActions.kt"
+  ],
+  "contract": "Stable unique row IDs and a shared context-scoped SwipeActionCoordinator are required. Horizontal drag preserves vertical scrolling; threshold follows original raw velocity+offset>60percent of action width,with10percent trailing resistance and300ms settle. Default45dp circles,10dp spacing/trailing inset. Opening one row closes others; vertical geometry changes,background,gesture cancellation and context disposal close it. Action callback returns true to close,false to retain; no automatic destructive operation. Accessibility exposes explicit labelled actions. Supports unequal widths with cumulative positioning,correcting source equal-width assumption. Gallery retains5original portraits; archive differs only by verified Hi Kavsoft !!! to Hi TenK !!! greeting substitution,all other Swift bytes identical. iOS snappy spring,gesture onset/velocity units,directional RTL,exact symbols,physical/iOS pixel/motion comparison remain unverified."
+}

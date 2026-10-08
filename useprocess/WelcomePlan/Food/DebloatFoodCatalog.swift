@@ -604,7 +604,7 @@ private extension DebloatFoodCatalog {
              why: "Vasodilatation + rétention — visage gonflé au réveil.",
              tags: ["evening-risk"], swaps: ["eau-plate", "tisane-camomille"]),
         food("cafeine-tardive", "Café / thé noir après 15 h", .avoidOther, .avoid, k: 50, na: 5, mg: 5,
-             why: "Excès tardif → sommeil ↓ → cortisol → visage gonflé.",
+             why: "La caféine tardive peut perturber le sommeil ; observe ta sensibilité personnelle.",
              tags: ["evening-risk"], swaps: ["tisane-camomille", "tisane-fenouil"]),
         food("sodas", "Sodas / jus industriels", .avoidOther, .avoid, k: 10, na: 20, mg: 2,
              why: "Sucres rapides + inflammation.",

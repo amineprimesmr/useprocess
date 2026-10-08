@@ -1,0 +1,20 @@
+MÉDIAS PRODUIT : 10 objets statiques, 452270193 octets (431.32 MiB).
+Bucket : gs://useprocess-d4385.firebasestorage.app/media/
+Copie locale échouée : espace disque insuffisant. Fichiers partiels nettoyés.
+À télécharger après libération d’espace avec gcloud storage cp --recursive. Conserver le bucket lors de la reprise pour préserver les URL.
+gs://useprocess-d4385.firebasestorage.app/media/:
+
+gs://useprocess-d4385.firebasestorage.app/media/lymph-circuit/:
+ 101865288  2026-08-30T12:36:59Z  gs://useprocess-d4385.firebasestorage.app/media/lymph-circuit/lymph_01.mp4
+ 123671240  2026-08-30T12:37:01Z  gs://useprocess-d4385.firebasestorage.app/media/lymph-circuit/lymph_02.mp4
+  83314389  2026-08-30T12:36:58Z  gs://useprocess-d4385.firebasestorage.app/media/lymph-circuit/lymph_03.mp4
+  24508716  2026-08-30T12:36:52Z  gs://useprocess-d4385.firebasestorage.app/media/lymph-circuit/lymph_05.mp4
+  44240420  2026-08-30T12:36:56Z  gs://useprocess-d4385.firebasestorage.app/media/lymph-circuit/lymph_06.mp4
+  65278496  2026-08-30T12:37:00Z  gs://useprocess-d4385.firebasestorage.app/media/lymph-circuit/lymph_07.mp4
+
+gs://useprocess-d4385.firebasestorage.app/media/onboarding/:
+   3767265  2026-08-30T12:37:03Z  gs://useprocess-d4385.firebasestorage.app/media/onboarding/daniel.mp4
+   1977519  2026-08-30T12:37:03Z  gs://useprocess-d4385.firebasestorage.app/media/onboarding/danielprime.mp4
+   1448262  2026-08-30T12:37:03Z  gs://useprocess-d4385.firebasestorage.app/media/onboarding/imran.mp4
+   2198598  2026-08-30T12:37:03Z  gs://useprocess-d4385.firebasestorage.app/media/onboarding/imranprime.mp4
+TOTAL: 10 objects, 452270193 bytes (431.32MiB)

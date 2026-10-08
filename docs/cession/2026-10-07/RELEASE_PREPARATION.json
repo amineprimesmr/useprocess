@@ -1,0 +1,47 @@
+{
+  "app_id": "6753808143",
+  "bundle_id": "com.useprocess",
+  "version": "1.13",
+  "build": "39",
+  "submit_allowed": false,
+  "required_authorization": "Nouvel accord explicite du propriétaire avant soumission Apple",
+  "remote_latest_observed_build": "38",
+  "device": "iPhone 14 Pro Max",
+  "debug_install_launch": "passed",
+  "user_visual_feedback": "positive, preliminary",
+  "backend_tests": {
+    "pass": 40,
+    "fail": 0
+  },
+  "website_build_deploy": "passed",
+  "mail": "SMTP/IMAP/self-delivery passed; two active aliases",
+  "release_archive": "passed, local .asc/artifacts/Process-1.13-39.xcarchive",
+  "remaining_checks": [
+    "Apple purchases and restores sandbox",
+    "iPad rejection reproduction on physical device",
+    "final App Store screenshots and editorial review",
+    "email plan invoice duration reconciliation",
+    "rights and real cost/revenue reconciliation",
+    "buyer identity and service transfers"
+  ],
+  "source_head": "2563680ee08613fe1ed641746ec97867f4b26064",
+  "working_tree": "pre-existing and task changes not committed",
+  "final_debug_compile": "passed after coach/profile/editorial corrections",
+  "source_inventory_sha256": "4b1c3ad8e46b9dd046ee65c60eb895880284c94828d9780ae8bd71904a411d58",
+  "final_debug_install_launch": "passed after final coach/profile corrections",
+  "ipa_export": "passed, local export only",
+  "updated_at": "2026-10-06T22:58:55.890123+00:00",
+  "ipa": {
+    "path": "/Users/amine/Developer/useprocess/.asc/artifacts/Process-1.13-39.ipa",
+    "bytes": 77773629,
+    "sha256": "1f32bf53401f54253dc1f9337b886b7f8889f51219b9d8352bc772cbaebd4cbe"
+  },
+  "uploaded_to_apple": false,
+  "submitted_to_apple": false,
+  "source_changed_after_build_39": true,
+  "next_build_number": 40,
+  "new_archive_required": true,
+  "new_device_validation_required": true,
+  "build_39_not_final_delivery": true,
+  "reason": "Analytics privacy corrections: replay/element capture disabled, technical metadata allowlist, no first name super-properties."
+}

@@ -9,8 +9,8 @@ extension View {
         title: String?,
         subtitle: String? = nil,
         titleAlignment: HorizontalAlignment = .leading,
-        titleColor: Color = .white,
-        appliesDarkToolbarColorScheme: Bool = true,
+        titleColor: Color = .primary,
+        appliesDarkToolbarColorScheme: Bool = false,
         showsBackButton: Bool = true,
         onBack: @escaping () -> Void,
         @ViewBuilder trailing: @escaping () -> Trailing = { EmptyView() },
@@ -173,7 +173,7 @@ private struct ProcessSettingsToolbarColorSchemeModifier: ViewModifier {
 
 struct ProcessSettingsToolbarBackButton: View {
     let action: () -> Void
-    var foregroundColor: Color = .white
+    var foregroundColor: Color = .primary
 
     var body: some View {
         Button(action: action) {

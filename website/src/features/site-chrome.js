@@ -25,12 +25,12 @@ export function getAppPageCopy() {
     creatorInvitesTitleNamed: (name) =>
       appCopy(`${name} t'invite sur Process`, `${name} invites you to Process`),
     invitedSubtitle: appCopy(
-      "3 jours d’essai offerts sur l’annuel. Télécharge l’app et entre le code.",
-      "3 free days on yearly. Get the app and enter the code."
+      "Télécharge l’app et entre le code pour rejoindre Process.",
+      "Get the app and enter the code to join Process."
     ),
     creatorSubtitle: appCopy(
-      "3 jours d’essai offerts sur l’annuel avec ce code clipper.",
-      "3 free days on yearly with this clipper code."
+      "Télécharge Process avec ce code clipper.",
+      "Download Process with this clipper code."
     ),
     tapBanner: appCopy("Tapote la bannière pour commencer", "Tap the banner to start"),
     stepsHeading: appCopy("Comment commencer", "How to get started"),
@@ -39,12 +39,12 @@ export function getAppPageCopy() {
     stepCodePrefix: appCopy("Ton code parrainage :", "Your referral code is"),
     stepCreatorCodePrefix: appCopy("Ton code clipper :", "Your clipper code is"),
     stepBenefitReferral: appCopy(
-      "3 jours d’essai offerts sur l’annuel avec le code de ton ami",
-      "3 free days on yearly with your friend's code"
+      "Entre le code de ton ami dans Process",
+      "Enter your friend's code in Process"
     ),
     stepBenefitCreator: appCopy(
-      "3 jours d’essai offerts sur l’annuel avec ce code clipper",
-      "3 free days on yearly with this clipper code"
+      "Entre ce code clipper dans Process",
+      "Enter this clipper code in Process"
     ),
     stepDownload: appCopy("Télécharge l'app", "Download the app"),
     iosEyebrow: appCopy("Télécharger sur", "Download on"),

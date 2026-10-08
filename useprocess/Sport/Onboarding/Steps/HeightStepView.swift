@@ -17,7 +17,6 @@ struct HeightStepView: View {
     @State private var unit: HeightUnit = ProcessMeasurementPreference.prefersImperial ? .ft : .cm
     /// Index 0 = 140 cm, index `tickIndexMax` = 220 cm (pas de 1 cm). Défaut 170 → index 30.
     @State private var tickSelection: Int = 30
-    @State private var sliderValue: Double = 0.375
     @State private var lastHapticHeight: Int = -1
     @State private var saveTask: Task<Void, Never>?
 
@@ -32,30 +31,17 @@ struct HeightStepView: View {
         self.onValidationChanged = onValidationChanged
         _unit = State(initialValue: ProcessMeasurementPreference.prefersImperial ? .ft : .cm)
 
-        var cm = selectedHeight.wrappedValue
-        if cm <= 0 {
-            cm = 170
-            selectedHeight.wrappedValue = 170
-        }
+        // Pas d'écriture dans le binding pendant l'init (publish pendant un update de vue) :
+        // `syncTickSelectionFromHeight()` normalise la valeur à l'apparition.
+        let cm = selectedHeight.wrappedValue > 0 ? selectedHeight.wrappedValue : 170
         let clamped = min(max(Int(cm.rounded()), 140), 220)
-        if Double(clamped) != selectedHeight.wrappedValue {
-            selectedHeight.wrappedValue = Double(clamped)
-        }
         _tickSelection = State(initialValue: clamped - 140)
-        _sliderValue = State(initialValue: Double(clamped - 140) / 80.0)
         _lastHapticHeight = State(initialValue: clamped)
     }
 
     enum HeightUnit {
         case cm
         case ft
-
-        var displayName: String {
-            switch self {
-            case .cm: return "CM"
-            case .ft: return "FT"
-            }
-        }
     }
 
     private var displayHeight: String {
@@ -63,10 +49,8 @@ struct HeightStepView: View {
         case .cm:
             return "\(Int(selectedHeight))"
         case .ft:
-            let totalInches = selectedHeight / 2.54
-            let feet = Int(totalInches / 12)
-            let inches = Int(totalInches.truncatingRemainder(dividingBy: 12))
-            return "\(feet)'\(inches)\""
+            let totalInches = Int((selectedHeight / 2.54).rounded())
+            return "\(totalInches / 12)'\(totalInches % 12)\""
         }
     }
 
@@ -164,11 +148,10 @@ struct HeightStepView: View {
     }
 
     private func syncTickSelectionFromHeight() {
-        let cmRounded = Int(selectedHeight.rounded())
+        let cmRounded = Int((selectedHeight > 0 ? selectedHeight : defaultHeightCM).rounded())
         let clampedCm = min(max(cmRounded, Int(minHeightCM)), Int(maxHeightCM))
         selectedHeight = Double(clampedCm)
         tickSelection = clampedCm - Int(minHeightCM)
-        sliderValue = (selectedHeight - minHeightCM) / (maxHeightCM - minHeightCM)
         lastHapticHeight = clampedCm
     }
 
@@ -180,20 +163,6 @@ struct HeightStepView: View {
         selectedHeight = newHeightCM
 
         let currentHeightCm = Int(newHeightCM)
-        if currentHeightCm != lastHapticHeight {
-            lastHapticHeight = currentHeightCm
-            HapticManager.shared.selection()
-        }
-
-        scheduleSaveHeight()
-    }
-
-    private func updateHeightFromSliderLegacy() {
-        let rawCM = minHeightCM + sliderValue * (maxHeightCM - minHeightCM)
-        let newHeightCM = Double(Int(rawCM.rounded()))
-        selectedHeight = min(max(newHeightCM, minHeightCM), maxHeightCM)
-
-        let currentHeightCm = Int(selectedHeight)
         if currentHeightCm != lastHapticHeight {
             lastHapticHeight = currentHeightCm
             HapticManager.shared.selection()

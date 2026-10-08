@@ -267,7 +267,7 @@ struct OnboardingCreatorCodeStepView: View {
     private func resolvedLabel(kind: ProcessAffiliateCodeKind, name: String) -> String {
         switch kind {
         case .affiliate:
-            return AppCopy.t("Clipper : \(name)", en: "Clipper: \(name)")
+            return AppCopy.t("Code retiré", en: "Retired code")
         case .referral:
             return AppCopy.t("Parrainage : \(name)", en: "Referral: \(name)")
         }

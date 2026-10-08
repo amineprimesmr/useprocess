@@ -30,8 +30,8 @@ enum OriginScriptRulesEngine {
 
         if snapshot.primaryBlocker == .stress || snapshot.primaryBlocker == .sleep {
             rules.append(AppCopy.tSync(
-                "Baisser cortisol avant tout — respiration nasale, sommeil, pas de cardio intensif tardif",
-                en: "Lower cortisol first — nasal breathing, sleep, no late intense cardio"
+                "Routine calme — respiration confortable, sommeil régulier et activité adaptée",
+                en: "Calm routine — comfortable breathing, regular sleep and suitable activity"
             ))
         }
 

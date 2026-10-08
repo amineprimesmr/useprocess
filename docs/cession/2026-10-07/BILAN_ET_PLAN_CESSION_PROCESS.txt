@@ -1,0 +1,299 @@
+ACTUALISATION PRIORITAIRE : consulter ETAT_PREPARATION_SANS_ACHETEUR.txt et REGISTRE_PASSATION.json pour l’état final de cette préparation. Build 40 requis après correction analytics ; Auth sauvegardé ; PostHog audité ; AppsFlyer reporté ; Stripe clôturé selon propriétaire. Le corps ci-dessous conserve des constats historiques.
+
+POINT D’EXÉCUTION — 7 OCTOBRE 2026
+Ce bilan détaillé contient l’audit initial et le plan de passation ; les tâches initialement non réalisées ci-dessous ne doivent pas être prises comme le dernier état d’exécution.
+Dernier état : domaine et site indépendants actifs, nouvelle boîte et 2 alias actifs/testés, fonctions email/portail migrées de façon ciblée, métadonnées FR/EN Apple enregistrées en préparation, build 39 installé/lancé sur iPhone physique, premier retour visuel positif. 40 tests backend passent ; sauvegardes effectuées.
+Directive du propriétaire : AUCUNE SOUMISSION APPLE avant nouvel accord explicite. Achats sandbox, cas iPad, revue finale médias/captures/droits/coûts et transferts restent ouverts. Voir CONTROLES_AVANT_VALIDATION.txt et PASSATION_TECHNIQUE.txt pour l’état opérationnel.
+
+# Préparation de la cession de Process Debloat
+
+Audit arrêté au 7 octobre 2026 — dossier interne de préparation, sans informations acheteur.
+Périmètre : l’application iOS Process Debloat, sa marque et ses dépendances nécessaires. Aucun autre projet n’est inclus. Aucune cession, invitation, modification de production, commande de domaine ou compilation n’a été effectuée pour ce bilan.
+
+## 1. Décision et état réel
+
+Objectif : transmettre un produit exploitable par un nouveau propriétaire avec son code, ses contenus licites, ses services, ses abonnements, sa documentation et ses outils de distribution. À terme, le vendeur ne doit plus héberger, payer, signer, administrer ni recevoir les emails de Process.
+
+Le produit n’est pas encore prêt pour une remise autonome à 100 %. Les éléments sont largement identifiés, mais plusieurs comptes sont partagés, la dernière version locale n’est pas celle publiée, le domaine cible est désormais processdebloat.com (achat non confirmé) et les modalités de continuité des utilisateurs Apple doivent être préparées. La préparation peut avancer sans identité acheteur. Les opérations de transfert et le contrat nominatif attendront une vente confirmée.
+
+Les cinq priorités sont :
+1. Sauvegarder intégralement l’état local et les données de production dans un espace adapté.
+2. Définir un pack strictement Process et contrôler les droits sur les contenus.
+3. Préparer le domaine, les emails et le site indépendants des autres activités.
+4. Préparer la migration Apple/Firebase/RevenueCat avec conservation des comptes et des achats.
+5. Arrêter un état financier et une liste des obligations, puis valider une version réellement publiée et documentée.
+
+La séparation de tous les liens avec le vendeur sera progressive : les anciennes versions installées peuvent encore appeler useprocess.xyz. Il faut soit une période de compatibilité limitée et contractualisée, soit attendre leur remplacement avant de déclarer la séparation terminée. Un nouveau domaine seul ne met pas à jour les anciens binaires.
+
+## 2. Niveau de preuve
+
+« Vérifié 7/10 » : lecture du code et des configurations locales, App Store Connect via CLI, Google Cloud/Firebase via CLI/API, et documentations officielles des fournisseurs. « Relevé 4–6/10 » : audit existant, factures/tableaux de bord et contrôles effectués ces jours-là ; ces éléments restent datés. « À confirmer » : aucun accès ou justificatif suffisant pour conclure.
+
+Le dossier de preuve du 7/10 comprend ETAT_VERIFIE.json. Les annexes de docs/cession datées du 4/10 restent les pièces historiques. Leur présence ne prouve pas qu’un achat, une migration ou un transfert a eu lieu.
+
+Limites : aucun audit exhaustif de sécurité, aucun contrôle juridique de propriété, aucun nouvel essai de paiement/UI, aucune compilation pour cet audit. L’éligibilité finale au transfert Apple, les droits commerciaux sur tous les médias, les passifs et les modalités de transfert de certains prestataires restent à établir. Les données personnelles et les valeurs des secrets ne sont pas exportées dans ce dossier.
+
+## 3. Inventaire et destination des actifs
+
+| Actif | État / preuve | Mode de remise prévu | Condition à lever |
+|---|---|---|---|
+| App Store : app 6753808143 | Process : Debloat ton visage ; bundle com.useprocess | Transfert de l’app vers le compte Apple Developer acheteur | Éligibilité et compte destinataire |
+| App publiée | 1.12, build 37, READY_FOR_SALE au 7/10 | Conservée pendant la transition | Vérifier son comportement et retrouver son source exact |
+| Dernière version | 1.13, build 38, REJECTED ; code local 1.13/38 | Grande mise à jour corrigée et publiée avant livraison | Motif de rejet, version retenue et validation |
+| Code iOS | Swift, Shared, ProcessWidgets, projet Xcode | Nouveau dépôt privé Process + archive filtrée | Préserver toutes les modifications locales |
+| Backend | firebase/functions, règles, index, configuration | Sources + projet cloud existant | Inventaire IAM, secrets et déploiement reproductible |
+| Firebase/GCP | useprocess-d4385, n°3107027616, ACTIVE | Accès projet puis facturation acheteur | Ne pas céder le compte Google ni sa facturation partagée |
+| Firestore | Base native eur3 | Conserver le projet et les identifiants | Sauvegarde/restauration, données et règles |
+| Storage | Médias et buckets techniques | Projet conservé + copie des médias autorisés | Sauvegarde absente et licences |
+| RevenueCat Process | Compte propriétaire multi-projets | Transfert du seul projet Process | Plan destinataire, nouveaux accès Apple |
+| Site Process | Vite/React, hébergement Vercel partagé | Projet indépendant dans l’équipe acheteur | Retirer les routes et secrets hors Process |
+| Nouveau domaine | processdebloat.com choisi le 7/10 ; achat non confirmé | Domaine dédié au titulaire convenu | Achat, titularité et remise à contrôler |
+| useprocess.xyz / emails actuels | Rattachés aux autres activités du vendeur | Exclus de la cession ; éventuel pont limité | Inventaire des anciens liens et durée du pont |
+| Nouvelle messagerie | À créer | Boîtes dédiées et facturation acheteur | SMTP, DNS, délivrabilité, adresse légale |
+| PostHog EU | Projet 240558, relevé Free 4/10 | Transfert/mouvement du projet si disponible ou migration ciblée | Confirmation fournisseur, historique, replays et accès |
+| AppsFlyer | SDK et app Apple présents ; session invalide | Transfert de l’app/paramétrage ou réinstallation indépendante | Compte, contrat, prix, ownership et liens |
+| Anthropic | Backend coach ; compte partagé | Organisation/clés acheteur dédiées | Attribution des coûts et rotation contrôlée |
+| TikTok / réseaux Process | Deux TikTok annoncés ; liens @useprocess dans le code | Uniquement actifs Process dont remise autorisée | Identifiants exacts, titulaire, conditions plateforme, 2FA, licences |
+| Fichiers marketing | Dossier content mélangé à examiner | Sélection Process uniquement | Droits, provenance et absence d’actifs d’autres projets |
+| Marque / logo / design | Nom commercial exploité ; titre juridique non établi | Actifs graphiques + droits effectivement détenus | Registre, auteurs/prestataires, polices et licences |
+| Affiliation / referral | Fonctions et portail actifs | Programme, code, contrats et passifs explicitement définis | Commissions dues, liens, emails, obligations promises |
+| Support | Endpoint historique retiré, renvoi 410 documenté | Nouveau canal fonctionnel + procédures | Vérifier impact sur les versions installées |
+| Crisp | Inactif/déconnecté, secrets historiques encore présents | Exclu du socle actif sauf choix motivé | Conservation/suppression historique conforme |
+| Stripe | Retiré du parcours actuel ; secrets historiques présents | Aucun compte personnel cédé | Rapprocher clients historiques, remboursements et webhooks |
+| Apple Developer / Google / GitHub personnels | Comptes du vendeur | Exclus | Acheteur crée ses propres comptes |
+| ScrollShow, 10K Design, appbid, footgoat, Aura, autres projets | Hors périmètre | Exclus intégralement | Aucun déplacement ni changement pour ces projets |
+
+Ce tableau est le périmètre de préparation ; il ne garantit pas la cessibilité de chaque compte social ou licence.
+
+## 4. Code, reproductibilité et conservation
+
+Le dépôt distant est amineprimesmr/useprocess. HEAD vérifié : 2563680ee08613fe1ed641746ec97867f4b26064 (31 août). Le relevé initial compte 166 entrées locales : 130 modifiées, 14 supprimées et 22 non suivies. Les nouveaux documents de cet audit s’ajoutent ensuite à cet état. Une simple copie du dépôt distant ne remettrait donc pas le produit actuel.
+
+Avant toute réorganisation : sauvegarde privée complète du répertoire de travail, avec les fichiers non suivis ; capture des différences Git ; inventaire des fichiers ignorés utiles, sans les publier. Cette sauvegarde de conservation peut contenir des secrets et des projets exclus : elle reste chez le vendeur et n’est jamais l’archive commerciale.
+
+Préparer séparément un dépôt Process propre contenant : app iOS, Shared, widgets, projet Xcode, dépendances verrouillées, backend, règles/index Firebase, site Process isolé, scripts utiles, métadonnées App Store, documentation et médias autorisés. Exclure appbid, footgoat, ScrollShow, les redirections hors Process et toute configuration associée. Trier content fichier par fichier : les 334 fichiers recensés par extensions ne sont pas tous automatiquement vendables.
+
+Versions relevées : iOS minimum 18.0 ; Firebase iOS 12.15 ; RevenueCat SDK 5.78 ; PostHog 3.69 ; AppsFlyer 7.0.2. Site React 19.2.4/Firebase 12.19 ; backend Node 22, TypeScript 6.0.3, Firebase Admin 13.10 et Functions 7.2.5. Les lockfiles remis font foi, avec licence et version de chaque dépendance directe ; éviter une mise à jour générale avant vente.
+
+Le script scripts/prepare_sale_pack.py est une base de préparation, pas une certification. Vérifier ses filtres avant utilisation. Examiner texte, binaires, fichiers cachés et historique Git ; supprimer les données d’autres projets du pack, pas du projet de travail. Si l’historique est mélangé, privilégier un nouveau dépôt filtré avec un état initial documenté plutôt qu’un transfert brut du dépôt existant. Tout secret découvert dans un historique destiné à être livré doit être révoqué puis remplacé.
+
+Le pack final comportera un manifeste fichier/taille/SHA-256, un commit/tag de livraison, une archive checksum et un journal des exclusions. Fournir la configuration par noms de variables et instructions ; transmettre les accès via les mécanismes officiels, jamais par .env ou clé privée dans le ZIP.
+
+Il reste à retrouver l’état source exact du build 37 publié et à expliquer les changements du build 38 rejeté. Ne pas appeler le dernier HEAD « source de la version App Store » sans preuve. Les validations du 4/10 (tests TypeScript, build web et appareil physique) sont historiques ; aucune validation nouvelle n’a été effectuée ici.
+
+## 5. Cloud, données et sauvegardes
+
+Le projet GCP est actif, sans parent d’organisation indiqué dans le relevé actuel. Sa facturation est active sur un compte partagé. La voie privilégiée est de conserver le projet Firebase, ses identifiants, les données, les URL techniques et les services, puis modifier les accès et la facturation. Recréer une nouvelle base sans nécessité ajouterait une migration utilisateurs et des risques d’identité.
+
+36 fonctions déployées ont été relevées actives, Node 22, us-central1 : coach, suppression de compte, connexion Apple, notifications Apple, RevenueCat, affiliation, referral, portail, bibliothèque, emails et intégrations TikTok/MCP. Aucun job Scheduler listé en us-central1 ; cela ne vaut pas inventaire mondial de toutes les régions.
+
+Firestore est en eur3. Le bucket principal useprocess-d4385.firebasestorage.app est en US-EAST1 ; deux buckets techniques Functions sont en US-CENTRAL1. Cartographier ces régions avec les transferts vers Anthropic, les outils d’analytics et les traitements sous-traités. Une base en Europe ne prouve pas que toutes les données restent en Europe.
+
+Point critique vérifié le 7/10 : récupération ponctuelle Firestore (PITR) désactivée, protection contre suppression désactivée, aucune planification de backup retournée et aucun backup retourné en eur3. Cela n’exclut pas d’anciens exports ailleurs, qui restent à rechercher. Ne pas lancer de transfert sans un export exploitable, contrôlé et une procédure de restauration.
+
+Au 4/10, /media contenait 10 objets, 452 270 193 octets (~431,32 MiB), dont vidéos et contenus onboarding. La copie locale avait échoué par manque d’espace. Au relevé de préparation, le disque avait environ 7,6 GiB libres et était occupé à 97 %. Prévoir un volume sécurisé assez grand pour sauvegardes et archives ; aucun nettoyage de fichiers personnels n’est nécessaire pour ce plan.
+
+Sauvegardes à préparer séparément : Firestore avec droits minimaux et rétention ; Firebase Auth selon le mécanisme documenté ; Storage médias avec checksums ; paramètres non secrets des fonctions ; règles/index ; IAM et comptes de service ; versions/configuration ; métadonnées App Store ; catalogues RevenueCat ; contenus/licences. Les backups de données clients doivent être chiffrés, restreints, datés et accompagnés d’une date de suppression, pas déposés dans un pack de prospection.
+
+Établir un tableau par collection et flux : finalité, données, producteur, lecteurs, région, durée, suppression, propriétaire après cession. Vérifier la suppression de compte de bout en bout, le traitement des fichiers locaux, des achats, des messages, des analytics et des backups.
+
+Les selfies/vidéos de scan sont prévus localement sur l’iPhone ; les résultats peuvent contenir marqueurs, scores, sommeil, HRV et analyses. Ne pas résumer cela par « aucune donnée liée au visage n’est stockée ». Les images volontairement envoyées au coach/repas peuvent suivre un autre flux vers Anthropic. Vérifier chaque parcours et aligner privacy policy, App Privacy et consentements avec le code réellement publié.
+
+## 6. Comptes, secrets et sécurité de remise
+
+Secret Manager contient 17 noms, dont des vestiges Stripe/Crisp. Huit noms de secrets sont déclarés dans les sources actives : ANTHROPIC_API_KEY, REVENUECAT_SECRET_API_KEY, REVENUECAT_WEBHOOK_SECRET, AFFILIATE_ADMIN_SECRET, APPLE_SIGNIN_TEAM_ID, APPLE_SIGNIN_KEY_ID, APPLE_SIGNIN_PRIVATE_KEY et PROCESS_SMTP_PASSWORD. Une déclaration source ne prouve pas à elle seule l’utilisation de chaque secret par chaque fonction déployée.
+
+Le site contient également des noms de configuration TikTok et Vercel. Les valeurs n’ont pas été copiées ici. Leur présence dans le site partagé impose de filtrer les environnements et intégrations avant création/transfert du site Process.
+
+Pour chaque accès : propriétaire actuel, périmètre Process, rôle nécessaire, titulaire futur, mode de transfert, facturation, 2FA/recovery, date de rotation, test et révocation vendeur. Inclure IAM humain, comptes de service, tokens CLI, GitHub Actions, déploiement Vercel, API Apple, webhooks, SMTP, OAuth et MCP. Ne pas transférer une session personnelle ou une clé Apple multi-apps.
+
+Ordre de rotation : préparer la nouvelle clé → installer dans un environnement maîtrisé → tester → basculer production → observer → révoquer l’ancienne. Pour les webhooks, prévoir une transition compatible afin de ne pas perdre des achats/commissions. Pour les identités Apple, conserver les éléments indispensables jusqu’à la fin documentée de migration. Ne pas supprimer les anciens secrets par simple absence dans le code : vérifier contrats historiques et fonctions/binaries encore utilisateurs.
+
+L’acheteur doit pouvoir administrer et récupérer chaque compte avec ses propres moyens. Une capture des accès, puis leur retrait contrôlé, fera partie de la réception finale.
+
+## 7. App Store, Apple et continuité utilisateur
+
+App : 6753808143 ; bundle com.useprocess ; SKU Process ; langue principale fr-FR. Team vendeur F2CJGJ69XU. App Store Connect déclare USES_THIRD_PARTY_CONTENT : réunir les licences correspondantes.
+
+Le transfert natif conserve l’identifiant d’app, les avis et la disponibilité ; il s’effectue entre Account Holders. Préparer un export de métadonnées et rapports, le catalogue achats, les éléments TestFlight/Xcode Cloud pertinents et les associations de connexion. Les opérations de préparation éventuellement requises par Apple seront effectuées au moment convenu, pas dans cet audit. [Apple, aperçu](https://developer.apple.com/help/app-store-connect/transfer-an-app/overview-of-app-transfer/)
+
+L’éligibilité n’a pas été confirmée : la commande de statut web nécessitait une session Apple non disponible. Une version REJECTED ne suffit pas à conclure que l’app est intransférable ; vérifier la checklist complète et les états des produits au moment de la cession. [Critères Apple](https://developer.apple.com/help/app-store-connect/transfer-an-app/app-transfer-criteria)
+
+Le destinataire devra fournir son Apple Account d’Account Holder et son Team ID. Une demande expire après 60 jours ; ne pas l’ouvrir pendant que la vente est encore incertaine. [Initiation Apple](https://developer.apple.com/help/app-store-connect/transfer-an-app/initiate-an-app-transfer/)
+
+Connexion Apple : les sources gèrent l’échange, la conservation et la révocation de tokens mais aucun parcours de migration de transfert n’a été retrouvé. Préparer le mapping ancien sujet Apple → identifiant de transfert → nouveau sujet Apple, tout en gardant les UID Firebase et les identités RevenueCat. Inclure emails relayés et Service IDs. Apple documente une fenêtre de migration de 60 jours : établir les échéances exactes des deux équipes et terminer avant la limite, distincte de l’expiration de la demande de transfert. [TN3159](https://developer.apple.com/documentation/technotes/tn3159-migrating-sign-in-with-apple-users-for-an-app-transfer)
+
+Capacités relevées : Sign in with Apple, App Attest production, HealthKit avec background delivery et associated domains. Aucun App Group dans les entitlements examinés ; confirmer portail et binaire. Vérifier keychain, App ID prefix, provisioning/certificats, accès HealthKit et App Attest côté backend ; ne pas supposer que changer le Team ID suffit. Documenter la reconnexion éventuellement nécessaire après mise à jour. Auditer APNs et tout service Apple supplémentaire s’il est activé au portail.
+
+Test de continuité obligatoire sur comptes d’essai contrôlés : utilisateur Apple existant, email masqué, compte email, historique scan, abonnement actif, achat lifetime, restauration après réinstallation, suppression de compte. Faire ces essais sur iPhone physique, avec un seul build nice -n 15 / xcodebuild -jobs 1 annoncé au préalable ; jamais sur simulateur. L’acheteur doit réussir ensuite une installation et un lancement signés par sa propre équipe.
+
+## 8. Achats, RevenueCat et obligations financières
+
+Conserver les identifiants de produits existants et les entitlements. Le catalogue historique comporte mensualité, annuel, trial et lifetime ; les prix relevés au 4/10 doivent être contrôlés à nouveau territoire par territoire. Ne pas renommer ni supprimer les SKU pour moderniser la marque. Identifier les anciens produits encore détenus par des clients même s’ils ne sont plus affichés.
+
+Le projet RevenueCat se transfère via son propriétaire, avec un destinataire administrateur et un plan approprié. Les conditions de facturation et les credentials App Store doivent être contrôlés ; les autres projets du compte vendeur restent exclus. [RevenueCat](https://www.revenuecat.com/docs/projects/overview)
+
+Préparer le shared secret spécifique à l’app, les nouvelles credentials API/IAP de l’équipe acheteur, notifications App Store Server, webhooks RevenueCat et attribution des identités. Effectuer restauration, entitlement, renouvellement, annulation, expiration, remboursement et idempotence de webhook. Contrôler les deux systèmes affiliation/referral pour éviter un double paiement.
+
+Stripe historique : établir la liste des clients, abonnements, échéances, remboursements, litiges et webhooks encore pertinents. Le retrait du SDK ne clôt pas les engagements existants. Les opérations sur un compte Stripe partagé demandent un traitement ciblé ; aucun compte ni moyen de paiement personnel ne fait partie du pack.
+
+Affiliation : recenser affiliés, contrats acceptés, commissions en attente/held/validées/payées, achats sources, remboursements, règles de hold, coordonnées de paiement, récompenses promises et droits sur leurs contenus. Les documents mentionnant 40 % net lifetime, délai 30 jours et récompenses ne sont pas une preuve de l’ensemble des obligations réellement souscrites. Annexer un état signé au closing et décider qui paie quoi selon date de vente et date de conversion.
+
+Arrêté financier : revenus bruts, remboursements, taxes, commission Apple, frais, net versé, produits différés, abonnés actifs, MRR défini, lifetime et charges. Fournir périodes/devise/HT-TTC ; comparer Apple et RevenueCat, puis les virements. Les chiffres de conversation commerciale ne suffisent pas. Fixer dans le contrat le traitement des règlements reçus après transfert pour des ventes antérieures.
+
+## 9. Coût d’exploitation : ce qui est connu
+
+| Service | Montant relevé | Portée et limite |
+|---|---|---|
+| Firebase Process | 25,68 € HT septembre 2026 (~30,82 € TTC sur facture) | Projet Process ; facture Google partagée à ne pas remettre intégralement |
+| Anthropic clé « useproces » | 11,27 $ sur 30 jours au 4/10 | Attribution par libellé ; lien au secret de prod encore à certifier |
+| Vercel équipe | 24 $ facture payée 12/9 ; 30 $ prochaine estimation | Équipe partagée, pas coût propre à Process |
+| PostHog | Free, 0 $ au 4/10 | Sans carte ; consommation et limites futures variables |
+| RevenueCat | Factures non affichées | Ne prouve pas une gratuité permanente ; plan acheteur à confirmer |
+| AppsFlyer | Inconnu | Contrat/tableau de bord non accessibles |
+| Nouveau domaine / email | Inconnu | Domaine non acheté, aucun devis retenu |
+| Crisp | Inactif, 0 $ affiché | Option hors socle actuel ; 95 $/mois affichés si réactivé le 4/10 |
+| Apple Developer acheteur | À prévoir | Propre abonnement de l’acheteur, compte vendeur exclu |
+
+Ne pas additionner euros et dollars ni factures et consommation prépayée Anthropic. Les coûts de useprocess.xyz et de sa messagerie sont exclus ; ils ne représentent pas les tarifs du futur domaine. Pour l’acheteur, établir trois scénarios à partir des unités consommées : activité actuelle, ×5 et ×10, avec coût IA par interaction, lectures/écritures/stockage/egress Firebase, analytics, hosting et support. Séparer coûts fixes, consommation, taxes et frais d’acquisition ; aucun total mensuel fiable n’est encore certifié.
+
+## 10. Domaine et site indépendants
+
+Le domaine cible choisi par le vendeur le 7 octobre est processdebloat.com. useprocess.xyz et ses emails restent au vendeur. La capture Hostinger montre 9,99 € pour un an, renouvellement affiché 16,99 €/an, confidentialité incluse et protection premium optionnelle à 9,99 €/an ; le paiement, les taxes finales et l’enregistrement ne sont pas confirmés. Vérifier le panier final, le titulaire et les modalités de remise. Acheter chez un registrar permettant gestion DNS, 2FA et transfert contrôlé ; éviter de l’attacher durablement à une identité du vendeur.
+
+Architecture cible : domaine Process dédié, site dans un projet Vercel dédié, messagerie dédiée, comptes sociaux et analytics Process, dépôt indépendant. Garder les identifiants techniques stables com.useprocess, useprocess-d4385 et produits IAP.
+
+Le relevé de code retrouve 214 lignes dans 65 fichiers pour anciens hosts/adresses et liens associés (périmètre technique local, pas preuve de tous les liens externes). Vérifier ProcessLegalURLs, Shared, iOS, site, backend, metadata et contenus diffusés. Remplacer avec configuration centralisée plutôt qu’une substitution globale du mot useprocess.
+
+Routes à inventorier et reproduire suivant leur usage réel : /, /app, /join/<code>, /c/<code>, /clipping, /api/mcp, pages légales, support, sources et endpoints nécessaires. Conserver les codes referral/affiliate, paramètres UTM, encodages et langues. Tester ancienne/nouvelle URL, installation/app ouverte et fallback web.
+
+Associated domains actuels : useprocess.xyz et join.useprocess.xyz. Pendant transition : ancienne + nouvelle association ; AASA sur le nouveau host avec les identifiants d’application corrects des équipes concernées, validés par App ID prefix ; aucun redirect sur le fichier AASA. Contrôler cache et ouverture sur iPhone.
+
+Firebase Auth authorizedDomains vérifiés au 7/10 : localhost, useprocess-d4385.firebaseapp.com, useprocess-d4385.web.app, useprocess.xyz, www.useprocess.xyz, join.useprocess.xyz. Le nouveau host est absent. Ajouter seulement les hosts nécessaires au moment de migration ; conserver les callbacks encore utilisés. L’extrait de configuration signIn n’est pas un inventaire complet des fournisseurs OAuth : contrôler Apple via sa configuration dédiée.
+
+Mettre à jour : CORS/allowlists, links d’emails, SMTP expéditeur, reply-to, OAuth TikTok, Apple relay/Service IDs si concernés, RevenueCat/App Store URLs, AppsFlyer deep links, PostHog, clients MCP, metadata App Store, profils sociaux et documents commerciaux. Vérifier MX/SPF/DKIM/DMARC, réception et envoi ; ne pas toucher au DNS global du domaine corporate.
+
+Vercel peut déplacer un projet et certains domaines/env ; les intégrations ne suivent pas toutes. Ici un clone Process isolé est préférable tant que le site partagé contient d’autres activités. Avant toute action, examiner les domaines/alias et secrets : un transfert brut pourrait emporter le domaine ou les intégrations du vendeur. [Vercel](https://vercel.com/docs/projects/transferring-projects)
+
+Le pont useprocess.xyz éventuel doit être limité aux routes Process, à une durée et à un responsable, avec une procédure de fin et une métrique d’usage résiduel. Toute intervention future sur ce domaine partagé doit respecter le périmètre autorisé. Pas de redirection globale de son activité.
+
+## 11. Marque, contenus et droits
+
+Créer un registre : nom/logo, domaines, captures Store, textes, illustrations, vidéos, photos onboarding, témoignages, recettes/programmes, templates TikTok, musique, voix, polices, documents et code tiers. Pour chaque fichier : auteur/source, licence, preuve d’achat/cession/consentement, droit de redistribution et contraintes d’attribution.
+
+Les médias onboarding Daniel/Imran et les vidéos lymphatiques doivent être examinés individuellement. Les contenus téléchargés, Pinterest, banques d’images ou variantes IA ne deviennent pas automatiquement libres à céder. Séparer contenus possédés, sous licence transmissible, sous licence à racheter et non justifiés. Retirer/remplacer ces derniers du pack remis, sans effacer les originaux du vendeur.
+
+Vérifier dépôt de marque et titulaire, disponibilités/risques de nom, éventuels contrats prestataires, cessions de droits sur le code et droits sur contenus UGC/affiliés. Préparer les fichiers sources graphiques et les exports exploitables. Transmettre les processus de production utiles à Process ; exclure les outils personnels et comptes multi-marques.
+
+TikTok : documenter les deux comptes exacts, leurs contenus, statistiques exportables, droits, emails/téléphones de récupération et restrictions de remise. Vérifier les modalités de la plateforme avant promettre un transfert de compte. Inclure OAuth/app développeur seulement si nécessaire et autorisé ; un compte social remis sans récupération/2FA indépendante ne constitue pas une remise complète.
+
+## 12. Données personnelles et documents de vente
+
+Préparer un contrat de cession d’actifs et ses annexes avec : parties, prix et paiement, date d’effet, actifs inclus/exclus, droits IP, licences, garanties limitées à ce qui est vérifié, état du code/version rejetée, passifs, obligations utilisateurs/affiliés, traitement des revenus, accès et données, confidentialité, assistance/durée, réception et conditions d’échec. Le faire valider par un professionnel adapté au montage retenu ; ce dossier ne remplace pas le contrat.
+
+Identifier le responsable de traitement après cession, finalités/bases légales, sous-traitants, information des utilisateurs, demandes d’exercice des droits, durées et transferts internationaux. La continuité du service et la réutilisation marketing du fichier clients doivent être analysées séparément ; ne pas promettre une libre exploitation commerciale des emails. [CNIL](https://cnil.fr/fr/vente-de-fichiers-clients-la-cnil-rappelle-les-regles)
+
+Prospection acheteur : statistiques agrégées et documents expurgés. Vente conclue : données strictement nécessaires dans un canal sécurisé et selon les engagements définis. Ne pas exposer contacts, historiques santé/visage, tokens, messages privés ou données d’autres apps pour démontrer la valeur du produit.
+
+Préparer privacy policy, CGU/CGV, mentions légales, support et identité d’éditeur du futur exploitant. Les champs acheteur restent placeholders jusqu’à confirmation. Vérifier la cohérence avec App Privacy, permissions HealthKit/caméra, IA et suppression de compte. Joindre un registre des incidents/demandes/litiges connus sans inventer d’attestation d’absence.
+
+## 13. Plan d’action de A à Z
+
+Chaque case ci-dessous est à exécuter ultérieurement ; le bilan seul ne la marque pas accomplie. V = vendeur ; A = acheteur ; T = intervenant technique ; J = conseil juridique/comptable selon besoin.
+
+### Phase A — Préparation sans acheteur, dès maintenant
+
+- [ ] A01 V/T : valider la liste d’actifs ci-dessus et le périmètre exact des contenus. Sortie : annexe inclus/exclus, aucun autre projet.
+- [ ] A02 V/T : choisir un volume sécurisé puis sauvegarder l’état local complet. Sortie : copie vérifiée, restauration d’un fichier test ; aucune perte des 166 entrées initiales.
+- [ ] A03 T : préparer et contrôler sauvegardes cloud et médias. Sortie : manifestes, rétention, procédure de restauration et accès restreint. Prioritaire avant migration.
+- [ ] A04 T : filtrer un nouveau dépôt Process et les configurations site. Sortie : source complète, lockfiles, aucun secret ni actif hors périmètre.
+- [ ] A05 V/T : documenter build 37 versus 38 et le rejet ; auditer bugs, affirmations et données de l’app, du site et des métadonnées. Recenser témoignages, badges « vérifié », avant/après, statistiques, scores, projections et promesses ; chaque élément doit avoir une preuve ou être retiré/reformulé clairement. Ne pas supprimer les vraies données utilisateurs ni confondre fixtures de test et données affichées en production. Sortie : registre des éléments, preuve, décision, correctif et test.
+- [ ] A06 V/T : registre comptes/IAM/intégrations/factures, confirmer AppsFlyer et PostHog. Sortie : titulaire, coûts, mode de transfert et dépendances pour chaque ligne.
+- [ ] A07 V/J : registre droits et passifs ; réconcilier affiliation, lifetime, anciens paiements et remboursements. Sortie : licences/obligations démontrées.
+- [ ] A08 V/T : établir la cartographie routes/emails/OAuth pour processdebloat.com et vérifier achat/renouvellement/titularité. Sortie : migration ciblée, useprocess.xyz conservé par le vendeur.
+- [ ] A09 T : préparer le mécanisme et le runbook de migration Apple ; définir jeux d’essai sans exposer données clients. Sortie : mapping, checkpoints et calendrier.
+- [ ] A10 V/T : préparer data room expurgée et modèle d’informations acheteur. Sortie : pack consultable de preuves, pas d’accès production au prospect.
+
+### Phase B — Produit indépendant préparé, avant transfert
+
+- [ ] B01 V/A : confirmer vente et choix/titulaire du domaine ; acheter et configurer le domaine dédié au moment autorisé. Dépend A08 ; sortie : DNS/registrar/recovery indépendants.
+- [ ] B02 T : créer site Process isolé et nouvelles boîtes ; migrer les routes/emails/OAuth de façon ciblée. Dépend A04/B01 ; sortie : URLs et emails testés.
+- [ ] B03 T : préparer une grande mise à jour avant livraison : bugs corrigés, parcours essentiels améliorés, contenu trompeur/données inventées retirés, promesses et estimations honnêtes, processdebloat.com intégré, support/privacy cohérents et rejet résolu. Dépend A05/B02 ; sortie : release documentée, validée sur iPhone et revue éditoriale achevée.
+- [ ] B04 V/T : tests sur iPhone physique de scans, Apple/email, HealthKit, IA, abonnement/restore/referral/suppression et liens. Dépend B03 ; sortie : checklist datée et résultats réels.
+- [ ] B05 V/T : soumettre et publier la grande mise à jour avant livraison, selon le calendrier convenu. Condition obligatoire : approbation Apple, disponibilité réelle et contrôles de production ; une soumission ou un build TestFlight seul ne suffit pas. Sortie : version publiée, notes de version et preuves de validation remises.
+- [ ] B06 T : observer anciennes versions et mesurer besoin du pont domaine. Sortie : durée/fin de compatibilité documentées et solution support.
+
+### Phase C — Vente confirmée et destinataire prêt
+
+- [ ] C01 A : fournir identité contractuelle, comptes et responsables ; Apple Developer actif/accords, Account Holder/Team ID, GitHub, GCP billing, Vercel, RevenueCat, IA, email/registrar.
+- [ ] C02 V/J/A : finaliser contrat/annexes et modalités de paiement/remise/réception. Dépend A07/C01 ; sortie : obligations et conditions de transfert signées.
+- [ ] C03 V/T/A : vérifier checklist Apple et chaque fournisseur ; obtenir confirmations de transférabilité encore manquantes. Sortie : aucun statut ou contrat bloquant ignoré.
+- [ ] C04 T/A : préparer clés, facturation, rôles, domaines et interfaces sans retirer les accès vendeur prématurément. Sortie : destinataire prêt et plan de secours approuvé.
+- [ ] C05 V/T/A : établir arrêté final et sauvegardes horodatées. Sortie : métriques/paiements/passifs et capacité de récupération au point de bascule.
+
+### Phase D — Bascule coordonnée
+
+- [ ] D01 V/A : remettre dépôt/actifs licites et contrôler accès de l’acheteur. Pas de dépôt personnel partagé transféré sans filtrage.
+- [ ] D02 V/T/A : ajouter les accès ciblés au projet GCP, changer la facturation vers acheteur, vérifier quotas/budgets ; ne pas désactiver la facturation pour transférer. Préserver IDs/données.
+- [ ] D03 V/A : transférer le seul projet RevenueCat selon les étapes fournisseur et maintenir les achats/webhooks pendant la bascule.
+- [ ] D04 V/A/T : initier/accepter le transfert Apple au créneau retenu ; migrer identités Sign in with Apple et credentials, respecter les délais.
+- [ ] D05 T/A : ajuster signing, App Attest/associations, credentials App Store/RevenueCat, tester puis renouveler/remplacer clés pertinentes.
+- [ ] D06 V/A/T : transférer ou recréer les seuls projets analytics/attribution, comptes sociaux et domain/email dédiés selon modalités validées.
+- [ ] D07 A/T : effectuer les tests de continuité et première livraison sous équipe acheteur ; contrôler prod, achats, métriques et emails.
+- [ ] D08 V/J/A : informer utilisateurs/affiliés selon engagements et obligations ; archiver preuves de notification et de réception.
+
+### Phase E — Sortie complète du vendeur
+
+- [ ] E01 A/T : réception technique et commerciale signée avec réserves éventuelles et délais.
+- [ ] E02 T/A : révoquer accès/tokens vendeur devenus inutiles après tests et migration ; contrôler roles/recovery/2FA et comptes de service.
+- [ ] E03 V/A : fermer la période de pont ancien domaine quand les critères convenus sont atteints ; assurer la continuité restante prévue.
+- [ ] E04 V/J/A : régler soldes/passifs, rediriger les futurs revenus, vérifier absence de frais Process sur moyens de paiement vendeur.
+- [ ] E05 V/T : supprimer/retenir les seules copies Process conformément au contrat et obligations de conservation ; conserver les preuves nécessaires, protéger les données.
+- [ ] E06 A : confirmer exploitation autonome, sauvegarde/restauration, support et capacité de release sans aide du vendeur.
+
+## 14. Calendrier et dépendances
+
+Ne pas promettre une date de remise complète avant A03/A05/A06/A07, publication et validation de la grande mise à jour B05, et C03. La review Apple, l’ouverture des comptes et la validation des fournisseurs sont des délais externes. La migration Apple a un délai à respecter après transfert ; la période d’adoption des nouveaux binaires n’est pas instantanée.
+
+Chemin principal : périmètre → sauvegardes → source filtrée/droits → domaine/site → version validée → destinataire/contrat → contrôles fournisseurs → transfert coordonné → tests → révocations → fin de compatibilité.
+
+En cas d’incident : arrêter les révocations et opérations suivantes ; garder les accès nécessaires ; rétablir configurations/routes/clés précédentes encore valides si possible ; traiter webhooks en attente de manière idempotente. Ne pas supposer qu’un transfert Apple accepté est annulable par un bouton ou qu’une restauration de données annule le transfert. Définir les responsabilités et la procédure d’échec avant D04.
+
+## 15. Structure du pack final à remettre
+
+00_LIRE_EN_PREMIER : état livré, version, contacts acheteur, accès, dépendances, procédure de démarrage.
+01_APPLICATION : source filtrée, Xcode, Shared/widgets, packages verrouillés, métadonnées Store, changelog et version/tag.
+02_BACKEND : fonctions, règles/index, configuration sans valeurs secrètes, schéma/flux, runbooks de déploiement et reprise.
+03_SITE_ET_DOMAINE : site Process isolé, routes, DNS/AASA, emails, callbacks et instructions registrar.
+04_MARQUE_ET_CONTENUS : sources graphiques, médias autorisés, contenus sociaux, registre de licences et provenance.
+05_EXPLOITATION : catalogue abonnements, analytics, support, sauvegardes, alertes, coût/métriques, affiliation et incidents connus.
+06_CESSION : contrat/annexes signés, inclus/exclus, passifs, calendrier, preuves de transferts et réception.
+07_PREUVES : manifestes, SHA-256, validations, factures expurgées, inventaire d’accès, exclusions et états datés.
+
+Canal séparé : secrets/access via invitations et rotation ; données clients/backups chiffrés uniquement au destinataire confirmé. Aucun .env, clé privée, carte, session de navigateur ou dump clients dans l’archive de code.
+
+## 16. Informations acheteur à recueillir plus tard
+
+Nom/société, statut juridique, adresse, représentant, coordonnées professionnelles et signataire ; Apple Account Holder/Team ID et état des accords ; responsables technique/données/support ; comptes cibles GitHub, GCP billing, Vercel, RevenueCat, registrar/email, Anthropic, PostHog/AppsFlyer ; moyens de paiement professionnels ; pays d’exploitation ; date souhaitée ; besoin d’assistance et disponibilité pour tests. Rien de cela n’est requis pour terminer la préparation documentaire actuelle.
+
+## 17. Définition de « cession à 100 % terminée »
+
+Toutes les conditions suivantes doivent être démontrées :
+- L’app figure chez l’acheteur et une release sous sa signature est possible.
+- Un utilisateur antérieur retrouve son compte, ses données et ses droits payants ; nouveaux achats et restauration fonctionnent.
+- Le cloud, l’IA, le site, les analytics et la messagerie ont leurs propriétaires/facturations indépendants.
+- Les droits sur marque/code/médias remis sont documentés et les obligations clients/affiliés réparties.
+- Le domaine et les comptes remis sont récupérables sans vendeur ; le pont partagé est terminé ou explicitement encore en cours, donc la sortie totale n’est pas déclarée achevée.
+- L’acheteur sait déployer, opérer, supporter et restaurer ; les backups existent et les tests sont datés.
+- Aucun autre projet ni donnée du vendeur n’a été remis ; aucun accès de prospection ne subsiste.
+- Les accès vendeur inutiles sont révoqués, les secrets renouvelés, et il ne paie plus les charges futures Process.
+- La réception finale et les réserves résolues sont signées.
+
+## 18. Références et annexes
+
+Annexes historiques à conserver : docs/cession/AUDIT_MIGRATION_PROCESSDEBLOAT_2026-10-04.txt ; FRAIS_ET_ABONNEMENTS.txt ; FRAIS_VERIFIES.json ; FONCTIONS_DEPLOYEES.json ; BUCKETS.json ; PACKAGES_IOS.json ; INVENTAIRE_DOMAINES_2026-10-04.json ; CONFIGURATION_A_REMETTRE.txt ; REPRISE_ET_DEPLOIEMENT.txt ; MEDIAS_STORAGE.txt ; CONVERSIONS_POSTHOG.txt ; VALIDATION_ET_RESTE_A_FAIRE.txt. Leurs dates et limites restent applicables.
+
+Google : modifier la facturation d’un projet se traite indépendamment de son IAM ; vérifier les permissions requises et les conditions avant opération. [Documentation](https://docs.cloud.google.com/billing/docs/how-to/modify-project)
+GitHub : un transfert de dépôt comporte effets de permissions/intégrations ; dans ce dossier mélangé, une copie Process contrôlée est la voie préparée. [Documentation](https://docs.github.com/en/repositories/creating-and-managing-repositories/transferring-a-repository)
+
+Ce dossier fixe les travaux et les preuves attendues. Il ne certifie ni une cession déjà réalisée ni un produit déjà totalement indépendant.

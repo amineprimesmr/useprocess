@@ -1,0 +1,116 @@
+{
+  "as_of": "2026-10-04",
+  "not_a_complete_profit_statement": true,
+  "services": [
+    {
+      "service": "Firebase / Google Cloud",
+      "scope": "useprocess-d4385",
+      "amount": 25.68,
+      "currency": "EUR",
+      "period": "septembre 2026, mois de facturation",
+      "status": "verified_project_row",
+      "note": "30.08 EUR utilisation, -4.40 EUR autres remises ; sous-total 25.68 EUR, TVA non incluse dans cette ligne"
+    },
+    {
+      "service": "Anthropic",
+      "scope": "clé nommée useproces",
+      "amount": 11.27,
+      "currency": "USD",
+      "period": "30 derniers jours au 4 octobre 2026",
+      "status": "verified_key_label",
+      "note": "Tous modèles ; attribution par libellé, correspondance avec secret Firebase non certifiée"
+    },
+    {
+      "service": "Anthropic",
+      "scope": "clé nommée process",
+      "amount": 0,
+      "currency": "USD",
+      "period": "même fenêtre de 30 jours",
+      "status": "verified_key_label",
+      "note": "Ne prouve pas que toute l’app coûte zéro"
+    },
+    {
+      "service": "RevenueCat",
+      "scope": "compte propriétaire partagé / projet Process Pro",
+      "amount": null,
+      "currency": "USD",
+      "period": "consultation 4 octobre 2026",
+      "status": "no_invoices_displayed",
+      "note": "Aucune facture affichée ; ne pas assimiler à gratuité future garantie"
+    },
+    {
+      "service": "Vercel",
+      "scope": "équipe partagée Amine’s projects",
+      "amount": 30,
+      "currency": "USD",
+      "period": "prochaine facture, cycle 12 sept.–12 oct. 2026",
+      "status": "verified_shared_upcoming",
+      "note": "Pas coût exclusif Process ; crédit infrastructure utilisé 10.03/20 USD, consommation facturable supplémentaire affichée zéro ; facture du 12 septembre payée 24 USD, Observability Plus 0 USD, compte partagé."
+    },
+    {
+      "service": "Crisp",
+      "scope": "workspace Process",
+      "amount": 0,
+      "currency": "USD",
+      "period": "mensuel affiché",
+      "status": "disconnected",
+      "note": "Retiré des sources iOS/site/backend ; plan ancien Essentials inactif à 0 USD. Historique conservé, aucun abonnement activé."
+    },
+    {
+      "service": "Hostinger domaine",
+      "scope": "useprocess.xyz",
+      "amount": 18.99,
+      "currency": "EUR",
+      "period": "renouvellement 12 mois, prélèvement 23 août 2027",
+      "status": "verified_renewal_ex_tax",
+      "note": "Taxes/frais affichés 4 EUR ; total 22.99 EUR ; expiration 19 septembre 2027 ; auto-renouvellement actif ; décision du 4 octobre : le domaine .xyz et ses emails restent vendeur, frais du nouveau .fr et mail à chiffrer séparément.",
+      "ownership_after_user_decision": "vendeur / entreprise ; exclu de la cession de l’app"
+    },
+    {
+      "service": "Hostinger email",
+      "scope": "Starter Business Email useprocess.xyz",
+      "amount": 19.08,
+      "currency": "EUR",
+      "period": "renouvellement 12 mois, prélèvement 5 décembre 2026",
+      "status": "verified_renewal_ex_tax",
+      "note": "Taxes/frais 3.82 EUR ; total 22.90 EUR ; expiration 19 décembre 2026 ; auto-renouvellement actif ; décision du 4 octobre : le domaine .xyz et ses emails restent vendeur, frais du nouveau .fr et mail à chiffrer séparément.",
+      "ownership_after_user_decision": "vendeur / entreprise ; exclu de la cession de l’app"
+    },
+    {
+      "service": "PostHog",
+      "scope": "projet EU 240558",
+      "amount": 0,
+      "currency": "USD",
+      "period": "cycle 3 octobre–2 novembre 2026",
+      "status": "verified_free_plan",
+      "note": "Organisation Free sans carte ; 7.41K événements / 1M gratuits, projection 186K ; replay mobile 99 / 2.5K ; flags 303 / 1M. Usage organisation, pas coût exclusif projet."
+    },
+    {
+      "service": "AppsFlyer",
+      "scope": "app Apple 6753808143",
+      "amount": null,
+      "currency": null,
+      "period": null,
+      "status": "login_required",
+      "note": "SDK présent ; coût, plan et transférabilité non vérifiés"
+    },
+    {
+      "service": "Apple Developer",
+      "scope": "compte personnel multiapps",
+      "amount": null,
+      "currency": null,
+      "period": "annuel",
+      "status": "invoice_required",
+      "note": "Abonnement du vendeur exclu du transfert ; l’acheteur a besoin de son propre compte"
+    },
+    {
+      "service": "GitHub",
+      "scope": "amineprimesmr/useprocess",
+      "amount": null,
+      "currency": null,
+      "period": null,
+      "status": "invoice_required",
+      "note": "Ne pas céder le compte GitHub personnel ; remettre un dépôt filtré"
+    }
+  ]
+}

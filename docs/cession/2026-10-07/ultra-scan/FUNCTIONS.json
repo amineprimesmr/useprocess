@@ -1,0 +1,2322 @@
+[
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/86515003-4491-4d6b-ab9c-985232e000af",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "appleSignInRegisterToken",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689731658055",
+          "object": "appleSignInRegisterToken/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689731658055",
+          "object": "appleSignInRegisterToken/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-18T17:39:24.086943621Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "6a1af5eb9864548ec879092b7fa589fcdfc62d8b"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/appleSignInRegisterToken",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "applesigninregistertoken-00004-has",
+      "secretEnvironmentVariables": [
+        {
+          "key": "APPLE_SIGNIN_TEAM_ID",
+          "projectId": "useprocess-d4385",
+          "secret": "APPLE_SIGNIN_TEAM_ID",
+          "version": "1"
+        },
+        {
+          "key": "APPLE_SIGNIN_KEY_ID",
+          "projectId": "useprocess-d4385",
+          "secret": "APPLE_SIGNIN_KEY_ID",
+          "version": "1"
+        },
+        {
+          "key": "APPLE_SIGNIN_PRIVATE_KEY",
+          "projectId": "useprocess-d4385",
+          "secret": "APPLE_SIGNIN_PRIVATE_KEY",
+          "version": "1"
+        }
+      ],
+      "service": "projects/useprocess-d4385/locations/us-central1/services/applesigninregistertoken",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 60,
+      "uri": "https://applesigninregistertoken-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-25T20:29:51.212530438Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/appleSignInRegisterToken"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/9ed51735-e57c-4f00-a01e-69645a083977",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateSyncProfile",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787697415687337",
+          "object": "affiliateSyncProfile/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787697415687337",
+          "object": "affiliateSyncProfile/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-17T14:45:35.056815330Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "81ea1b7800f8180c7a5f124fdbde6808c86778b4"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateSyncProfile",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliatesyncprofile-00012-rog",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliatesyncprofile",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 30,
+      "uri": "https://affiliatesyncprofile-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-25T22:37:07.381755919Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateSyncProfile"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/60ff3f37-3be1-4ba8-b82e-cc45396f93c4",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateSetLoginEmail",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787825598299198",
+          "object": "affiliateSetLoginEmail/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787825598299198",
+          "object": "affiliateSetLoginEmail/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-27T10:13:18.561676628Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "a16d551f0ec00262b44f645d6b3941db587f1711"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateSetLoginEmail",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliatesetloginemail-00001-yoj",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliatesetloginemail",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 20,
+      "uri": "https://affiliatesetloginemail-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_REGION",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-27T10:13:27.520313923Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateSetLoginEmail"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/bcb19fb4-81c6-4241-983f-81134bd060ed",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateTikTokStudio",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791326678373989",
+          "object": "affiliateTikTokStudio/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791326678373989",
+          "object": "affiliateTikTokStudio/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-25T14:53:04.803423545Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "7cfad581ffd233b9f025a348ac053ce5703b3371"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateTikTokStudio",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "512Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliatetiktokstudio-00004-qeg",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliatetiktokstudio",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 30,
+      "uri": "https://affiliatetiktokstudio-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-06T22:45:34.385446592Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateTikTokStudio"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/49fa92a2-6d44-45d7-b470-47376385b698",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateAdminListPending",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791110099304120",
+          "object": "affiliateAdminListPending/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791110099304120",
+          "object": "affiliateAdminListPending/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-20T10:27:32.287785155Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "b7567e24132eb2e33b51f1a6982aabc5fecf120a"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateAdminListPending",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliateadminlistpending-00009-duc",
+      "secretEnvironmentVariables": [
+        {
+          "key": "AFFILIATE_ADMIN_SECRET",
+          "projectId": "useprocess-d4385",
+          "secret": "AFFILIATE_ADMIN_SECRET",
+          "version": "3"
+        }
+      ],
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliateadminlistpending",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 30,
+      "uri": "https://affiliateadminlistpending-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-04T10:35:20.939608063Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateAdminListPending"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/a04d8f5b-2b7c-4caf-975c-1081e8793481",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "referralRevenueCatWebhook",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791110099537807",
+          "object": "referralRevenueCatWebhook/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791110099537807",
+          "object": "referralRevenueCatWebhook/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-11T12:01:08.676188221Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "e148f2978fa1051bdb363078984da21ec306d16f"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/referralRevenueCatWebhook",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "512Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "referralrevenuecatwebhook-00013-woq",
+      "secretEnvironmentVariables": [
+        {
+          "key": "REVENUECAT_SECRET_API_KEY",
+          "projectId": "useprocess-d4385",
+          "secret": "REVENUECAT_SECRET_API_KEY",
+          "version": "1"
+        },
+        {
+          "key": "REVENUECAT_WEBHOOK_SECRET",
+          "projectId": "useprocess-d4385",
+          "secret": "REVENUECAT_WEBHOOK_SECRET",
+          "version": "4"
+        }
+      ],
+      "service": "projects/useprocess-d4385/locations/us-central1/services/referralrevenuecatwebhook",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 60,
+      "uri": "https://referralrevenuecatwebhook-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_REGION",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-04T10:35:19.270127443Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/referralRevenueCatWebhook"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/86515003-4491-4d6b-ab9c-985232e000af",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliatePreparePasswordless",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689784062621",
+          "object": "affiliatePreparePasswordless/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689784062621",
+          "object": "affiliatePreparePasswordless/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-22T14:24:19.829972422Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "e40e06525c309e61d150a163a5cdb13de759ee10"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliatePreparePasswordless",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliatepreparepasswordless-00005-guy",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliatepreparepasswordless",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 20,
+      "uri": "https://affiliatepreparepasswordless-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-25T20:30:15.431402187Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliatePreparePasswordless"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/86515003-4491-4d6b-ab9c-985232e000af",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "referralSyncProgram",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689784011571",
+          "object": "referralSyncProgram/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689784011571",
+          "object": "referralSyncProgram/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-11T11:53:31.198660679Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "e40e06525c309e61d150a163a5cdb13de759ee10"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/referralSyncProgram",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "referralsyncprogram-00010-weg",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/referralsyncprogram",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 30,
+      "uri": "https://referralsyncprogram-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-25T20:29:53.959140882Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/referralSyncProgram"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/a04d8f5b-2b7c-4caf-975c-1081e8793481",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateAdminMarkPaid",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791110099578781",
+          "object": "affiliateAdminMarkPaid/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791110099578781",
+          "object": "affiliateAdminMarkPaid/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-17T14:45:33.879508551Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "b7567e24132eb2e33b51f1a6982aabc5fecf120a"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateAdminMarkPaid",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "512Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliateadminmarkpaid-00013-pos",
+      "secretEnvironmentVariables": [
+        {
+          "key": "AFFILIATE_ADMIN_SECRET",
+          "projectId": "useprocess-d4385",
+          "secret": "AFFILIATE_ADMIN_SECRET",
+          "version": "3"
+        }
+      ],
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliateadminmarkpaid",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 60,
+      "uri": "https://affiliateadminmarkpaid-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-04T10:35:21.876865669Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateAdminMarkPaid"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/64a16e60-24a4-460a-8e07-5f063058e5bf",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateLibrary",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791326730401937",
+          "object": "affiliateLibrary/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791326730401937",
+          "object": "affiliateLibrary/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-25T14:53:47.353061396Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "7cfad581ffd233b9f025a348ac053ce5703b3371"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateLibrary",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliatelibrary-00003-how",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliatelibrary",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 30,
+      "uri": "https://affiliatelibrary-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-06T22:45:38.547544505Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateLibrary"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/7ecbbbab-270b-47c6-9ed5-927eb0a635ea",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateValidateLoginEmail",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787825972995091",
+          "object": "affiliateValidateLoginEmail/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787825972995091",
+          "object": "affiliateValidateLoginEmail/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-25T22:22:14.068104083Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "82557b3c46e1d83c766a19e416f27ab155e7ac64"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateValidateLoginEmail",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliatevalidateloginemail-00003-yof",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliatevalidateloginemail",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 15,
+      "uri": "https://affiliatevalidateloginemail-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_REGION",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-27T10:21:28.758175965Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateValidateLoginEmail"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/86515003-4491-4d6b-ab9c-985232e000af",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "referralRegister",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689783948678",
+          "object": "referralRegister/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689783948678",
+          "object": "referralRegister/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-11T11:54:32.130277759Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "e40e06525c309e61d150a163a5cdb13de759ee10"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/referralRegister",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "referralregister-00010-dit",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/referralregister",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 30,
+      "uri": "https://referralregister-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-25T20:29:56.976506129Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/referralRegister"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/a04d8f5b-2b7c-4caf-975c-1081e8793481",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "coachStream",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791110099514866",
+          "object": "coachStream/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791110099514866",
+          "object": "coachStream/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-06-15T11:51:41.264430613Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "9f237a2113c8f2b96a8f28b925dede0b6f1313ee"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/coachStream",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "512Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "coachstream-00019-mej",
+      "secretEnvironmentVariables": [
+        {
+          "key": "ANTHROPIC_API_KEY",
+          "projectId": "useprocess-d4385",
+          "secret": "ANTHROPIC_API_KEY",
+          "version": "1"
+        },
+        {
+          "key": "REVENUECAT_SECRET_API_KEY",
+          "projectId": "useprocess-d4385",
+          "secret": "REVENUECAT_SECRET_API_KEY",
+          "version": "1"
+        }
+      ],
+      "service": "projects/useprocess-d4385/locations/us-central1/services/coachstream",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 180,
+      "uri": "https://coachstream-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-04T10:35:19.861472839Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/coachStream"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/bcb19fb4-81c6-4241-983f-81134bd060ed",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateMcp",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791326728748664",
+          "object": "affiliateMcp/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791326728748664",
+          "object": "affiliateMcp/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-25T14:53:57.609335596Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "7cfad581ffd233b9f025a348ac053ce5703b3371"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateMcp",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "512Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliatemcp-00003-wef",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliatemcp",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 60,
+      "uri": "https://affiliatemcp-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-06T22:45:38.822379361Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateMcp"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/01f7946e-c527-4703-9b5c-cda502d9bb42",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "supportSendMessage",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791326370870856",
+          "object": "supportSendMessage/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791326370870856",
+          "object": "supportSendMessage/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-17T14:20:27.150806224Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "e2cac3e102c7d3b9089c4b3561f34e493e150616"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/supportSendMessage",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 2,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "supportsendmessage-00011-kix",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/supportsendmessage",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 60,
+      "uri": "https://supportsendmessage-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-06T22:40:40.881294234Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/supportSendMessage"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/f55814b5-f0f8-4785-97dc-af28bf81c1fe",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateRegister",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787826814710065",
+          "object": "affiliateRegister/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787826814710065",
+          "object": "affiliateRegister/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-17T14:45:34.523856343Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "d24c854de8420dfdd4f65b881f3800931fefd8a9"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateRegister",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliateregister-00013-duz",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliateregister",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 30,
+      "uri": "https://affiliateregister-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_REGION",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-27T10:33:57.895250591Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateRegister"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/60ff3f37-3be1-4ba8-b82e-cc45396f93c4",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliatePortalHandoff",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787825523243603",
+          "object": "affiliatePortalHandoff/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787825523243603",
+          "object": "affiliatePortalHandoff/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-27T10:12:03.550023136Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "a16d551f0ec00262b44f645d6b3941db587f1711"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliatePortalHandoff",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliateportalhandoff-00001-fed",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliateportalhandoff",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 15,
+      "uri": "https://affiliateportalhandoff-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_REGION",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-27T10:13:21.485205128Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliatePortalHandoff"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/58d0a220-fc77-4f47-8ff4-caaa3756181f",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateLeaderboard",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787827164150999",
+          "object": "affiliateLeaderboard/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787827164150999",
+          "object": "affiliateLeaderboard/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-25T14:53:46.870502795Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "e6ff2de2fae312005f92e088aa35531727e35b3d"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateLeaderboard",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliateleaderboard-00004-ben",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliateleaderboard",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 20,
+      "uri": "https://affiliateleaderboard-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_REGION",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-27T10:40:44.037252717Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateLeaderboard"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/49f874a7-25f7-413d-afe7-2a367d7d7488",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "referralDashboard",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689793593858",
+          "object": "referralDashboard/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689793593858",
+          "object": "referralDashboard/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-20T10:27:32.178793135Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "e40e06525c309e61d150a163a5cdb13de759ee10"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/referralDashboard",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "512Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "referraldashboard-00004-nub",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/referraldashboard",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 45,
+      "uri": "https://referraldashboard-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-25T20:30:03.314723577Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/referralDashboard"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/86515003-4491-4d6b-ab9c-985232e000af",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateResolveCode",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689783643428",
+          "object": "affiliateResolveCode/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689783643428",
+          "object": "affiliateResolveCode/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-17T14:44:42.157234374Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "e40e06525c309e61d150a163a5cdb13de759ee10"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateResolveCode",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliateresolvecode-00011-miy",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliateresolvecode",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 20,
+      "uri": "https://affiliateresolvecode-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-25T20:30:03.413183041Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateResolveCode"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/f55814b5-f0f8-4785-97dc-af28bf81c1fe",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateTrackFunnel",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787826750590619",
+          "object": "affiliateTrackFunnel/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787826750590619",
+          "object": "affiliateTrackFunnel/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-25T13:40:44.702231512Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "d24c854de8420dfdd4f65b881f3800931fefd8a9"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateTrackFunnel",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliatetrackfunnel-00004-cez",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliatetrackfunnel",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 15,
+      "uri": "https://affiliatetrackfunnel-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_REGION",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-27T10:33:52.720510267Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateTrackFunnel"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/15800110-c558-4618-9ea3-7f3fcb03a842",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateSendLoginEmail",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791326371205698",
+          "object": "affiliateSendLoginEmail/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791326371205698",
+          "object": "affiliateSendLoginEmail/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-25T22:31:26.072748437Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "bbdfbec2ddd82683c3e5d537432a2cd512e55614"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateSendLoginEmail",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliatesendloginemail-00007-xoj",
+      "secretEnvironmentVariables": [
+        {
+          "key": "PROCESS_SMTP_PASSWORD",
+          "projectId": "useprocess-d4385",
+          "secret": "PROCESS_SMTP_PASSWORD",
+          "version": "2"
+        }
+      ],
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliatesendloginemail",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 30,
+      "uri": "https://affiliatesendloginemail-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_REGION",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-06T22:40:27.148108139Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateSendLoginEmail"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/49f874a7-25f7-413d-afe7-2a367d7d7488",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateReleaseHeldCommissions",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689793584137",
+          "object": "affiliateReleaseHeldCommissions/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689793584137",
+          "object": "affiliateReleaseHeldCommissions/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-17T14:45:33.921929584Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "5eadfe6db828fec43f3ebdadc5d2af65b4a38fef"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateReleaseHeldCommissions",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "512Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliatereleaseheldcommissions-00010-lip",
+      "secretEnvironmentVariables": [
+        {
+          "key": "AFFILIATE_ADMIN_SECRET",
+          "projectId": "useprocess-d4385",
+          "secret": "AFFILIATE_ADMIN_SECRET",
+          "version": "3"
+        }
+      ],
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliatereleaseheldcommissions",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 120,
+      "uri": "https://affiliatereleaseheldcommissions-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-25T20:30:05.484045198Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateReleaseHeldCommissions"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/1995975b-be4c-4884-946d-5e192664b715",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "deleteUserAccount",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791110045149153",
+          "object": "deleteUserAccount/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791110045149153",
+          "object": "deleteUserAccount/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-06-18T15:11:06.128464018Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "e2a025d054ecb7012143cf463a4762882807c86b"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/deleteUserAccount",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "1024Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "deleteuseraccount-00018-vet",
+      "secretEnvironmentVariables": [
+        {
+          "key": "APPLE_SIGNIN_TEAM_ID",
+          "projectId": "useprocess-d4385",
+          "secret": "APPLE_SIGNIN_TEAM_ID",
+          "version": "1"
+        },
+        {
+          "key": "APPLE_SIGNIN_KEY_ID",
+          "projectId": "useprocess-d4385",
+          "secret": "APPLE_SIGNIN_KEY_ID",
+          "version": "1"
+        },
+        {
+          "key": "APPLE_SIGNIN_PRIVATE_KEY",
+          "projectId": "useprocess-d4385",
+          "secret": "APPLE_SIGNIN_PRIVATE_KEY",
+          "version": "1"
+        }
+      ],
+      "service": "projects/useprocess-d4385/locations/us-central1/services/deleteuseraccount",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 180,
+      "uri": "https://deleteuseraccount-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-04T10:34:56.367718125Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/deleteUserAccount"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/9ed51735-e57c-4f00-a01e-69645a083977",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateApply",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787697351923221",
+          "object": "affiliateApply/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787697351923221",
+          "object": "affiliateApply/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-17T14:45:35.045468892Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "81ea1b7800f8180c7a5f124fdbde6808c86778b4"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateApply",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliateapply-00016-gif",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliateapply",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 30,
+      "uri": "https://affiliateapply-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-25T22:37:07.492907503Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateApply"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/86515003-4491-4d6b-ab9c-985232e000af",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateAdminApprove",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689784204663",
+          "object": "affiliateAdminApprove/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689784204663",
+          "object": "affiliateAdminApprove/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-17T14:45:35.062176498Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "5eadfe6db828fec43f3ebdadc5d2af65b4a38fef"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateAdminApprove",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliateadminapprove-00011-sef",
+      "secretEnvironmentVariables": [
+        {
+          "key": "AFFILIATE_ADMIN_SECRET",
+          "projectId": "useprocess-d4385",
+          "secret": "AFFILIATE_ADMIN_SECRET",
+          "version": "3"
+        }
+      ],
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliateadminapprove",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 30,
+      "uri": "https://affiliateadminapprove-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-25T20:29:56.394353085Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateAdminApprove"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/a04d8f5b-2b7c-4caf-975c-1081e8793481",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "coachComplete",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791110045164604",
+          "object": "coachComplete/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791110045164604",
+          "object": "coachComplete/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-06-15T11:50:47.919782414Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "9f237a2113c8f2b96a8f28b925dede0b6f1313ee"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/coachComplete",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "512Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "coachcomplete-00019-zej",
+      "secretEnvironmentVariables": [
+        {
+          "key": "ANTHROPIC_API_KEY",
+          "projectId": "useprocess-d4385",
+          "secret": "ANTHROPIC_API_KEY",
+          "version": "1"
+        },
+        {
+          "key": "REVENUECAT_SECRET_API_KEY",
+          "projectId": "useprocess-d4385",
+          "secret": "REVENUECAT_SECRET_API_KEY",
+          "version": "1"
+        }
+      ],
+      "service": "projects/useprocess-d4385/locations/us-central1/services/coachcomplete",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 120,
+      "uri": "https://coachcomplete-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-04T10:35:17.138388049Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/coachComplete"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/86515003-4491-4d6b-ab9c-985232e000af",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateAdminProvisionAuth",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689784145898",
+          "object": "affiliateAdminProvisionAuth/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689784145898",
+          "object": "affiliateAdminProvisionAuth/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-17T14:56:38.956618426Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "5eadfe6db828fec43f3ebdadc5d2af65b4a38fef"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateAdminProvisionAuth",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliateadminprovisionauth-00011-wof",
+      "secretEnvironmentVariables": [
+        {
+          "key": "AFFILIATE_ADMIN_SECRET",
+          "projectId": "useprocess-d4385",
+          "secret": "AFFILIATE_ADMIN_SECRET",
+          "version": "3"
+        }
+      ],
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliateadminprovisionauth",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 30,
+      "uri": "https://affiliateadminprovisionauth-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-25T20:29:56.234950318Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateAdminProvisionAuth"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/60ff3f37-3be1-4ba8-b82e-cc45396f93c4",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliatePortalHandoffRedeem",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787825598309836",
+          "object": "affiliatePortalHandoffRedeem/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787825598309836",
+          "object": "affiliatePortalHandoffRedeem/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-27T10:13:18.566371313Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "a16d551f0ec00262b44f645d6b3941db587f1711"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliatePortalHandoffRedeem",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliateportalhandoffredeem-00001-dog",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliateportalhandoffredeem",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 15,
+      "uri": "https://affiliateportalhandoffredeem-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_REGION",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-27T10:13:27.341117044Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliatePortalHandoffRedeem"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/a04d8f5b-2b7c-4caf-975c-1081e8793481",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateDashboard",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791110099464577",
+          "object": "affiliateDashboard/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791110099464577",
+          "object": "affiliateDashboard/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-17T14:44:42.136920622Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "b3fddaa9ae45b015f0747a5e0c8902549e303de9"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateDashboard",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "512Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 40,
+      "revision": "affiliatedashboard-00024-pud",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliatedashboard",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 20,
+      "uri": "https://affiliatedashboard-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_REGION",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-04T10:35:22.531033821Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateDashboard"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/702f046b-4795-4792-9549-2527de60132c",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateRevenueCatWebhook",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787826814210631",
+          "object": "affiliateRevenueCatWebhook/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787826814210631",
+          "object": "affiliateRevenueCatWebhook/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-17T14:45:33.876771307Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "3bc2b550943ff332bc37ce28880d78527d1a388c"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateRevenueCatWebhook",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "512Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliaterevenuecatwebhook-00011-rey",
+      "secretEnvironmentVariables": [
+        {
+          "key": "REVENUECAT_WEBHOOK_SECRET",
+          "projectId": "useprocess-d4385",
+          "secret": "REVENUECAT_WEBHOOK_SECRET",
+          "version": "4"
+        }
+      ],
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliaterevenuecatwebhook",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 60,
+      "uri": "https://affiliaterevenuecatwebhook-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_REGION",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-27T10:33:56.930978634Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateRevenueCatWebhook"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/49fa92a2-6d44-45d7-b470-47376385b698",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "referralConfirmSubscription",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791110045347453",
+          "object": "referralConfirmSubscription/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791110045347453",
+          "object": "referralConfirmSubscription/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-11T12:00:07.312307031Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "954f68ea35697f4019ba6b08d48441b8fb78b093"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/referralConfirmSubscription",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "referralconfirmsubscription-00011-wam",
+      "secretEnvironmentVariables": [
+        {
+          "key": "REVENUECAT_SECRET_API_KEY",
+          "projectId": "useprocess-d4385",
+          "secret": "REVENUECAT_SECRET_API_KEY",
+          "version": "1"
+        }
+      ],
+      "service": "projects/useprocess-d4385/locations/us-central1/services/referralconfirmsubscription",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 60,
+      "uri": "https://referralconfirmsubscription-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-04T10:35:17.454227338Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/referralConfirmSubscription"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/86515003-4491-4d6b-ab9c-985232e000af",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateAdminCreate",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689784188983",
+          "object": "affiliateAdminCreate/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689784188983",
+          "object": "affiliateAdminCreate/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-17T14:45:35.059320185Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "5eadfe6db828fec43f3ebdadc5d2af65b4a38fef"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateAdminCreate",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliateadmincreate-00012-yok",
+      "secretEnvironmentVariables": [
+        {
+          "key": "AFFILIATE_ADMIN_SECRET",
+          "projectId": "useprocess-d4385",
+          "secret": "AFFILIATE_ADMIN_SECRET",
+          "version": "3"
+        }
+      ],
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliateadmincreate",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 30,
+      "uri": "https://affiliateadmincreate-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-25T20:29:59.187836179Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateAdminCreate"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/64a16e60-24a4-460a-8e07-5f063058e5bf",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateTikTokOAuthCallback",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791326678335343",
+          "object": "affiliateTikTokOAuthCallback/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791326678335343",
+          "object": "affiliateTikTokOAuthCallback/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-25T14:53:04.762237829Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "7cfad581ffd233b9f025a348ac053ce5703b3371"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateTikTokOAuthCallback",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliatetiktokoauthcallback-00005-cud",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliatetiktokoauthcallback",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 30,
+      "uri": "https://affiliatetiktokoauthcallback-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-06T22:45:30.201826070Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateTikTokOAuthCallback"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/e5d54055-a9e2-4357-ba24-801e96ca4dee",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "appleBillingNotifications",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791110045293911",
+          "object": "appleBillingNotifications/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1791110045293911",
+          "object": "appleBillingNotifications/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-10-01T15:10:19.993377431Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "b3fddaa9ae45b015f0747a5e0c8902549e303de9"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/appleBillingNotifications",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 10,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "applebillingnotifications-00002-gah",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/applebillingnotifications",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 60,
+      "uri": "https://applebillingnotifications-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-04T10:35:16.369772071Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/appleBillingNotifications"
+  },
+  {
+    "buildConfig": {
+      "automaticUpdatePolicy": {},
+      "build": "projects/3107027616/locations/us-central1/builds/86515003-4491-4d6b-ab9c-985232e000af",
+      "dockerRegistry": "ARTIFACT_REGISTRY",
+      "dockerRepository": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+      "entryPoint": "affiliateTrackLink",
+      "runtime": "nodejs22",
+      "serviceAccount": "projects/useprocess-d4385/serviceAccounts/3107027616-compute@developer.gserviceaccount.com",
+      "source": {
+        "storageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689784199923",
+          "object": "affiliateTrackLink/function-source.zip"
+        }
+      },
+      "sourceProvenance": {
+        "resolvedStorageSource": {
+          "bucket": "gcf-v2-sources-3107027616-us-central1",
+          "generation": "1787689784199923",
+          "object": "affiliateTrackLink/function-source.zip"
+        }
+      },
+      "environmentVariableNames": [
+        "GOOGLE_NODE_RUN_SCRIPTS"
+      ]
+    },
+    "createTime": "2026-08-25T13:39:51.990244303Z",
+    "environment": "GEN_2",
+    "labels": {
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-hash": "e40e06525c309e61d150a163a5cdb13de759ee10"
+    },
+    "name": "projects/useprocess-d4385/locations/us-central1/functions/affiliateTrackLink",
+    "satisfiesPzi": true,
+    "serviceConfig": {
+      "allTrafficOnLatestRevision": true,
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "ingressSettings": "ALLOW_ALL",
+      "maxInstanceCount": 20,
+      "maxInstanceRequestConcurrency": 80,
+      "revision": "affiliatetracklink-00003-xud",
+      "service": "projects/useprocess-d4385/locations/us-central1/services/affiliatetracklink",
+      "serviceAccountEmail": "3107027616-compute@developer.gserviceaccount.com",
+      "timeoutSeconds": 15,
+      "uri": "https://affiliatetracklink-auslgu3aha-uc.a.run.app",
+      "environmentVariableNames": [
+        "EVENTARC_CLOUD_EVENT_SOURCE",
+        "FIREBASE_CONFIG",
+        "FUNCTION_SIGNATURE_TYPE",
+        "FUNCTION_TARGET",
+        "GCLOUD_PROJECT",
+        "LOG_EXECUTION_ID"
+      ]
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-08-25T20:30:13.362596826Z",
+    "url": "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateTrackLink"
+  }
+]

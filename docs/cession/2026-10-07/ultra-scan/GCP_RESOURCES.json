@@ -1,0 +1,5 @@
+{
+  "status": "unavailable",
+  "reason": "Cloud Asset API disabled during audit; individual service inventories used instead",
+  "complete_cloud_asset_inventory": false
+}

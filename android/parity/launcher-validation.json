@@ -1,0 +1,19 @@
+{
+  "recordedAt": "2026-10-08T02:01:02.871844+00:00",
+  "build": "passed",
+  "lint": {
+    "Error": 0,
+    "Warning": 25
+  },
+  "originalPixelsUnchanged": true,
+  "runtimeMasking": "unverified",
+  "sourceSha256": {
+    "app/src/main/AndroidManifest.xml": "428103b08e198af6947ed934addda51b7da1a974cefa8e623a84842ca89a4cf6",
+    "app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml": "ccb2ebdf6a54321e10115f9178c0a5fbe9de679e5919ad4ff8ef82111f940ce6",
+    "app/src/main/res/drawable/process_launcher_foreground.xml": "998fbff7583ef448cae2ca6e7a0119a052831fd10c3330597981d292482530b3",
+    "app/src/main/res/drawable-nodpi/process_launcher.png": "4acef6061b087da95ec1bffdc811fca70eda9dba1377efc961a5eeac2f5b6778",
+    "app/src/main/res/xml/data_extraction_rules.xml": "6776a6a01f449fd8dcd49a6fdd63429ea883dca62304b9bc345808494c7c2f8e"
+  },
+  "apkSha256": "3023074d1944b3c6eea7ec84309efe2dc6f136b7223836c0360b7b82344f4f32",
+  "buildLog": "/tmp/process-adaptive-launcher-build.log"
+}

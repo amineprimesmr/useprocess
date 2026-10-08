@@ -1,0 +1,44 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-149647077-606615573/DIQRScanner/DIQRScanner/ContentView.swift": "9017a860a8fd564a6327f957000c429b071a6322a7ba1ab69212af3d6fc3d050",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-149647077-606615573/DIQRScanner/DIQRScanner/DIQRScannerApp.swift": "d707e3eb629b9575f3df2cff2b59accf9f548eeec8856ebb047d793c56ce2d6d",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-149647077-606615573/DIQRScanner/DIQRScanner/Helpers/DIQRScannerView.swift": "61e4bdd4acadbe886a69f6bdb604cd92b423c8062d5596048e3a6313ddacddab"
+  },
+  "nativeFiles": [
+    "QrScannerModel.kt",
+    "TenKQrCameraSession.kt",
+    "TenKQrScannerScreen.kt",
+    "TenKQrScanner.kt",
+    "ProcessMotionPreferences.kt"
+  ],
+  "officialReferences": [
+    "https://developers.google.com/ml-kit/vision/barcode-scanning/android"
+  ],
+  "contract": "CameraX1.6.2 back-camera preview and bundled MLKit barcode-scanning17.3.0 configured for QR only; minSdk28. Mount only on host scanning request and pass stable contextKey,isActive,onScan,onClose. Explicit Allow camera request; denied state opens app settings. RESUMED/active/permission gate owns only preview+analysis use cases and never unbinds other features. Geometry is debounced150ms before binding to avoid camera churn during opening. Analyze latest frame at most10Hz,close every ImageProxy,guard late callbacks anddeliver first raw string once per request. Codes are untrusted data; never opens URLs or performs actions. No frame/photo storage or upload. Close request immediately disables delivery; failed host callback shows retry. Source120x36collapsed to(width-30)square,30radius,80inset,2dp frame,2.5dp sweep850ms+100ms delay and350ms expansion adapted to Android safe area,with landscape fit and reduced-motion support. Does not impersonate Dynamic Island. Scan covers full analysis image,not guaranteed restricted to visible crop. Native thin material/blur/phase/spring,haptic,permissions/rotation/back-camera/actual QR decoding and physical/iOS pixel/motion remain unverified. Host proofs use explicit camera fixtures; no actual camera or ML inference was tested.",
+  "recordedAt": "2026-10-08T11:26:18.338549+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 196,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 48
+  },
+  "visual": "host only",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "QrScannerModel.kt": "e8b8f6fe3fdcfaf53e217f1c58dd04139b1759435675b281bf9a95e3575156c0",
+    "TenKQrCameraSession.kt": "141a429b411475048e3443773bee915806819da34d3431aacc6ffa510e47c5b7",
+    "TenKQrScannerScreen.kt": "8775db156711e2c6dc94d28a7e579d2a5624b70b8f8ea11e2652fdc985ae0572",
+    "TenKQrScanner.kt": "7258ad4b55721ea7d1b35ec85434f7cb4467b8678453904c9b9fc7c5890710e5",
+    "ProcessMotionPreferences.kt": "5f62c13457fb14a4db1e32f7095cc3b929bdde001e26bd4e1de74fd35a943462"
+  },
+  "remaining": [
+    "Physical QR decoding/camera/permissions/lifecycle and PixelCopy/dialog/surface capture require actual Android tests",
+    "Exact source materials/fonts/animations and physical/iOS paired comparison"
+  ]
+}

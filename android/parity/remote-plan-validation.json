@@ -1,0 +1,35 @@
+{
+  "recordedAt": "2026-10-08T12:12:52.888371+00:00",
+  "scope": "Read-only account-bound projection of actual FaceOriginPlan JSON. Full raw JSON retained. No write adapter,plan generation,actual sign-in or network data request performed. Not counted as a separate catalog component.",
+  "sourceSha256": {
+    "WelcomePlan/WelcomePlanModels.swift": "e7c93bf75484cd4d97a098d12b9c1477616fe2e060781cd795a7234ade1c1c20",
+    "WelcomePlan/WelcomePlanFirestoreRepository.swift": "f4cc2dd27517fc7c16d114482d76f53d33daf78e781c4393b2655ea4b4d1ab04",
+    "WelcomePlan/OriginPlanCalendarModels.swift": "f82ac9f1b356fff27a863d7ae6f125f8479c7c67f4d682786e29871c5d81d298",
+    "WelcomePlan/OriginPlanCalendarBuilder.swift": "0611d043eae7f4f52a9dccfc934c73583becee4f7e6702352125c11b440e5fc8"
+  },
+  "nativeSha256": {
+    "ProcessRemotePlan.kt": "6db0ec643fab5537c51a86183b73ff31fbc57768fe4c25f95e485a9b4bd4bbad",
+    "ProcessPlanJson.kt": "a0f51e050386c3ac850f5cbc93da6d1aa9e9e15777b3b2338722bc4c60a64e2e",
+    "ProcessCloudRepository.kt": "84564507c7d46be979daeaa4237192e08ec4abc9a4d487a073455c7ffda4bdcd"
+  },
+  "unitTests": {
+    "tests": 205,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "hostJsonTest": "passed",
+  "checks": [
+    "Swift2001reference-date epoch and fractions",
+    "Local-day lookup across DST; actual calendar length",
+    "Owner identity mismatch and local-preview identity rejected",
+    "Duplicate/misordered days,invalid dates/unknown task statuses rejected",
+    "Day-specific failed status overrides legacy completion",
+    "JSONunknownfields retained exactly;4MiB/depth48limits"
+  ],
+  "remaining": [
+    "Complete protocol/training/sleep/assessment projections and full production navigation",
+    "Real authenticated Firestore read validation",
+    "Account-scoped plan mutations preserving full unknown schema"
+  ]
+}

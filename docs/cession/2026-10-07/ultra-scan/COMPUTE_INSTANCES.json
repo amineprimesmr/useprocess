@@ -1,0 +1,4 @@
+{
+  "status": "unavailable",
+  "error": "ERROR: (gcloud.compute.instances.list) PERMISSION_DENIED: Compute Engine API has not been used in project useprocess-d4385 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=useprocess-d4385 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry. This command is authenticated as amine.ennasri.pro@gmail.com which is the active account specified by the [core/account] property.\nCompute Engine API has not been used in project useprocess-d4385 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=useprocess-d4385 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.\nGoogle developers console API activatio"
+}

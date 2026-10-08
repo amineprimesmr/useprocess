@@ -1,0 +1,52 @@
+PROCESS DEBLOAT — PLAN ACTUALISÉ DE CESSION
+8 octobre 2026 — préparation interne ; ne remplace pas un contrat signé.
+Ce document actualise l'ordre opérationnel de PROCEDURE_TRANSFERT.txt du 7 octobre, notamment l'état des builds et le retrait clipper. L'inventaire détaillé des services reste dans REGISTRE_PASSATION.json du 7 octobre, avec ses dates de preuve.
+
+CONSTAT VÉRIFIÉ AUJOURD'HUI
+Apple API : version 1.12 en vente, build 37. Version 1.13 REJECTED liée au build 38. Les cinq builds les plus récents ne contiennent ni 39 ni 40. Voir APPLE_VERSIONS.json et APPLE_BUILDS.json.
+Local : audit du 8 octobre atteste build Debug 1.13 (40) compilé, installé et lancé sur iPhone 14 Pro Max. Le vendeur dit maintenant que tout est bon. Cela ne constitue pas une preuve de paiement/restauration en sandbox ni une archive de distribution.
+Ancienne archive 39 non représentative du code restauré/optimisé. Nouveau livrable Release à produire après gel ; aucun simulateur.
+Clipper : retrait dans sources, tests backend et builds locaux validés ; déploiement production non effectué d'après l'audit. Ne pas déclarer le service distant supprimé.
+Dossier et pack du 7 octobre : antérieurs aux dernières corrections, à régénérer après gel. Ne pas remettre l'ancien pack comme version finale.
+Acheteur : autre personne sur WhatsApp, prix 3 500 EUR déclaré. Identité, comptes, modalités de paiement et acceptation des composants 10K Design manquants.
+
+ORDRE RECOMMANDÉ
+A. AUJOURD'HUI — préparation
+Recueillir INFORMATIONS_ACHETEUR.txt. Finaliser le périmètre, droits, exceptions 10K Design et licences déjà accordées ; vérifier les justificatifs des médias et de la marque. Distinguer prix convenu et traitement fiscal non encore précisé. Préparer contrat et facture avec identités exactes, modalités de règlement, date d'effet, livraison et assistance. Ne pas transférer les actifs irréversiblement sur une simple promesse de paiement ; suivre le dispositif de règlement convenu.
+
+B. AVANT LA MISE À JOUR
+Relire le motif du rejet 1.13 et vérifier chaque correctif. Vérifier liens/support/confidentialité sur processdebloat.com dans app, metadata et site ; conserver compatibilité des anciennes versions avec les anciennes URLs nécessaires.
+La restauration des anciens écrans annule une partie des conclusions éditoriales du nettoyage antérieur : vérifier chiffres, témoignages, promesses de résultats et comportement commercial de la roulette. Ne pas déclarer conformité acquise sur la base de l'audit du 7 octobre.
+Planifier/déployer les changements site/backend Process Debloat après contrôle des anciens clients, webhooks et endpoints encore actifs ; retrait clipper distant à constater, sans effacer historiques utilisateurs/financiers. Les anciennes validations locales ne prouvent pas l'état de production.
+Valider scan, coach, connexion, compte existant, caméra/permissions, premium existant, achat sandbox, restauration et annulation. Valider les coûts et les dépendances IA réellement exploitées. Ne pas changer bundle ID, identifiants abonnements ou UID utilisateurs.
+Geler code et configurations ; créer une archive Release du code final, conserver hash/version et correspondance sources. Préparer captures, informations review, confidentialité et notes. Aucune compilation dans le cadre de cette préparation documentaire.
+
+C. PUBLICATION PUIS TRANSFERT APPLE
+Recommandation : faire publier la version corrigée avant de transférer afin que l'acheteur reçoive la version vendue. Ce n'est pas une obligation Apple de créer une mise à jour avant chaque transfert.
+La soumission reste soumise à la validation explicite du vendeur. Aucune soumission réalisée ici. Attendre la publication et revérifier tous les critères : une version en attente/en cours de review ou en attente de publication peut bloquer le transfert.
+La vente peut être organisée aujourd'hui ; ne pas promettre review Apple et tous transferts terminés aujourd'hui.
+
+D. PRÉPARER LES DESTINATIONS ET LA CONTINUITÉ
+Apple : Account Holder + Team ID ; accords en vigueur. Préparer migration Sign in with Apple des utilisateurs avant transfert, associations Service ID/groupes et traitement des identifiants privés. Apple prévoit une fenêtre de 60 jours après transfert pour cette migration ; la planifier immédiatement, pas à l'échéance.
+RevenueCat : inviter l'acheteur comme administrateur, préparer transfert de propriété séparé et nouveaux credentials Apple appropriés. Préserver entitlements, produits et historique ; vérifier premium/restore après transfert. Ne pas céder clé Apple multi-apps.
+Firebase/GCP : conserver le projet useprocess-d4385 et les UID. Acquéreur propriétaire et facturation à lui ; pas de suppression/recréation de projet. Vérifier sauvegarde récente et récupération, puis service accounts, secrets, Auth Apple, API restrictions, App Check, IAM, alertes et buckets. Sauvegardes utilisateurs séparées du ZIP de code, accès limité au moment approprié.
+Vercel/GitHub : transférer uniquement projet/repo Process, variables dédiées, intégrations et facturation ; inspecter pipelines/tokens pouvant viser d'autres projets. Vercel process-debloat, site processdebloat.com ; ancien site useprocess.xyz reste vendeur. Mettre à jour AASA/associated domains pour la nouvelle équipe avec continuité des anciennes installations.
+Hostinger : domaine enregistré le 7 octobre ; déplacement interne possible seulement après plus de 96 heures selon la règle officielle. Au plus tôt le 11 octobre après l'heure d'enregistrement, à confirmer dans la console. Un transfert vers un autre registrar suit d'autres délais, notamment le verrou des domaines récents. Migration de la boîte contact et aliases distincte du domaine ; sauvegarder mail, vérifier DNS/MX/SPF/DKIM/DMARC et réception après bascule.
+IA/PostHog/AppsFlyer : reprendre les projets dédiés et leurs facturations selon capacités des fournisseurs ; remplacer clés personnelles/OAuth et secrets un par un. L'audit AppsFlyer est encore différé. Ne pas transmettre une clé donnant accès à d'autres applications.
+TikTok/marque/assets : identifier exactement les comptes, contenus, droits, emails, téléphone de récupération et 2FA. Valider les possibilités de transfert et ne pas transmettre compte personnel multi-projets. Inventorier les éventuelles licences/outils dont le transfert est impossible et prévoir le remplacement.
+
+E. APRÈS ACCEPTATION DES TRANSFERTS
+Recette commune : App Store, abonnés existants, restauration, Apple login ancien/nouveau, scan, coach, synchro, suppression compte, support/email, site/DNS, analytics et facturation. Vérifier les fonctions actives en production, pas seulement le code local.
+Créer/remplacer chaque credential dédié, tester, puis révoquer ancien accès. Retirer le vendeur des memberships, paiements, recovery/2FA, CI et dashboards une fois la continuité démontrée. Ne pas supprimer les comptes clients ou les anciens reçus.
+Remettre sources exactes, manifeste/hash, procédures de build/déploiement, matrice services/coûts, droits/limitations connus, secrets via canal adapté et preuve des propriétaires/facturations. Faire constater la livraison et la fin d'assistance convenue. Conserver seulement les archives nécessaires selon obligations/convention, sans accès opérationnel permanent implicite.
+
+CONDITIONS DE FIN
+Aucun service essentiel facturé au vendeur ; aucun secret personnel utilisé par l'app ; tous actifs du périmètre reçus ; droits clients conservés ; exceptions et transitions explicites, datées, acceptées. Tant que l'audit AppsFlyer, les droits, le domaine ou un service sont ouverts, ne pas annoncer un détachement à 100 %.
+
+SOURCES OFFICIELLES VÉRIFIÉES LE 8 OCTOBRE
+https://developer.apple.com/help/app-store-connect/transfer-an-app/app-transfer-criteria/
+https://developer.apple.com/help/app-store-connect/transfer-an-app/initiate-an-app-transfer/
+https://developer.apple.com/help/app-store-connect/transfer-an-app/overview-of-app-transfer/
+https://developer.apple.com/documentation/technotes/tn3159-migrating-sign-in-with-apple-users-for-an-app-transfer
+https://www.revenuecat.com/docs/projects/overview
+https://www.hostinger.com/support/4068055-how-to-move-a-domain-between-hostinger-accounts/

@@ -1,0 +1,37 @@
+{
+  "recordedAt": "2026-10-08T02:34:14.972804+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 120,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 28
+  },
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/process/android/ProcessRoutineCatalog.kt": "beee30e9dce72bfff593acb342c0c1feb0896a08853b7f108f2084d18adc2c99",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/process/android/ProcessRoutineMedia.kt": "75488e19869ec241543a317830970dc4743d3c7f75c7f26fd1522f1ad5d19c4f",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/process/android/ProcessRoutineExerciseDetail.kt": "c0358624480995c0d8e1f12d138708ebc4d21798877de30a42566e8c62c451b1",
+    "/Users/amine/Developer/useprocess/useprocess/LymphCircuit/LymphCircuitExerciseDetailView.swift": "5091705382ae11f5b11a9998583e96c5d473e9a4b0ebbd0d6befe9d86a057156",
+    "/Users/amine/Developer/useprocess/useprocess/LymphCircuit/LymphCircuitDemoMediaView.swift": "eed2a22d524fcfb4d33ace43e6fbe6c3c8bfb85024d62eac8c5c0ae98b69c8a4",
+    "/Users/amine/Developer/useprocess/useprocess/LymphCircuit/LymphCircuitVideoCatalog.swift": "e01da9ce6dff39dba1cffc6439dd48c5f119c2a40a063ba6ccb021bf3d7b9b4f",
+    "/Users/amine/Developer/useprocess/useprocess/Theme/AppTheme.swift": "98df2c617ad2640378b3386da0392f6c0d282c5a130080dd99759a1adcd7d193",
+    "/Users/amine/Developer/useprocess/useprocess/DesignSystem/ProcessColors.swift": "3c4cfb4c2926907c9ae4946399a974f1821b23dfa26fb2c141764d9b114fc509"
+  },
+  "originalMediaEvidence": "routine-source.json",
+  "formatEvidence": "routine-media-formats.json",
+  "runtime": "unverified",
+  "visual": "unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "remaining": [
+    "HEVC decoder support, video crop/loop and lifecycle behavior require device checks",
+    "Remote higher-quality Firebase media/cache not integrated",
+    "Camera/motion-coach session not included; session callback belongs to host",
+    "Native symbols, shadows, fonts and physical screenshot/motion comparisons"
+  ],
+  "buildLog": "parity/logs/process-routine-exercise-final-build.log"
+}

@@ -1,0 +1,6618 @@
+{
+  "schema": 1,
+  "sources": [
+    {
+      "path": "Analytics/AppsFlyerConfiguration.swift",
+      "sha256": "b7e77be6ca1461e83781abfb65a5a89249bcfec2d2d7a2d2baac6f0fb4e17469",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "AppsFlyerConfiguration"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Analytics/OnboardingFunnelScreen.swift",
+      "sha256": "6e844c728969fcb2db534c194988873252ac40805a5be6f5ff23a2dea18def68",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OnboardingFunnelScreen"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Analytics/PostHogConfiguration.swift",
+      "sha256": "d601689fd745331636f85c4e6c6ae807a346f5e29e7601914d327e530b7987b5",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "PostHogConfiguration"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Analytics/ProcessAcquisitionAttribution.swift",
+      "sha256": "c1895ce490b0ecd798490583c6e463c0751b1629104e9d3a0c12c9d094e7668e",
+      "imports": [
+        "AdServices",
+        "Foundation"
+      ],
+      "types": [
+        "ProcessAcquisitionAttribution",
+        "Snapshot",
+        "Touch"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Analytics/ProcessAnalytics+MossFunnel.swift",
+      "sha256": "c290759b4c125a3bbc9c48b103504c23cb2c704f48a8b7223beade078eb13e77",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "MossPage"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Analytics/ProcessAnalytics+OnboardingAnswers.swift",
+      "sha256": "7b467cf6f4e59c3f2113486b61ea92b0ccf883574e76a5f076eacf722ca5bca0",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [],
+      "animations": []
+    },
+    {
+      "path": "Analytics/ProcessAnalytics.swift",
+      "sha256": "97c7cdaac7d70c97bb8099f3f70863fa9e7f2ae193a3452efa0f5ed7f26f811c",
+      "imports": [
+        "Foundation",
+        "PostHog",
+        "StoreKit",
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "ProcessAnalytics",
+        "ProcessRenderDiagnostics"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Analytics/ProcessAppsFlyer.swift",
+      "sha256": "3878fdfce0a7e36816e795e15d429326efe2b5e3fb201ee461f3e644c7d03210",
+      "imports": [
+        "AppsFlyerLib",
+        "Foundation"
+      ],
+      "types": [
+        "ProcessAppsFlyer"
+      ],
+      "animations": []
+    },
+    {
+      "path": "AppSession.swift",
+      "sha256": "050d734a6b9470fca59274bf1cc3b4e7ac43e22162d34348343ee960b1aee230",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "AccountDeletionPhase",
+        "AppSession",
+        "Keys",
+        "AppAppearance"
+      ],
+      "animations": []
+    },
+    {
+      "path": "AppShellView.swift",
+      "sha256": "d596e27374fc30e9e807a901bc6e34c8bdfea3bdbde2ff167f6761c94ce2c38c",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "AppShellView"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.25), value: session.isAccountWipeInProgress)",
+        ".easeInOut(duration: 0.28), value: session.hasCompletedOnboarding)",
+        ".easeInOut(duration: 0.28), value: subscriptionService.hasResolvedInitialSubscriptionStatus)",
+        ".easeInOut(duration: 0.28), value: subscriptionService.subscriptionStatus)"
+      ]
+    },
+    {
+      "path": "BodyScan/BodyScanLiveFrameRouter.swift",
+      "sha256": "38b2b7a610fd65c1c102781d36a95a57934a12a51080b0d765aaece6ff8bc784",
+      "imports": [
+        "AVFoundation",
+        "Foundation"
+      ],
+      "types": [
+        "BodyScanLiveFrameRouter"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Capture/BodyScanCameraPreview.swift",
+      "sha256": "ac5885052e7de7fcffe88eaa456d2bfe094abfef91084e8a7481a22951fd8a36",
+      "imports": [
+        "AVFoundation",
+        "SwiftUI"
+      ],
+      "types": [
+        "BodyScanCameraPreview",
+        "Coordinator",
+        "PreviewView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Capture/BodyScanCameraService.swift",
+      "sha256": "87a104d89e448d34233bb0afe26a7556636b35acff10a1795058ac00b763884f",
+      "imports": [
+        "AVFoundation",
+        "Combine",
+        "UIKit"
+      ],
+      "types": [
+        "BodyScanCameraService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Capture/BodyScanLiveCameraView.swift",
+      "sha256": "ff614eedd01b9c3d52924baf9ff283d2cbaa6815e0c8912fbdd36225da260366",
+      "imports": [
+        "AVFoundation",
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "BodyScanLiveCameraView",
+        "BodyScanLiveCameraRepresentable"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Capture/FaceMeshScanView.swift",
+      "sha256": "fa73a9480911b32e911a8fbd657489de3a1ab8cf9852c3d51189019a1ad482d3",
+      "imports": [
+        "ARKit",
+        "SceneKit",
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "FaceMeshScanView",
+        "PreviewContainer",
+        "Coordinator",
+        "LiveScanPhase"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Capture/FaceScanQualityValidator.swift",
+      "sha256": "337b69052b636220efe5544e1d91b11ecbd6a8bdefb2b18692fe343bc4999de2",
+      "imports": [
+        "CoreGraphics",
+        "UIKit",
+        "simd"
+      ],
+      "types": [
+        "FaceScanQualityValidator",
+        "FaceDistanceFeedback"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Capture/FaceScanScreenFlash.swift",
+      "sha256": "32ad0a152290bbe3a15c3dd516d9f14035601d55a7c359958709981c1974a0ec",
+      "imports": [
+        "UIKit"
+      ],
+      "types": [
+        "FaceScanScreenFlash"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Capture/FaceScanVideoRecorder.swift",
+      "sha256": "64b394aec053a1c233b075c6c262840eb8da3585670e8f602324189c39e6fc09",
+      "imports": [
+        "AVFoundation",
+        "CoreVideo"
+      ],
+      "types": [
+        "FaceScanVideoRecorder"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Capture/ProcessScanCamera.swift",
+      "sha256": "57845b4c0f7dbf66191e98729c431ef2b5bf409cd45455a12369c05687a6b0f0",
+      "imports": [
+        "AVFoundation",
+        "UIKit"
+      ],
+      "types": [
+        "ProcessScanCameraProfile",
+        "ProcessScanPortraitLockProfile",
+        "ProcessScanCamera"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Config/EnzoCoachingVoiceGuide.swift",
+      "sha256": "b31bbc4d541128474ce3d6054d40b5fb96cf4fcf17f981f905a252f04fa21809",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "EnzoCoachingVoiceGuide"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Models/BodyScanModels.swift",
+      "sha256": "20b49fb808ec6782b9787ab7685c8552bc5497046ff8838b4a44f1af5059b51c",
+      "imports": [
+        "CoreGraphics",
+        "Foundation"
+      ],
+      "types": [
+        "ScanPoseKind",
+        "BodyArmStyle",
+        "BodyTurntablePass",
+        "BodyLandmark",
+        "BodyScanCaptureRecord",
+        "CodingKeys",
+        "PostureMetrics",
+        "FaceWellnessMarkers",
+        "MusclePriority",
+        "BodyZoneStatus",
+        "ZoneHealthStatus",
+        "BodyScanResult",
+        "CodingKeys",
+        "BodyScanPhase",
+        "ScanQualityFeedback"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Models/FaceMeshModels.swift",
+      "sha256": "6d2957126fd4911259220ec8ae03758b38ffd5a29c9492c4197b9928f85fe36d",
+      "imports": [
+        "Foundation",
+        "UIKit"
+      ],
+      "types": [
+        "FaceMesh3DData",
+        "OnboardingFaceScanPayload",
+        "FaceScanCapturePayload",
+        "FaceScanSource",
+        "FaceScanStudioFraming",
+        "FaceScanResult",
+        "FaceScanBaselineLabel",
+        "FaceScanRelativeSignals",
+        "FaceScanTrend"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Perception/AVCaptureVideoPreviewLayer+Vision.swift",
+      "sha256": "6384ccb3373cce12d95f31b65d9c7138031644797bf9e0b0088211af71cf5656",
+      "imports": [
+        "AVFoundation",
+        "CoreGraphics"
+      ],
+      "types": [],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Perception/BodyPoseAnalysis.swift",
+      "sha256": "7221a5623907e4bae9f10a016c8c522e0bd673550437fe18dcbc1947730f70c2",
+      "imports": [
+        "Foundation",
+        "Vision"
+      ],
+      "types": [
+        "BodyPoseAnalysis",
+        "BodySkeletonTopology"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Perception/BodyPoseTracker.swift",
+      "sha256": "82e3e5328d76ab47748ce57e37916b55511c55840522b5c99d19498fdbd74eb4",
+      "imports": [
+        "AVFoundation",
+        "Foundation",
+        "UIKit",
+        "Vision"
+      ],
+      "types": [
+        "BodyPoseTracker",
+        "SampleBufferBox",
+        "PoseAlignmentValidator"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Perception/FaceWellnessAnalyzer.swift",
+      "sha256": "a3976ca3109725e80408de7fea2c7242a04a4141bd5d38f7606ac02594bfc387",
+      "imports": [
+        "ARKit",
+        "Foundation",
+        "UIKit",
+        "Vision"
+      ],
+      "types": [
+        "FaceWellnessAnalyzer"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Perception/LandmarkSmoother.swift",
+      "sha256": "482fda53c0ed62a4f1715573691b05f9419f365a8848f32480704ad8caa2ad7a",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "LandmarkSmoother",
+        "ReadyStateStabilizer"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Perception/UIImage+Vision.swift",
+      "sha256": "4f5b08c359fb14228647e57bc209f5493068dfe03e0d3942580e7ab8bcb3d590",
+      "imports": [
+        "ImageIO",
+        "UIKit"
+      ],
+      "types": [],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Perception/VisionPoseExtractor.swift",
+      "sha256": "fc78abfb0a76c1d2a0d0cfe76c7857eea1d6b1dbd37f5b472a63963f3de8f17a",
+      "imports": [
+        "Foundation",
+        "UIKit",
+        "Vision"
+      ],
+      "types": [
+        "VisionPoseExtractor"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Services/BodyScanHistoryStore.swift",
+      "sha256": "818bf2241e2b59ed779e21ef4b23dadc2bebd0d46216bf037035e9a024ee8928",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "BodyScanHistoryStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Services/BodyScanImageStore.swift",
+      "sha256": "dcd24dd490eef45aec19b1cb221b2a590865eda25ca3ef7b4d0830a3c304138e",
+      "imports": [
+        "CoreGraphics",
+        "Foundation",
+        "ImageIO",
+        "UIKit"
+      ],
+      "types": [
+        "BodyScanImageStore",
+        "RGBAImage"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Services/FaceScanBehaviorReviewBuilder.swift",
+      "sha256": "2bfedf6a457b36165a2a9c5058e14bc92bf701d480e1de77df7ef8088bd16acb",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "FaceScanBehaviorReviewEvent",
+        "FaceScanBehaviorReview",
+        "FaceScanBehaviorReviewBuilder"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Services/FaceScanCadence.swift",
+      "sha256": "d48647075e1b89937f759ea2296e426c72e891f6b19ba3eea2e63407d9081232",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "FaceScanCadence",
+        "CountdownComponents"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Services/FaceScanCorrelationEngine.swift",
+      "sha256": "cdd72501435e0fc48b4c0f6d32973393201b91e3ea9c1eae9c6713bb8b3779fd",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "FaceScanCorrelationInsight",
+        "Kind",
+        "FaceScanCorrelationEngine"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Services/FaceScanDataLifecycle.swift",
+      "sha256": "b20aa9195c5da5c02137b566e9b0f5f2ff1122753dfe2c4bf6d1b52a9a88ddc8",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "FaceScanDataLifecycle"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Services/FaceScanEvolutionEngine.swift",
+      "sha256": "f8fd15ce8eb38138a29e80e775d3a4082fe758f827eb3b1e21907308140ce6e7",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "FaceScanNutritionFacts",
+        "FaceScanIndicatorTrend",
+        "Direction",
+        "FaceScanEvolutionFacts",
+        "FaceScanEvolutionEngine"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Services/FaceScanFirestoreRepository.swift",
+      "sha256": "ef8c45375a9a90a72643700772d20235f7a4790e5745b83e0717affb3fe51efa",
+      "imports": [
+        "FirebaseFirestore",
+        "Foundation"
+      ],
+      "types": [
+        "FaceScanFirestoreRepository"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Services/FaceScanHistoryStore.swift",
+      "sha256": "4a3a47fa15df7df9c0de27308f5e4fed8e0403902a326cd531bcf0a9b0f1bc9e",
+      "imports": [
+        "FirebaseAuth",
+        "Foundation"
+      ],
+      "types": [
+        "FaceScanHistoryStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Services/FaceScanImageStore.swift",
+      "sha256": "4545a78ea174ade59a05c216830ccf797fc1c47f5f5f8a1e01716cd49152edd5",
+      "imports": [
+        "Foundation",
+        "UIKit"
+      ],
+      "types": [
+        "FaceScanImageStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Services/FaceScanIndicators.swift",
+      "sha256": "e1447b359fba6aa76f49d92ae4aea64f0fbf2065006662a7fc42c0e34d434ecf",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "FaceScanIndicators",
+        "Kind",
+        "WellnessZone",
+        "MeshContext"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Services/FaceScanMediaImport.swift",
+      "sha256": "0a6584b75b8e65937fe9a9c198cb11b372b0cdf984f26fcf07a89b7c6f74dafc",
+      "imports": [
+        "AVFoundation",
+        "Foundation",
+        "UIKit",
+        "Vision"
+      ],
+      "types": [
+        "FaceScanMediaImport",
+        "ImportError"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Services/FaceScanMetricDisplay.swift",
+      "sha256": "5acac3ef57ec158f35a6ab34db7b78d3bf45cad16b39f239bb606feaf2983c6f",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "FaceScanMetricDisplay",
+        "ComparisonKind",
+        "Item"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Services/FaceScanReminderService.swift",
+      "sha256": "9634028858b0c4c57d5badac72cef826569776ba3954fe19e3d4fe7ced7a3001",
+      "imports": [
+        "Foundation",
+        "UserNotifications"
+      ],
+      "types": [
+        "FaceScanReminderService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Services/FaceScanService.swift",
+      "sha256": "63c7074a06b605cc67f7e7e2c82cab1bafeffa48535da5129419de94895edb23",
+      "imports": [
+        "Foundation",
+        "UIKit"
+      ],
+      "types": [
+        "FaceScanService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Services/FaceWellnessScore.swift",
+      "sha256": "4d1cbaf1834e67e75793dbdcd13fb7e837b412ef887302998ac1638f1fb7dbaa",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "FaceWellnessScore",
+        "RelativeAssessment",
+        "Tone",
+        "Appreciation"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Services/OnboardingFaceMarkersStore.swift",
+      "sha256": "bb4ca051cc3ce00f1f697e153d95c3a871367816e17387579fca9853a10291b6",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OnboardingFaceMarkersStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Services/ProcessCreatorModeStore.swift",
+      "sha256": "9e7ef9837ff36c9bcca1ab3351f18e59bc92ed942670650f4dd8d98bfc37a4e3",
+      "imports": [
+        "Combine",
+        "Foundation"
+      ],
+      "types": [
+        "ProcessCreatorScanResultsLayout",
+        "ProcessCreatorStudioScanSlot",
+        "ProcessCreatorModeStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Views/BodyScanReportView.swift",
+      "sha256": "bedf800de90981d7d577ee504142acd11a1cacbd160e81b2371f7bdfd3c434cd",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "BodyScanReportView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Views/FaceScanAIInsightCard.swift",
+      "sha256": "84e7dec553f3f3fb17e4e90caac62605332434af9fe1804274618c5eb4c60e68",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "FaceScanPrimaryCause",
+        "FaceScanInsightContext",
+        "FaceScanAIInsight",
+        "FaceScanAIInsightBuilder",
+        "FaceScanAIInsightStyle"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Views/FaceScanAnalysisFlowView.swift",
+      "sha256": "8e0b9e5a93707cfc0478bad0107f2d3e166ad1a112aba3d7a8157cc094c66ab0",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "FaceScanAnalysisFlowView",
+        "FaceScanAnalysisProgressBars",
+        "FaceScanAnalysisHeroView",
+        "FaceScanAnalysisSweepOverlay"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.22), value: creatorMode.scanResultsLayout)",
+        ".easeInOut(duration: 0.28), value: baseResult?.id)",
+        ".linear(duration: 0.08), value: progress)",
+        ".spring(response: 0.42, dampingFraction: 0.86)) {",
+        ".spring(response: 0.42, dampingFraction: 0.86), value: didSaveScan)"
+      ]
+    },
+    {
+      "path": "BodyScan/Views/FaceScanCaptureScreen.swift",
+      "sha256": "9e941707c545d111b7668ad6554161b9e22c85b09d7ad9731eb34d07fc973cb4",
+      "imports": [
+        "ARKit",
+        "AVFoundation",
+        "SwiftUI"
+      ],
+      "types": [
+        "FaceScanHubCopySnapshot",
+        "FaceScanCapturePresentation",
+        "InlineHomePhase",
+        "FaceScanCaptureScreen",
+        "FaceScanPhase",
+        "Layout",
+        "SkipScanButtonChromeModifier",
+        "FaceScanCameraPermissionGateOverlay",
+        "FaceScanFlashToggle"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.18)",
+        ".easeInOut(duration: 0.18)) {",
+        ".easeInOut(duration: 0.2)) {",
+        ".easeInOut(duration: 0.2)),",
+        ".easeInOut(duration: 0.2), value: instruction)",
+        ".easeInOut(duration: 0.2), value: showsFrameCorners)",
+        ".easeInOut(duration: 0.22)) {",
+        ".easeInOut(duration: 0.22), value: arrivalCountdownValue)",
+        ".easeInOut(duration: 0.22), value: isArrivalCountdownActive)",
+        ".easeInOut(duration: 0.22), value: isFlashEnabled)",
+        ".easeInOut(duration: 0.22), value: onboardingScanCopyToken)",
+        ".easeInOut(duration: 0.25)) {",
+        ".easeInOut(duration: 0.25), value: phase)",
+        ".easeInOut(duration: 0.28), value: scanBlockedByLighting)",
+        ".easeInOut(duration: 0.28), value: showsCameraPermissionGate)",
+        ".easeInOut(duration: 0.3), value: safeProgress)",
+        ".easeInOut(duration: 0.35), value: showsDelayedScanLaterLink)",
+        ".easeOut(duration: 0.42).delay(0.08)) {",
+        ".spring(response: 0.36, dampingFraction: 0.68)",
+        ".spring(response: 0.38, dampingFraction: 0.74)) {",
+        ".spring(response: 0.4, dampingFraction: 0.82)) {",
+        ".spring(response: 0.44, dampingFraction: 0.84)",
+        ".spring(response: 0.44, dampingFraction: 0.84),",
+        ".spring(response: 0.48, dampingFraction: 0.84)) {",
+        ".spring(response: 0.52, dampingFraction: 0.86), value: isPreview)"
+      ]
+    },
+    {
+      "path": "BodyScan/Views/FaceScanGalleryImportPicker.swift",
+      "sha256": "8323c3527ee85ab6cbb5bad1ceb1570dc2c00e9b26d6802fe7c7967616dfeadc",
+      "imports": [
+        "PhotosUI",
+        "SwiftUI",
+        "UniformTypeIdentifiers"
+      ],
+      "types": [
+        "FaceScanGalleryImportPicker",
+        "Coordinator"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Views/FaceScanRecordingMediaView.swift",
+      "sha256": "f32141163ca4c54556e9ebc11dd4361abc47d494a8ada2842b230812a90a196b",
+      "imports": [
+        "AVFoundation",
+        "SwiftUI"
+      ],
+      "types": [
+        "FaceScanRecordingMediaView",
+        "DisplayMode",
+        "FaceScanMediaCornerClip",
+        "FaceScanSilentVideoLoopView",
+        "Coordinator",
+        "FaceScanVideoLoopContainerView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Views/FaceScanResultView.swift",
+      "sha256": "b9375f01966373a923fd0a80a0683b8b2a85d9c6a46590faa3f90ad2dbc8af3d",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "FaceScanResultView",
+        "FaceScanResultContent"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Views/FaceScanSessionView.swift",
+      "sha256": "223e41fe448f2c4f848ef436290695e35e585c4e150b022d157b5d7dc498f035",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "FaceScanSessionView",
+        "CaptureInput"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.28)"
+      ]
+    },
+    {
+      "path": "BodyScan/Views/FaceScanStudioFramingEditor.swift",
+      "sha256": "50db6108e69bbc571f03335fe1aac6ff49121818238caa0307875e7ca1d7afdd",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "FaceScanStudioFramingEditor"
+      ],
+      "animations": [
+        ".easeOut(duration: 0.18)) {"
+      ]
+    },
+    {
+      "path": "BodyScan/Views/FaceScanStudioQualitySlider.swift",
+      "sha256": "af68cf2fee55c3596de36db01c21892487b66ac626b86a576e9e269c0058cc16",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "FaceScanStudioQualitySlider"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Views/FaceScanStudioResultsLayoutPicker.swift",
+      "sha256": "3820289de8122765d686d00e6f904a1698fc0301102712c72336ea0b4e04f73e",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "FaceScanStudioResultsLayoutPicker"
+      ],
+      "animations": []
+    },
+    {
+      "path": "BodyScan/Views/FaceScanWhoopAnalysisDesign.swift",
+      "sha256": "0ba97a11caafae3d5305fb67983a49734f2c4af166b019d6a1c2adea3c3c2ed2",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "FaceScanWhoopPalette",
+        "FaceScanWhoopDateLabel",
+        "FaceScanWhoopAnalysisScreen",
+        "FaceScanWhoopResultsStyle",
+        "FaceScanWhoopInlineResults",
+        "FaceScanWhoopScoreRing",
+        "FaceScanWhoopCircularPhoto",
+        "FaceScanWhoopMetricsCard",
+        "FaceScanWhoopMetricsCardChrome",
+        "FaceScanWhoopEvolutionHistory",
+        "FaceScanWhoopEvolutionSummaryCard",
+        "FaceScanWhoopBehaviorTimelineRow",
+        "FaceScanWhoopMetricRow",
+        "FaceScanWhoopZoneBar",
+        "FaceScanWhoopIndicatorTrendsSection",
+        "FaceScanWhoopIndicatorTrendCard",
+        "FaceScanWhoopChartDaySlot",
+        "FaceScanWhoopLineChart",
+        "FaceScanWhoopAnalysisInfoSheet",
+        "FaceScanDetailConfidenceRing",
+        "FaceScanDetailInfoCard",
+        "FaceScanDetailHistoryRow"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.22), value: creatorMode.scanResultsLayout)",
+        ".easeOut(duration: 0.12)) {"
+      ]
+    },
+    {
+      "path": "BodyScan/Views/FaceScanWhoopRevealEnvironment.swift",
+      "sha256": "57b3ef46950957fa7f1536632bbdd6b46086d3bfd226f6e4d6b647a4677f6c59",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "FaceScanWhoopRevealTiming",
+        "FaceScanResultsAnimateRevealKey"
+      ],
+      "animations": [
+        ".easeOut(duration: 0.28)",
+        ".spring(response: 0.56, dampingFraction: 0.86)"
+      ]
+    },
+    {
+      "path": "BodyScan/Views/ProcessFaceScanHomeView.swift",
+      "sha256": "61e0b495a5df1764331989938cd5f4b677e7e8a91349a4ee3034f7cb8f92e7a4",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessFaceScanDayCoordinator",
+        "ProcessFaceScanSessionHost",
+        "OnboardingScanPreviewPausedKey",
+        "OnboardingDashboardScanSession",
+        "OnboardingDashboardScanSessionKey"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/CoachMealHandoff.swift",
+      "sha256": "aad9c8cab16574a1116a96163b17ea07675abeb6f4e299c5ce5189b49f7abf4e",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachMealHandoff",
+        "CoachMealHandoffBuilder"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Components/CoachAssistantMessageBody.swift",
+      "sha256": "61823a3e87788181c65855fb59eac250d6916871f02b9a4720f02c54d80d027f",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "CoachWorkoutPreviewCard",
+        "CoachAssistantMessageBody"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Components/CoachBlobIndicator.swift",
+      "sha256": "3d56ff3582241e080c7805e6767c4774f91256a09b6faff3ba9cc76a676039df",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "CoachEdgeBlobMode",
+        "CoachEdgeBlobOverlay",
+        "FrameKind",
+        "LoadingDot",
+        "ResolvedFrame",
+        "CoachBlobFlatShape",
+        "CoachBlobMorphShape",
+        "WaterCurve",
+        "CoachBlobLayout",
+        "CoachResponseAnchorKey",
+        "CoachMessageFadeIn"
+      ],
+      "animations": [
+        ".easeIn((ratio - 0.58) / 0.10) : 0",
+        ".easeIn((ratio - 0.68) / 0.14)",
+        ".easeInOut((t - thinkingPhase(1.65)) / thinkingPhase(0.40))",
+        ".easeOut(ratio / 0.10)",
+        ".easeOut(t / thinkingPhase(0.35))",
+        ".spring(response: 0.44, dampingFraction: 0.86)) {"
+      ]
+    },
+    {
+      "path": "Coach/Components/CoachChatCameraSheet.swift",
+      "sha256": "f8d792443a727538471ce1255d32e61cc493001c74848c9505e084aca9401824",
+      "imports": [
+        "AVFoundation",
+        "PhotosUI",
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "CoachInlineBottomCameraPanel",
+        "CoachPhotoShrinkToInputAnimation",
+        "CoachCameraControlsBar",
+        "CoachCameraCaptureGlassButton",
+        "CoachCameraGlassButton",
+        "CoachChatSingleImagePicker",
+        "Coordinator",
+        "CoachCameraFlashMode",
+        "CoachSharedCameraSession",
+        "CoachAttachmentImageNormalizer",
+        "CoachCameraPreview",
+        "CoachCameraPreviewView"
+      ],
+      "animations": [
+        ".spring(response: 0.46, dampingFraction: 0.86)) {"
+      ]
+    },
+    {
+      "path": "Coach/Components/CoachChatImageUserMessageView.swift",
+      "sha256": "6f1917775a85a2ac157e2790148838a2b0137df1876ceb5ac77bf4b73a1e4677",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "CoachChatImageUserMessageView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Components/CoachContextualActionButtons.swift",
+      "sha256": "a2615addac7993cbf1f9f40378fcc0c681a798ecf4e7d2c49004bea1fc7b7588",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "CoachContextualActionButtons"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Components/CoachContextualHomeView.swift",
+      "sha256": "500f0a7a4d98d57fd532fa63f8e6c362cd706ecbdb0b56b424086a60e1f0ad3b",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "CoachContextualHomeView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Components/CoachFaceScanUserMessageView.swift",
+      "sha256": "5c774e162249ff2d4e5218167a53b5ee8a09efbd9dc612f5f10c27a871f6b342",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "CoachFaceScanUserMessageView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Components/CoachFormattedText.swift",
+      "sha256": "cb4f2c1be6b54867a68be0e9288bf2a2b258442b4a79a56d53401b823698999f",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "CoachFormattedText"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Components/CoachHomeSuggestionBar.swift",
+      "sha256": "3236b4abd58485d4fe34568729137f191453fa89015982c5c145f0031b1b4163",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "CoachHomeSuggestionBar",
+        "CoachHomeSuggestionCard"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Components/CoachLiquidGlassInputBar.swift",
+      "sha256": "9638462243e8f055fe13eacb4927746e4d8c2c2a3f25598166194138a5a2c0c2",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "CoachLiquidGlassInputBar",
+        "CoachBarGlassCircleStyle",
+        "CoachInputBarLightSurface",
+        "CoachVoiceWaveformDots"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Components/CoachMessageEnrichmentView.swift",
+      "sha256": "e4c44b4819f34f3cb0bced24c599684206965f63d8e8d64db7bc34629e81501a",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "CoachMessageEnrichmentView",
+        "CoachDeepLinkButton"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Components/CoachThinkingDotsView.swift",
+      "sha256": "6c403dd8e463cf373237115a1c046a544e73d21246aad525ed559029de7e1d14",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "CoachThinkingDotsView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Components/CoachUserMessageContextMenu.swift",
+      "sha256": "99f51fc22dc747cdd3905c3fdb9f712de73b5b31fad55fe932fcd2461d087746",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "CoachUserMessageContextState",
+        "CoachUserMessageBubbleView",
+        "CoachBubbleLongPressDetector",
+        "Coordinator",
+        "CoachUserMessageContextOverlay",
+        "CoachMessageContextGlassModifier"
+      ],
+      "animations": [
+        ".spring(response: 0.26, dampingFraction: 0.92)) {",
+        ".spring(response: 0.32, dampingFraction: 0.86)) {"
+      ]
+    },
+    {
+      "path": "Coach/Components/CoachUserThoughtBubbleStyle.swift",
+      "sha256": "bb2ae1db590a0db7196e8951bcfb23b45ff94bf55511e423cb9c680b75517253",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "CoachUserThoughtBubbleMetrics",
+        "CoachThoughtBubbleTailView",
+        "CoachUserChatAvatarView",
+        "CoachUserThoughtBubbleBody"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Config/ClaudeConfiguration.swift",
+      "sha256": "75f9ad32c7dec870e2aa8f5d2c360f67ec1ee2f698237326bffef6ce69401179",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ClaudeConfiguration"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Config/ClaudeModel.swift",
+      "sha256": "42fe64a665761cb3a15de0b4c680509cf1f4193f656ab3b57a346df244fb3338",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ClaudeModel",
+        "CoachTaskKind"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Config/FirebaseProjectConfiguration.swift",
+      "sha256": "4bcf01d60f1f2842bbb1003493f7654f391699f6e7c59e03fd41a9878623530b",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "FirebaseProjectConfiguration"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/FaceScan/CoachDebloatJourneyStore.swift",
+      "sha256": "708f8c4d1d8b01ee7500664ecb469cf39e816e215270c56cbdb687d3288603ea",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachDebloatJourneyStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/FaceScan/CoachFaceScanHandoff.swift",
+      "sha256": "d33bee46767a98b7b08a21debdc70bd1745a1c08ed723c954c580f1e80973f6e",
+      "imports": [
+        "Foundation",
+        "UIKit"
+      ],
+      "types": [
+        "CoachFaceScanMessageMarker",
+        "FaceScanCoachHandoff"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/FaceScan/FaceScanCoachInsightService.swift",
+      "sha256": "56d43cbc305e34e454bcb89ccbc2c7b96f1c0592daf016c31675eb02e7984249",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "FaceScanCoachInsightService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Models/CoachContextualAction.swift",
+      "sha256": "1bfa528555fe5188070b7c43bb552ce5fbdd5efc3c1f440c1cfb27bb2281a993",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachContextualActionKind",
+        "CoachContextualAction",
+        "PendingCoachPlanPatch"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Models/CoachConversation.swift",
+      "sha256": "46734906f5cf088a4e281232b7112ac8c7e37fd31643c287733e4dd92494a9a9",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachConversation",
+        "CoachConversationLibrary"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Models/CoachDailyBriefContent.swift",
+      "sha256": "b169c54666e9ec398dd77a7fe620fcc96a11071dd7a11b94f71370d6486279b6",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachDailyBriefContent",
+        "CoachDailyBriefParser"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Models/CoachHomeContext.swift",
+      "sha256": "c67b667a6ed88c625b6537b9bb373f1a5b13fbdb2e93906db3a5fbdf68490526",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachHomeSuggestion",
+        "CoachHomePromptKind",
+        "CoachHomePrompt",
+        "CoachHomeContext"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Models/CoachMessage.swift",
+      "sha256": "4e2b79a701a27d46f3b02084ef2f7a77e0de893114b83e0d1be61259496b30a7",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachMessageRole",
+        "CoachMessage",
+        "CoachChatThread"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Models/CoachMessageEnrichment.swift",
+      "sha256": "0c61bb0fcb3a8e5abb7133a559fdc8c81ff6998422b0b50a1ddde14a53ccb4a3",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachDeepLinkAction",
+        "CoachDeepLink",
+        "CoachMessageEnrichment",
+        "CoachMemoryUpdate",
+        "CoachParsedReply",
+        "CoachResponseParser"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Models/CoachStructuredMessage.swift",
+      "sha256": "18a3cecd94bcef8ae66474d00b6a6f4ff35fac402fd6a7853246d01784e478fa",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachMessageSegment",
+        "CoachWorkoutPreview",
+        "CoachExercisePreview",
+        "CoachStructuredMessageParser",
+        "ExerciseMatch"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Models/CoachTool.swift",
+      "sha256": "5d19cfac4261dd8690bfe1ad7dae20ccc9226ef497f609337976673dc584a294",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachTool"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Models/FaceScanAnalysisContent.swift",
+      "sha256": "21fafc408148ec11fb4908fc37270eb90ea2b38e25a0edbb9ad208302639bf5c",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "FaceScanAnalysisContent",
+        "FaceScanAnalysisParser"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/ClaudeAPIService.swift",
+      "sha256": "bf844de7c4eab82cade4d42d352c3761c48190c1fdb85dfd0b29dcde2e3c418b",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachAPIMode",
+        "CoachAPITransport",
+        "ClaudeAPIError",
+        "ClaudeLocalAPIService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachChatAttachmentImageStore.swift",
+      "sha256": "4436aacb90270c22bc9596cb30c2245bf255c266b5d7f848cba153bb38f223d1",
+      "imports": [
+        "Foundation",
+        "UIKit"
+      ],
+      "types": [
+        "CoachChatAttachmentImageStore",
+        "CoachChatImageMessageMarker"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachCheckInScheduler.swift",
+      "sha256": "bb2feeade08a67358be8960330b8530166b238c7c5c310a0d7e539cadef4c164",
+      "imports": [
+        "Foundation",
+        "UserNotifications"
+      ],
+      "types": [
+        "CoachCheckInScheduler"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachCheckInStore.swift",
+      "sha256": "f41a3b7254b05d104f7c68aaa5d20165d7e607b3ffbb3dbe7a0d1487fbb7740d",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachCheckIn",
+        "CoachCheckInTemplate",
+        "CoachCheckInStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachContextualActionResolver.swift",
+      "sha256": "212c5df030ff2f06c130d89df89153a655b2c51c442b4a91683a6c02512eb5b1",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachContextualActionResolver"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachConversationLibraryStore.swift",
+      "sha256": "efe87a4a86dda35ff4739d71d803b805289d0f4c1b5c578b5bf9144ba57ac135",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachConversationLibraryStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachConversationStore.swift",
+      "sha256": "d3732e6a7ffc16f04d6ba5066f6e7689b26293b2d2ea899687d39704b867dacb",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachConversationStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachConversationSubjectService.swift",
+      "sha256": "372b54d667619e6d9650ec44549bef58d80f40fc01ffd9d7f242456a68238fc7",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachConversationSubjectService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachDailyRhythmService.swift",
+      "sha256": "88d94201bcb3b5cccb3ecd12c53217b672cda367f80fad23cc59be517dc8e1f1",
+      "imports": [
+        "Foundation",
+        "UserNotifications"
+      ],
+      "types": [
+        "CoachDailyRhythmService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachEngine.swift",
+      "sha256": "9b2ea44a31688e140777ad87933506d9c1d498a72164b3a9cefa842a05e7fc12",
+      "imports": [
+        "Foundation",
+        "UIKit"
+      ],
+      "types": [
+        "CoachEngine"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachFirestoreRepository.swift",
+      "sha256": "fd395af18b159154b05333c8e641a08eaf21f8edc5964e6fd4efc1c43518814b",
+      "imports": [
+        "FirebaseFirestore",
+        "Foundation"
+      ],
+      "types": [
+        "CoachFirestoreMessage",
+        "CoachFirestoreThreadMeta",
+        "CoachFirestoreRepository"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachFollowUpSanitizer.swift",
+      "sha256": "916e8b7ad34e73540c2b6ebad5240b814a3a585267dc2f138f474342c631577b",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachFollowUpSanitizer"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachIntelligenceNotificationService.swift",
+      "sha256": "85e70516697c3334e199c9c9615a17dcdf40144c7fc1c84a1f9f809a03ad14ef",
+      "imports": [
+        "Foundation",
+        "UserNotifications"
+      ],
+      "types": [
+        "CoachIntelligenceNotificationService",
+        "FormattedNotification",
+        "CoachNotificationCenterDelegate"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachIntelligencePromptBuilder.swift",
+      "sha256": "d97cc4b096a7923b716a81c01e75ac4ca73fe6f2c2ab0c1ce7bd37d125bb8b28",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachIntelligencePromptBuilder"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachIntelligenceSettingsStore.swift",
+      "sha256": "02205734d0ef29512b6fae7ac7242c2754f2a36292e5e92d159656ab69c846f8",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachIntelligencePersonality",
+        "CoachIntelligenceSettingsStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachMealContentEnricher.swift",
+      "sha256": "92c201d13fd572ae9b6af48dae90fadd3252fbd6b053b23e13a537d5f57feb4c",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachMealContentEnricher"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachMyMemoryStore.swift",
+      "sha256": "745141605aece18317322abc88a4aad9deda19d684d4a23a8e13f4dd3b08108b",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachMyMemoryCategory",
+        "CoachMyMemoryEntry",
+        "CoachMyMemoryStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachPostReplyService.swift",
+      "sha256": "e151541e2e25570e4a6373b7bf98b2542cc3f58a74064186d8a4e2fb910de610",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachPostReplyService",
+        "CoachTrainingTemplateStore",
+        "CoachMyMemoryExtractor"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachPresentationTracker.swift",
+      "sha256": "ac18b36f8f934cbd130545c58f117141769dc93f5042a8a75d8878cf4df77e36",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachPresentationTracker"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachProcessFilesStore.swift",
+      "sha256": "a463a63e7c7d511bd016a8dda9d3b0864fde3672d9f7c577d64ebe8697ba3ec7",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachProcessFile",
+        "CoachProcessFilesStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachRemoteService.swift",
+      "sha256": "724a2c144a5d01ba6eca45df5fa951d9e15e0b6983cf6663fddfb54974ea7d1f",
+      "imports": [
+        "FirebaseAuth",
+        "Foundation"
+      ],
+      "types": [
+        "CoachRemoteTask",
+        "CoachRemoteError",
+        "CoachRemoteService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachSpeechTranscriber.swift",
+      "sha256": "389e993f7c7ef8984b1593e504c533bc6cecb6f3aff041e00bcb39caa07cec11",
+      "imports": [
+        "AVFoundation",
+        "Foundation",
+        "Speech"
+      ],
+      "types": [
+        "CoachSpeechTranscriber",
+        "CoachSpeechError"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/CoachSyncService.swift",
+      "sha256": "8b4fc9bd4298990d57747065653a4803f5f18237086633e86ef63ad05246624e",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachSyncService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/Services/UserContextBuilder.swift",
+      "sha256": "9bfacf4c2cc90da720e2bc0dff4f1b0955d9aed3fd529529f6626c369e5af87a",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachUserContext",
+        "ProfileBlock",
+        "HealthBlock",
+        "BodyScanBlock",
+        "OnboardingFaceBlock",
+        "FaceScanHistoryEntry",
+        "ScanHistoryEntry",
+        "DebloatTrajectoryBlock",
+        "DebloatDayEntry",
+        "UserContextBuilder"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Coach/ViewModels/CoachChatViewModel.swift",
+      "sha256": "f1f4e38a0050d7d02298f4bbe8b2e5d66bb508adcdfbd1833f43f515469b1aa2",
+      "imports": [
+        "Foundation",
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "CoachChatViewModel"
+      ],
+      "animations": [
+        ".spring(response: 0.38, dampingFraction: 0.88)) {",
+        ".spring(response: 0.44, dampingFraction: 0.86)) {"
+      ]
+    },
+    {
+      "path": "Coach/Views/CoachChatView.swift",
+      "sha256": "753632048b4ad200439e32cd024d0c239e6ef494e61644ddb206f9a9e8d0173c",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "CoachChatView",
+        "CoachMessageSpacing"
+      ],
+      "animations": [
+        ".easeOut(duration: 0.22), value: isInputFocused)",
+        ".spring(response: 0.32, dampingFraction: 0.86), value: messageContextMenu != nil)",
+        ".spring(response: 0.34, dampingFraction: 0.86)) {",
+        ".spring(response: 0.34, dampingFraction: 0.86), value: isCompactCameraPresented)",
+        ".spring(response: 0.34, dampingFraction: 0.86), value: viewModel.pendingAttachmentImages.count)",
+        ".spring(response: 0.38, dampingFraction: 0.9)) {",
+        ".spring(response: 0.42, dampingFraction: 0.86), value: showsCloseControl)",
+        ".spring(response: 0.42, dampingFraction: 0.86).delay(0.06)) {"
+      ]
+    },
+    {
+      "path": "Components/KeyboardHeightObserver.swift",
+      "sha256": "63e0863f3363f7aac8b3e2b925fa8e712f91b344362029b0fe5b221614b842ee",
+      "imports": [
+        "Combine",
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "KeyboardHeightObserver"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Components/OptionalAssetImage.swift",
+      "sha256": "cef415e00c5b438bd1adee1f36f9d50a52264b2fe604b729331d0a2d7ddd93e8",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OptionalAssetImage"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Components/ProcessAssetCatalog.swift",
+      "sha256": "a1ad0a988d2739d895db46cd52d68f1a5069075a9c0b1e981065e0cfb7bc103d",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessAssetCatalog"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Components/ProcessAudioSession.swift",
+      "sha256": "44bffdb3d850accff4d1a484b14057740ad4a4527ace550f96e534c548cd7ee5",
+      "imports": [
+        "AVFoundation"
+      ],
+      "types": [
+        "ProcessAudioSession"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Components/ProcessMeasurementPreference.swift",
+      "sha256": "d398388733206671cc8291f206842a74ef4b64d35219a6a019374d83688b6281",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessMeasurementPreference"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Components/ProcessSoundPlayer.swift",
+      "sha256": "20372356418f22b80ee28d1ecdeb9a4ae2b4b65318c35b7298f65e40fea33b83",
+      "imports": [
+        "AVFoundation"
+      ],
+      "types": [
+        "ProcessSoundPlayer"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Components/SafePressGesture.swift",
+      "sha256": "293ceea3c2c5914b4f39c5cbd923d29af42552636eb084376c5060e737ed4499",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "SafePressGesture",
+        "UIKitPressDetector",
+        "Coordinator"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Components/ScreenMetrics.swift",
+      "sha256": "bcd2f770d6fb081bb8f91afb6a88c0a8c0be9fc0b12a4463b0c1598e3dbb369b",
+      "imports": [
+        "UIKit"
+      ],
+      "types": [
+        "ScreenMetrics"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Components/iOS26Stability.swift",
+      "sha256": "8f8e460c935c23876fe6dbb774e2510ffba2f4300f5a3282fbc036a5ae7ece89",
+      "imports": [
+        "Foundation",
+        "Network",
+        "SwiftUI"
+      ],
+      "types": [
+        "iOS26Stability"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Config/AppBranding.swift",
+      "sha256": "e140e117d9baed8ac75d2bda622c5d716f26fcf89f0501c1e0a862bb1a21640f",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "AppBranding"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Config/AppConfiguration.swift",
+      "sha256": "a1592404536781864c1dede20cc012a51de5341abd2ef54c15f1979c0605d4c1",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "AppConfiguration"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Config/AppIntegrations.swift",
+      "sha256": "9deadac4d95e03a486581f763c354766ce858a0c53584fd67a741f239caa2954",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "AppIntegrations"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Config/ProcessLegalURLs.swift",
+      "sha256": "382484b6e2a63a8e7738e8b4d79c6cfc4011226435c852e4f1f952a18c0cbc6b",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessLegalURLs"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Core/ProcessAffiliateLink.swift",
+      "sha256": "eaaec907125d1bf235c141d582223687fb929fb3b468da8398eddfec66c00076",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessAffiliateLink",
+        "ProcessAffiliateAttribution"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Core/ProcessMetricKitMonitor.swift",
+      "sha256": "3535b335efe4f6f11c5a80c85dd7aa43c077d70ee27048f99dcd604fd703a601",
+      "imports": [
+        "MetricKit",
+        "OSLog"
+      ],
+      "types": [
+        "ProcessMetricKitMonitor"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Core/ProcessPerformanceTrace.swift",
+      "sha256": "6c19c5008f79604f8507d8c6c4059d36a081e0e110ee91b9021d111302ce7c18",
+      "imports": [
+        "Foundation",
+        "os"
+      ],
+      "types": [
+        "ProcessPerformanceTrace"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Core/ProcessPersistenceWriter.swift",
+      "sha256": "d57b8ee4ca6046c24f525a7890b26a615eeadb5c12339be567f3a7425ca59c72",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [],
+      "animations": []
+    },
+    {
+      "path": "Core/ProcessReferralCapture.swift",
+      "sha256": "2d7dabd70802b81f70a71dcc09519ea4767c6f5f580ae5f2e5105945f5dc4357",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessReferralLink",
+        "ProcessReferralAttribution"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Core/RemoteMediaCache.swift",
+      "sha256": "22b3852af6b623947d3f3e5a7d6808f09d8a2bda8082212a79533c388d624994",
+      "imports": [
+        "FirebaseAuth",
+        "Foundation"
+      ],
+      "types": [],
+      "animations": []
+    },
+    {
+      "path": "Core/UserScopedStorage.swift",
+      "sha256": "e67f68a0802933a244249b938bf91b83fdcc3d38ea15e9a19fd523c9a59572f5",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "UserScopedStorage"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Core/UserSessionCoordinator.swift",
+      "sha256": "49c1bbd3379652968065c48613b0170b724ab5d78264d0c400a1e2ef7a27a1e1",
+      "imports": [
+        "FirebaseAuth",
+        "Foundation"
+      ],
+      "types": [
+        "UserSessionCoordinator"
+      ],
+      "animations": []
+    },
+    {
+      "path": "DesignSystem/Components/ProcessCarouselPageIndicator.swift",
+      "sha256": "07f49274e350762dd9f8fe499e4a333cd37ade3f0a3dadcef5cccd73a29cdfa2",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessCarouselPageMark"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.22), value: isSelected)"
+      ]
+    },
+    {
+      "path": "DesignSystem/Components/ProcessCoverFlow.swift",
+      "sha256": "68265534619c37e65324d64686d265dcf5f4c79514bfa822e7d61df6bb288224",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessCoverFlowConfig",
+        "ProcessCoverFlow"
+      ],
+      "animations": []
+    },
+    {
+      "path": "DesignSystem/Components/ProcessGlassButtons.swift",
+      "sha256": "0ac9c64dcf25ba4398ee565883b5e165e40232b00f7ddbc5021c03f5a014b290",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessGlassPressStyle",
+        "ProcessAppHeaderControlMetrics",
+        "ProcessGlassIconButton",
+        "ProcessGlassWideButton",
+        "ProcessGlass"
+      ],
+      "animations": [
+        ".spring(response: 0.28, dampingFraction: 0.9)",
+        ".spring(response: 0.32, dampingFraction: 0.86)"
+      ]
+    },
+    {
+      "path": "DesignSystem/Components/ProcessLiquidGlassConfirmSlider.swift",
+      "sha256": "ab405f8deee5017411326bd7510e7d0b35fc1975747df9f0d2d0d4fa1ea4ca0b",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessLiquidGlassConfirmSlider",
+        "Config",
+        "ProcessLiquidGlassConfirmKnobBackground"
+      ],
+      "animations": [
+        ".spring(response: 0.3, dampingFraction: 0.5), value: isActive)"
+      ]
+    },
+    {
+      "path": "DesignSystem/Components/ProcessMotionTiltImageCard.swift",
+      "sha256": "b62a9163334e09c4d247d9fdfc55806073ba95d9fefd5eb1679d27dfeed21acc",
+      "imports": [
+        "Combine",
+        "CoreMotion",
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessMotionTiltImageCard",
+        "ProcessDeviceMotionTiltModel"
+      ],
+      "animations": [
+        ".spring(response: 0.52, dampingFraction: 0.74)) {"
+      ]
+    },
+    {
+      "path": "DesignSystem/DynamicIslandToast/DynamicIslandPassThroughWindow.swift",
+      "sha256": "060b2ee459eefb75aa711a3830a3d1ebe84bb9a785fc8d845be70ed4de61d127",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "DynamicIslandToastState",
+        "DynamicIslandPassThroughWindow"
+      ],
+      "animations": []
+    },
+    {
+      "path": "DesignSystem/DynamicIslandToast/DynamicIslandToastHostingController.swift",
+      "sha256": "e664cded637d5a9dc0db1a18bfd69b8e17138eabe297ecd26954ae1d8717394f",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "DynamicIslandToastHostingController"
+      ],
+      "animations": []
+    },
+    {
+      "path": "DesignSystem/DynamicIslandToast/DynamicIslandToastMessage.swift",
+      "sha256": "ea07279c02d659391896a5fbd83b896ce316f353e65715f52a58267dc2839966",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "DynamicIslandToastMessage"
+      ],
+      "animations": []
+    },
+    {
+      "path": "DesignSystem/DynamicIslandToast/DynamicIslandToastView.swift",
+      "sha256": "182a7862457279a39271d0060c27e848e003d4837637648f6a871708ae5644c4",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "DynamicIslandToastViewModifier",
+        "DynamicIslandToastContentView",
+        "Metrics",
+        "DynamicIslandStreakCounter",
+        "DynamicIslandStreakProgressBar"
+      ],
+      "animations": [
+        ".linear(duration: 0.02).delay(isExpanded ? 0 : 0.28)) { content in",
+        ".spring(response: 0.45, dampingFraction: 0.8)) {",
+        ".spring(response: 0.5, dampingFraction: 0.85)) {"
+      ]
+    },
+    {
+      "path": "DesignSystem/DynamicIslandToast/ScanCompletionToastPresenter.swift",
+      "sha256": "43fbab61fed6edd61283b9034e23a3ebd7a730817703a9e8aed43e006d340f48",
+      "imports": [
+        "Foundation",
+        "SwiftUI"
+      ],
+      "types": [
+        "ScanCompletionToastPresenter"
+      ],
+      "animations": []
+    },
+    {
+      "path": "DesignSystem/DynamicIslandToast/WindowExtractor.swift",
+      "sha256": "dbe1ff1d9601908c9af86e5b257a0eeed8ca41d9fbee5236cf68544c40c244be",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "WindowExtractor"
+      ],
+      "animations": []
+    },
+    {
+      "path": "DesignSystem/ProcessColors.swift",
+      "sha256": "3c4cfb4c2926907c9ae4946399a974f1821b23dfa26fb2c141764d9b114fc509",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessColors"
+      ],
+      "animations": []
+    },
+    {
+      "path": "DesignSystem/ProcessFluidZoomTransition.swift",
+      "sha256": "a379d07868d72a01622f6761fe61f8d86249cc2bc013726c817c4c1c42416ea2",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessZoomTransitionID",
+        "ProcessCoachZoomTransition",
+        "ProcessFluidZoomButtonStyleBody",
+        "ProcessFluidZoomGlassModifier"
+      ],
+      "animations": [
+        ".spring(response: 0.32, dampingFraction: 0.9)"
+      ]
+    },
+    {
+      "path": "DesignSystem/ProcessGlassCompat.swift",
+      "sha256": "d489910e40a80c89612baa47db603e1e3a3611e846523958bed3a5f3427b7de8",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessGlassButtonModifier",
+        "ProcessGlassLabelButtonStyle",
+        "ProcessNativeOrManualPressScale",
+        "ProcessGlassLightStroke",
+        "ProcessInvertedGlassModifier"
+      ],
+      "animations": []
+    },
+    {
+      "path": "DesignSystem/ProcessPageTitleHeader.swift",
+      "sha256": "5b3faec30eaf6ce091d02cb6bf498470d6a57158b66ecaa02dc00fe71ce83ef4",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessPageTitleHeader"
+      ],
+      "animations": [
+        ".spring(response: 0.45, dampingFraction: 0.86)) {"
+      ]
+    },
+    {
+      "path": "DesignSystem/ProcessStickySection.swift",
+      "sha256": "914481262bd137edf26f0f060e14d51480cefde37d7834ddbd036531e13712c6",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessStickySection",
+        "Config",
+        "ProcessStickySectionBackground"
+      ],
+      "animations": []
+    },
+    {
+      "path": "DesignSystem/Toasts/ProcessStackedToasts.swift",
+      "sha256": "179f7f7a6f717e0868b5985fca7955b53cbfb5dcd80ed2e89f1853bee2a8e0b9",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessStackedToasts",
+        "ProcessStackedToastsModern",
+        "ProcessStackedToastsLegacy",
+        "ProcessToastRow",
+        "ProcessToastGlassModifier",
+        "ProcessToastSwipeDismissModifier"
+      ],
+      "animations": [
+        ".spring(response: 0.32, dampingFraction: 0.82)) {",
+        ".spring(response: 0.38, dampingFraction: 0.86), value: toasts)"
+      ]
+    },
+    {
+      "path": "DesignSystem/Toasts/ProcessToast.swift",
+      "sha256": "89e51c80cf390e44f1da2976ce21d9a8f069d3a9ea6ebd73649e9b0f7faacc0d",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessToast",
+        "ProcessToastCenter"
+      ],
+      "animations": []
+    },
+    {
+      "path": "DesignSystem/Toasts/ProcessToastHost.swift",
+      "sha256": "59f71e9119aed354b639251ebd07399ea80a70d1974ffc1cc19be4d624d6327a",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessStackedToastsHostModifier"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Engagement/DebloatTrajectoryFirestoreRepository.swift",
+      "sha256": "3da709bc309166d4eeb6caa86fd13ba0e845869f5ea3e8db8ef2379387f8acbc",
+      "imports": [
+        "FirebaseFirestore",
+        "Foundation"
+      ],
+      "types": [
+        "DebloatTrajectoryFirestoreRepository"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Engagement/ProcessActivityStatusModels.swift",
+      "sha256": "65bdca6d5046cc3a49d8648c5c1b32419e8c47c84ff078b99579faaca3678250",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessActivityStatus",
+        "ProcessActivityStatusState"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Engagement/ProcessActivityStatusStore.swift",
+      "sha256": "63dbca9409998e10fead9497abe93923bda786725a800b27ab7a2e00c3bd4be6",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessActivityStatusStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Engagement/ProcessDebloatTrajectoryEngine.swift",
+      "sha256": "214d5299c2fcc171914e7d7f5e37f6990b97751062db206ed238cf69b21c9f5b",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "EveningCheckInQuestionID",
+        "ProcessDebloatTrajectoryEngine"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Engagement/ProcessDebloatTrajectoryModels.swift",
+      "sha256": "b8615411d247a0682d5eac5fc0376dfcfee2aa04c2ee2aafc65d3f26fb0e9c18",
+      "imports": [
+        "Foundation",
+        "SwiftUI"
+      ],
+      "types": [
+        "DebloatDayVerdict",
+        "TrajectoryTrend",
+        "DebloatDayRecord",
+        "CodingKeys",
+        "ProcessDebloatTrajectoryState",
+        "DebloatTrajectoryPoint",
+        "DebloatTrajectorySnapshot",
+        "tomorrow"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Engagement/ProcessDebloatTrajectoryStore.swift",
+      "sha256": "16d34e78e06ee47835929a0ac2ce4b82f753698f89f67bcdf7d2f4f0278d2aee",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessDebloatTrajectoryStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Engagement/ProcessDebloatValidation.swift",
+      "sha256": "7f57d68bde84b82d8049511369902f3e626a09c99d30234271b7787a6bf402fb",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessDebloatValidation",
+        "Failure"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Engagement/ProcessPlanProgressEngine.swift",
+      "sha256": "69d0bff047f6c7f10522380379a2895bd7f4716442b653537c348eb5fccb2f11",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessPlanProgressEngine"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Engagement/ProcessPlanProgressModels.swift",
+      "sha256": "b29914d7235b2e91794a37fb7aac643cddba3fe6ddf8c1dc1fbbb128c6b40faa",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "PlanDurationEvolutionReason",
+        "PlanDurationEvolutionEvent",
+        "ProcessPlanProgressState",
+        "PlanMilestoneProgress",
+        "PlanProgressSnapshot"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Engagement/ProcessPlanProgressStore.swift",
+      "sha256": "f2e581185a04e14a8795237f0e6658c9fce3da7c797732c7b3150268b148670b",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessPlanProgressStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Engagement/ProcessStreakModels.swift",
+      "sha256": "c8431498dfd9a1ef671e7b5a05aea2f068d1616619c2c2bd579fd802f2db224e",
+      "imports": [
+        "Foundation",
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessStreakState",
+        "ProcessStreakLaunchPolicy",
+        "ProcessStreakMath",
+        "ProcessStreakDaySnapshot",
+        "ProfileProgramStreakDay",
+        "ProcessStreakMilestone",
+        "ProcessStreakSnapshot",
+        "tomorrow",
+        "tomorrow",
+        "ProcessStreakPalette"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Engagement/ProcessStreakStore.swift",
+      "sha256": "d51c712fd9c20c1775607a03bbd650cd0b1e070be2573b5569802823c5c927a0",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessStreakStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Affiliate/AcquisitionCodeService.swift",
+      "sha256": "20989dc33c7d5738020cf86d3eccfadcdb3610e68dad9a4a264743120da267c7",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "AcquisitionCodeService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Affiliate/AffiliateRemoteService.swift",
+      "sha256": "52096071e0e49b63f66ac1f0bb878d06165374795c3203518bcdb8ba835c7e4d",
+      "imports": [
+        "FirebaseAuth",
+        "Foundation"
+      ],
+      "types": [
+        "AffiliateRemoteError",
+        "AffiliateRemoteService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Affiliate/AffiliateService.swift",
+      "sha256": "82165a1a839bcdc6be7024273b1499447c662d7160dd0899825bd1a7949a1b0e",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "AffiliateService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Affiliate/ProcessAffiliateModels.swift",
+      "sha256": "028be2ebc8d4883b6fb698ddab128d800fa624ecfc30c6e393953a5ef9993ac9",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessAffiliateCodeKind",
+        "ProcessAffiliateResolveResult",
+        "ProcessAffiliateDashboardStats",
+        "ProcessAffiliateDashboardCode",
+        "ProcessAffiliateDashboardCommission",
+        "ProcessAffiliateDashboardPayout",
+        "ProcessAffiliateDashboardResponse",
+        "ProcessAffiliateAttributionKind",
+        "ProcessStoredAcquisitionCode"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Affiliate/ProcessAffiliatePortalLink.swift",
+      "sha256": "0227b4b6c4a1a47d600880d3a53f8d1c967fa1ba42b1233118844514d07acf31",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessAffiliatePortalLink"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Affiliate/ProcessAffiliateProgramView.swift",
+      "sha256": "e2c1fdfd9afb498be0adcd57a04663c712e811f422d935e449e66b9207856b2c",
+      "imports": [
+        "FirebaseAuth",
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessAffiliateStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/HomeTutorial/PlanHomeTutorialFocus.swift",
+      "sha256": "de50aa8fd3927568a61afa8d492cc9add90ab911587d0970a11b4abc1580ea6c",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "PlanHomeTutorialFocus"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/HomeTutorial/PlanHomeTutorialOverlay.swift",
+      "sha256": "59db45ef02458f5b790d199bc2af13ccd0d6a6b5b597f5bc93008824f7e96b34",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanHomeTutorialModifier",
+        "PlanHomeTutorialTabStepFooter",
+        "PlanHomeTutorialTabStepControls"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/HomeTutorial/PlanHomeTutorialRotatingBorder.swift",
+      "sha256": "bec1a2e930d22a5ba05636a8732edb23dfdbef53f379a038f89f7e4f9cc501e8",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanHomeTutorialRotatingBorder",
+        "PlanHomeTutorialRotatingBorderPulse",
+        "PlanHomeTutorialMetrics",
+        "PlanHomeTutorialChromeStyle",
+        "PlanHomeTutorialFocusChrome",
+        "PlanHomeTutorialTabSegmentOutline",
+        "PlanHomeTutorialCaption",
+        "PlanHomeTutorialInlineFooter",
+        "PlanHomeTutorialSkipButton"
+      ],
+      "animations": [
+        ".spring(response: 0.52, dampingFraction: 0.88), value: isFocused)"
+      ]
+    },
+    {
+      "path": "Features/HomeTutorial/PlanHomeTutorialStep.swift",
+      "sha256": "48d6c5c4374f7435840fab04b278693f7e406099516571c141384fabf07df9da",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "PlanHomeTutorialStep"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/HomeTutorial/PlanHomeTutorialStore.swift",
+      "sha256": "6d4b0a09042d966d13f1f3634f4ed075040baca7ece7d79f9365c3ffdbe46950",
+      "imports": [
+        "Foundation",
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanHomeTutorialStore"
+      ],
+      "animations": [
+        ".spring(response: 0.52, dampingFraction: 0.86)) {"
+      ]
+    },
+    {
+      "path": "Features/HydrationTimer/ProcessHydrationSipCelebrationCoordinator.swift",
+      "sha256": "95e16eff1293ab1d18b5292d552c37407e7b8cb3488cb543098af2c60520abce",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessHydrationSipCelebrationCoordinator"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/HydrationTimer/ProcessHydrationTimerLiveActivityController.swift",
+      "sha256": "440b62971bb3e86794d44c8346545dd3483d3d18226cd3c2182dcc207036545d",
+      "imports": [
+        "ActivityKit",
+        "Foundation",
+        "UIKit"
+      ],
+      "types": [
+        "ProcessHydrationTimerLiveActivityController"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/HydrationTimer/ProcessHydrationTimerMonitor.swift",
+      "sha256": "ace4d9f9f1def7bff68eec51ccf199eaec0ca5d7425a10222e082431f33b7736",
+      "imports": [
+        "Foundation",
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "ProcessHydrationTimerMonitor"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/HydrationTimer/ProcessHydrationTimerNotificationService.swift",
+      "sha256": "693fa34092929bbb1eba70a3cb0d636514ff50084e2cba1701738716de8fcb1b",
+      "imports": [
+        "Foundation",
+        "UserNotifications"
+      ],
+      "types": [
+        "ProcessHydrationTimerNotificationService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/HydrationTimer/ProcessHydrationTimerPresenter.swift",
+      "sha256": "3674f1bf6ce897c9b8cad8c413303be2a1dc503d7ec8d2093e088d01b3126b61",
+      "imports": [
+        "Foundation",
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessHydrationTimerPresentation",
+        "ProcessHydrationTimerPresenter"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/HydrationTimer/ProcessHydrationTimerStore.swift",
+      "sha256": "39f749346194aee5dbb44b82594354493a11f2b64d0fd0ca98deaacba400d918",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessHydrationTimerState",
+        "ProcessHydrationTimerInterval",
+        "ProcessHydrationTimerStore",
+        "ProcessHydrationTimerDueSource"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/HydrationTimer/ProcessHydrationTimerView.swift",
+      "sha256": "40eb356e710e5e890f18db5a50a10eb805bf73618a7cc62a3f5bb1996cce9c82",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "ProcessHydrationTimerView"
+      ],
+      "animations": [
+        ".easeOut(duration: 0.55)) {",
+        ".spring(response: 0.7, dampingFraction: 0.85), value: progress)"
+      ]
+    },
+    {
+      "path": "Features/MealScan/MealPhotoScanAnalysisService.swift",
+      "sha256": "e175a71df2acddfc00976f5da1d57f0689231ed85358f8f50cb5d3673770515a",
+      "imports": [
+        "Foundation",
+        "UIKit"
+      ],
+      "types": [
+        "MealPhotoScanAnalysisService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/MealScan/MealPhotoScanFlowView.swift",
+      "sha256": "2fd815de1a65a83c6d2724eb5d95cbf109a90a657a8cf530fe8764c9bb085259",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "MealPhotoScanFlowView",
+        "MealScanCompositionEditTarget",
+        "MealPhotoScanCameraPresentation"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.28), value: showsAnalyzingUI)",
+        ".spring(response: 0.30, dampingFraction: 0.90)",
+        ".spring(response: 0.42, dampingFraction: 0.9)) {"
+      ]
+    },
+    {
+      "path": "Features/MealScan/MealPhotoScanViewModel.swift",
+      "sha256": "7ca67972d579fd59cbc7db24e7206c75b5226f63677cdceb2c643a38a4324bc7",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "MealPhotoScanViewModel",
+        "Phase",
+        "ResultTab"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/MealScan/MealScanAnalysisProgressDirector.swift",
+      "sha256": "96aa54356cca4380fedade1672ebbef27d47b5a6b6a96c825476df0647f8b570",
+      "imports": [
+        "Foundation",
+        "Observation"
+      ],
+      "types": [
+        "MealScanAnalysisProgressDirector",
+        "StepStatus",
+        "Step"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/MealScan/MealScanAnalyzingView.swift",
+      "sha256": "15fd299b6ad6ac4cbad5ef99abfcd007ef2dd9aa967997cdb7443adda8274035",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "MealScanAnalyzingView"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.25), value: director.activeStepIndex)",
+        ".easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {",
+        ".linear(duration: 1.8).repeatForever(autoreverses: false)) {",
+        ".spring(response: 0.36, dampingFraction: 0.78), value: status)",
+        ".spring(response: 0.38, dampingFraction: 0.84), value: director.statuses)"
+      ]
+    },
+    {
+      "path": "Features/MealScan/MealScanCompositionEditSheet.swift",
+      "sha256": "b4b307de71f7b2df5399b9bda3c3b1bdc5975d3db38d923c9e67567458c67ff7",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "MealScanCompositionEditSheet",
+        "Mode",
+        "Field"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Profile/AccountDeletionOverlayView.swift",
+      "sha256": "cc6eaa1a6dea2a133a891fca682119529329ad766a5454b83fa5215e6a30b8ec",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "AccountDeletionOverlayView"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.28), value: statusMessage)",
+        ".easeInOut(duration: 1.05).repeatForever(autoreverses: true)) {",
+        ".linear(duration: 1.15).repeatForever(autoreverses: false)) {",
+        ".spring(response: 0.55, dampingFraction: 0.82)) {"
+      ]
+    },
+    {
+      "path": "Features/Profile/EditProfileView.swift",
+      "sha256": "36a8e0a2269bec5de572c4d8fe5fa7a95ac3616d9ba285619d5b451bf66f475f",
+      "imports": [
+        "SwiftUI",
+        "UIKit",
+        "UserNotifications"
+      ],
+      "types": [
+        "EditProfileView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Profile/ProcessCreatorStudioView.swift",
+      "sha256": "2a730b2c0eaaa2cafeadec241a289043413d1d15e0a665e435306762f464f277",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessCreatorStudioView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Profile/ProcessProfileHomeView.swift",
+      "sha256": "e0241d90d6bf71a2884896b827e88ef69b060c28d076358a67400aef597e32f0",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProfileMetricPresentation",
+        "ProcessProfileHomeView",
+        "ProfileStatisticsAnchor"
+      ],
+      "animations": [
+        ".spring(response: 0.42, dampingFraction: 0.86)) {"
+      ]
+    },
+    {
+      "path": "Features/Profile/ProcessProfileView.swift",
+      "sha256": "18a85f60cc34facd06d7537c122c90cf406f27b31b9f90c209fd62f1c2015df2",
+      "imports": [
+        "AuthenticationServices",
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessProfileView",
+        "ProcessProfileTabBarAdoption",
+        "ProfileOnboardingPreviewTopAnchor"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Profile/ProcessSettingsFullScreenView.swift",
+      "sha256": "505fb0299de5db75559d27025e02b1debe46e9e2ea66f5809c12a27d6101820d",
+      "imports": [
+        "AuthenticationServices",
+        "SwiftUI"
+      ],
+      "types": [
+        "ProfileSettingsHubMarker",
+        "ProcessSettingsHubView",
+        "ProcessProfileSettingsTabView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Profile/ProcessSettingsScrollToolBar.swift",
+      "sha256": "f99a472e60a2012ec76fd78603a463d62ba3aeaf1c660a9cfe7b2863b5fea66c",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessSettingsSubpageToolbarModifier",
+        "ProcessSettingsNestedScrollPage",
+        "ProcessSettingsScrollToolBarModifier",
+        "ProcessSettingsToolbarColorSchemeModifier",
+        "ProcessSettingsToolbarBackButton",
+        "ProcessSettingsScrollSectionReporter"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.3), value: subtitle)",
+        ".easeInOut(duration: 0.3), value: title)"
+      ]
+    },
+    {
+      "path": "Features/Profile/ProfileComponents.swift",
+      "sha256": "f0ca7e68c7f89278e3fba2a8ab7e4bd4051c89f5d0d71b0fc7db558ae3866f6b",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "ProfileStretchyHeroFrame",
+        "ProfileHeroBottomLightGlow",
+        "ProfileIdentityStyle",
+        "ProfileIdentityBlock",
+        "ProfileShareSheet"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Profile/ProfileDebloatScoreSection.swift",
+      "sha256": "2f692126270ceb16766ccb6a08177c6423c7bbabf4744e802ff2fabdd5ef9208",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProfileDebloatScoreSection",
+        "RangeKind",
+        "DayScore",
+        "ProfileDebloatScoreChart",
+        "ProfileDebloatScorePalette"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.2)) {"
+      ]
+    },
+    {
+      "path": "Features/Profile/ProfileEditComponents.swift",
+      "sha256": "6ed2c677dce20263b2b22a94706d101364a992d38fbc591df2bd33f19f19d985",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "ProfileEditTheme",
+        "ProfileInterestChip",
+        "ProfileInterestFlowLayout",
+        "AccountDetailsTheme",
+        "AccountDetailsGlassReliefModifier",
+        "ProfileAccountDeletionHandlerKey",
+        "AccountDeleteAnimatedButton",
+        "AccountDeleteConfirmationSheet",
+        "ProcessSettingsOpalTheme",
+        "ProcessSettingsChangeFeedback",
+        "ProcessSettingsSaveToolbarButton",
+        "ProcessSettingsOpalPressStyle",
+        "ProcessSettingsOpalPageBackground",
+        "ProcessSettingsOpalScrollPage",
+        "ProcessSettingsOpalBackButton",
+        "ProcessSettingsOpalSectionTitle",
+        "ProcessSettingsOpalCard",
+        "ProcessSettingsOpalRowDivider",
+        "ProcessSettingsOpalRow",
+        "ProcessSettingsOpalTrailing",
+        "ProcessSettingsInlineLanguageRows",
+        "ProcessSettingsLatestScanAvatar",
+        "ProcessSettingsOpalAccountRow",
+        "ProcessSettingsOpalActionRow",
+        "ProcessSettingsOpalDestructiveButton",
+        "ProcessSettingsOpalGlowButton",
+        "ProcessSettingsOpalField",
+        "ProcessSettingsOpalVersionFooter"
+      ],
+      "animations": [
+        ".spring(response: 0.28, dampingFraction: 0.9, blendDuration: 0.06)",
+        ".spring(response: 0.34, dampingFraction: 0.86)"
+      ]
+    },
+    {
+      "path": "Features/Profile/ProfileFieldEditors.swift",
+      "sha256": "0058db6d96c03b4ca8a07bd54d1ba25dacefec508682f6e20fe580b2f202394e",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "ProfileEditDestination",
+        "ProfileNameEditorView",
+        "ProfileGenderEditorView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Profile/ProfileInterestsCatalog.swift",
+      "sha256": "f499aeca2e7ad4e288c132890f8322c1b2f3b8ecea87a2a45fd9c7e5d8be6a97",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProfileInterest",
+        "ProfileInterestCategory",
+        "ProfileInterestsCatalog"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Profile/ProfileMetricChartDesign.swift",
+      "sha256": "f16c421e213767cd2076c0b16870219c55380e41757b2a19daad3ce2fd593448",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProfileChartAnimationGate",
+        "ProfileMetricChartLayout",
+        "ProfileMetricChartSection",
+        "ProfileMetricChartPresentation",
+        "ProfileMetricChartSectionContent",
+        "ProfileChartStatusBadge",
+        "ProfileMetricChartRenderer",
+        "ProfileMetricChartAxis",
+        "ProfileMetricChartGrid",
+        "ProfileMetricChartXAxis",
+        "ProfileMetricSplineChart",
+        "ProfileMetricLineAreaChart",
+        "ProfileMetricBarTrendChart",
+        "ProfileMetricDashedLineChart",
+        "ProfileMetricComparisonLabel"
+      ],
+      "animations": [
+        ".easeOut(duration: 0.85)) { drawProgress = 1 }",
+        ".easeOut(duration: 0.9)) { drawProgress = 1 }"
+      ]
+    },
+    {
+      "path": "Features/Profile/ProfilePerformanceComponents.swift",
+      "sha256": "47b498b63eb15d5704b3f1bc7e3a432d2b162dc04151c7c112d32a93da55a1aa",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "ProfileAnalyticsRange",
+        "ProfileAnalyticsPoint",
+        "ProfilePerformancePalette",
+        "ProfileAvatarButton"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Profile/ProfileRegularityChart.swift",
+      "sha256": "0c8355e9f6d536db5e0755778a64c977de45b0f75df0d2446288e71467a270d4",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProfileAnalyticsLineShape",
+        "ProfileAnalyticsAreaShape",
+        "ProfileWeightChart"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Profile/ProfileScanEvolutionPair.swift",
+      "sha256": "d8a42e9f8dc56f25cb00647d04c5eda4d72b6d0a4ad23cd9404f3b54d858f9ba",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProfileScanEvolutionPair"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Profile/ProfileSettingsCategories.swift",
+      "sha256": "f6cade336ee705498b3e9ddb25d59204d4ed67df1a0c3525f94104087941c289",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProfileSettingsCategory",
+        "ProfileSettingsGroupedSection",
+        "ProfileSettingsHubTitleRow",
+        "ProfileSettingsHubDivider",
+        "ProfileSettingsCategoryHubRow"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Profile/ProfileSettingsSections.swift",
+      "sha256": "227aae02864c84c1f60680af6b19123f3c396538c758efb43eb4f0a6d9078e34",
+      "imports": [
+        "FirebaseAuth",
+        "SafariServices",
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "ProfileSettingsAccountDetailView",
+        "ProfileSettingsHealthDetailView",
+        "ProfileSettingsAppDetailView",
+        "ProfileSettingsLanguageDetailView",
+        "ProfileSettingsLegalDetailView",
+        "ProfileSettingsSafariView",
+        "BodyScanHistoryTabContent"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Profile/ProfileStreakAchievementsSection.swift",
+      "sha256": "77e3997b87c8546d5a93b24c8f2d00df8885240d539cf7a19994e37705a9658a",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProfileStreakDesign",
+        "ProfileStreakAchievementsSection",
+        "ProfileStreakStatsAnchor",
+        "ProfileStreakTodaySpinner",
+        "ProfileStreakReliefNumber",
+        "ProfileStreakHeroGlow",
+        "ProfileMiniFlameIcon",
+        "ProfileAnimatedFlameView",
+        "ProfileFlamePath"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.25), value: message)",
+        ".easeInOut(duration: 2.4).repeatForever(autoreverses: true), value: pulse)",
+        ".linear(duration: 1.1).repeatForever(autoreverses: false)) {",
+        ".spring(response: 0.34, dampingFraction: 0.82)) {",
+        ".spring(response: 0.38, dampingFraction: 0.78), value: day.isComplete)",
+        ".spring(response: 0.4, dampingFraction: 0.82), value: streakStore.displayStreak)",
+        ".spring(response: 0.4, dampingFraction: 0.82), value: value)",
+        ".spring(response: 0.45, dampingFraction: 0.82), value: range.lowerBound)",
+        ".spring(response: 0.45, dampingFraction: 0.82), value: range.upperBound)",
+        ".spring(response: 0.55, dampingFraction: 0.82)) {",
+        ".spring(response: 0.55, dampingFraction: 0.82).delay(0.08)) {"
+      ]
+    },
+    {
+      "path": "Features/Profile/ProfileTheme.swift",
+      "sha256": "958bfe9621290011ba4264abc6167ce92a57e7ec7768c58c54cf0c66fe571b14",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "ProfileTheme",
+        "ProfileEmptyHeroBackground"
+      ],
+      "animations": [
+        ".spring(response: 0.28, dampingFraction: 0.9)",
+        ".spring(response: 0.38, dampingFraction: 0.86)"
+      ]
+    },
+    {
+      "path": "Features/Profile/ProfileWeightHistory.swift",
+      "sha256": "0b538a1f0ad887814311f2dbe53e4618e5e9ec2150d17d8e987db2ef69fd573f",
+      "imports": [
+        "Foundation",
+        "SwiftUI"
+      ],
+      "types": [
+        "ProfileChartMetric",
+        "ProfileChartVisualStyle",
+        "ProfileChartAxisStyle",
+        "ProfileChartColors",
+        "ProfileChartHistoryBuilder"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Profile/SocialProfileStore.swift",
+      "sha256": "99fe171ef85aa20f8eab346df19eaf6c004f7cebbe386b50510414902f9aacb1",
+      "imports": [
+        "Foundation",
+        "SwiftUI"
+      ],
+      "types": [
+        "SocialProfilePin",
+        "SocialProfile",
+        "SocialProfileStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Profile/UserProfileOnboardingSummary.swift",
+      "sha256": "b9eac54fcff1eb9a8f2f4017e1a3039165eca5a20d55b0f70277b84f93486655",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProfileSummaryItem",
+        "ProfileSummarySection"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Referral/ProcessReferralFirestoreRepository.swift",
+      "sha256": "ad1ff3dc251fdd0e4f965496247db3b765692154507299fd09b477ae22b7debd",
+      "imports": [
+        "FirebaseFirestore",
+        "Foundation"
+      ],
+      "types": [
+        "ProcessReferralFirestoreRepository"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Referral/ProcessReferralMetalCard.swift",
+      "sha256": "3acfc1470c979169ef9f57d8aeb2722676793deb002eded679d01744f5b4d6ba",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "ProcessReferralInviteHeadline",
+        "ProcessReferralEngravedMetalCard",
+        "ProcessReferralOpalCodeTile",
+        "ProcessReferralMetalBrushedOverlay",
+        "ProcessReferralMetalNoiseOverlay"
+      ],
+      "animations": [
+        ".easeOut(duration: 0.2)) {",
+        ".spring(response: 0.28, dampingFraction: 0.72)) {",
+        ".spring(response: 0.52, dampingFraction: 0.76)) {"
+      ]
+    },
+    {
+      "path": "Features/Referral/ProcessReferralModels.swift",
+      "sha256": "0775095ac28bb246aa50a3d895c53739ef54dd156bf9347f0b735f242a8425b8",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessReferralCode",
+        "ProcessReferralEntryStatus",
+        "ProcessReferralRewardDuration",
+        "ProcessReferralEntry",
+        "ProcessReferralRewardSummary",
+        "ProcessReferralSnapshot",
+        "ProcessReferralProgramTerms",
+        "ProcessReferralDashboardResponse"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Referral/ProcessReferralProgramView.swift",
+      "sha256": "f9ff60f2c0fd9e820b374fcb9dd95b56b6bc0a8e74cfeca5fa39a519d47c175a",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessReferralProgramView",
+        "ProcessReferralProgramDetailView",
+        "ProcessReferralProgramScrollAnchor",
+        "ProcessReferralProgramScreen",
+        "ProcessReferralTheme"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Referral/ProcessReferralRewardsDesign.swift",
+      "sha256": "d9e9bbea32682465cba9081a403f6a8df629f556b0377dcd537381dcd8b555bb",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "ProcessReferralRewardsPalette",
+        "ProcessReferralOpalProgressText",
+        "ProcessReferralGlassSocialShareRow",
+        "ProcessReferralHowItWorksStep",
+        "ProcessReferralHowItWorksSection",
+        "ProcessReferralHowItWorksStepRow",
+        "ProcessReferralGlassShareButton"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Referral/ProcessReferralShareRouter.swift",
+      "sha256": "ffe83cb7ba5859840101d426dfec2c2512fd7528e983119d2db5957925e662ac",
+      "imports": [
+        "MessageUI",
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "ProcessReferralShareDestination",
+        "ProcessReferralShareRouter"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Referral/ProcessReferralSocialBrandIcons.swift",
+      "sha256": "5698ee2d87b162d02069a774443f56aa49b97a037d0af4ecdf77a6bb0f39fa78",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessSocialBrand",
+        "ProcessSocialBrandIcon",
+        "ProcessReferralSocialShareMetrics",
+        "ProcessReferralSocialBrandIcon"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Referral/ProcessReferralStore.swift",
+      "sha256": "e433a4294aeedb932fbf6d07ab40c798bfe1cb5df9929e0a685d40b1d60d5a92",
+      "imports": [
+        "Foundation",
+        "UIKit"
+      ],
+      "types": [
+        "ProcessReferralStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Referral/ReferralRemoteService.swift",
+      "sha256": "b16394ffd4a3966879253dd0fa8794af4f55ca6250c10d27d88d53da3aac2b0b",
+      "imports": [
+        "FirebaseAuth",
+        "Foundation"
+      ],
+      "types": [
+        "ReferralRemoteError",
+        "ReferralRemoteService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Referral/ReferralService.swift",
+      "sha256": "bc4b5d061a5b624883c2f99ec4ab4e4adead4b3a8593de5c2fbef88b893b5c89",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ReferralService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Settings/GroupedSettingsComponents.swift",
+      "sha256": "b86f452b228956e657d5b251ec715c4415fe671b0c60776cf7de865ed2c104e3",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "GroupedSettingsMetrics",
+        "GroupedSettingsIconBox",
+        "GroupedSettingsCard",
+        "GroupedSettingsRowDivider",
+        "GroupedSettingsInfoRow",
+        "GroupedSettingsSectionLabel"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Features/Settings/HealthConnectedSourcesSettingsView.swift",
+      "sha256": "6184af11f0adff26d2a48bbcb7456947a72eea74a655af4adbca65b633674c56",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "HealthConnectedSourcesSettingsView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Components/DailyJournalChecklistView.swift",
+      "sha256": "2563305549b614d8daf5601f5f8839f53312b762b075d46e16c822dce43ffdf0",
+      "imports": [
+        "SwiftUI",
+        "UniformTypeIdentifiers"
+      ],
+      "types": [
+        "JournalDesign",
+        "Strip",
+        "DailyJournalChecklistView",
+        "JournalDayCompletionCard",
+        "JournalWeekDayStrip",
+        "JournalDayCellButtonStyle",
+        "JournalDayTileBackground",
+        "JournalStripCurvedHighlight",
+        "JournalTaskRow",
+        "JournalTriStateIndicator",
+        "JournalTriStateControl",
+        "JournalAutoStepsRow",
+        "JournalAutoExerciseRow",
+        "JournalContinuousHabitRow",
+        "JournalCircularProgressRing"
+      ],
+      "animations": [
+        ".spring(response: 0.22, dampingFraction: 0.72), value: configuration.isPressed)",
+        ".spring(response: 0.32, dampingFraction: 0.78), value: isSelected)",
+        ".spring(response: 0.34, dampingFraction: 0.82)) {",
+        ".spring(response: 0.34, dampingFraction: 0.86)) {",
+        ".spring(response: 0.38, dampingFraction: 0.86)) {",
+        ".spring(response: 0.38, dampingFraction: 0.88)) {",
+        ".spring(response: 0.42, dampingFraction: 0.86)) {",
+        ".spring(response: 0.42, dampingFraction: 0.86), value: isChecklistExpanded)",
+        ".spring(response: 0.42, dampingFraction: 0.86), value: layoutStore.orderedSections.map(\\.rawValue))",
+        ".spring(response: 0.52, dampingFraction: 0.88),"
+      ]
+    },
+    {
+      "path": "Health/Components/HealthHubDesign.swift",
+      "sha256": "2e45c569efd3b526c802fcde4fd9b12953f1185baec74aa0c633ec5785c7cac5",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "HealthHubDesign"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Components/HealthMedicalSourcesView.swift",
+      "sha256": "6485ef67080dae9af0a0b883e385a01723ee0088c78c3de242bbd28c4cf69fd3",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "HealthMedicalSources",
+        "Reference",
+        "HealthMedicalSourcesView",
+        "Style"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Components/HealthPageSectionHeader.swift",
+      "sha256": "0562aa6009495ac4b54ad50e722dea03fef625d1dc4fd065c70ec7b666528ea6",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "HealthPageSectionHeader"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Components/HealthTodayMetricsCard.swift",
+      "sha256": "87655d2f1cdaf2c5980225bbf31a53076210f03ea045480a40464e16ff5d5839",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "HealthTodayMetricsCard"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.22)) { showDetails.toggle() }"
+      ]
+    },
+    {
+      "path": "Health/Components/Hydration/ProcessFluidWaterMotionEngine.swift",
+      "sha256": "24231a6bcdb69f2582e6306c57746b5a0ccd11ae91f73f9c84e4d86a7164776d",
+      "imports": [
+        "Combine",
+        "CoreGraphics",
+        "CoreMotion",
+        "Foundation"
+      ],
+      "types": [
+        "ProcessFluidWaterMotionEngine"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Components/Hydration/ProcessHydrationBottleView.swift",
+      "sha256": "f2815bd487f18fd557a27f0e66e4c2804a247836d27acda532c7e6e9d4730e01",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessHydrationBottleView",
+        "ProcessHydrationBottleMetrics",
+        "ProcessHydrationBottleBodyMaskShape",
+        "ProcessHydrationBottleWaterFillShape"
+      ],
+      "animations": [
+        ".spring(response: 0.82, dampingFraction: 0.78), value: fillLevel)"
+      ]
+    },
+    {
+      "path": "Health/Components/Hydration/ProcessHydrationLogStore.swift",
+      "sha256": "02f25c72897516496d574fbababfc61decca9c74b586bf56bca524e27374d905",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessHydrationEntry",
+        "ProcessHydrationDayLog",
+        "ProcessHydrationLogState",
+        "ProcessHydrationEveningPrefill",
+        "ProcessHydrationLogStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Components/Plan/MealDebloatScoreComponents.swift",
+      "sha256": "5b4c62b175efb58dc15ba76fb8859d6a5dc8a34cab9b611045c4553e2ffe569d",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "MealDebloatScorePalette",
+        "MealDebloatScorePill",
+        "MealDebloatScoreGlassPill",
+        "MealDebloatScoreBreakdownView",
+        "MealDebloatScoreDetailCard"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.3), value: value)"
+      ]
+    },
+    {
+      "path": "Health/Components/Plan/PlanFaceDaySection.swift",
+      "sha256": "6fb90cc722977af79a744f1c2a2816bbfd8f5f7ae70aa596ff52b6be46d540eb",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanFaceDaySection",
+        "LymphCircuitSessionLaunch"
+      ],
+      "animations": [
+        ".spring(response: 0.52, dampingFraction: 0.88), value: tutorialStore.currentStepIndex)"
+      ]
+    },
+    {
+      "path": "Health/Components/Plan/PlanHomeUpgradeProCard.swift",
+      "sha256": "09e1de7568c0410f19ec815ad82e8c6a843b5dc544d57fd5940f1415124f499f",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanHomeUpgradeProCard",
+        "CardKind",
+        "Layout",
+        "PlanHomeUpgradeProCardBackdrop",
+        "PlanHomeUpgradeProCardStore"
+      ],
+      "animations": [
+        ".spring(response: 0.38, dampingFraction: 0.88)"
+      ]
+    },
+    {
+      "path": "Health/Components/Plan/PlanLymphCircuitStepsBar.swift",
+      "sha256": "8658259492ecb1e0d99cd40c19db9e08783ab8cb1ea9cfbb2361a6358568b53c",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanLymphCircuitStepsBar",
+        "Layout"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.35), value: percent)"
+      ]
+    },
+    {
+      "path": "Health/Components/Plan/PlanMealCatalogComponents.swift",
+      "sha256": "159a2c8fe827db2b92e79ff1092e7b1bcfd593e40204c62fc21b2d56ff2f7d91",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanMealCatalogLayout",
+        "PlanMealCatalogCarousel",
+        "PlanMealCatalogCard",
+        "PlanMealCatalogTileButtonStyle"
+      ],
+      "animations": [
+        ".spring(response: 0.28, dampingFraction: 0.82), value: configuration.isPressed)"
+      ]
+    },
+    {
+      "path": "Health/Components/Plan/PlanMealDetailView.swift",
+      "sha256": "0f8356ddfb93c0416dfad43d1e7db8cee7f0a9eaeed5cd547da38bf88c66cc1c",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanMealDetailView"
+      ],
+      "animations": [
+        ".spring(response: 0.42, dampingFraction: 0.86)) {",
+        ".spring(response: 0.42, dampingFraction: 0.86), value: displayedMeal.name)"
+      ]
+    },
+    {
+      "path": "Health/Components/Plan/PlanNutritionDaySection.swift",
+      "sha256": "9c121d37cdbed65cf9e6907fc0eb11be3c506f29eaa21fc19249cf097a7514a6",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "PlanDayMealEntry",
+        "PlanDayMealsProvider",
+        "PlanNutritionDaySection",
+        "PlanHydrationCarouselCard",
+        "PlanNutritionStripLayout",
+        "PlanDayMealsMarketCard"
+      ],
+      "animations": [
+        ".easeOut(duration: 0.78)) {",
+        ".spring(response: 0.32, dampingFraction: 0.48)) {",
+        ".spring(response: 0.52, dampingFraction: 0.88), value: showsMealCard)",
+        ".spring(response: 0.52, dampingFraction: 0.88), value: tutorialStore.currentStepIndex)",
+        ".spring(response: 0.64, dampingFraction: 0.74).delay(0.14)) {",
+        ".spring(response: 0.92, dampingFraction: 0.74)) {"
+      ]
+    },
+    {
+      "path": "Health/Components/Plan/PlanPostureDaySection.swift",
+      "sha256": "ecfaae066093ceea5b795bd67adcfa9e8a6b03b5e86820a9c059d55b215bb62f",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanPostureCircuitContent",
+        "PlanPostureDaySection"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Components/Plan/PlanProgramCalendarView.swift",
+      "sha256": "36d7b5183eb97f679ef2cdd59f632324b4dd5275d113766f3cafacb626c18c7a",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "PlanProgramCalendarView",
+        "PlanProgramCalendarDesign",
+        "PlanProgramCalendarDayStatus",
+        "PlanProgramCalendarDayModel",
+        "PlanProgramCalendarScanThumb",
+        "PlanProgramCalendarDayButtonStyle"
+      ],
+      "animations": [
+        ".spring(response: 0.24, dampingFraction: 0.78), value: configuration.isPressed)",
+        ".spring(response: 0.34, dampingFraction: 0.82)) {",
+        ".spring(response: 0.38, dampingFraction: 0.86)) {",
+        ".spring(response: 0.38, dampingFraction: 0.86), value: selectedDate)"
+      ]
+    },
+    {
+      "path": "Health/Components/Plan/PlanProtocolCarousel.swift",
+      "sha256": "089b9fe635c7188c14d9f76e2e3a5c9c9ad9bd86daa5c88449c09add92706f5f",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanStepsProgress",
+        "PlanProtocolCarouselItem",
+        "PlanProtocolLineParser",
+        "PlanProtocolCarouselBuilder",
+        "PlanProtocolCarouselLayout",
+        "PlanDayProtocolCarousel",
+        "PlanProtocolCarouselCardLayoutStyle",
+        "PlanProtocolCarouselCard",
+        "PlanProtocolCarouselCardPressStyleModifier",
+        "PlanProtocolItemDetailSheet",
+        "PlanProtocolSectionHeader",
+        "PlanStepsProgressFormatter",
+        "PlanStepsProgressRing"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Components/Plan/PlanRoutineHoldValidate.swift",
+      "sha256": "b4ec29311d2698e23d9427feebcf72d721c24fbbef3dd2eb7dac50d33de9ff72",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "RoutineCardPerimeterProgress",
+        "RoutineHoldValidateDetector",
+        "Coordinator",
+        "RoutineHoldTouchView",
+        "PlanRoutineHoldValidateOverlay"
+      ],
+      "animations": [
+        ".easeOut(duration: 0.18)) {",
+        ".easeOut(duration: 0.25)) {",
+        ".linear(duration: 0.02), value: holdProgress)",
+        ".spring(response: 0.38, dampingFraction: 0.72)) {",
+        ".spring(response: 0.42, dampingFraction: 0.78)) {",
+        ".spring(response: 0.5, dampingFraction: 0.8).delay(0.12)) {"
+      ]
+    },
+    {
+      "path": "Health/Components/Plan/PlanTrainingDaySection.swift",
+      "sha256": "1544094828e1cf87713c64c2c649bb7e398fa974c2d3ce314ebc0b578f53b29e",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanTrainingDaySection"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Components/Plan/PlanTrainingMediaViews.swift",
+      "sha256": "f23779e68276be9b3b3bd7270bdb1a8d3490ec70c0f80bbe2c8fdb37c36abe9e",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanTrainingMediaThumb",
+        "PlanTrainingBlockRow",
+        "PlanTrainingCardReliefOverlay",
+        "PlanTrainingCard3DPressStyle",
+        "PlanTrainingCardPairedPressStyle"
+      ],
+      "animations": [
+        ".spring(response: 0.28, dampingFraction: 0.82), value: configuration.isPressed)",
+        ".spring(response: 0.32, dampingFraction: 0.74), value: configuration.isPressed)"
+      ]
+    },
+    {
+      "path": "Health/Components/PlanHomeFaceScanDisplayPreferences.swift",
+      "sha256": "5cfbf74d6b686a001da104b119d90b298b8258088c90a3f78cede2da78d9a362",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "PlanHomeFaceScanDisplayPreferences"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Components/PlanHomeGreeting.swift",
+      "sha256": "4b8aecb96d9219792aa18d8ee975bd6c7e3ae52b4e62671a78931a0c9268a185",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "PlanHomeGreeting",
+        "PlanHomeGreetingBuilder"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Components/PlanHomeHealthMetrics.swift",
+      "sha256": "7e0c5b0a080ddfbe6d0b174ffad2db1ca69f782c0c130a23b41b43535e296064",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "PlanHomeHealthMetrics"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Components/PlanHomeLayoutEditorSheet.swift",
+      "sha256": "0ab10d1a021689e12495f5cbd54b4d293e8cf633e244ad52b29854a66bc26cde",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanHomeLayoutEditableSection",
+        "PlanHomeSectionDropDelegate"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.22), value: isVisible)",
+        ".spring(response: 0.34, dampingFraction: 0.86), value: isDragging)",
+        ".spring(response: 0.34, dampingFraction: 0.86), value: isVisible)",
+        ".spring(response: 0.38, dampingFraction: 0.88)) {"
+      ]
+    },
+    {
+      "path": "Health/Components/PlanHomeLayoutStore.swift",
+      "sha256": "b23dce4055617bf7ba0c4a7f056ff5fd6dfa1bc75588f3198153588372fccff5",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "PlanHomeLayoutStore",
+        "Payload"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Components/PlanHomePeriodicTicker.swift",
+      "sha256": "f7f63cbbb8a68bcc703c17134daf03cc440703cb982e6bc7e2916de60d6190cb",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanHomePeriodicTicker"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Components/PlanHomeSectionDesign.swift",
+      "sha256": "199c13f7499fb410108f083fdc94bd205cc7b43087547a485534abca0c40bf01",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanHomeSectionDesign",
+        "PlanHomeSectionHeader"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Components/PlanHomeTopChrome.swift",
+      "sha256": "b9fa0540ea53c320556f9f0f5ea64e82a72d6892242ca50ea9a1eed15e676176",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanHomeTopChromePlacement",
+        "PlanHomeTopChrome",
+        "PlanHomeToolbarActions",
+        "PlanHomeStreakFlameButton",
+        "PlanHomeProgramProgressBar",
+        "PlanHomeGreetingLabel",
+        "Style"
+      ],
+      "animations": [
+        ".easeOut(duration: 0.22), value: progress)",
+        ".spring(response: 0.4, dampingFraction: 0.82), value: streakStore.displayStreak)",
+        ".spring(response: 0.5, dampingFraction: 0.82), value: fillProgress)"
+      ]
+    },
+    {
+      "path": "Health/Components/PlanLastFaceScanSection.swift",
+      "sha256": "3468df8ffd1e5f301e74af530b973930ef99d1e53087b75c1bc6f399ad549441",
+      "imports": [
+        "AVFoundation",
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanLastFaceScanSection",
+        "Layout",
+        "PlanFaceScanNextScanFooter",
+        "PlanFaceScanProgressBar",
+        "PlanFaceScanMediaPanel",
+        "UnifiedScanCameraClipShape",
+        "PlanFaceScanLiveCameraPanel"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.28), value: historyStore.isScanDue)",
+        ".easeInOut(duration: 0.28), value: historyStore.latestResult?.id)",
+        ".easeInOut(duration: 0.35), value: fillProgress)"
+      ]
+    },
+    {
+      "path": "Health/HealthKit/HealthKitQueryService.swift",
+      "sha256": "d4cd3efa23cfa4faafb4cd60850ae902f543f5172a9c289b274e56d719a575be",
+      "imports": [
+        "Foundation",
+        "HealthKit"
+      ],
+      "types": [
+        "HealthKitQueryService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/HealthKit/HealthKitTypes.swift",
+      "sha256": "6b0466981029174860ce5567c453c6c3b8abb35541e55ca9753ab5e7019f9c42",
+      "imports": [
+        "Foundation",
+        "HealthKit"
+      ],
+      "types": [
+        "HealthKitTypes"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Models/HealthDataModels.swift",
+      "sha256": "eec00f530a9269601af88d792518821a474c2f22d78c581eace499d0fddc60f4",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "DailyRecoveryData",
+        "DailyEffortData",
+        "DailySleepData",
+        "DailyActivityData",
+        "DailyHealthMetricsData",
+        "DailyNutritionData",
+        "DailyHealthSnapshot",
+        "UserHealthBaselines"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Models/PlanHomeSectionKind.swift",
+      "sha256": "be5f84e6dc671f1cdf2cc8b9ff06c3744f773e8b96e00af485191e9165e94396",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "PlanHomeSectionKind"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Services/BaselineCalculator.swift",
+      "sha256": "ef8d7d4e62ddc5b160b17a5d171b5982b0411a0ad6954ec2f0b84226e8cada20",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "BaselineCalculator"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Services/HealthManager.swift",
+      "sha256": "cb26505e8ad31ddfcdf78a332b11edbe8e576276a6a1732fcffed309d3ed74d9",
+      "imports": [
+        "Combine",
+        "Foundation",
+        "HealthKit"
+      ],
+      "types": [
+        "HealthManager",
+        "HealthMetrics"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Storage/HealthFirestoreRepository.swift",
+      "sha256": "5611d67ff2295de31b35ce02b46b44059562bf05966b713a0bc33f6f94ffe94e",
+      "imports": [
+        "FirebaseFirestore",
+        "Foundation"
+      ],
+      "types": [
+        "HealthFirestoreRepository"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Views/HealthDashboardView.swift",
+      "sha256": "e686effc26d0e616478bdb3032256e3ad5294cbcc6845f26361f24a8c466a1b7",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProfileHealthSection"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Views/PlanDashboardView.swift",
+      "sha256": "66285efad18773215e78b83a04c112e860e184508c2ee8c95e40a0aa7ba72d31",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanDashboardView",
+        "PlanDashboardClearHostingBackground"
+      ],
+      "animations": [
+        ".spring(response: 0.44, dampingFraction: 0.88), value: session.hasCompletedWelcomePlanChat)",
+        ".spring(response: 0.56, dampingFraction: 0.9)) {"
+      ]
+    },
+    {
+      "path": "Health/Views/PlanDayTimelineView.swift",
+      "sha256": "5397cb2a1ea819334e3d00f772feccd6560d4938a9f6e379d2b19ba935a656b5",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PlanDayChronologicalTimeline",
+        "PlanInfoLinkButton",
+        "PlanResourceSheet"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Health/Views/ProcessRoutineHomeView.swift",
+      "sha256": "b32763b882cdeadc5ab8d3a3299ef978f74a209e23dd6222e4c14ef1de64942a",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessRoutineHomeView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Helpers/GooeyRefreshable/ProcessMorphingRefreshable.swift",
+      "sha256": "131905647af02bd5e10132859e5acf0ee5eefe7640a57cb6074e3e680a80f9a7",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessMorphingRefreshableModifier",
+        "ProcessRefreshControlTintUpdater"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.2), completionCriteria: .logicallyComplete) {"
+      ]
+    },
+    {
+      "path": "Helpers/ProcessDeferHomeIndicator.swift",
+      "sha256": "421880aa662514fdbb0c9ea37eab97c437784a10f703cf87a4ec6c5914425bb5",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "ProcessDeferHomeIndicatorController",
+        "ProcessDeferHomeHostingController",
+        "ProcessDeferHomePassthroughView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Helpers/ProcessPreAccessHomeSwipeCoordinator.swift",
+      "sha256": "77444deacca49556420c0063f50a03cbf92d2084546a9118f8250cfa5532320f",
+      "imports": [
+        "Combine",
+        "Foundation"
+      ],
+      "types": [
+        "ProcessPreAccessHomeSwipeCoordinator",
+        "RetentionSurface"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Helpers/ScrollableHeader.swift",
+      "sha256": "f370d4d530b924ba857fbb21478436167cf3dcc3b83bed41f877a74a9e79ddb1",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessFloatingTabBarScrollAdoption"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Helpers/UIApplication+SafeArea.swift",
+      "sha256": "098977922c1e09e3bb1f493c8db04c048ddfa2d90edb71a1bd10d2d847b8e9d9",
+      "imports": [
+        "UIKit"
+      ],
+      "types": [],
+      "animations": []
+    },
+    {
+      "path": "Helpers/VariableBlur.swift",
+      "sha256": "d8d888a73c506eff8f38ef481759fb7953bcd14a82979be01e43eb652498ba34",
+      "imports": [
+        "CoreImage",
+        "QuartzCore",
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "VariableBlurDirection",
+        "VariableBlurView",
+        "VariableBlurUIView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Integrations/AccountDeletionRemoteService.swift",
+      "sha256": "7fe722c93312038ae5bebf93548d742881ea6b3cb139e9969d4524a41ca3edc0",
+      "imports": [
+        "FirebaseAuth",
+        "Foundation"
+      ],
+      "types": [
+        "AccountDeletionRemoteService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Integrations/AppleSignInTokenRegistrar.swift",
+      "sha256": "7f593a9612e7801001e8ce58016791ad79dede821d8948acbf866964602b09f4",
+      "imports": [
+        "FirebaseAuth",
+        "Foundation"
+      ],
+      "types": [
+        "AppleSignInTokenRegistrar"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Integrations/AuthUser.swift",
+      "sha256": "786dedbc3d6ede499a5b29bd5a5d80d44c0c2610f6bbdcdbbff0c714891ec8ba",
+      "imports": [
+        "FirebaseAuth",
+        "FirebaseCore",
+        "Foundation"
+      ],
+      "types": [
+        "AuthUser",
+        "Session",
+        "ProfileChangeRequestBridge"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Integrations/FirebaseAppAttestation.swift",
+      "sha256": "16f5aa020540acd8d1ad308dcd25c0a1c1f4572c6220e8a72d53926c703b1bb9",
+      "imports": [
+        "FirebaseAppCheck",
+        "FirebaseCore",
+        "Foundation"
+      ],
+      "types": [
+        "ProcessAppCheckProviderFactory",
+        "FirebaseAppAttestation"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Integrations/FirebaseAppleSignIn.swift",
+      "sha256": "2ed42fa7b6e463d2bcfc32e8c1db1e937cec1bee25a8aea62b17882b612098e9",
+      "imports": [
+        "AuthenticationServices",
+        "Combine",
+        "CryptoKit",
+        "FirebaseAuth",
+        "UIKit"
+      ],
+      "types": [
+        "AppleSignInManager",
+        "AppleSignInIntent",
+        "AppleSignInError"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Integrations/FirebaseBootstrap.swift",
+      "sha256": "03480a252eba784c693c631d85cb1b8fc9c40f3418d5c5c2218153c53eb5e74c",
+      "imports": [
+        "FirebaseAuth",
+        "FirebaseCore",
+        "FirebaseFirestore",
+        "Foundation"
+      ],
+      "types": [
+        "FirebaseBootstrap"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Integrations/FirebaseProfileRepository.swift",
+      "sha256": "d7910f52b75186154d8c6c586e4361bbd9f650bd56bc051062fc90c960cf570c",
+      "imports": [
+        "Combine",
+        "FirebaseAuth",
+        "FirebaseFirestore",
+        "Foundation"
+      ],
+      "types": [
+        "FirebaseProfileRepository"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Integrations/ProcessUsernameRegistry.swift",
+      "sha256": "e03271d4ee7567d4ba1403a365b715f05b7112e08da0e9a062537f225cffc2f4",
+      "imports": [
+        "FirebaseAuth",
+        "FirebaseCore",
+        "FirebaseFirestore",
+        "Foundation"
+      ],
+      "types": [
+        "ProcessUsernameRegistry",
+        "ProcessUsernameProvisioner"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Integrations/ProcessUsernameTag.swift",
+      "sha256": "6f5b5b872ecf2cf30888daaf92d9a5d546238cc97dc049d6efc1b738161372fd",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessPublicUserTag",
+        "ProcessUsernameTag",
+        "ProcessUsernameError"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Localization/AppCopy.swift",
+      "sha256": "686f7712415cbfac5f9dc614655e115ff21d47473cc078a63548e6bdd042323e",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "AppCopy"
+      ],
+      "animations": []
+    },
+    {
+      "path": "LymphCircuit/LymphCircuitDemoMediaView.swift",
+      "sha256": "eed2a22d524fcfb4d33ace43e6fbe6c3c8bfb85024d62eac8c5c0ae98b69c8a4",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "LymphCircuitDemoMediaView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "LymphCircuit/LymphCircuitExerciseDetailView.swift",
+      "sha256": "5091705382ae11f5b11a9998583e96c5d473e9a4b0ebbd0d6befe9d86a057156",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "LymphCircuitExerciseDetailView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "LymphCircuit/LymphCircuitMotionCoach.swift",
+      "sha256": "e31f4fb645a228641e2d5e116656a57f82e36f1a33128d83d0d3271bf12d763b",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "LymphCircuitMotionCoach",
+        "Snapshot"
+      ],
+      "animations": []
+    },
+    {
+      "path": "LymphCircuit/LymphCircuitSessionModel.swift",
+      "sha256": "8a62e9e50b6ecd3293a7d9a5c7a1d24bacba3ca365a278db108967c390e7a17a",
+      "imports": [
+        "AVFoundation",
+        "Foundation",
+        "SwiftUI"
+      ],
+      "types": [
+        "LymphCircuitPhase",
+        "LymphCircuitSessionModel",
+        "SendableSampleBuffer"
+      ],
+      "animations": []
+    },
+    {
+      "path": "LymphCircuit/LymphCircuitSessionView.swift",
+      "sha256": "690b6b469b78677d8d578910fb80a8fca806b0ac59db105a4f8b631725d01470",
+      "imports": [
+        "AVFoundation",
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "LymphCircuitSessionView"
+      ],
+      "animations": [
+        ".easeOut(duration: 0.15), value: model.motion.intensity)",
+        ".easeOut(duration: 0.2), value: model.coachingMessage)",
+        ".easeOut(duration: 0.2), value: model.countdownValue)"
+      ]
+    },
+    {
+      "path": "LymphCircuit/LymphCircuitVideoCatalog.swift",
+      "sha256": "e01da9ce6dff39dba1cffc6439dd48c5f119c2a40a063ba6ccb021bf3d7b9b4f",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "LymphCircuitVideoCatalog"
+      ],
+      "animations": []
+    },
+    {
+      "path": "MainAppView.swift",
+      "sha256": "ed597d97d0944ded71278ef7e905b65038daedcc86c2222d67eb3d6d6fd97b47",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "MainAppView",
+        "MealPhotoScanCoverModifier"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.22), value: screenFlash.isActive)"
+      ]
+    },
+    {
+      "path": "Navigation/PostOnboardingActivationService.swift",
+      "sha256": "0a3b043fdfe0f02326aa221668ef1f0ec018d68d46dcea18e323c9ad051d8eeb",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "PostOnboardingActivationService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Navigation/ProcessBevelTabBar.swift",
+      "sha256": "a8702a681fd78baa4eb40711c5bbff6a5098517eb8eea8a31e5f3aa2febc91ed",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "ProcessTabBarScrollState",
+        "ProcessMainScrollOffsetKey",
+        "BevelTabMetrics",
+        "ProcessCoachAccessoryCopy",
+        "ProcessCoachTabAccessoryContent",
+        "ProcessCoachAccessoryChrome"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Navigation/ProcessIGStyleTabBar.swift",
+      "sha256": "d42ca271b21a8f9e34b5f5cc7f2e2377ca3eb2ee793e7596adbb527903b7f99a",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "ProcessIGTabMetrics",
+        "ProcessIGTabBarProgressKey",
+        "ProcessIGTabBarScrollModifier",
+        "ProcessIGTabBarScrollTracking",
+        "ProcessIGStyleTabBar",
+        "Coordinator",
+        "ProcessIGSegmentedControl",
+        "ProcessIGTabShell",
+        "ProcessIGMealScanButton",
+        "ProcessIGTabBarGlassChrome",
+        "Style"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Navigation/ProcessMainSection.swift",
+      "sha256": "20ebe1b40ea015d70f067fddcb6bde4762759d7beaac613c7b63b906b4caf75b",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "ProcessMainSection"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Navigation/ProcessMainStickyChrome.swift",
+      "sha256": "cf186bf8cb85d3ad9329947dbe8c7d14f57487c5eb6cee6db96736ee00bdc72f",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "ProcessMainChromeMetrics",
+        "ProfileSubrouteActiveKey"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Privacy/ProcessPrivacyConsentStore.swift",
+      "sha256": "ccaad2ce02a8fef382954f3a61b461b0168ff9c984d7d603d907779ff5a9df1a",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessPrivacyConsentError",
+        "ProcessPrivacyConsentStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Privacy/ProcessPrivacyConsentViews.swift",
+      "sha256": "57c70bb8a1693afaf739af572d9d0a569dcde48167ce82a78ee301ca41d51c59",
+      "imports": [
+        "SafariServices",
+        "SwiftUI"
+      ],
+      "types": [
+        "ThirdPartyAIConsentView",
+        "FaceScanPrivacyGateView",
+        "ProcessThirdPartyAIConsentModifier",
+        "ProcessPrivacySafariView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Retention/AppLaunchRouter.swift",
+      "sha256": "7f0ddfee0dcda736d84ad45fb3f27534629f17f1d21522757275ea7ca99a277e",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "AppLaunchRouter"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Retention/ProcessAppStoreReviewPrompt.swift",
+      "sha256": "4c115deb21057917a21408fd7aa4e6bb62f009fdcb224954ff1176be4bc698c7",
+      "imports": [
+        "StoreKit",
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessAppStoreReviewOpportunity",
+        "ProcessAppStoreReviewPrompt",
+        "ProcessAppStoreReviewPromptsModifier"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Retention/ProcessAppUpdateChecker.swift",
+      "sha256": "9e31ad0d00113024e5d7ee4ce6be54502f286588b011458841379b61067d5836",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessAppUpdateInfo",
+        "ProcessAppUpdateChecker",
+        "ProcessAppUpdateStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Retention/ProcessAppUpdateSheet.swift",
+      "sha256": "1618c82c7a34dd63ed87791a31a883ba850b1087d7d18392f51771e1f3aca950",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessAppUpdateSheet",
+        "ProcessAppUpdatePromptModifier"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Retention/ProcessHomeScreenQuickActionKind.swift",
+      "sha256": "f7f2025ad3bd9839f4c67ac10d5893aa3e16df4b71c302d0ff595395fd8e62f7",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessHomeScreenQuickActionKind"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Retention/ProcessHomeScreenQuickActions.swift",
+      "sha256": "9ebafc5eb9f2dd5e3228d0903dc386696b0fb248cb1f2b7dec6c318b3a902bd1",
+      "imports": [
+        "UIKit"
+      ],
+      "types": [
+        "ProcessHomeScreenQuickActions"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Retention/ProcessMarketingHealthPulseKind.swift",
+      "sha256": "bf971a5f44c99b4ce04fde08fb0f340ef24d201da70c409ee720c07248536fb5",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessMarketingHealthPulseKind",
+        "is",
+        "ProcessMarketingHealthPulseMetrics"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Retention/ProcessMarketingHealthPulseService.swift",
+      "sha256": "f3d8330c8cf7438b32a0406c07552d12958fd0d8d8d1bb61ee8276d57d8cd863",
+      "imports": [
+        "Foundation",
+        "UserNotifications"
+      ],
+      "types": [
+        "ProcessMarketingHealthPulseService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Retention/ProcessMarketingNotificationKind.swift",
+      "sha256": "ea73039e55e036eca0248b9af06f5c0f957cfdd2ca9e5ec8ee99135f012b6e5e",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessMarketingNotificationKind"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Retention/ProcessMarketingNotificationService.swift",
+      "sha256": "1be1b789345972576429feeb6999149e6c07ac77daf9d3bece51357fdf83193b",
+      "imports": [
+        "Foundation",
+        "UserNotifications"
+      ],
+      "types": [
+        "ProcessMarketingNotificationService",
+        "Candidate"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Retention/ProcessSceneDelegate.swift",
+      "sha256": "45e8ef83f088b8c0aa931312eb072a1119b760d17018026888c13287e627355d",
+      "imports": [
+        "UIKit",
+        "UserNotifications"
+      ],
+      "types": [
+        "ProcessSceneDelegate"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Core/AdaptiveScreenLayout.swift",
+      "sha256": "3fa4081aa61e622998a59451f5ff09d9057681a626a9b9761bda1f58e6ee4576",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "AdaptiveScreenLayout",
+        "RegularWidthContainerModifier"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Core/DeadlineModels.swift",
+      "sha256": "c74ffae0e76f14602223ef3b7bc809e5c082c812c45e68cf10062172ab73f5fa",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "DeadlineType",
+        "DeadlineDetailCategory",
+        "DeadlineDetail",
+        "GoalDeadline"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Core/DebugLogger.swift",
+      "sha256": "db676bb0ed5780413b9debafc25a6cab1e8aed8a278f12b6aec96fbb41f6998a",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "DebugLogger"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Core/Font+RevolutTitle.swift",
+      "sha256": "b06a9aa631fb8332d64a4523acbd0912a31fafb48133b0e8e484dff84a01f020",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [],
+      "animations": []
+    },
+    {
+      "path": "Sport/Core/GoalPaceModels.swift",
+      "sha256": "63f35fcc9c7367fbdac66176993737e07b889a056169a30af3a22d53015f8596",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "GoalPace"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Core/HapticManager.swift",
+      "sha256": "a27ec89ef2adc865494ef955e654e944aae4751cfcaeb1092751e23648454a2f",
+      "imports": [
+        "Combine",
+        "CoreHaptics",
+        "UIKit"
+      ],
+      "types": [
+        "HapticManager"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Core/LayoutConstants.swift",
+      "sha256": "cf3a52c244c6d8534305e1318a7a4a04070fbb7f9d3518f5aeeba65b963dc13b",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "LayoutConstants",
+        "Spacing",
+        "Heights",
+        "Cards",
+        "Typography"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Core/NutritionModels.swift",
+      "sha256": "3c24d88cc37ebac6e4926d83dc8a060d58fe44d8f70389ab479166794984d32b",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "NutritionQuality",
+        "DietaryRestriction",
+        "NutritionObstacle",
+        "WeightManagementExperience",
+        "HydrationLevel",
+        "HardestMeal",
+        "NutritionProfile"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Core/OnboardingProgressService.swift",
+      "sha256": "2db1a8c65c7a4ce907cf6a3721cc39885c76302cd1b26bad042f15cb3da0c0db",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OnboardingProgressService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Core/OnboardingWellnessProfile.swift",
+      "sha256": "6cdf985e80e7307f06b105a9c676ac0707a53586c803d5ecda28aa15f68fb527",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OnboardingPrimaryFocus",
+        "OnboardingDebloatDriver",
+        "OnboardingRoutineChallenge"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Core/PersonalizedPlanModels.swift",
+      "sha256": "e854800b167a48a03e0dc1030b14861f3ff9918c961ec057f095f5fcac67eded",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "SportDetail",
+        "MainGoal",
+        "UserGoals",
+        "SpecificGoal",
+        "GoalType",
+        "GoalPriority",
+        "ExperienceLevel",
+        "PersonalRecord",
+        "TrainingConstraints",
+        "WeekDay",
+        "TimeBlock",
+        "TrainingLocation",
+        "PlanEquipment",
+        "InjuryHistory",
+        "InjurySeverity",
+        "UserTrainingPreferences",
+        "TimeOfDay",
+        "CoachingStyle",
+        "FinalBaselines",
+        "MotivationProfile",
+        "MotivationLevel"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Core/PrimaryGoal.swift",
+      "sha256": "109bc3ef37f66e49b257ff4d5be0d9db05bad221b387c283f7b061ff2c30244d",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "PrimaryGoal"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Core/SleepModels.swift",
+      "sha256": "d530f650288786b82b317c3d57b8f51e0b3d57c6bb9cd433bf3cd01330cde9db",
+      "imports": [
+        "Foundation",
+        "HealthKit"
+      ],
+      "types": [
+        "OnboardingSleepQuality",
+        "FatigueFrequency",
+        "FatiguePeaks",
+        "SleepProfile",
+        "RecoveredSleepData"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Core/UnifiedUserProfile.swift",
+      "sha256": "48a32ed43f42cfb28c5d6673146bd1ab170a3ce22cc537aedf636ca4681eaf46",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "UnifiedUserProfile",
+        "CodingKeys",
+        "Gender",
+        "BMICategory",
+        "Sport",
+        "CodingKeys",
+        "SportCategory",
+        "SportFrequency",
+        "SportIntensity",
+        "ChronotypeEnergy",
+        "UserPreferences",
+        "MeasurementUnits"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Core/UserProfileEnums.swift",
+      "sha256": "2676382a3da22bb8e06348ca44c9d12981819105f659230e25d8bc8092201bd2",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "Chronotype",
+        "ActivityLevel",
+        "FitnessGoalType",
+        "Injury",
+        "CodingKeys",
+        "DayOfWeek",
+        "WorkType",
+        "SleepSchedule",
+        "DietType",
+        "SmokingStatus",
+        "AlcoholConsumption",
+        "WorkDay",
+        "MaritalStatus"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Extensions/Color+Extensions.swift",
+      "sha256": "3bf5db6f45ac1e92af6059861db45d56ef2d645bf817bd469067746f50c41973",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Components/AgeWheelPicker.swift",
+      "sha256": "b999f3ffa0dcbc19c1747509e19c588add913b904c20e27a9bf98716a42aff53",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "AgeWheelPicker",
+        "AgeItem"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Components/AnimatedOnboardingGlow.swift",
+      "sha256": "6da5a81d325a29466e5a142b40cc779715c5d4675352edbc9e8971e403856118",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "AnimatedOnboardingGlow"
+      ],
+      "animations": [
+        ".spring(response: 0.55, dampingFraction: 0.86)) {"
+      ]
+    },
+    {
+      "path": "Sport/Onboarding/Components/BeforeAfterComparisonSlider.swift",
+      "sha256": "714e99188560361cd3d466536508e043ef8f8f725328382a3183a903145aced5",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "BeforeAfterComparisonSlider",
+        "ComparisonBadgeStyle"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.85)) {",
+        ".spring(response: 0.62, dampingFraction: 0.84)) {"
+      ]
+    },
+    {
+      "path": "Sport/Onboarding/Components/EstimationStepLayout.swift",
+      "sha256": "0167401d1d244a0c66d09c110e431ababe48a23ceb5f94d03fc8ff1baaed5060",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "EstimationStepLayout"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Components/FaceIDScanUI.swift",
+      "sha256": "868d371744a2325af0ff725fea1f6515d66a0423cdddd5f0c015c2148e58a3e3",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "FaceIDScanColors",
+        "FaceScanCaptureOverlayMode",
+        "FaceScanTiltDirection",
+        "FaceScanViewportMetrics",
+        "FaceScanViewportStyle",
+        "FaceMorphClipShape",
+        "FaceScanOnboardingOvalShape",
+        "FaceScanOnboardingInnerEdgeGlow",
+        "FaceScanFrameCornerBrackets",
+        "FaceScanCornerBracketsShape",
+        "FaceScannerViewport",
+        "FaceIDTickProgressRing",
+        "FaceIDOnboardingTickProgressRing",
+        "FaceIDTiltHoldRing",
+        "FaceScanTiltArrowHint",
+        "FaceIDSuccessRing",
+        "FaceIDFrameHint",
+        "FaceIDContinueButton"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.85)) {",
+        ".easeOut(duration: 0.12), value: filledSignature)",
+        ".spring(response: 0.5, dampingFraction: 0.72)) {"
+      ]
+    },
+    {
+      "path": "Sport/Onboarding/Components/LanguageSelectorView.swift",
+      "sha256": "753778e6bc9772b368f29d346eda87c4cf69b54807eb589820057da6fd5fe7be",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "LanguageSelectorView",
+        "LanguageMenuGlassModifier"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Components/OnboardingAnalysisYesNoPopup.swift",
+      "sha256": "0dd4f05b4fff004b101b325f686934b23c38f8b538a177351a446fcfe1730edd",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingAnalysisYesNoPopup"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Components/OnboardingBackButton.swift",
+      "sha256": "2e852e54f9e8c00fcb60787904c5971e4ac37c984a18ea65d7cffae8966b6b7e",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingBackButton"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Components/OnboardingConstants.swift",
+      "sha256": "686fdf5b6fc2ffcda4c198e1a54f69aefaf1845d43cfa09742d84ec8340b6875",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "OnboardingConstants",
+        "OnboardingHeaderLayout"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Components/OnboardingEstimationGraphView.swift",
+      "sha256": "f37253a4640172d76b644939e3751c5b9524f84e15877cebb74aa1540cdd9c60",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingEstimationGraphView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Components/OnboardingProgressBar.swift",
+      "sha256": "896a46c666d46d57314308ef026983151a707706f0fb42d42e4fb88d9ca5cdc0",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingProgressBar",
+        "OnboardingSegmentedProgressBar"
+      ],
+      "animations": [
+        ".spring(response: 0.34, dampingFraction: 0.88), value: clampedProgress)"
+      ]
+    },
+    {
+      "path": "Sport/Onboarding/Components/OnboardingStandardStepLayout.swift",
+      "sha256": "5664b9a57c91c1243d3e947452f4eb1534d5e9655841a2a4843624ab1af42ef9",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingStandardStepLayout"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Components/OnboardingTheme.swift",
+      "sha256": "dcdc1ad66579172246ead6267a1f330fc82ea4564df33cf5e76e0bdffaf0badd",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "OnboardingTheme"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Components/OnboardingTitleView.swift",
+      "sha256": "8df95646ec1e67a1d6a0656bb60fb3401708a6c83337046dc846a80277586f9a",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingTitleView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Components/OnboardingTransition.swift",
+      "sha256": "b9a13cd68a8501169d27168c0e0281a9d1a533e4fc5fa3caa509c4e6fe202146",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "TransitionDirection",
+        "OnboardingTransitionTiming",
+        "OnboardingScanFlowMotion",
+        "OnboardingStepLayoutModifier",
+        "OnboardingHorizontalShakeEffect"
+      ],
+      "animations": [
+        ".spring(response: 0.42, dampingFraction: 0.86, blendDuration: 0.18)"
+      ]
+    },
+    {
+      "path": "Sport/Onboarding/Components/OnboardingUnitSegmentToggle.swift",
+      "sha256": "1cb228b2461769893ea5ae9b4bc425bab261e403c2d693103b6fb9170fba7b33",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingUnitSegmentToggle"
+      ],
+      "animations": [
+        ".spring(response: 0.3, dampingFraction: 0.7)) {"
+      ]
+    },
+    {
+      "path": "Sport/Onboarding/Components/TickPicker.swift",
+      "sha256": "cc3dca11e0321c338d95b805434e72a86ee7449cf5730581a14d62377fa464dc",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "TickConfig",
+        "Alignment",
+        "TickPicker"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Components/TransformationBundledVideo.swift",
+      "sha256": "feac46a1ff0943b67a2a6193d2a52183a7ce0a81724e8e79a08031747c0fae63",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "TransformationBundledVideo"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Components/TransformationCaseStudyCard.swift",
+      "sha256": "482b1d9a9e0e353ed9c1913992e0841dd36c7b46cd153bfb37ea377df7ef66dc",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "TransformationCaseStudyCard"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Models/OnboardingAnswersSnapshot.swift",
+      "sha256": "00e7cbdcb318d7a4e7f33bcddbdcfb616ca62e1522c2b2a608182c1b69edb8ed",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OnboardingAnswersSnapshot",
+        "OnboardingDashboardScanPersistedState"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Models/OnboardingDataModel.swift",
+      "sha256": "c846ec00a113ee678618a044a636dc071b2c86bbf67ab69afd71a3f1bf8be478",
+      "imports": [
+        "Combine",
+        "Foundation"
+      ],
+      "types": [
+        "OnboardingDataModel"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Models/OnboardingEstimationModels.swift",
+      "sha256": "39e6857d3d9ad3546f9a9f68077a57d6d516fc9736e68bb4b2d50c6237895e9e",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OnboardingEstimationContext",
+        "OnboardingGraphMilestone",
+        "OnboardingEstimationGraphSnapshot"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Models/OnboardingStep.swift",
+      "sha256": "c27544a5b5499f5218dbf4bc66ec35155605c54eda30764ae70677afab6a66d8",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OnboardingStep"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Models/WeightGoal.swift",
+      "sha256": "1b8d811d418bf100355bbcae17b2dbfb0e88817c83341e58f066f3107c552a4e",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "WeightGoal"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Moss/MossAnalytics.swift",
+      "sha256": "05a4cb85134b3ba97d28a7744216aaf909fb1f8dbe1f262ce1559a7fa5ba78e3",
+      "imports": [
+        "Foundation",
+        "os"
+      ],
+      "types": [
+        "MossAnalytics"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Moss/MossChat.swift",
+      "sha256": "82887138da879efe7dd93d502145749af87e752744d8dd74b70614c55bb8b821",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "MossChatStyle",
+        "MossIMessage",
+        "MossBalloonShape",
+        "MossAppIconRow",
+        "MossAnswerChipMetrics",
+        "MossChip",
+        "MossChipPress",
+        "MossSettleIn",
+        "MossChatPrimaryButton",
+        "MossBreathingArc",
+        "Edge",
+        "Palette"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Moss/MossConversationEngine.swift",
+      "sha256": "536f76663b5742977faf6820178a28c2d8cd77a330e103de637177c7f8c52d4d",
+      "imports": [
+        "CoreHaptics",
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "MossTypingProfile",
+        "MossLine",
+        "MossConversationEngine",
+        "Sender",
+        "Message",
+        "MossTypeHaptics",
+        "MossTypedText",
+        "MossConversationBubble"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Moss/OnboardingMossChatHelpers.swift",
+      "sha256": "7934bd64f2a9dd0ca551f2c8d741207c773b8f6c610c42996482fae5d8ffbe0a",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OnboardingMossChatHelpers"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Moss/ProcessMossTheme.swift",
+      "sha256": "3c4f946ff56152786b05e586bdd508abe9ac7869feee67714d21b62f95c90dae",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "Theme",
+        "Space",
+        "Fonts"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/OnboardingCoordinator.swift",
+      "sha256": "ff6f12e3f969f01dbdb62e8f0a7a1a1a922e0d0e9f9711ab5c425afa16a93a6d",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OnboardingCoordinator"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/OnboardingFlowHelpers.swift",
+      "sha256": "43f11f4fe1c41d72418337b270307a50e15dd3b35f549f8e6814313b09c98b76",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/OnboardingView+Computed.swift",
+      "sha256": "07ee815e3ee16f9d2a4914d0888095e0d640501d37bafc78cd248b02489c5a4d",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/OnboardingView+Navigation.swift",
+      "sha256": "285f9db13e856b3de26c1d4ad69c81b7e95a012d3a245a8f3b7c5c0c794dfc82",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/OnboardingView+StepContent.swift",
+      "sha256": "f271b5873584a1b43944a6e017a45e43812f9145381638d491accc6d62ea79db",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/OnboardingView.swift",
+      "sha256": "7e69c63125e0aabf40938c4c5e05e026180a96763dc82e754ca29757c2dc93ef",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "SportOnboardingView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/OnboardingViewChrome.swift",
+      "sha256": "fbbf54483db9071fd929b1bcd2e7a3e5c6ba63cda48be6e4b98bfb742d20ff23",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingHeaderChrome"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/OnboardingViewModel.swift",
+      "sha256": "0e6a5722290af05f7a59bac5132646d1f149a0ca8aaf2a92295ebaa98b9f1357",
+      "imports": [
+        "Combine",
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingViewModel",
+        "OnboardingDashboardPreviewPresentation"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/ProcessAppLanguage.swift",
+      "sha256": "02f2c549f3712f07349eb3cc16da3b3bb5277fcb7e2d613ee343ba43d8d8bc6b",
+      "imports": [
+        "Foundation",
+        "Observation"
+      ],
+      "types": [
+        "ProcessAppLanguage"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/ProfileChat/OnboardingAnalysisProgressConfig.swift",
+      "sha256": "a9de1795cacf0b92e80e92a11519c840f72b9aabfe2ce9ed3ee6469003106d75",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OnboardingAnalysisProgressConfig",
+        "PopupKind",
+        "Popup",
+        "ProgressStep"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/ProfileChat/OnboardingDedicatedFaceScanResultsView.swift",
+      "sha256": "29d3b3ef4088d442e5cd30dff75a783333ef4aa6559ccc59ffaf25a44c4c92eb",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingDedicatedFaceScanResultsView",
+        "OnboardingCreatePlanButton",
+        "OnboardingCreatePlanButtonStyle",
+        "OnboardingCreatePlanButtonVisual",
+        "OnboardingCreatePlanRotatingBorder"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/ProfileChat/OnboardingFaceDeepAnalysisView.swift",
+      "sha256": "f070f19e1e9e61c481b6f91457dacecfc77dbff2325492e1d3d64755859201c5",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingFaceDeepAnalysisView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/ProfileChat/OnboardingFaceScanMarkerCalibration.swift",
+      "sha256": "f5d9d846bc9bf9ca40f1d2f50a043cda4fc47d8570c0c5744d84ebd2c3b03eb0",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OnboardingFaceScanMarkerCalibration"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/ProfileChat/OnboardingProfileChatAnswerReveal.swift",
+      "sha256": "69aa3bdc00f633babe831f5b38539a6ace50087bf97b3f69fb3a7d02896ea7fc",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingProfileChatAnswerRevealModifier"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/ProfileChat/OnboardingProfileChatCoachHeader.swift",
+      "sha256": "cbfb114eb06f900ccf78938cd3dc1e46f30e15a156f3b2867880208800dfd70b",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingProfileChatCoachHeaderProgress",
+        "Snapshot"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/ProfileChat/OnboardingProfileChatDepthStyle.swift",
+      "sha256": "0db3be85afcb9e18c0fd758a587b89d5fba501d3d714f198e5943076609fc548",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingProfileChatDepthStyle",
+        "OnboardingChatScrollableAnswerStack"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/ProfileChat/OnboardingProfileChatModels.swift",
+      "sha256": "dbc342ff9fb439dcb847b7f55c01d09d3fe449a575e2b2e7fbac6ef91d35f779",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OnboardingProfileChatQuestionKind",
+        "OnboardingProfileChatChoice",
+        "OnboardingProfileChatQuestion",
+        "OnboardingProfileChatQuestionBank"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/ProfileChat/OnboardingProfileChatProfileSummarySection.swift",
+      "sha256": "a346add654e0a911aa7e5eb6e15c169a5f91cacd0d61a50e8443dc4aa1109a1e",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingProfileChatProfileSummarySection",
+        "FlowLayout"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/ProfileChat/OnboardingProfileChatView.swift",
+      "sha256": "9f42fc5b7b54a57e307059f2f801ce0fcd95944543ddade469c7970762e9ef15",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingProfileChatView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/ProfileChat/OnboardingProfileChatViewModel.swift",
+      "sha256": "77da0f7a8673c0ca84a3fbba85b3916ce06d8d1e57dd9fd2787436b540d3b741",
+      "imports": [
+        "Foundation",
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "OnboardingProfileChatViewModel"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.22)"
+      ]
+    },
+    {
+      "path": "Sport/Onboarding/ProfileChat/OnboardingProfileSummaryBuilder.swift",
+      "sha256": "b61c01a7e651800473df2efa1ea8e0776808dba0c963904767523947202b6c31",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OnboardingProfileSummaryChip",
+        "OnboardingProfileSummarySection",
+        "OnboardingProfileSummaryBuilder"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/ProfileChat/OnboardingSportCatalog.swift",
+      "sha256": "1e342b138b80e76c44770f650a556bbaab28cd31e265c6f1016ef53341c7acbd",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OnboardingSportCatalog"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Services/BodyCompositionEstimate.swift",
+      "sha256": "11a28342590d496cfd232e492a6833cc86b1163f3ab5034f4ffc4f924c24839f",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "BodyComposition",
+        "BodyCompositionEstimate"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Services/OnboardingAppleAuth.swift",
+      "sha256": "7abed6c85633943766979b054a14b8be911b93c76b28b70039af4650a6036c39",
+      "imports": [
+        "FirebaseAuth",
+        "Foundation"
+      ],
+      "types": [
+        "OnboardingAppleAuth"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Services/OnboardingEstimationEngine.swift",
+      "sha256": "91c163367722c311602d56d89efac9b19bc6d926c07930286521b84c9798e27e",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OnboardingEstimationTimeline",
+        "OnboardingEstimationEngine"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Services/PersonalizedIdealWeightCalculator.swift",
+      "sha256": "d31ee518811f329ca27b93e82e21f98dae2e1b54559d407c11b8157296057970",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "PersonalizedIdealWeightCalculator"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Steps/AgeSelectionStepView.swift",
+      "sha256": "2afdf2c79605fb1dde7f56786a0db104af4da63a182971c7dab838ab969d09c0",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "AgeSelectionStepView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Steps/BiometricAuthStepView.swift",
+      "sha256": "36f1905e148fe9c6deb56e106c874817a7889e492f21788d3ffcb20afd5ec315",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "BiometricAuthStepView"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.1), value: progress)",
+        ".easeOut(duration: 0.22), value: fill)",
+        ".spring(response: 0.3, dampingFraction: 0.6), value: isPressed)",
+        ".spring(response: 0.35, dampingFraction: 0.78)) {",
+        ".spring(response: 0.42, dampingFraction: 0.78), value: fill)",
+        ".spring(response: 0.44, dampingFraction: 0.68), value: fill)",
+        ".spring(response: 0.45, dampingFraction: 0.72)) {"
+      ]
+    },
+    {
+      "path": "Sport/Onboarding/Steps/DashboardPreviewStepView.swift",
+      "sha256": "1c63de3dac42b2abbb9e968a60dedec02c7eb1bdec01799d235ecc9e8d391a31",
+      "imports": [
+        "AVFoundation",
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "DashboardPreviewStepView",
+        "DashboardPreviewScanSessionSnapshot",
+        "DashboardPreviewCarouselMotion",
+        "DashboardPreviewTourProgressBar",
+        "DashboardPreviewCarousel",
+        "DashboardPreviewAppPage",
+        "DashboardPreviewEmbeddedFaceScanSession",
+        "CapturePayload",
+        "DashboardPreviewPageKind",
+        "DashboardPreviewSlide",
+        "DashboardPreviewTourCopy"
+      ],
+      "animations": [
+        ".easeOut(duration: 0.2), value: logicalSlideIndex)",
+        ".spring(response: 0.42, dampingFraction: 0.9)"
+      ]
+    },
+    {
+      "path": "Sport/Onboarding/Steps/DreamFaceCommitStepView.swift",
+      "sha256": "222768c086fed49e818896b5233336960a2a459f19598fad47497758f3b8f9ff",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "DreamFaceCommitStepView",
+        "DreamFaceCommitSlider"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.16), value: titleRevealProgress)",
+        ".easeInOut(duration: 0.7).repeatForever(autoreverses: true)) {",
+        ".spring(response: 0.32, dampingFraction: 0.86)) {",
+        ".spring(response: 0.38, dampingFraction: 0.82)) {"
+      ]
+    },
+    {
+      "path": "Sport/Onboarding/Steps/FaceLeverageIntroStepView.swift",
+      "sha256": "14a8beb79e44d306e10befcc08a2bf476fa16c5aa170447ab8a8bfda7a340af3",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "FaceLeverageIntroStepView",
+        "FaceLeverageStaggerReveal"
+      ],
+      "animations": [
+        ".spring(response: 0.62, dampingFraction: 0.84)) {"
+      ]
+    },
+    {
+      "path": "Sport/Onboarding/Steps/FirstNameInputStepView.swift",
+      "sha256": "ecf40785542b1075573f13151f476435c3f9544bb849b4fe83648d750ef7f2e4",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "FirstNameInputStepView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Steps/GenderSelectionStepView.swift",
+      "sha256": "8d028f052cbca628e453ccb979b955d39420c066766ecd4b76a5e773eb091584",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "GenderSelectionStepView"
+      ],
+      "animations": [
+        ".easeOut(duration: 0.92).delay(0.24)) {",
+        ".spring(response: 0.3, dampingFraction: 0.78), value: selectedGender)",
+        ".spring(response: 0.4, dampingFraction: 0.8)) {"
+      ]
+    },
+    {
+      "path": "Sport/Onboarding/Steps/HeightStepView.swift",
+      "sha256": "853f107ddadc181fb3b844593c3273233ad707c68243bbd668817746a9dc9e2a",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "HeightStepView",
+        "HeightUnit"
+      ],
+      "animations": [
+        ".spring(response: 0.4, dampingFraction: 0.8), value: selectedHeight)"
+      ]
+    },
+    {
+      "path": "Sport/Onboarding/Steps/OnboardingCreatorCodeStepView.swift",
+      "sha256": "a42c73455c5ae4cb66b4f1aa34adf94733a1ad7e3e44b68c2aed2625c2788b1e",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingCreatorCodeStepView"
+      ],
+      "animations": [
+        ".spring(response: 0.38, dampingFraction: 0.86)) {"
+      ]
+    },
+    {
+      "path": "Sport/Onboarding/Steps/OnboardingEstimationStepView.swift",
+      "sha256": "a39312fdee457cb3dabaaad21f302778b3fab34667115214b8659defa517a2e1",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingEstimationStepView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Steps/OnboardingGlowUpResultsStepView.swift",
+      "sha256": "91c66bdb55b66d93c8d3d70ab44f02e7472e342507fa317f57c3e746f8e638e8",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingGlowUpResultsStepView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Steps/OnboardingPostPaymentThankYouView.swift",
+      "sha256": "7d4bf6ab65928800a00298879975203df04853e48405beb671d4f1a3e3d92093",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingPostPaymentThankYouView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Steps/OnboardingProgramCreationStepView.swift",
+      "sha256": "f720a8f2650c00f6fa148c86fb8431f52114b1dc76de9652abf48a6e7279db4b",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingProgramCreationStepView"
+      ],
+      "animations": [
+        ".spring(response: 0.55, dampingFraction: 0.86), value: creationViewModel.badgeStyle)",
+        ".spring(response: 0.62, dampingFraction: 0.84), value: creationViewModel.displayMode)"
+      ]
+    },
+    {
+      "path": "Sport/Onboarding/Steps/OnboardingProgramCreationUI.swift",
+      "sha256": "7b415b26525b94e7938993fb9762786ca62ef80560279b8ef09367c13ddabdae",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingProgramCreationPalette",
+        "OnboardingProgramCreationBackground",
+        "OnboardingProgramCreationHeroPercentage",
+        "OnboardingProgramCreationBadge",
+        "Style",
+        "OnboardingProgramCreationProgressBars",
+        "ProgramCreationConfettiPiece",
+        "OnboardingProgramCreationConfettiView",
+        "ConfettiPieceView",
+        "OnboardingProgramCreationSuccessView",
+        "OnboardingProgramCreationSuccessFooter"
+      ],
+      "animations": [
+        ".easeOut(duration: 0.35).delay(0.22), value: isRevealed)",
+        ".linear(duration: piece.duration)",
+        ".spring(response: 0.42, dampingFraction: 0.82), value: progresses)",
+        ".spring(response: 0.48, dampingFraction: 0.84), value: clampedVisibleCount)",
+        ".spring(response: 0.55, dampingFraction: 0.86).delay(0.14), value: isRevealed)",
+        ".spring(response: 0.56, dampingFraction: 0.72), value: isRevealed)",
+        ".spring(response: 0.58, dampingFraction: 0.84).delay(0.08),"
+      ]
+    },
+    {
+      "path": "Sport/Onboarding/Steps/OnboardingProgramCreationViewModel.swift",
+      "sha256": "9c5612dacd0901d7eb98df9536316bfab6bece8bee29e2afa62a2b4d7fc83cfb",
+      "imports": [
+        "Combine",
+        "Foundation",
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingProgramCreationPopupModel",
+        "OnboardingProgramCreationViewModel",
+        "Phase",
+        "DisplayMode",
+        "ProgressMilestone"
+      ],
+      "animations": [
+        ".easeInOut(duration: milestone.animationDuration)) {",
+        ".spring(response: 0.58, dampingFraction: 0.82)) {",
+        ".spring(response: 0.62, dampingFraction: 0.78)) {",
+        ".spring(response: 0.62, dampingFraction: 0.84)) {"
+      ]
+    },
+    {
+      "path": "Sport/Onboarding/Steps/OnboardingWelcomeExplainerSteps.swift",
+      "sha256": "93f7e1b685a2a04e096cefcaadaea2d5b09d2399ecf1eb44a8a86fd7bf217610",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "OnboardingExplainerContent",
+        "OnboardingExplainerStepView",
+        "OnboardingPostPaymentWelcomeStepView",
+        "OnboardingExplainerBodyFatStepView",
+        "OnboardingExplainerWaterRetentionStepView",
+        "OnboardingExplainerLymphDrainageStepView"
+      ],
+      "animations": [
+        ".spring(response: 0.5, dampingFraction: 0.85)) {"
+      ]
+    },
+    {
+      "path": "Sport/Onboarding/Steps/TransformationPreviewStepView.swift",
+      "sha256": "22debbd9b948a5ab12130a5a24149046a1b411561c13069a33cf0a33d15c9bec",
+      "imports": [
+        "StoreKit",
+        "SwiftUI"
+      ],
+      "types": [
+        "TransformationCaseStudy",
+        "TransformationCaseStudyCatalog",
+        "TransformationPreviewStepView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Onboarding/Steps/WeightStepView.swift",
+      "sha256": "e6dddeb20a2c4f674748217920827a93c6720f506d40960a015ae8038797a3a2",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "WeightStepView",
+        "WeightUnit"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Paywall/PaywallBevelDesign.swift",
+      "sha256": "0718535cbe2a6c1957fc88da99f28e56559ebd4eab31e22182bda93747722a7e",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "PaywallBevelTheme",
+        "PaywallFeatureItem",
+        "PaywallBevelBackdrop",
+        "PaywallBevelFeatureRow",
+        "PaywallBevelAlsoIncludesDivider",
+        "PaywallBevelAutoScrollingFeatures",
+        "PaywallBevelPlanSegmentPicker",
+        "PaywallBevelContinueButton",
+        "PaywallBevelPressStyle",
+        "PaywallBevelFeatureCatalog"
+      ],
+      "animations": [
+        ".easeInOut(duration: 0.18), value: isSelected)",
+        ".spring(response: 0.22, dampingFraction: 0.82), value: configuration.isPressed)",
+        ".spring(response: 0.42, dampingFraction: 0.84, blendDuration: 0.12)) {"
+      ]
+    },
+    {
+      "path": "Sport/Paywall/PaywallSpinWinbackView.swift",
+      "sha256": "d8d2e2712672d7e4417db5e63bf7314569705e4316789206a57a1ee3ec8068e9",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PaywallSpinWinbackPresentation",
+        "PaywallSpinWinbackView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Paywall/PaywallTrialRetentionView.swift",
+      "sha256": "0c2eb177506d6158722fb4dc64c665807251d13fa1ef850316164b184818d541",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "PaywallTrialRetentionView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Paywall/PaywallView.swift",
+      "sha256": "8a0e70f5b875420d4d9ccd8e22fb79321f25494a2403321cca7138061e8f6c6a",
+      "imports": [
+        "SafariServices",
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "PaywallView",
+        "PaywallReferralCodeSheet",
+        "PaywallStayRetentionOverlay",
+        "PaywallContinueShakeEffect",
+        "PaywallFaceScanHero",
+        "PaywallInAppSafariView"
+      ],
+      "animations": [
+        ".easeOut(duration: 0.28)) {",
+        ".spring(response: 0.36, dampingFraction: 0.88)) {",
+        ".spring(response: 0.42, dampingFraction: 0.86)) {",
+        ".spring(response: 0.42, dampingFraction: 0.86), value: showsStayPopup)",
+        ".spring(response: 0.48, dampingFraction: 0.78)) {",
+        ".spring(response: 0.9, dampingFraction: 0.82)) {"
+      ]
+    },
+    {
+      "path": "Sport/SportOnboardingRootView.swift",
+      "sha256": "f73de1e1577b25817631761539833c23cf8cd2c1a5d1ec7ea8f1ace37e2338a8",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "SportOnboardingRootView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Sport/Stubs/SportServices.swift",
+      "sha256": "ef772105d24434790d110a5446b4242e1c17c8f5830432fc5e741cc0d87e0d5a",
+      "imports": [
+        "AuthenticationServices",
+        "Combine",
+        "FirebaseAuth",
+        "HealthKit",
+        "StoreKit",
+        "SwiftUI",
+        "UserNotifications"
+      ],
+      "types": [
+        "DailyDataManager",
+        "AccountDeletionError",
+        "AuthKeys",
+        "AuthenticationManager",
+        "UnifiedProfileService",
+        "PermissionsManager",
+        "OnboardingError",
+        "OnboardingService",
+        "AppleWatchService",
+        "WatchAvailabilityManager",
+        "UserPattern"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Subscriptions/PaywallPricingExperiment.swift",
+      "sha256": "a35665278324a30e20316b8a858ec124f3d4029d0c7166ef4e4d7ca70e62da75",
+      "imports": [
+        "Foundation",
+        "PostHog"
+      ],
+      "types": [
+        "PaywallPricingExperiment",
+        "Variant"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Subscriptions/ProcessAffiliateLifetimePass.swift",
+      "sha256": "28b5af7babcea88f65b6efa3e81ebcb09c2965def6b6ad0212a72ef7bf4d78d2",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessAffiliateLifetimePass"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Subscriptions/RevenueCatConfiguration.swift",
+      "sha256": "1d670e1eb3fab862c336f555a5935620c9f10e70f7de1eebdf35d84c946c2233",
+      "imports": [
+        "Foundation",
+        "os"
+      ],
+      "types": [
+        "RevenueCatConfiguration"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Subscriptions/SubscriptionConfiguration.swift",
+      "sha256": "458145064f2001b326ec6286b61d1660c65b612de4fc2ba557af5b267337fe48",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "SubscriptionConfiguration",
+        "RetentionMessagingCopy",
+        "SubscriptionBillingPlan",
+        "SubscriptionProductDisplay",
+        "SubscriptionError"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Subscriptions/SubscriptionMarketPolicy.swift",
+      "sha256": "2d2e7ff6cc1c2c638a1f6deacd27dab13b8cea2c11c5b7ed294faa6d6282a4f4",
+      "imports": [
+        "Foundation",
+        "StoreKit"
+      ],
+      "types": [
+        "SubscriptionMarketPolicy"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Subscriptions/SubscriptionService.swift",
+      "sha256": "ac05e909805e6cced7394287f9e0ba4cd84fb5ddcc49199bfc7d758ab3eb3be1",
+      "imports": [
+        "Combine",
+        "Foundation",
+        "RevenueCat",
+        "StoreKit",
+        "UIKit"
+      ],
+      "types": [
+        "SubscriptionService",
+        "SubscriptionStatus"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Support/ProcessSupportChatView.swift",
+      "sha256": "b720afacebbc8d690fcb596b98bcc52e797d2a23c2b11e716327cf2b501198e9",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessSupportChatView"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Theme/AppTheme.swift",
+      "sha256": "98df2c617ad2640378b3386da0392f6c0d282c5a130080dd99759a1adcd7d193",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "AppTheme",
+        "AppThemeKey",
+        "ProcessWindowAppearance"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Theme/BackgroundView.swift",
+      "sha256": "79f7f810b6669540ed7bf4f1aa545f4996ff85ffb525a456bef62ea6208a9a80",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "ProcessBackgroundPalette",
+        "ProcessScreenBackground",
+        "ProcessTranslucentOverlayBackground",
+        "ProcessUIKitOpaqueSurface",
+        "ProcessUIKitOpaqueSurfaceView",
+        "ProcessUIKitTransparentSurface",
+        "ProcessUIKitTransparentSurfaceView",
+        "ProcessScrollContentHeightKey",
+        "ProcessScrollViewportHeightKey",
+        "ProcessUIScrollViewBounceDisabler",
+        "ProcessZoomDismissFriendlyScrollModifier"
+      ],
+      "animations": []
+    },
+    {
+      "path": "Theme/GlassButton.swift",
+      "sha256": "1fb65b07298d7da04168a724ec727218692871d9a53412a7a3a3d207d6ce950b",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "ProcessButtonPressFeedback",
+        "ProcessButtonPressScaleEffect",
+        "ProcessPlainButtonStyle",
+        "GlassFallbackStyle",
+        "GlassCircleFallbackStyle",
+        "GlassCapsuleFallbackStyle",
+        "OnboardingPrimaryActionButtonStyle",
+        "OnboardingContinueFillRevealLabel",
+        "OnboardingContinueFillRevealButtonStyle"
+      ],
+      "animations": [
+        ".linear(duration: 0.09), value: clampedProgress)",
+        ".spring(response: 0.24, dampingFraction: 0.82), value: configuration.isPressed)",
+        ".spring(response: 0.25, dampingFraction: 0.7)"
+      ]
+    },
+    {
+      "path": "WelcomePlan/BreakfastMealBuilderCatalog.swift",
+      "sha256": "203a53c6472fe4cb615dfe6e57a14a600d14091312ee9bc05d53e585da7c93a4",
+      "imports": [
+        "CoreGraphics",
+        "Foundation"
+      ],
+      "types": [
+        "BreakfastBuilderCategory",
+        "BreakfastLayerPlacement",
+        "BreakfastBuilderOption",
+        "BreakfastMealBuilderCatalog",
+        "BreakfastBuilderSelections"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/ChinRecessionIntelligenceGuide.swift",
+      "sha256": "69697ed3df3e675e922c150ce49cf36818e0f66401fffd1a5f2e212bedd9d3f2",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ChinRecessionIntelligenceGuide"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/CoachMemoryStore.swift",
+      "sha256": "0d226093d110e4d7633a52c018a66f00691de3ecde8e7d20facac5b24f2912d3",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachConversationDigest",
+        "CoachGlobalMemory",
+        "CoachMemoryStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/CoachMemorySummarizer.swift",
+      "sha256": "2e361d4b6b1fab82ce18237f6b605a564399dd9a573270802d534d0df26dfa21",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachMemorySummarizer"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/CoachPlanAutoApplier.swift",
+      "sha256": "006a8095f85a4c9ac6fe7022ed76af64065f4a0c9191f7ffcb7e6d3909486572",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachPlanAutoApplier"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/CoachPlanContextBuilder.swift",
+      "sha256": "58d3ce7d4a9272025fe9fc5c6f1d866644ef7bd36306a5e359a48af378c66ed1",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachPlanContextBuilder"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/CoachPlanEditor.swift",
+      "sha256": "c5792c3a77566aa6a9ba7f73b1b5ac67722411e32fc2318030111b26719dbe22",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachPlanEditor"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/CoachPlanModificationService.swift",
+      "sha256": "ea6f7e351bc05d31caa4ae4f08ce4265e5d032fffdddeda0416dda5a4cc7dbfa",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachPlanModificationScope",
+        "CoachPlanModificationIntent",
+        "CoachPlanModificationService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/CoachPlanNavigationBridge.swift",
+      "sha256": "7822073110f2c3b189f0f3c933663b49935e707a6425a86c1731b82294a0d622",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "CoachPlanNavigationBridge"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/DailyRoutineCompletionCatalog.swift",
+      "sha256": "a32d30c0e906b5cada64c2cbd46ee3e8c865792a19a5e0b78362c39bb16d1d90",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "DailyRoutineCompletionCatalog"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/DebloatCardioDayCatalog.swift",
+      "sha256": "920d360f876b444b93ec516b6ea71371b0499be2590b94af9a0fc675afbab6f6",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "DebloatCardioDayCatalog",
+        "Session"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/FaceMorningRoutineCatalog.swift",
+      "sha256": "012f12a9b87439974233b87b28e7cfc9817db84535cd8fd4710d1db469d79a88",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "FaceMorningRoutineCatalog",
+        "Step"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/Food/DebloatFoodCatalog.swift",
+      "sha256": "a4ec0dad4921c68c301dee28e7a36c954872e1171d7cb791ee715d977ad90f7e",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "DebloatFoodCatalog",
+        "DebloatFoodCatalogSection",
+        "DebloatFoodHubTab"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/Food/DebloatFoodCatalogPageView.swift",
+      "sha256": "73e53364c61d5dc45b7f53b806895b72906d9c7178a3a30fa341659e1b9bc945",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "DebloatFoodCatalogPageView"
+      ],
+      "animations": [
+        ".spring(response: 0.35, dampingFraction: 0.86)) {",
+        ".spring(response: 0.35, dampingFraction: 0.86), value: tab)"
+      ]
+    },
+    {
+      "path": "WelcomePlan/Food/DebloatFoodHubView.swift",
+      "sha256": "60e7bd5be6968518cfd619905aae01c4dead0a428dc709a89db20a9da2f49a36",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "DebloatFoodHubView",
+        "DebloatFoodIllustrationTable",
+        "DebloatFoodEmojiTable",
+        "CatalogMealSelection",
+        "DebloatFoodRow",
+        "DebloatFoodDetailSheet"
+      ],
+      "animations": [
+        ".spring(response: 0.35, dampingFraction: 0.86)) {"
+      ]
+    },
+    {
+      "path": "WelcomePlan/Food/DebloatFoodModels.swift",
+      "sha256": "be41a85bbcb51e37f3439c0d10889adf60628628ba06db385128652b8a83cca8",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "DebloatFoodTier",
+        "DebloatFoodCategory",
+        "DebloatGroceryAisle",
+        "DebloatGroceryBudget",
+        "DebloatFoodItem",
+        "DebloatFoodScoreEngine",
+        "DebloatFoodNameNormalizer"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/Food/DebloatFoodPreferenceStore.swift",
+      "sha256": "3a85735c09a5b2dce9686fa0582778881152ef8e05955819157237748d429f1b",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "DebloatFoodPreferenceState",
+        "DebloatFoodPreferenceStore"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/Food/DebloatGroceryGenerator.swift",
+      "sha256": "84976dcef4b67d13e3ac5a908cb072c1a5b1cb5ee164cc39840eb0fa363704e5",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "DebloatGroceryRequest",
+        "DebloatGroceryLine",
+        "DebloatGroceryPlan",
+        "DebloatGroceryGenerator"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/Food/ProcessLocalizedDebloatFoodContent.swift",
+      "sha256": "2c76b61a4cbaf35d987d4b9de49fcf1e5c81e93eef80116de009c0abd02becd7",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessLocalizedDebloatFoodContent"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/GutHealthIntelligenceGuide.swift",
+      "sha256": "a0b8b048dbdb2cddda55ff7b9af3ac9e6370d51ea8612f9a95255bfbf0743195",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "GutHealthIntelligenceGuide",
+        "phase"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/JournalCoreTaskCatalog.swift",
+      "sha256": "fe9c45dd3cfabf019ba3b73af23bc38a01105f0361423c6c023c877b782273f6",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "JournalCoreTaskCatalog"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/MealHubModels.swift",
+      "sha256": "32024df704bc58cbecb029abbc2e2de4aa7a33125680ed59049feb8391fa7711",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "MealHubError",
+        "MealTimeSlot",
+        "MealSubScores",
+        "MealShoppingItem",
+        "MealHistoryEntry",
+        "MealFeeling",
+        "MealFeedbackEntry"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/MealHubStore.swift",
+      "sha256": "178a308fc3d8a1607c33e8c179e5e0c8b92461ea7123dca0ed7a5638288cdcf9",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/MealHubUI.swift",
+      "sha256": "a03c6829719bb4b33224bb51b8eeed87de7a8d6a630981b5cdbb649f63e25175",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "MealItemAlternativesBar",
+        "MealPhotoScanSheet"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/MealNutritionCatalog.swift",
+      "sha256": "7ebaec81c367378697c3bfe06a2f9462236e275b6a91610400d033f20b6d100a",
+      "imports": [
+        "SwiftUI"
+      ],
+      "types": [
+        "MealChartSegment",
+        "MealNutritionProfile",
+        "MealDebloatAssessment",
+        "MealNutritionCatalog",
+        "MealElectrolyteBalance",
+        "MealElectrolytePalette",
+        "PlanMealSlotLabel"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/MealNutritionEstimator.swift",
+      "sha256": "44ea2d56ea5990319d482c38478f3179dd538a3dd7d6a44fac3e731e8d831a31",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "MealNutritionEstimator",
+        "IngredientBreakdown",
+        "MacroTemplate"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/MealSuggestionCardView.swift",
+      "sha256": "24c0554de1131852710c7a838d1cfb54fefd1438578edaec2cc9f2568d70866a",
+      "imports": [
+        "SwiftUI",
+        "UIKit"
+      ],
+      "types": [
+        "MealSuggestionCardView",
+        "MealProtocolScoreRing",
+        "MealSuggestionItemRow",
+        "CoachMealSuggestionMessageView",
+        "CoachMealMessageDetector"
+      ],
+      "animations": [
+        ".spring(response: 0.32, dampingFraction: 0.86)) {",
+        ".spring(response: 0.34, dampingFraction: 0.86), value: showsIngredients)"
+      ]
+    },
+    {
+      "path": "WelcomePlan/MealSuggestionContent.swift",
+      "sha256": "b30707e52bc6776620db98fa77a4cd9d5eb0ad0e3b15a554b3fa7d6be9138e52",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "MealSuggestionItem",
+        "MealSuggestionItemDisplay",
+        "MealSuggestionContent",
+        "MealSuggestionParser",
+        "MealPreparationStep",
+        "MealPreparationPresentation",
+        "MealPreparationStepsParser"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/MewingIntelligenceGuide.swift",
+      "sha256": "1153e5e15835cfa9a92104f9d6bf011e22b40190ba8f573a374a372d01ed1d26",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "MewingIntelligenceGuide"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/NutritionPlanType.swift",
+      "sha256": "4ef4ea43bf27d8ce4e999b9bbc58fbf7ed6991ee3778a1d683d9feea6454cbef",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "NutritionPlanType"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/OriginPlanCalendarBuilder.swift",
+      "sha256": "0611d043eae7f4f52a9dccfc934c73583becee4f7e6702352125c11b440e5fc8",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OriginPlanCalendarBuilder"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/OriginPlanCalendarModels.swift",
+      "sha256": "f82ac9f1b356fff27a863d7ae6f125f8479c7c67f4d682786e29871c5d81d298",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OriginProgramCalendar",
+        "CodingKeys",
+        "OriginProgramWeek",
+        "OriginProgramDay",
+        "OriginPlanTask",
+        "OriginMealPlanStyle",
+        "OriginDayNutrition",
+        "OriginDayTraining",
+        "OriginExercise",
+        "OriginDaySleep",
+        "JournalTaskStatus",
+        "OriginPlanProgress",
+        "CodingKeys",
+        "StoredOriginPlanProgress",
+        "OriginPlanModification",
+        "OriginLifestyleExtras",
+        "PlanCoachMode",
+        "CoachPlanFocus"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/OriginPlanDailyTaskCatalog.swift",
+      "sha256": "e0cb69adc7c8e3d2826c6096032433f21eeffc558a49f075e5f73a95df497d80",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OriginPlanDailyTaskCatalog"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/OriginPlanDuration.swift",
+      "sha256": "4c570144f01902cd0549c0c69a9eec23ae28ba3d6592c9d92286f5dbff5f06f9",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OriginPlanDuration",
+        "ProcessDurationFormat"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/OriginPlanNotificationService.swift",
+      "sha256": "d9895b52fc6033e3b35a11a92b1f3d749dfe00281ebd76f1875d41e6c2147441",
+      "imports": [
+        "Foundation",
+        "UserNotifications"
+      ],
+      "types": [
+        "OriginPlanNotificationService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/OriginPlanPersonalizationExtensions.swift",
+      "sha256": "7ccc4e6c5cca249811b1b329586a10f044d246f770eeac8bcfcb2da47b6e1472",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/OriginPlanPresenter.swift",
+      "sha256": "8b94b7bfe66d5383814fe8ffacfe9870ab748b74a329ac119b9782194cf23828",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OriginPlanPresenter",
+        "PlanDayPhaseKind",
+        "PlanDayPhase",
+        "JournalSection",
+        "JournalDayAvailability",
+        "JournalDayCompletionSummary"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/OriginScriptRulesEngine.swift",
+      "sha256": "19af6a2cba8c4cc8ecaf68d83bc610101ff7e76eb5ddc6a8272a6fdb0aa475d8",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OriginScriptRulesEngine"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/OriginUserAssessment.swift",
+      "sha256": "7fec32460a37e710da28813e6b5a21cf360ce69833ae31afca85c26c8ea1f1c1",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "OriginPlanArchetype",
+        "OriginPrimaryBlocker",
+        "OriginSuccessCriterion",
+        "OriginPersonalizedDailyTargets",
+        "OriginPlanAssessmentSnapshot",
+        "OriginUserAssessment",
+        "Result"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/PlanDurationPersonalizer.swift",
+      "sha256": "e5429c90d0d03123bfd0d2738cbc3b1278efe52e0ca6b864e1d39ebe882a70de",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "TrajectoryMode",
+        "TrajectoryMilestone",
+        "TrajectoryTimeline",
+        "PlanDurationPersonalizer",
+        "ProfileSignals"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/PlanMealSchedule.swift",
+      "sha256": "55652bd6a3a4c365ecfa2adb8f85c632da4b13247aac10e4992fb319d7ba7d08",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "PlanMealSchedule",
+        "Timing"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/PlanRecalibrationService.swift",
+      "sha256": "c081642e17fa1c00f79311db48e4d54253b49fbee397833f16a938766780d2e9",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "PlanRecalibrationService"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/PostureIntelligenceGuide.swift",
+      "sha256": "4139d2e843955fca50a7a6c24dea3520374c8e779ea21558765f19aec2e54525",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "PostureIntelligenceGuide"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/ProcessContinuousHabits.swift",
+      "sha256": "2fd03905994dcba04ead82b0b4d59680860f7bc3c52acd1bc5471a9b653b2383",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessContinuousHabits"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/ProcessDailyTargets.swift",
+      "sha256": "ada36169323d94d3c2581c2fca1b6c5fb9abc4db9511a299f89dd83e31eddc84",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessDailyTargets"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/ProcessDebloatMealLibrary.swift",
+      "sha256": "c9ffed0f827aec29bb90c76eacc8a293e5d22cee3601bec9a7656c9a93a0f0d9",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessDebloatMealLibrary",
+        "CatalogSection"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/ProcessHydrationGuide.swift",
+      "sha256": "294e9645f89f3dee9e070c267c4da777494af8becad26c8f27367172c98a4324",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessHydrationGuide"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/ProcessLocalizedBreakfastBuilderContent.swift",
+      "sha256": "e7f62bec3e567ab409eaa2504037f403b0b7d15bf48ec64a8c8a1554a420eb4b",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessLocalizedBreakfastBuilderContent"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/ProcessLocalizedMealContentCatalog.swift",
+      "sha256": "759ebc2ede3f18e696535a160479b97832f0c496d77ab809caa20ae6045c1c1b",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/ProcessLocalizedMealNames.swift",
+      "sha256": "6853c7c1cd41818e6ffe86f6e1c0430a3e3daffaf5d8fef5297952a2685db2d4",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessLocalizedMealContent"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/ProcessMealPlanConfiguration.swift",
+      "sha256": "976b19f3e81d351072ea2985d2926ac8132b6d17170ce0bb95e394330c0064a9",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "ProcessMealPlanConfiguration"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/RoutineAssetCatalog.swift",
+      "sha256": "50b7c905419233cf15db7941109f6f75f8fa7337cfffe7fb454b32e02660f867",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "RoutineAssetCatalog"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/SideSleepIntelligenceGuide.swift",
+      "sha256": "ab2c83d9399c80fa3a9a4c0ca47a3068bdc8559e469eb1756708be2ac23e9510",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "SideSleepIntelligenceGuide"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/SkinHealthIntelligenceGuide.swift",
+      "sha256": "e97e72ea3ed25cd21e7c8f2382440afcfc7095cb10e275619b1550e5f19f31c1",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "SkinHealthIntelligenceGuide"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/TrainingAssetCatalog.swift",
+      "sha256": "14efae4f5a2e96cae5f398b43ad305b1f6b60c4cbefdbcf8f98de2449a031b8f",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "TrainingAssetCatalog",
+        "Names"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/WelcomePlanFirestoreRepository.swift",
+      "sha256": "f4cc2dd27517fc7c16d114482d76f53d33daf78e781c4393b2655ea4b4d1ab04",
+      "imports": [
+        "FirebaseFirestore",
+        "Foundation"
+      ],
+      "types": [
+        "WelcomePlanCloudPayload",
+        "WelcomePlanFirestoreRepository"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/WelcomePlanGenerator.swift",
+      "sha256": "40d6e26104d1ab10ede5f4d79760635c550eb0431c689d8d36f34cff24492807",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "WelcomePlanGenerator"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/WelcomePlanModels.swift",
+      "sha256": "e7c93bf75484cd4d97a098d12b9c1477616fe2e060781cd795a7234ade1c1c20",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "WelcomePlanPhase",
+        "WelcomeQuestionKind",
+        "WelcomePlanChoice",
+        "WelcomePlanQuestion",
+        "WelcomePlanSkipRule",
+        "WelcomePlanAnswer",
+        "WelcomePlanQuestionnaireState",
+        "FaceOriginPlan",
+        "CodingKeys",
+        "OriginPillarScore",
+        "OriginDailyHabit",
+        "OriginWeeklyBlock",
+        "OriginPlanPhaseBlock",
+        "OriginNutritionProtocol",
+        "OriginSleepProtocol",
+        "OriginTrainingProtocol",
+        "OriginPostureProtocol",
+        "OriginFaceProtocol"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/WelcomePlanQuestionBank+Prefill.swift",
+      "sha256": "cb4b23ef2c50cafaa6abf205e48ec7cc09a9b70ac60878842dd432f462a4d94a",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/WelcomePlanQuestionBank.swift",
+      "sha256": "86f03ee5d3fce9424e2b463b710a86c9aebcb99545d7e8bb60fd8d06e31a8904",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "WelcomePlanQuestionBank"
+      ],
+      "animations": []
+    },
+    {
+      "path": "WelcomePlan/WelcomePlanStore.swift",
+      "sha256": "21d415eaa6c8e2057de4363fde375c641911c68cdbe19ba01556fd9e280d735d",
+      "imports": [
+        "Foundation"
+      ],
+      "types": [
+        "WelcomePlanStore",
+        "WelcomePlanProfileSync"
+      ],
+      "animations": []
+    },
+    {
+      "path": "useprocessApp.swift",
+      "sha256": "63e41630ac34966cc4a0b574ecdf7ce4dbe3c73cd41cdc9c0655f7d016df70fc",
+      "imports": [
+        "SwiftUI",
+        "UIKit",
+        "UserNotifications"
+      ],
+      "types": [
+        "ProcessAppDelegate",
+        "useprocessApp"
+      ],
+      "animations": []
+    }
+  ]
+}

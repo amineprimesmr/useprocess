@@ -16,11 +16,11 @@ enum ProfileChartMetric: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .weight: return AppCopy.t("Poids", en: "Weight")
-        case .cortisol: return AppCopy.tSync("Cortisol", en: "Cortisol")
+        case .cortisol: return AppCopy.tSync("Indice visuel", en: "Visual index")
         case .recovery: return AppCopy.t("Cernes et fatigue", en: "Dark Circles & Fatigue")
-        case .retention: return AppCopy.t("Rétention", en: "Water Retention")
+        case .retention: return AppCopy.t("Aspect gonflé", en: "Apparent puffiness")
         case .definition: return AppCopy.t("Mâchoire & pommettes", en: "Jawline & Cheekbones")
-        case .skin: return AppCopy.t("Peau", en: "Skin")
+        case .skin: return AppCopy.t("Capture", en: "Capture")
         case .effort: return AppCopy.t("Effort", en: "Effort")
         }
     }
@@ -67,11 +67,11 @@ enum ProfileChartMetric: String, CaseIterable, Identifiable {
     var summarySubtitle: String {
         switch self {
         case .weight: return AppCopy.t("poids actuel", en: "current weight")
-        case .cortisol: return AppCopy.t("cortisol estimé", en: "estimated cortisol")
+        case .cortisol: return AppCopy.t("indice visuel expérimental", en: "experimental visual index")
         case .recovery: return AppCopy.t("cernes et fatigue", en: "dark circles and fatigue")
-        case .retention: return AppCopy.t("rétention d'eau", en: "water retention")
+        case .retention: return AppCopy.t("aspect visuel apparent", en: "apparent visual appearance")
         case .definition: return AppCopy.t("définition faciale", en: "facial definition")
-        case .skin: return AppCopy.t("qualité de peau", en: "skin quality")
+        case .skin: return AppCopy.t("qualité de capture", en: "capture quality")
         case .effort: return AppCopy.t("score d'activité", en: "activity score")
         }
     }

@@ -1,0 +1,51 @@
+{
+  "slug": "design-source-113691826-363764416",
+  "sourceSha256": {
+    "content/source-projects/design-source-113691826-363764416/ScrollInteraction/ScrollInteraction/ContentView.swift": "f48272bef617ff01203f64bce0bc13f3395ad7e150f366c387558e4533ce8c4a",
+    "content/source-projects/design-source-113691826-363764416/ScrollInteraction/ScrollInteraction/ScrollInteractionApp.swift": "3eaff4c7a5b247f8b636cbc8e945ea657854e52ad18ad3eb64f298ff0b6ca1e6"
+  },
+  "originalImages": [
+    {
+      "archive": "ScrollInteraction.zip",
+      "member": "ScrollInteraction/ScrollInteraction/Assets.xcassets/Images/Pic1.imageset/Pic1.jpg",
+      "name": "scrollfx_1.jpg",
+      "sha256": "bc7e34018a446d99693846675534236fe5caae686fcc2a1e6f650ad2c5e5999a",
+      "bytes": 733873
+    },
+    {
+      "archive": "ScrollInteraction.zip",
+      "member": "ScrollInteraction/ScrollInteraction/Assets.xcassets/Images/Pic6.imageset/Pic6.jpg",
+      "name": "scrollfx_6.jpg",
+      "sha256": "92b34a5f90308d3fc31762f7989c5e154265d019ded68129d59b6fb869e62b23",
+      "bytes": 238022
+    },
+    {
+      "archive": "ScrollInteraction.zip",
+      "member": "ScrollInteraction/ScrollInteraction/Assets.xcassets/Images/Pic3.imageset/Pic3.jpg",
+      "name": "scrollfx_3.jpg",
+      "sha256": "4c26c2a643ab33835f07cc0b2bf4e4518fde99c24076c508c10e154b6c8d3457",
+      "bytes": 611499
+    },
+    {
+      "archive": "ScrollInteraction.zip",
+      "member": "ScrollInteraction/ScrollInteraction/Assets.xcassets/Images/Pic2.imageset/Pic2.jpg",
+      "name": "scrollfx_2.jpg",
+      "sha256": "4c5facd201cff14994f4ad58493134f5bbf24c8ece761fe004ea152c3bd18c78",
+      "bytes": 421772
+    },
+    {
+      "archive": "ScrollInteraction.zip",
+      "member": "ScrollInteraction/ScrollInteraction/Assets.xcassets/Images/Pic4.imageset/Pic4.jpg",
+      "name": "scrollfx_4.jpg",
+      "sha256": "6f52786c4c7fe3fbf1a0aad361bbb97299403cf98f606daa58a376dbc20acafa",
+      "bytes": 650510
+    },
+    {
+      "archive": "ScrollInteraction.zip",
+      "member": "ScrollInteraction/ScrollInteraction/Assets.xcassets/Images/Pic5.imageset/Pic5.jpg",
+      "name": "scrollfx_5.jpg",
+      "sha256": "b3805bc5e84d3d7ad79a8956d554ba15d0f58d6580c0d901a346f9c41fc81c20",
+      "bytes": 652746
+    }
+  ]
+}

@@ -2,7 +2,7 @@ import Foundation
 
 /// Liens et messages de parrainage partagés entre l'app et le site.
 enum ProcessReferralLink {
-    static let landingHost = "useprocess.xyz"
+    static let landingHost = "processdebloat.com"
     static let joinHost = "join.useprocess.xyz"
     static let joinPathPrefix = "/join/"
 
@@ -14,7 +14,7 @@ enum ProcessReferralLink {
     /// Lien ultra-court — actif quand join.useprocess.xyz pointe vers Vercel.
     static func brandedShortURL(code: String) -> URL {
         let normalized = normalizeCode(code)
-        return URL(string: "https://\(joinHost)/\(normalized)")!
+        return landingURL(code: normalized)
     }
 
     static func normalizeCode(_ raw: String) -> String {
@@ -37,7 +37,7 @@ enum ProcessReferralLink {
         }
 
         if let host = url.host?.lowercased(),
-           host == landingHost || host == joinHost || host.hasSuffix(".\(landingHost)") {
+           host == landingHost || host == "www.processdebloat.com" || host == "useprocess.xyz" || host == joinHost || host.hasSuffix(".useprocess.xyz") {
             let path = url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
             if host == joinHost, !path.isEmpty,
                path.lowercased() != "get", path.lowercased() != "telecharger",
@@ -80,7 +80,7 @@ enum ProcessReferralLink {
             }
         }
 
-        let joinPattern = #/(?:https?:\/\/)?(?:join\.)?useprocess\.xyz(?:/join)?/([A-Za-z0-9-]+)/#
+        let joinPattern = #/(?:https?:\/\/)?(?:(?:join\.)?useprocess\.xyz|(?:www\.)?processdebloat\.com)(?:/join)?/([A-Za-z0-9-]+)/#
         if let match = trimmed.firstMatch(of: joinPattern) {
             return normalizeCode(String(match.1))
         }

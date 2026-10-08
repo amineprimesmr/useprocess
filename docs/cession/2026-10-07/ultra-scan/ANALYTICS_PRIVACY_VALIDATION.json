@@ -1,0 +1,17 @@
+{
+  "scope": "prepared source only; not running production app",
+  "source_file": "useprocess/Analytics/ProcessAnalytics.swift",
+  "source_sha256": "97c7cdaac7d70c97bb8099f3f70863fa9e7f2ae193a3452efa0f5ed7f26f811c",
+  "swift_syntax_parse": "passed",
+  "foundation_only_actual_filter_test": {
+    "result": "passed",
+    "synthetic_private_fields_excluded": 24,
+    "technical_fields_preserved": 7,
+    "unknown_future_field_excluded": true
+  },
+  "session_replay_config": false,
+  "element_capture_config": false,
+  "physical_device_test": false,
+  "app_build_executed": false,
+  "planned_build": 40
+}

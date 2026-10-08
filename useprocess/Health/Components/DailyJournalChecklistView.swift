@@ -5,12 +5,12 @@ import UniformTypeIdentifiers
 
 private enum JournalDesign {
     static let cardFill = Color(red: 0.11, green: 0.11, blue: 0.12)
-    static let segmentTrack = Color.white.opacity(0.08)
+    static let segmentTrack = Color.primary.opacity(0.08)
     static let completedBlue = Color(red: 0.0, green: 0.48, blue: 1.0)
     static let failedOrange = Color(red: 0.72, green: 0.38, blue: 0.18)
     static let goldCheck = Color(red: 0.92, green: 0.75, blue: 0.35)
     static let progressGreen = Color(red: 0.35, green: 0.78, blue: 0.45)
-    static let mutedIcon = Color.white.opacity(0.35)
+    static let mutedIcon = Color.primary.opacity(0.35)
 
     enum Strip {
         static let cellWidth: CGFloat = 44
@@ -1172,7 +1172,7 @@ struct JournalCircularProgressRing: View {
     var progress: Double
     var lineWidth: CGFloat = 3
     var size: CGFloat = 28
-    var trackColor: Color = Color.white.opacity(0.12)
+    var trackColor: Color = Color.primary.opacity(0.12)
     var fillColor: Color = JournalDesign.progressGreen
 
     var body: some View {

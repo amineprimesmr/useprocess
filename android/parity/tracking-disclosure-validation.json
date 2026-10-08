@@ -1,0 +1,23 @@
+{
+  "recordedAt": "2026-10-08T02:51:57.384982+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 122,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/process/android/ProcessTransformationPreview.kt": "bef4588f0320ee935ba2c9562507f6ee654c3d702aa3efb1be0cf5e1a3ff207f",
+    "/Users/amine/Developer/useprocess/useprocess/Sport/Onboarding/Steps/TransformationPreviewStepView.swift": "22debbd9b948a5ab12130a5a24149046a1b411561c13069a33cf0a33d15c9bec"
+  },
+  "hostUI": "Five tests passed; tracking-disclosure-light.png inspected",
+  "sourceBasis": "Current live Process disclosure; original catalog before/after removed in live iOS",
+  "physicalDevice": "unverified",
+  "motion": "unverified",
+  "visual": "host rendering only; original iOS pairing pending",
+  "remaining": [
+    "Exact platform typography/shadow/spring",
+    "Production flow and physical-device comparison"
+  ]
+}

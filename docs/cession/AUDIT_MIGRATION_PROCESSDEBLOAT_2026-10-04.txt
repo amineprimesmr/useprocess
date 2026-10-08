@@ -1,0 +1,169 @@
+PROCESS / DEBLOAT — AUDIT DE MIGRATION DE DOMAINE
+Décision utilisateur du 4 octobre 2026 : useprocess.xyz reste la propriété de l’entreprise d’Amine ; l’app vendue utilisera processdebloat.fr.
+État : analyse et préparation uniquement. Aucun domaine acheté, DNS modifié, compte transféré ou code de production basculé pendant cet audit.
+
+1. CONCLUSION ET PÉRIMÈTRE
+Oui, cette séparation est techniquement possible. Une migration du domaine ne nécessite pas de créer une autre app, un autre bundle, un autre projet Firebase ou de nouveaux abonnements.
+Le domaine processdebloat.fr n’est pas enregistré dans la réponse RDAP Afnic consultée le 4 octobre : HTTP 404 NOT_FOUND_DOMAIN_NAME_WITH_NAME. Ce constat ne réserve pas le nom, ne garantit pas le prix ni son attribution au moment de la commande.
+Une refonte de la configuration de domaine, du site et des coordonnées est nécessaire ; remplacer toutes les occurrences « useprocess » serait dangereux : les identifiants techniques existants doivent rester stables.
+L’inventaire local contient 283 lignes avec domaine littéral, dans 78 fichiers : iOS 17 lignes/7 fichiers ; site 156/43 ; Firebase 38/10 ; metadata 8/6 ; catalogues Shared 15/5 ; documentation 49/7. Les fichiers historiques et traductions sont inclus ; ce ne sont pas 283 dépendances actives distinctes.
+Le JSON INVENTAIRE_DOMAINES_2026-10-04.json donne les fichiers et lignes, sans copier des clés privées.
+Recherche dans sources, configs, scripts, metadata, textes, ressources et fichiers locaux d’environnement (noms des variables et présence du domaine uniquement). Exclusions : .git, dépendances, builds, sorties Vercel, projets appbid/footgoat étrangers à l’app. Les sorties générées ont été considérées comme historiques, pas comme preuve de routes actives.
+Les réglages externes non accessibles ne sont pas déclarés vérifiés : AppsFlyer, certains réglages Apple/TikTok, boîtes email, App Check web, liens des publications sociales, contenus Firestore et outils partenaires.
+
+2. ARCHITECTURE CIBLE
+- useprocess.xyz : entreprise d’Amine, conservée ; compte registrar, factures, emails et autres projets restent au vendeur.
+- processdebloat.fr : site et marque commerciale de l’app ; domaine distinct pouvant être transmis à l’acquéreur.
+- www.processdebloat.fr : alias redirigé vers le domaine canonique processdebloat.fr.
+- processdebloat.fr/app : lien bio principal.
+- processdebloat.fr/join/<code> et /c/<code> : acquisition et parrainage, paramètres conservés.
+- processdebloat.fr/clipping : portail affiliés et connexion par email.
+- processdebloat.fr/cgu, /confidentialite, /mentions-legales, /support, /sources-sante : documents de l’app.
+- contact@processdebloat.fr : adresse support et expéditeur SMTP proposé ; boîte créée et testée avant affichage ou envoi.
+- join.processdebloat.fr et get.processdebloat.fr : facultatifs. Éviter d’ajouter des sous-domaines si /join et /app suffisent ; si retenus, DNS/TLS/routage/AASA/entitlements doivent être configurés pour chacun.
+- Auth Firebase : conserver useprocess-d4385.firebaseapp.com comme authDomain au début ; ajouter le nouveau domaine aux domaines autorisés. Un auth.processdebloat.fr serait un chantier supplémentaire Hosting/OAuth, pas requis pour cette migration.
+- Backend : conserver les URL Cloud Functions existantes ; /api/mcp du nouveau site reste un proxy vers affiliateMcp.
+- Deux projets web autonomes à terme : projet de l’app avec le .fr ; projet de l’entreprise avec useprocess.xyz et les quelques routes historiques de transition. Ne pas céder un projet contenant l’entreprise et les secrets d’autres produits.
+
+3. CONSTATS EXTERNES VÉRIFIÉS
+DNS actuel : useprocess.xyz A 216.198.79.1 ; www CNAME 9ea96c8a944fb1e8.vercel-dns-017.com ; MX Hostinger mx1/mx2 ; SPF include:_spf.mail.hostinger.com ; DMARC p=none. Valeurs informatives, ne pas recopier les A Vercel sans les recommandations du nouveau projet.
+TXT de vérification TikTok présent sur useprocess.xyz : intégration à séparer, pas de suppression automatique du TXT de l’entreprise.
+join.useprocess.xyz et get.useprocess.xyz : NXDOMAIN au résolveur consulté. Les chemins de code existent malgré l’absence de ces DNS.
+Vercel CLI : useprocess.xyz est un domaine Third Party, cohérent avec l’enregistrement Hostinger. La nouvelle propriété du domaine doit être ajoutée au bon projet Vercel, pas une redirection globale du domaine entreprise.
+Firebase Auth authorizedDomains vérifiés : localhost, useprocess-d4385.firebaseapp.com, useprocess-d4385.web.app, useprocess.xyz, www.useprocess.xyz, join.useprocess.xyz. processdebloat.fr absent.
+Action email Firebase actuelle : https://useprocess-d4385.firebaseapp.com/__/auth/action ; provider Apple activé. Aucun changement d’authDomain n’est nécessaire par simple changement de domaine web.
+Clés Google client iOS et Browser : aucune restriction browser allowedReferrers présente dans le résultat consulté ; 27 API targets chacune. Aucun ancien referrer à remplacer constaté. Ne pas modifier les restrictions de clés à l’aveugle pour migrer.
+App Store public consulté : app 6753808143, version 1.12, bundle com.useprocess. La version publique ne pourra pas recevoir les nouveaux entitlements sans nouvelle version.
+
+4. IOS — TOUS LES POINTS CONCRETS
+useprocess/Config/ProcessLegalURLs.swift : CGU, confidentialité, ancres données faciales/IA, mentions légales, support, clipping, mail. Conserver les paramètres de langue et les ancres.
+useprocess/Config/AppConfiguration.swift : supportEmail vaut encore hello@useprocess.xyz, différent du support contact@ dans ProcessLegalURLs. Unifier via une configuration unique pour éviter les oublis.
+useprocess/Support/ProcessSupportChatView.swift : contact@useprocess.xyz affiché directement. Alimenter affichage et mailto avec la même configuration ; encodage sujet/brouillon conservé.
+useprocess/Features/Profile/EditProfileView.swift : lien de partage du site.
+useprocess/Features/Affiliate/ProcessAffiliatePortalLink.swift : URL portail et email-link ; ne pas altérer le mécanisme de liaison de compte.
+useprocess/Core/ProcessReferralCapture.swift : landingHost/joinHost, génération des liens, liste d’hôtes acceptés et regex useprocess\.xyz. Générer uniquement les nouveaux liens mais continuer à parser les anciens pendant la transition.
+useprocess/useprocess.entitlements : applinks useprocess.xyz et join.useprocess.xyz. Ajouter processdebloat.fr et les nouveaux sous-domaines réellement utilisés ; conserver les anciens pour compatibilité au début. Provisioning/signature à valider.
+AASA existant : F2CJGJ69XU.com.useprocess, paths très larges dont /*. Sur le site entreprise, restreindre les routes app au besoin : éviter que ses futures pages ouvrent l’app vendue. Tester l’effet du cache Apple et des anciennes versions ; ne pas simplement supprimer l’AASA.
+Le nouveau domaine doit servir /.well-known/apple-app-site-association en HTTPS, sans redirection, avec les bonnes identités app/équipe. Chacun des sous-domaines associés doit servir son propre AASA.
+Les identifiants app com.useprocess, App ID 6753808143, schémas process://, groupes widgets, Keychain et références HealthKit ne changent pas pour le domaine.
+Si cession Apple ensuite : vérifier AASA et équipe/signature lors du transfert ; ne pas confondre migration de domaine et migration Sign in with Apple des utilisateurs.
+Aucune compilation lancée pour cet audit informatif.
+
+5. SITE ET ROUTAGE
+website/src/features/bio-link.js : /app, /get, /i, /a, /telecharger et ancien get sous-domaine.
+website/src/features/referral-link.js : host join, base des liens, /join et /c, normalisation/parsing. Accepter nouveaux et anciens liens et conserver ref, code, UTM, source et autres paramètres utiles.
+website/src/features/acquisition-link.js : détection de texte « useprocess.xyz/ », join regex, lien par défaut /app et génération /join. Modifier les expressions et validateurs, pas seulement les strings simples.
+website/src/features/in-app-browser-escape.js : fallback siteOrigin, Safari/Android intent. Tester TikTok/Instagram, iOS Safari et navigateurs intégrés après bascule.
+website/src/router/index.js, /features/app-copy.js et /public/js/site-language.js : URLs et mécanisme de langue/routage.
+website/src/affiliate : affiliate-utils, AffiliateApp, AffiliateLanding, AffiliateOnboarding, AffiliateMethod, AffiliateAutomation : liens copiés, mails, aide, docs et landing affiliée.
+website/src/process-landing/process-landing-data.js et landing-cinematic : contacts et contenu du site.
+website/index.html, affiliate.html, clipping.html : metadata canonique/OpenGraph/partage et liens embarqués.
+website/public et pages légales racine : duplicates sources/public, mentions éditeur, contact, conditions, confidentialité et liens. Les deux copies doivent être cohérentes.
+robots.txt et sitemap.xml existent en double racine/public : URLs du sitemap et canonical à changer. Sitemap app nouveau et sitemap entreprise distincts.
+website/vercel.json : règles has host pour get/join, aliases affiliate→clipping, API MCP, headers, exclusion SPA des pages légales. Adapter sans casser les routes statiques.
+Redirections /tiktok et /tiktok/callback vers scrollshow.io présentes : liens entreprise/autre produit. Ne pas les déplacer automatiquement dans le produit vendu. Documenter leur destination et propriété.
+Les fichiers metadata app-store-listing, app-review et instructions d’anciennes versions sont des archives. Mettre à jour les fichiers actuels nécessaires à la publication et garder les archives clairement historiques.
+
+6. AUTH AFFILIÉS ET EMAIL — CHEMIN CRITIQUE
+firebase/functions/src/affiliateLoginEmail.ts : expéditeur et utilisateur SMTP sont AFFILIATE_LOGIN_FROM contact@useprocess.xyz ; continuer à utiliser l’ancien mot de passe après changement d’adresse casserait l’auth SMTP.
+Créer contact@processdebloat.fr avec ses propres accès, DNS MX, SPF, DKIM, DMARC. Tester envoi ET réception, y compris réponses et erreurs de livraison.
+Mettre à jour PROCESS_SMTP_PASSWORD pour la nouvelle boîte au moment de déployer l’expéditeur et valider les autres fonctions qui utilisent ce secret ; ne pas changer un secret partagé d’un autre produit.
+Même fichier : CLIPPING_PORTAL_URL, footer HTML/texte et isAllowedContinueUrl n’autorisant aujourd’hui que useprocess.xyz/www (+localhost). Ajouter les nouveaux hôtes et une validation de schéma/path cohérente. Conserver l’ancien hôte le temps des liens déjà envoyés.
+affiliate.ts : affiliateSendLoginEmail consomme ce module et secret. Déployer cette fonction au minimum après predeploy et tests.
+website/src/affiliate/affiliate-email-link.js : retour /clipping, emailLink/next/email, stockage local de l’email et de la demande d’inscription ; paramètres de Firebase oobCode/mode doivent arriver intacts.
+localStorage, sessionStorage, IndexedDB/Firebase Auth et cookies sont attachés à l’origine : les affiliés devront généralement se reconnecter sur le .fr. Ne pas copier tokens/cookies via l’URL.
+Tester lien demandé sur nouveau domaine, ouvert dans même navigateur/autre appareil, lien ancien encore valide, fallback sendSignInLinkToEmail, profil existant et inscription anonyme→compte. Préserver les UID et comptes existants.
+Les emails générés portent actuellement aussi l’adresse utilisateur dans la query continueUrl : éviter d’élargir la diffusion de ces URL dans analytics, QR publics, logs ou redirects ; réexaminer ce choix séparément sans casser les liens existants.
+Support iOS/backend/site : contact/hello/support trouvés. Choisir une adresse app unique et conserver les boîtes entreprise ; éventuelle redirection email app limitée aux conversations identifiées, sans transférer tout le courrier corporate à l’acheteur.
+Apple Private Relay : enregistrer les nouveaux domaines/expéditeurs et valider SPF/DKIM côté Apple pour les emails masqués. Le code filtre privaterelay.appleid.com dans affiliateShared.ts, affiliate-utils.js et ProcessAffiliatePortalLink.swift ; Apple a annoncé aussi private.icloud.com. Traitement à actualiser de façon cohérente avec des tests dédiés, sans retirer arbitrairement la restriction existante du portail.
+
+7. FIREBASE, DATABASE, API ET STOCKAGE
+Conserver projet useprocess-d4385 et Auth/Firestore/Storage pour préserver UID, accès premium, progression, commissions et médias.
+Ajouter processdebloat.fr et www (et sous-domaines utilisés) aux authorizedDomains AVANT bascule de la connexion web. Ne pas retirer les anciens immédiatement.
+App Check web/reCAPTCHA, domaines autorisés OAuth Apple web et consent screen Google : vérifier les paramètres réels si employés ; aucune nouvelle autorisation n’est présumée déjà faite.
+firebase/functions/src/affiliateLibraryShared.ts : CLIPPING_SITE construit des URL absolues à partir de chemins relatifs. Ajuster et inspecter les données bibliothèque contenant des liens absolus historiques. Les objets ne sont pas automatiquement réécrits par le nouveau domaine.
+firebase/functions/src/affiliateTikTok.ts : SITE renvoie /clipping ; callback par défaut Cloud Functions stable. TIKTOK_REDIRECT_URI peut surcharger ce callback : vérifier la configuration réellement déployée, pas seulement le défaut source.
+firebase/functions/src/supportRetired.ts : adresse de contact retournée aux anciens clients ; changer à la même étape que la disponibilité réelle de la nouvelle boîte.
+CORS actuellement * / cors:true : le nouveau domaine n’est pas bloqué par une ancienne allowlist constatée ici. Une éventuelle restriction CORS est une modification de sécurité distincte à tester.
+Cloud Functions, secrets Anthropic/RevenueCat/Apple, Firestore indexes/rules, service accounts et buckets n’ont pas à être renommés pour le domaine web.
+Les 10 médias Storage statiques restent sur firebasestorage.app et les URL existantes sont conservées. Le domaine n’exige pas de copier les données ni de changer les clés Firebase client.
+Contrôle de données à réaliser avec périmètre validé : rechercher domaines dans configs publiques, bibliothèque, emails/templates, documents affiliés et URL stockées ; produire seulement champs/volumes concernés, puis migration idempotente sauvegardée si utile. Aucun scan/export des photos, chats ou données santé utilisateurs effectué pendant cet audit.
+
+8. TIKTOK, SOCIAL, ANALYTICS ET INTÉGRATIONS
+Les .env.local et .vercel/.env.production.local contiennent TIKTOK_REDIRECT_URI avec l’ancien domaine, TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET et STUDIO_SESSION_SECRET. Aucune valeur privée copiée dans cet audit.
+Les anciennes sorties .vercel ont des handlers /api/tiktok, mais website/api ne fournit actuellement pas de fichiers source : ne pas déduire qu’un ancien serveur TikTok est encore livré. Les redirects vers ScrollShow confirment un mélange avec un autre produit.
+Créer une séparation explicite de l’intégration TikTok de l’app et de celle de l’entreprise/ScrollShow ; ne pas transférer les clés entreprise. Si OAuth Process utilisé : nouvelles URLs de site/CGU/confidentialité, callback identique à la configuration TikTok, domaines vérifiés et éventuelle revue fournisseur. Le TXT entreprise reste.
+@mannyprcs et @debloatman : nouveaux liens bio, descriptions épinglées, messages types, liens de clipping, QR et bibliothèques de contenus. Les publications anciennes non modifiables passent par le pont historique.
+Réseaux codés dans ProcessLegalURLs : @useprocess sur TikTok/Instagram/Snapchat/X, distincts des deux comptes de vente déclarés. Vérifier propriété et inclusion au contrat ; ne pas céder la marque entreprise par ces liens.
+WhatsApp personnel et X leksoudblt dans affiliate-utils : hors changement DNS mais dépendances de propriété ; remplacer par support repreneur à la cession selon le périmètre, conserver accès tant que le relais manque.
+Telegram clippers, bots, liens d’invitation, clips, scripts d’automatisation et documents : inventaire manuel des URLs et propriétaires à terminer.
+PostHog EU 240558 : conserver projet/historique si consacré à l’app ; vérifier URLs de site, liens dashboards, filters host/$current_url, funnels, cohorts et captures web. Un nouveau domaine ne conserve pas automatiquement le cookie anonymous web ; plan d’identité et annotation de bascule, sans mélanger entreprise et app.
+PostHog iOS : clé projet et endpoints EU indépendants du domaine ; aucune obligation de changer ces clés pour le DNS. Retirer tracking app du futur site entreprise ou utiliser projet analytics entreprise séparé.
+AppsFlyer : dev key/App ID restent liés à l’app ; vérifier OneLink, branded links, website, fallback, domaines et destinations. Aucun OneLink/custom domain confirmé par la source. Dashboard inaccessible : contrôle requis avant prétendre migration complète.
+RevenueCat : même projet ab4f477a, app, produits, entitlement, App User ID et webhooks. Vérifier coordonnées projet/portails si renseignées ; le domaine ne remet pas à zéro les achats.
+Anthropic : clé API/usage du backend indépendants du domaine ; adaptation du libellé/propriétaire au transfert seulement, pas re-création du coach.
+Crisp : déjà retiré de l’app/site/backend ; aucun widget à migrer. Les conversations historiques et secrets non attachés ne justifient pas céder le compte entreprise.
+Stripe : ancien flux app retiré ; ne pas reconnecter Stripe en changeant de domaine. Autres produits/compte vendeur hors vente de Process.
+MCP : nouveau /api/mcp doit garder authentification, tokens et destination affiliateMcp ; actualiser URLs de connexion/outils consommateur, sans envoyer les tokens dans les redirects.
+
+9. APP STORE ET IDENTITÉ COMMERCIALE
+Mettre à jour privacyPolicyUrl des localisations app-info et supportUrl/marketingUrl/CGU dans les descriptions et fichiers de la version à publier.
+Metadata 1.13 actuelle contient encore des mentions Stripe/Apple Pay alors que le build préparé est IAP uniquement. Corriger la fiche finale avant soumission ; ne pas importer aveuglément ces archives.
+App Store privacy labels et mentions légales : vérifier réalité des responsables/prestataires. Un changement de domaine ne change pas automatiquement l’identité juridique ; l’acquéreur change l’éditeur au transfert, pas pendant une préparation sans acheteur.
+Une mise à jour iOS est requise pour les nouveaux liens embarqués et Associated Domains. Site/DNS/backend peuvent être préparés avant revue ; conserver le pont ancien domaine pendant revue et tant que les versions actives en dépendent.
+Les abonnements, restauration et paiements Apple ne sont pas liés au nouveau domaine ; aucune nouvelle fiche app ou nouvelle série de SKU nécessaire.
+Bundle, projet Firebase, produits com.useprocess.*, UID et schéma process:// restent stables. Le nom technique « useprocess » dans un identifiant n’équivaut pas à céder useprocess.xyz.
+Nom « Process » de l’entreprise et marque « Process Debloat » : définir précisément les droits cédés et exclus au contrat ; vérifier droits au nom/domaines/logo/contenus. L’achat du domaine ne suffit pas à établir une propriété de marque.
+Pour le .fr, le futur titulaire doit être éligible Afnic (UE ou pays admis, selon personne/organisation). Un acquéreur hors de ce périmètre doit résoudre ce point avant transfert. Prix et renouvellement propres au .fr non encore consultés ; les 22.99 EUR de useprocess.xyz ne sont pas le prix du nouveau domaine.
+
+10. TRANSITION DU DOMAINE ENTREPRISE
+Ne pas appliquer 301/308 useprocess.xyz/* → processdebloat.fr/* à tout le domaine : cela déplacerait aussi l’entreprise et d’autres produits.
+Réserver uniquement les chemins historiques de l’app : /app, /get, /i, /a, /telecharger, /join/*, /c/*, /clipping, /affiliate, /affiliate.html, /clipping.html, /cgu, /confidentialite, /mentions-legales, /support, /sources-sante (avec slash/ancres/langues à traiter).
+Certaines anciennes pages juridiques sont à la racine : elles doivent continuer à mener aux documents de l’app pour les vieilles versions. Les documents juridiques corporate devront avoir un espace distinct ou une stratégie compatible.
+Ancien accueil / : future page entreprise avec lien clair vers l’app ; faire le relais du trafic bio ancien vers l’app sans imposer une redirection globale permanente. La bascule commerciale de l’accueil dépend de l’usage réel des liens publics.
+AASA doit être servi localement sur chaque hôte concerné, pas redirigé. Cache CDN Apple à prendre en compte ; tester une installation nouvelle et une mise à jour.
+Paramètres query essentiels conservés, ancres préservées lorsque le client les transmet, pas de conversion des liens API POST en redirections vers GET. /api/mcp demande un proxy temporaire ou une reconfiguration explicite de ses clients.
+Les liens OAuth avec token/code et emails de connexion ne doivent pas être capturés par une page entreprise/analytics avant traitement.
+Bridge maintenu par le vendeur : accord sur durée, chemins et responsabilités. L’acheteur possède .fr et fonctionne seul pour ses nouveaux utilisateurs ; il ne reçoit pas ownership ni accès global à useprocess.xyz.
+Retirer progressivement les anciens authorizedDomains/entitlements après mesure des versions/liens actifs et fin de transition. Aucun délai universel « quelques jours » garanti.
+
+11. ORDRE DE MIGRATION
+A — Acheter/enregistrer .fr et vérifier titulaire, prix, renouvellement, taxes, auto-renouvellement et éligibilité future. Aucun achat fait pendant ce scan.
+B — Créer DNS/TLS et boîte contact ; SPF/DKIM/DMARC ; Apple email relay si nécessaire. Vérifier que nouveaux emails arrivent et répondent.
+C — Préparer site app séparé, URLs centralisées, AASA du nouveau domaine, sitemap/canonicals, routes/portal/MCP et documents légaux. Garder le site existant opérationnel.
+D — Ajouter domaines Firebase/provider/App Check nécessaires ; déployer allowlist/backend compatible ancien+nouveau ; basculer SMTP seulement avec boîte et secret validés.
+E — Tester site/connexion/parrainage/attribution/liens/support sur .fr ; ajouter redirects ciblés/bridge enterprise, tester liens anciens.
+F — Préparer version iOS nouveaux domaines/liens, signature, metadata corrigée, tests sur iPhone 14 Pro Max, soumission App Store. Aucun test simulator.
+G — Publier nouveau domaine dans bios, clips, emails et acquisition après vérification ; suivre erreurs/auth/conversions et annoter bascule dans analytics.
+H — Cession au repreneur : seulement .fr, projet app Vercel, projet Firebase, RevenueCat, comptes marketing/actifs explicitement inclus, configurations nécessaires sous procédure sécurisée ; useprocess.xyz/boîtes et comptes corporate restent vendeur.
+I — Réduire legacy uniquement après preuve d’absence de dépendances actives et durée de bridge convenue.
+
+12. VALIDATION ET RETOUR ARRIÈRE
+DNS A/CNAME/MX corrects, TLS apex/www, pas de boucle redirects ; AASA HTTP200 JSON sans redirect sur les hôtes retenus.
+Routes /app, /join/code, /c/code, /clipping, alias anciens, liens lang/fragments, QR et navigateur intégré.
+Nouvelle/ancienne app : ouverture universal link, code capturé et attribution valide ; aucun lien entreprise lancé dans app hors chemins réservés.
+Connexion affilié email sur même navigateur/autre appareil, user existant, aucune duplication UID/commissions, links anciens en cours.
+SMTP réception/envoi, alias éventuels, Apple masqué, Gmail/Outlook, replies/bounces.
+App Store IAP sandbox, restauration ancien compte, premium coach, sauvegarde/progression, suppression compte. Domaine ne modifie pas ces fonctions, régression minimale nécessaire.
+PostHog events cohérents, paramètres acquisition/ref conservés, AppsFlyer attribution et webhooks RC/Apple inchangés.
+Médias et liens légaux de l’ancienne version encore accessibles, MCP sécurisé, site corporate autonome.
+Rollback : conserver ancien DNS/site/expéditeur/authorizedDomains, secrets sous procédure sûre, versions Vercel connues ; bascule réversible des générateurs de liens et SMTP. App iOS installée n’est pas rétrogradée par DNS : le nouveau domaine doit rester accessible même si l’acquisition est remise temporairement sur l’ancien.
+Mesurer erreurs HTTP/Auth/SMTP, trafic par hôte et version iOS, achats suivis vs RC ; aucune automatisation d’alertes créée sans demande.
+
+13. MODIFICATION DU PACK DE VENTE
+Ancien pack du 4 octobre préparé avant décision : son inclusion de useprocess.xyz et de ses emails est désormais dépassée.
+Annexe à joindre : domaine entreprise exclu de la vente ; processdebloat.fr inclus après acquisition/validation ; coûts .fr/mail à confirmer ; bridge useprocess.xyz détenu et opéré par vendeur.
+Refaire les sources/manifeste après migration réelle ; ne pas envoyer comme migration terminée le pack courant. Regrouper registres DNS, URLs, ownership, sécrets noms seulement et tests sous périmètre app.
+Ne pas céder adresse personnelle de facturation, compte Hostinger/Vercel/GitHub/Apple multiapps ou clés d’intégrations ScrollShow/V2/entreprise.
+
+14. SOURCES ET LIMITES
+RDAP live : https://rdap.nic.fr/domain/processdebloat.fr
+Afnic disponibilité/conditions : https://www.afnic.fr/noms-de-domaine/faq/
+Apple Associated Domains : https://developer.apple.com/documentation/xcode/supporting-associated-domains
+Apple email relay : https://developer.apple.com/help/account/capabilities/configure-private-email-relay-service
+Apple nouveau relay : https://developer.apple.com/news/?id=1ptvdtcm (résultat indexé consulté ; page directe non récupérée)
+Firebase authorizedDomains/email : https://firebase.google.com/docs/auth/ios/email-link-auth
+Firebase OAuth custom authDomain : https://firebase.google.com/docs/auth/web/redirect-best-practices
+Vercel domaines : https://vercel.com/docs/domains/set-up-custom-domain
+Evidence locale : inventaire JSON, sources référencées, DNS lu, Identity Toolkit config/keys API et Vercel CLI lus. Aucune valeur de secret exportée.
+Les comptes non accessibles, les droits de marque et la liste exhaustive des anciens liens publics/données historiques restent à vérifier : cet audit ne prétend pas les avoir inspectés à 100 %.

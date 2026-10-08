@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SportOnboardingView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.locale) private var locale
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     @EnvironmentObject var profileService: UnifiedProfileService
     @EnvironmentObject var healthManager: HealthManager
@@ -32,17 +33,14 @@ struct SportOnboardingView: View {
 
     /// Padding bas animé du CTA — monte avec le clavier (taille → poids, etc.).
     @State var animatedContinueBottomOffset: CGFloat = 50
+    /// Tap Continuer pendant le fill de l’estimation : on avance dès que l’anim est finie.
+    @State var pendingEstimationContinue = false
+    @State var navigationUnlockTask: Task<Void, Never>?
 
     /// Hauteur live du clavier — le CTA global ignoreSafeArea, donc SwiftUI
     /// n'évite pas le clavier tout seul (bug CONTINUER sous le pad sur certains iPhone).
     @StateObject var keyboardHeight = KeyboardHeightObserver()
     @Bindable private var appLanguage = ProcessAppLanguage.shared
-
-    var navigationEngine: OnboardingNavigationEngine {
-        OnboardingNavigationEngine(viewModel: viewModel, profileService: profileService)
-    }
-
-    let totalSteps = OnboardingStep.validSavedStepUpperBound
 
     var body: some View {
         ZStack {
@@ -67,11 +65,11 @@ struct SportOnboardingView: View {
             }
         }
         .overlay(alignment: .bottom) {
-            continueButtonOverlay
-                .opacity(shouldShowGlobalContinueButton ? 1 : 0)
-                .accessibilityHidden(!shouldShowGlobalContinueButton)
-                .allowsHitTesting(shouldShowGlobalContinueButton)
-                .zIndex(shouldShowGlobalContinueButton ? 20 : -1)
+            if isOnboardingRestoreComplete, shouldShowGlobalContinueButton {
+                continueButtonOverlay
+                    .transition(.opacity)
+                    .zIndex(20)
+            }
         }
         .overlay(alignment: .top) {
             if !isImmersiveOnboardingStep,
@@ -108,10 +106,7 @@ struct SportOnboardingView: View {
             }
 
             restoreOnboardingProgressFromSavedState()
-            reconcileVisitedStepsForRestore(
-                viewModel: viewModel,
-                navigationEngine: navigationEngine
-            )
+            reconcileVisitedStepsForRestore(viewModel: viewModel)
             refreshOnboardingFlowProgress()
             animatedContinueBottomOffset = continueButtonBottomOffset
             isOnboardingRestoreComplete = true
@@ -129,10 +124,7 @@ struct SportOnboardingView: View {
                     await profileService.loadProfile()
                     if let profile = profileService.currentProfile {
                         viewModel.syncWithExistingProfile(profile)
-                        reconcileVisitedStepsForRestore(
-                            viewModel: viewModel,
-                            navigationEngine: navigationEngine
-                        )
+                        reconcileVisitedStepsForRestore(viewModel: viewModel)
                         scheduleRefreshOnboardingFlowProgress()
                     }
                 }
@@ -140,23 +132,31 @@ struct SportOnboardingView: View {
                 await SubscriptionService.shared.checkSubscriptionStatus()
                 reconcileUnpaidOnboardingResumeIfNeeded()
                 reconcilePostPaymentStepIfNeeded()
+                // Statut maintenant connu : ré-écrit l'étape de reprise (sauvée brute tant qu'il ne l'était pas).
+                viewModel.saveProgress()
                 scheduleRefreshOnboardingFlowProgress()
             }
+        }
+        .task(id: "\(viewModel.currentStep)-\(colorScheme)-\(locale.identifier)-\(profileService.currentProfile?.userId ?? "")-\(profileService.currentProfile?.firstName ?? "")") {
+            let step = OnboardingStep.resolved(from: viewModel.currentStep)
+            guard step == .weightMotivation || step == .dashboardPreview else { return }
+            await DashboardPreviewSnapshotStore.shared.prepare(colorScheme: colorScheme, locale: locale)
         }
         .onChange(of: profileService.currentProfile) { _, newValue in
             guard let profile = newValue else { return }
             viewModel.syncWithExistingProfile(profile)
-            reconcileVisitedStepsForRestore(
-                viewModel: viewModel,
-                navigationEngine: navigationEngine
-            )
+            reconcileVisitedStepsForRestore(viewModel: viewModel)
             scheduleRefreshOnboardingFlowProgress()
         }
         .onChange(of: viewModel.currentStep) { _, newStep in
+            pendingEstimationContinue = false
             viewModel.saveProgress()
             syncAnimatedContinueBottomOffset(stepTransition: true)
             ProcessAnalytics.trackOnboardingStep(step: OnboardingStep(rawValue: newStep))
             scheduleRefreshOnboardingFlowProgress()
+        }
+        .onChange(of: viewModel.isWeightEstimationCompleted) { _, completed in
+            flushPendingEstimationContinueIfNeeded(completed: completed)
         }
         .onChange(of: keyboardHeight.height) { _, _ in
             syncAnimatedContinueBottomOffset(stepTransition: false)
@@ -179,10 +179,7 @@ struct SportOnboardingView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 ProcessReferralAttribution.applyPendingIfNeeded(to: viewModel)
-                reconcileVisitedStepsForRestore(
-                    viewModel: viewModel,
-                    navigationEngine: navigationEngine
-                )
+                reconcileVisitedStepsForRestore(viewModel: viewModel)
                 scheduleRefreshOnboardingFlowProgress()
             }
             guard phase == .inactive || phase == .background else { return }
@@ -206,51 +203,6 @@ struct SportOnboardingView: View {
             }
         } message: {
             Text(viewModel.errorMessage ?? "")
-        }
-        .fullScreenCover(item: $viewModel.presentedOnboardingFaceScan) { presentation in
-            OnboardingFaceScanSessionView(
-                initialResult: presentation.initialResult,
-                showsBackButton: presentation.usesChatCallbacks,
-                onCancel: {
-                    viewModel.dismissOnboardingFaceScan()
-                    if presentation.usesChatCallbacks {
-                        viewModel.onOnboardingFaceScanCancel?()
-                    }
-                },
-                onSkip: {
-                    viewModel.dismissOnboardingFaceScan()
-                    if presentation.usesChatCallbacks {
-                        if let skip = viewModel.onOnboardingFaceScanSkip {
-                            skip()
-                        } else {
-                            // Filet de sécurité : callback chat absent → on avance quand même.
-                            viewModel.skipDashboardFaceScanForLater()
-                            viewModel.onOnboardingFaceScanContinueFromDashboard?()
-                        }
-                    } else {
-                        viewModel.skipDashboardFaceScanForLater()
-                        viewModel.onOnboardingFaceScanContinueFromDashboard?()
-                    }
-                },
-                onResultReady: { result in
-                    if presentation.usesChatCallbacks {
-                        viewModel.onOnboardingFaceScanResult?(result)
-                    } else {
-                        viewModel.recordDashboardFaceScanResult(result)
-                    }
-                },
-                onContinueAfterResults: {
-                    viewModel.dismissOnboardingFaceScan()
-                    if presentation.usesChatCallbacks {
-                        viewModel.onOnboardingFaceScanContinue?()
-                    } else {
-                        viewModel.onOnboardingFaceScanContinueFromDashboard?()
-                    }
-                }
-            )
-            .environmentObject(profileService)
-            .interactiveDismissDisabled(true)
-            .presentationBackground(FaceScanWhoopPalette.canvas)
         }
     }
 
@@ -276,7 +228,7 @@ struct SportOnboardingView: View {
                     Button(action: {
                         handleContinueButtonTap()
                     }) {
-                        Text(continueButtonTitle)
+                        Text(OnboardingCopy.continueCTAUpper)
                             .font(.system(size: 22, weight: .black))
                             .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
                             .id("continue_button_label_\(viewModel.currentStep)")
@@ -287,9 +239,8 @@ struct SportOnboardingView: View {
                 }
             }
             .padding(.horizontal, 34)
-            .disabled(!canContinue && OnboardingStep(rawValue: viewModel.currentStep) != .referralCode)
+            .disabled(!canContinue && !shouldKeepContinueEnabledWhileInvalid)
             .opacity(continueButtonOpacity)
-            .allowsHitTesting(continueButtonHitTestingEnabled)
         }
         .padding(.bottom, animatedContinueBottomOffset)
         .id("onboarding_global_continue")
@@ -318,12 +269,6 @@ struct SportOnboardingView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(
-            .top,
-            isImmersiveOnboardingStep || !shouldAddTopPadding
-                ? 0
-                : OnboardingConstants.titleTopPaddingFromScreenTop
-        )
         .modifier(OnboardingStepLayoutModifier(immersive: isImmersiveOnboardingStep))
         .transition(onboardingPageTransition)
         .ios26SafeAnimation(onboardingPageChangeAnimation, value: viewModel.currentStep)

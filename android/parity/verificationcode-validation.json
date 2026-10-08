@@ -1,0 +1,35 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-121058920-413737815/VerificationCode/VerificationCode/ContentView.swift": "fb28683171e63c1cba2cfc7596aab8a601a5979450304b081141fbed8ce1564f",
+    "content/source-projects/design-source-121058920-413737815/VerificationCode/VerificationCode/VerificationCodeApp.swift": "4c80b77f768a74817a97f2ccaaa931de46756058f49a86ba8775ab1204283770",
+    "content/source-projects/design-source-121058920-413737815/VerificationCode/VerificationCode/Helpers/VerificationField.swift": "fc18a9a2a81b2b08fb44c00c96d728ee6a4108c4b17f06fba909ddf9f0b5dd3b"
+  },
+  "nativeFiles": [
+    "VerificationCodeModel.kt",
+    "TenKVerificationCode.kt"
+  ],
+  "contract": "Controlled value/onValueChange,4or6digits,rounded50x50/radius10/1.2dpstroke/6gap or underlined40x50/1dp/10gap,22sp semibold. Provide a suspend validator; state controls gray/primary/green/red borders and the original six60ms invalid-shake segments. Native input normalizes Unicode decimal digits to ASCII and truncates without losing leading zeroes. Value/length/context changes cancel validation and discard stale noncooperative results. Keyboard Done clears focus. Source blurReplace is approximated by200ms fade/scale; native curve,typeface,OTP autofill,IME placement and physical/iOS comparison remain unverified. Gallery fixture codes1235/451245 are not authentication.",
+  "recordedAt": "2026-10-08T09:01:56.285997+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 163,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 33
+  },
+  "visual": "host render inspected; iOS comparison unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "VerificationCodeModel.kt": "6da206316009d3ddef123433a512f97806dfc4e712194b788ba19e59713a8212",
+    "TenKVerificationCode.kt": "a8e5cf61b10ff56e08d19dc7b48c9408921e8664f4ad80ce7e2ebafd04bfad44"
+  },
+  "remaining": [
+    "Host validation/OTP autofill integration",
+    "SF symbols,fonts,blurReplace,IME/sheet geometry and physical/iOS pixel/motion comparison"
+  ]
+}

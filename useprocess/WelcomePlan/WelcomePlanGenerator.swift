@@ -321,8 +321,8 @@ enum WelcomePlanGenerator {
                 id: "sleep_face",
                 title: AppCopy.tSync("Sommeil prioritaire visage", en: "Face-first sleep"),
                 detail: AppCopy.tSync(
-                    "\(Int(targets.sleepHours)) h par nuit. Les cernes = cortisol + lymphe stagnante.",
-                    en: "\(Int(targets.sleepHours)) h per night. Under-eyes = cortisol + stagnant lymph."
+                    "\(Int(targets.sleepHours)) h par nuit comme objectif personnel. Le scan ne détermine pas la cause des cernes.",
+                    en: "\(Int(targets.sleepHours)) h per night as a personal goal. The scan cannot identify the cause of under-eye appearance."
                 ),
                 pillar: AppCopy.tSync("Visage", en: "Face"),
                 timing: AppCopy.tSync("Nuit", en: "Night")

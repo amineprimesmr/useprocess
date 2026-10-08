@@ -39,61 +39,14 @@ final class ProcessMarketingNotificationService {
 
     /// Démarre / rafraîchit la campagne (sortie paywall, cancel achat, app open non-payer).
     func scheduleConversionSeries(reason: String) async {
-        guard !SubscriptionService.shared.subscriptionStatus.isActive else {
-            cancelAll()
-            return
-        }
-
-        let center = UNUserNotificationCenter.current()
-        let settings = await center.notificationSettings()
-        guard settings.authorizationStatus == .authorized else { return }
-
-        let defaults = UserDefaults.standard
-        let now = Date()
-        var anchor = defaults.object(forKey: Self.campaignAnchorKey) as? Date ?? now
-        let version = defaults.integer(forKey: Self.seriesVersionKey)
-
-        // Nouvelle ancre si première fois ou maj de série.
-        if defaults.object(forKey: Self.campaignAnchorKey) == nil || version != Self.seriesVersion {
-            anchor = now
-            defaults.set(anchor, forKey: Self.campaignAnchorKey)
-            defaults.set(Self.seriesVersion, forKey: Self.seriesVersionKey)
-        }
-
-        let candidates = buildCandidates(anchor: anchor, now: now, sawSpin: hasSawSpinWheel)
-        let selected = applyCaps(candidates)
-
-        // Ne touche pas à la chase instantanée en vol.
-        cancelPendingSeriesRequests()
-
-        var scheduledIDs: [String] = []
-        for item in selected {
-            guard item.fireDate > now.addingTimeInterval(45) else { continue }
-            do {
-                try await schedule(item)
-                scheduledIDs.append(item.kind.rawValue)
-            } catch {
-                continue
-            }
-        }
-
-        if !scheduledIDs.isEmpty {
-            ProcessAnalytics.trackMarketingNotificationsScheduled(
-                reason: reason,
-                campaignIds: scheduledIDs,
-                sawSpin: hasSawSpinWheel
-            )
-        }
+        // Ancienne campagne FOMO désactivée ; retirer les demandes locales existantes.
+        cancelAll()
     }
 
     /// Reschedule léger à l’ouverture app (ne reset pas l’ancre).
     func refreshIfNeededOnAppOpen() async {
-        guard !SubscriptionService.shared.subscriptionStatus.isActive else {
-            cancelAll()
-            return
-        }
-        guard UserDefaults.standard.object(forKey: Self.campaignAnchorKey) != nil else { return }
-        await scheduleConversionSeries(reason: "app_open")
+        // Ancienne campagne FOMO désactivée ; retirer les demandes locales existantes.
+        cancelAll()
     }
 
     /// Démarre la série après un abandon paywall / cancel + arme la chase instantanée.
@@ -154,10 +107,8 @@ final class ProcessMarketingNotificationService {
 
     /// Arme la chase : dès que l’app passe en background (fenêtre 8 min), notif ~1.2s → roue.
     func armExitChase() {
-        guard !SubscriptionService.shared.subscriptionStatus.isActive else { return }
-        let defaults = UserDefaults.standard
-        defaults.set(Date(), forKey: Self.exitChaseArmedAtKey)
-        defaults.set(false, forKey: Self.exitChaseFiredKey)
+        // Ancienne campagne FOMO désactivée ; retirer les demandes locales existantes.
+        cancelAll()
     }
 
     func clearExitChase() {
@@ -168,23 +119,8 @@ final class ProcessMarketingNotificationService {
 
     /// Appelé quand l’app passe en background → chase instantanée si armée / sur paywall.
     func handleAppLeftForeground() {
-        guard !SubscriptionService.shared.subscriptionStatus.isActive else {
-            clearExitChase()
-            return
-        }
-
-        let onRetentionSurface = ProcessPreAccessHomeSwipeCoordinator.shared.retentionSurface != .none
-        if onRetentionSurface, !isExitChaseArmedAndFresh {
-            // Quitte l’app depuis le paywall / la roue sans dismiss préalable.
-            armExitChase()
-        }
-
-        guard isExitChaseArmedAndFresh else { return }
-        guard !UserDefaults.standard.bool(forKey: Self.exitChaseFiredKey) else { return }
-
-        Task {
-            await fireExitChaseNotificationIfPossible()
-        }
+        // Ancienne campagne FOMO désactivée ; retirer les demandes locales existantes.
+        cancelAll()
     }
 
     /// App revient au premier plan — retire la chase pending non délivrée.

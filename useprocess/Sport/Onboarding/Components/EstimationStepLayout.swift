@@ -41,28 +41,32 @@ struct EstimationStepLayout<Graph: View, Bottom: View>: View {
                         .padding(.horizontal, 8)
 
                     HStack(spacing: 12) {
-                        Button(action: {}) {
+                        dateChip {
                             Text(displayDay)
                                 .font(.system(size: 32, weight: .bold))
+                                .monospacedDigit()
                                 .foregroundStyle(OnboardingTheme.primaryText)
-                                .padding(.horizontal, 18)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.55)
+                                .fixedSize(horizontal: true, vertical: false)
+                                .padding(.horizontal, 16)
                                 .frame(minWidth: 64, minHeight: 46)
                         }
-                        .processGlassButton(in: dateChipShape, interactive: false)
-                        .buttonBorderShape(.roundedRectangle(radius: dateChipCornerRadius))
-                        .controlSize(.large)
+                        .layoutPriority(2)
 
-                        Button(action: {}) {
+                        dateChip {
                             Text(displayMonth)
                                 .font(.system(size: 22, weight: .bold))
                                 .foregroundStyle(OnboardingTheme.primaryText)
-                                .padding(.horizontal, 20)
-                                .frame(minHeight: 46)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.55)
+                                .padding(.horizontal, 16)
+                                .frame(maxWidth: .infinity, minHeight: 46)
                         }
-                        .processGlassButton(in: dateChipShape, interactive: false)
-                        .buttonBorderShape(.roundedRectangle(radius: dateChipCornerRadius))
-                        .controlSize(.large)
                     }
+                    .opacity(displayDay.isEmpty && displayMonth.isEmpty ? 0 : 1)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(displayDay) \(displayMonth)")
                 }
                 .padding(.horizontal, 40)
                 .padding(.top, OnboardingConstants.backOnlyContentTopInset)
@@ -83,5 +87,10 @@ struct EstimationStepLayout<Graph: View, Bottom: View>: View {
             .padding(.bottom, bottomReserve)
             .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
         }
+    }
+
+    private func dateChip<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .processGlassEffect(in: dateChipShape, interactive: false)
     }
 }

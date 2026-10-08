@@ -1,0 +1,21 @@
+ACTUALISATION — 7 OCTOBRE 2026
+Le propriétaire n’a pas son iPhone. Les corrections analytics ajoutées après le build 39 nécessitent le build 40, une nouvelle archive et des tests physiques. Le build 39 reste une preuve antérieure, pas la livraison finale. Aucun upload ni soumission Apple.
+PostHog audité : 2 clés personnelles All access, 4 apps OAuth, essai annuel A/B actif ; forfait gratuit affiché. AppsFlyer console reportée à la demande du propriétaire.
+373 comptes Auth exportés en privé ; intégrité vérifiée, restauration complète non testée. Compte Stripe clôturé selon confirmation propriétaire.
+
+Validation du 7 octobre 2026 — version 1.13, build 39
+
+Compilation Debug iPhone physique 14 Pro Max : BUILD SUCCEEDED.
+Installation et lancement com.useprocess réussis ; version/build vérifiés dans Info.plist.
+Retour du propriétaire sur la première installation : « oui ça a l’air super ». Première validation visuelle uniquement.
+Après corrections complémentaires coach/profil, compilation réussie, nouvelle installation et lancement réussis. Ces dernières corrections restent à contrôler visuellement par le propriétaire.
+
+À valider : scans réels, connexion, achats et restauration Apple sandbox, annulation et état pending, suppression de compte, consentement IA, liens support/légaux.
+Rejet Apple build 38 : Claim my offer bloqué sur iPad Air M4 / iPadOS 27.0 ; pas encore de validation physique iPad.
+Aucun simulateur utilisé. Aucun paiement réel effectué.
+Aucune soumission Apple avant nouvel accord explicite du propriétaire.
+
+processdebloat.com actif, site indépendant et HTTPS vérifiés. useprocess.xyz reste au vendeur.
+contact@processdebloat.com active et testée ; deux alias actifs. Forfait Hostinger encore en traitement.
+
+Archive Release et export IPA App Store local : réussis. Signature archive vérifiée. Aucun upload ni soumission Apple.

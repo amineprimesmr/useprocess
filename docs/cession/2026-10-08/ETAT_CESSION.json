@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-08",
+  "scope": "Process Debloat only",
+  "buyer": {
+    "identity": null,
+    "channel": "WhatsApp",
+    "same_as_lapourax": false,
+    "price_eur": 3500,
+    "tax_treatment": null,
+    "ten_k_design_disclosure_accepted": null
+  },
+  "apple": {
+    "app_id": "6753808143",
+    "bundle_id": "com.useprocess",
+    "live_version": "1.12",
+    "live_build": "37",
+    "new_version": "1.13",
+    "new_version_state": "REJECTED",
+    "associated_build": "38",
+    "local_device_build": "40",
+    "local_device_build_is_release_archive": false,
+    "submission_performed": false,
+    "transfer_initiated": false
+  },
+  "excluded_assets": [
+    "useprocess.xyz",
+    "10K Design",
+    "ScrollShow",
+    "other projects",
+    "personal and shared accounts/credentials"
+  ],
+  "open_items": [
+    "buyer identity and destination accounts",
+    "asset/rights inventory and 10K Design disclosure",
+    "contract payment terms and tax treatment",
+    "rejection remedy and review of restored commercial claims",
+    "sandbox purchase and restore evidence",
+    "final release archive and seller approval to submit",
+    "production clipper retirement and verification",
+    "AppsFlyer console audit",
+    "Sign in with Apple migration preparation",
+    "fresh private backup and recovery validation",
+    "source pack regeneration after release freeze",
+    "domain internal move 96-hour minimum; exact eligibility time unverified",
+    "ownership billing credentials and operational acceptance for every service"
+  ],
+  "references": [
+    "INFORMATIONS_ACHETEUR.txt",
+    "PLAN_TRANSFERT_ACTUALISE.txt",
+    "APPLE_VERSIONS.json",
+    "APPLE_BUILDS.json",
+    "../2026-10-07/REGISTRE_PASSATION.json"
+  ]
+}

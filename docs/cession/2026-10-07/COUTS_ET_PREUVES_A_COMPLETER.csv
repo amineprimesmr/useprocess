@@ -1,0 +1,15 @@
+service,scope,period,currency,fixed_cost,variable_cost,tax,invoice_evidence,buyer_billing_required,status
+Apple Developer,Process Debloat,,,,,,,yes,A_RAPPROCHER_SANS_ESTIMATION_INVENTEE
+Apple commissions/refunds,Process Debloat,,,,,,,yes,A_RAPPROCHER_SANS_ESTIMATION_INVENTEE
+RevenueCat,Process Debloat,,,,,,,yes,A_RAPPROCHER_SANS_ESTIMATION_INVENTEE
+Google Cloud Functions/Run,Process Debloat,,,,,,,yes,A_RAPPROCHER_SANS_ESTIMATION_INVENTEE
+Firestore,Process Debloat,,,,,,,yes,A_RAPPROCHER_SANS_ESTIMATION_INVENTEE
+Cloud Storage/backups,Process Debloat,,,,,,,yes,A_RAPPROCHER_SANS_ESTIMATION_INVENTEE
+Anthropic,Process Debloat,,,,,,,yes,A_RAPPROCHER_SANS_ESTIMATION_INVENTEE
+PostHog,Process Debloat,,,,,,,yes,A_RAPPROCHER_SANS_ESTIMATION_INVENTEE
+AppsFlyer,Process Debloat,,,,,,,yes,A_RAPPROCHER_SANS_ESTIMATION_INVENTEE
+Vercel,Process Debloat,,,,,,,yes,A_RAPPROCHER_SANS_ESTIMATION_INVENTEE
+Hostinger domain,Process Debloat,,,,,,,yes,A_RAPPROCHER_SANS_ESTIMATION_INVENTEE
+Hostinger email,Process Debloat,,,,,,,yes,A_RAPPROCHER_SANS_ESTIMATION_INVENTEE
+TikTok/ads,Process Debloat,,,,,,,yes,A_RAPPROCHER_SANS_ESTIMATION_INVENTEE
+Affiliates/commissions,Process Debloat,,,,,,,yes,A_RAPPROCHER_SANS_ESTIMATION_INVENTEE

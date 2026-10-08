@@ -1,0 +1,13 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-160455688-677468257/TPIndicators/TPIndicators/ContentView.swift": "ab3aa27661a104ae4110dc3f11db09ab4088da4a639b677403c9fc281b5d033b",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-160455688-677468257/TPIndicators/TPIndicators/TPIndicatorsApp.swift": "e22115861786716690c648a236ed28d8a516df7e7e67f7aaa2c511c221df25ce",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-160455688-677468257/TPIndicators/TPIndicators/Helpers/TimedPagingIndicator.swift": "93b61dfbc761e62bbe8efcc64c2a57cfeb5ad93aeb267d8fbae111a5f98b08cc"
+  },
+  "nativeFiles": [
+    "TimedPagingModel.kt",
+    "TenKTimedPagingIndicator.kt",
+    "ProcessMotionPreferences.kt"
+  ],
+  "contract": "Controlled selection,count,durationMillis,paused and contextKey. Source5dp inactive dots,20dp active capsule,5dp spacing,10dp overall height and300ms width transition. Active fill advances over host duration; source pause collapses active capsule and shows full dot,then resets countdown on resume. Android lifecycle below RESUMED also pauses and resets. Callback emits one next-index request per selection interval; host must update selection to continue. Wraps last page to zero; empty/singleton counts never request. Context/duration/count/selection changes cancel prior timer. Source frame-clock timing is deterministic in host tests. Gallery uses original5colors,220dp pages and2second timer; its settled-page synchronization may add page-settle delay relative to source. Swift spring,gradients,exact page-snap timing and physical/iOS motion/pixel comparison remain unverified."
+}

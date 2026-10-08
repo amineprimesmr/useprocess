@@ -79,18 +79,11 @@ struct FaceLeverageIntroStepView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             continueButton
-                .opacity(viewModel.isFaceLeverageIntroCompleted ? 1 : 0)
-                .allowsHitTesting(viewModel.isFaceLeverageIntroCompleted)
-                .accessibilityHidden(!viewModel.isFaceLeverageIntroCompleted)
         }
         .onAppear {
             viewModel.isFaceLeverageIntroCompleted = true
             onValidationChanged?(true)
             startRevealSequence()
-        }
-        .onDisappear {
-            viewModel.isFaceLeverageIntroCompleted = false
-            onValidationChanged?(false)
         }
         .processRestoreOpaqueUIKitHostingBackground(
             OnboardingTheme.hostingBackgroundUIColor
@@ -99,8 +92,6 @@ struct FaceLeverageIntroStepView: View {
 
     private var continueButton: some View {
         Button {
-            guard viewModel.isFaceLeverageIntroCompleted else { return }
-            HapticManager.shared.impact(.medium)
             onContinue()
         } label: {
             Text(OnboardingCopy.continueCTA)
@@ -193,8 +184,8 @@ struct FaceLeverageIntroStepView: View {
             HStack(spacing: 0) {
                 overlappingAvatars
                 Text(OnboardingCopy.t(
-                    "+10k utilisateurs",
-                    en: "+10k users"
+                    "Disponible sur iPhone",
+                    en: "Available on iPhone"
                 ))
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(OnboardingTheme.mutedText)
@@ -204,14 +195,7 @@ struct FaceLeverageIntroStepView: View {
             quoteText
 
             HStack(spacing: 6) {
-                HStack(spacing: 2) {
-                    ForEach(0..<5, id: \.self) { _ in
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(accent)
-                    }
-                }
-                Text(OnboardingCopy.t("4,9 • 2 100 avis", en: "4.9 • 2,100 reviews"))
+                Text(OnboardingCopy.t("Scan, plan et coach IA", en: "Scan, plan and AI coach"))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(OnboardingTheme.mutedText)
             }
@@ -392,6 +376,8 @@ struct FaceLeverageIntroStepView: View {
 
     private func reveal(after delay: TimeInterval, action: @escaping () -> Void) {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            // L'utilisateur a pu déjà quitter l'écran : pas d'haptique ni d'écriture fantôme.
+            guard OnboardingStep(rawValue: viewModel.currentStep) == .faceLeverageIntro else { return }
             withAnimation(.spring(response: 0.62, dampingFraction: 0.84)) {
                 action()
             }

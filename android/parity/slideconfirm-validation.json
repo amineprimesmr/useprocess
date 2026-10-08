@@ -1,0 +1,33 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-126118945-448338666/SlideControl/SlideControl/ContentView.swift": "eb3d508f8ae0cd6aef4ed7a8859342cdd540218c54ae2515c42421420a67e1e7",
+    "content/source-projects/design-source-126118945-448338666/SlideControl/SlideControl/SlideControlApp.swift": "555ef345370515080346865d5bb2a085fcf1777c64f0785ffd22ffb1946ce365",
+    "content/source-projects/design-source-126118945-448338666/SlideControl/SlideControl/Helpers/SlideToConfirm.swift": "8055c03f4ed4f15dd147ceb76a031c5d5dd71d0446fd8c278327bdec445244f3"
+  },
+  "mirrorMatchesInventory": true,
+  "contract": "Supply onSwiped and optional SlideConfirmConfig. This reports the completed gesture, never payment success. Original65dp height,5dp inset,80percent viewport width capped300dp,completed50dp height/50percent viewport width and0.6knob scale are retained. Drag must reach the endpoint; interrupted drag resets; completion gates repeated callbacks. Accessible confirmation action is available. Shimmer follows2.5seconds and pauses with lifecycle inactivity. Pass reduceMotion. Swift smooth spring, SoftLight text band, inner shadow, native chevron/check blur and pixel comparison remain unverified.",
+  "nativeFiles": [
+    "TenKSlideToConfirm.kt"
+  ],
+  "recordedAt": "2026-10-08T07:26:47.681347+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 132,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 31
+  },
+  "visual": "host render inspected; iOS comparison unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "TenKSlideToConfirm.kt": "6a3ec7dedd487fad06ff556e76ed7f0338df5ef7833c3de330c2ba7c4daa02fb"
+  },
+  "remaining": [
+    "Swift smooth/blur/shadow/SoftLight/native glyph and physical comparison"
+  ]
+}

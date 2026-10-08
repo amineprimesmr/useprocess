@@ -577,6 +577,7 @@ export {
   referralConfirmSubscription,
   referralRevenueCatWebhook,
 } from "./referralRewards";
+export { supportSendMessage } from "./supportRetired";
 export {
   affiliatePreparePasswordless,
   affiliateSendLoginEmail,
@@ -595,19 +596,14 @@ export {
   affiliateAdminApprove,
   affiliateAdminListPending,
   affiliateAdminMarkPaid,
-} from "./affiliate";
-export {
   affiliateRevenueCatWebhook,
   affiliateReleaseHeldCommissions,
-} from "./affiliateCommissions";
-export {
-  affiliateStripeConnectStart,
-  affiliateStripeConnectSync,
-  affiliateStripeConnectDashboard,
-  affiliateStripeWebhook,
-} from "./affiliateStripe";
-export { supportSendMessage, supportCrispWebhook, supportCrispPoll } from "./supportCrisp";
-export { affiliateTikTokStudio, affiliateTikTokOAuthCallback } from "./affiliateTikTok";
-export { affiliateLeaderboard } from "./affiliateLeaderboard";
-export { affiliateLibrary } from "./affiliateLibrary";
-export { affiliateMcp } from "./affiliateMcp";
+  affiliateTikTokStudio,
+  affiliateTikTokOAuthCallback,
+  affiliateLeaderboard,
+  affiliateLibrary,
+  affiliateMcp,
+} from "./clipperRetired";
+
+
+export { appleBillingNotifications } from "./appleBillingNotifications";

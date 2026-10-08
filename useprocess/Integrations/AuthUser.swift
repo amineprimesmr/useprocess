@@ -19,6 +19,10 @@ enum AuthUser {
         }
     }
 
+    static var isAnonymous: Bool {
+        FirebaseBootstrap.isConfigured && Auth.auth().currentUser?.isAnonymous == true
+    }
+
     static var current: Session? {
         guard AppConfiguration.firebaseConfigured else { return nil }
         FirebaseBootstrap.configure()

@@ -1,0 +1,43 @@
+{
+  "recordedAt": "2026-10-08T01:13:35.601386+00:00",
+  "status": "development-preview",
+  "build": "passed",
+  "unitTests": {
+    "tests": 61,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 22
+  },
+  "apkSha256": "d4523c9dea34b0fd70d3b9c29a63093711fe8940afe330dd695b70e7789a6df9",
+  "runtime": "unverified; emulator shared with active V2 thread",
+  "firebase": {
+    "project": "useprocess-d4385",
+    "appId": "1:3107027616:android:b7449b8bac87414159a7c5",
+    "package": "com.process.android",
+    "registration": "passed",
+    "sdkCompilation": "passed",
+    "debugShaRegistration": "passed",
+    "liveAuth": "unverified",
+    "liveProfileReadWrite": "unverified"
+  },
+  "sourceSha256": {
+    "ProcessTabModel": "531db95b98026f38857e0f85bfa2a2633ddb9a51ac337a51f4f0fe4e80cbeab9",
+    "ProcessTabBar": "214de0310b035811261f2297256354af140dbdae8afbe334ae0c6170cc22b1d0",
+    "ProgramCalendarModel": "fb4d39b75bd41eeaadfbcfedb2954fd0556b6377a0d61b88b0b81f3b114e9b78",
+    "ProcessProgramCalendar": "ccfbd17d7bdb77551bf39390e7d77bcda805c04eb8f9229340a1be0348053493",
+    "ProcessCloudContracts": "aa288cc57863d9e7edbb30fe1ce8ebb6539978bad836ccc64340523d2a67a898",
+    "ProcessFirebaseSession": "6ab4b6250e811ee5c219a83d2dd448d7f807db7ba2cc3dd782348cd3089ed06f",
+    "ProcessCloudRepository": "33fa93fe8c585b7016fe0fb76673a6bd906894597668b5c5c8e3c06bd6fae40f"
+  },
+  "remaining": [
+    "Calendar exact typography, photo crop, selection/transition animation, material and physical visual comparisons",
+    "Tab bar exact native glass, symbols, collapse motion and host navigation",
+    "Real authenticated account flow including Apple web Service ID setup",
+    "Complete new-profile creation compatible with iOS schema; existing-profile partial updates only",
+    "Billing, scan, production navigation, signing and Play release remain unfinished"
+  ]
+}

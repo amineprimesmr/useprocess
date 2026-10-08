@@ -5,17 +5,26 @@ import UIKit
 
 /// Scan visage — mesh 3D invisible, flash piloté par l'écran parent.
 struct FaceMeshScanView: UIViewRepresentable {
-    /// Crop portrait UIKit : ARSCNView remplit tout son bounds avec le FOV natif (grand-angle).
-    /// SwiftUI `scaleEffect` ne scale pas le layer Metal — on agrandit la vue et on clippe.
+    /// Keep ARSCNView untransformed. ARKit updates its backing size during
+    /// layout; scaling the AR view made it and its parent continuously resize
+    /// each other on device, starving touches and camera delegate callbacks.
     final class PreviewContainer: UIView {
         let arView = ARSCNView(frame: .zero)
         var onViewportSizeChange: ((CGSize) -> Void)?
-        var previewZoom: CGFloat = ProcessScanCamera.frontPreviewLayoutZoom {
-            didSet {
-                if abs(oldValue - previewZoom) > 0.01 {
-                    setNeedsLayout()
-                }
-            }
+
+        /// Crop only at composition time, on the parent layer. ARSCNView keeps
+        /// identity geometry so ARKit's backing-size layout cannot fight us.
+        func setPreviewZoom(_ zoom: CGFloat) {
+            let scale = max(1, zoom)
+            let transform = CATransform3DMakeScale(scale, scale, 1)
+            guard !CATransform3DEqualToTransform(layer.sublayerTransform, transform) else { return }
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            layer.sublayerTransform = transform
+            CATransaction.commit()
+            #if DEBUG
+            print("[FaceScanRuntime] preview crop: \(scale)x; AR view transform identity: \(arView.transform.isIdentity)")
+            #endif
         }
 
         override init(frame: CGRect) {
@@ -23,6 +32,8 @@ struct FaceMeshScanView: UIViewRepresentable {
             clipsToBounds = true
             backgroundColor = UIColor(red: 0.09, green: 0.09, blue: 0.10, alpha: 1)
             isOpaque = true
+            arView.frame = bounds
+            arView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             addSubview(arView)
         }
 
@@ -30,12 +41,6 @@ struct FaceMeshScanView: UIViewRepresentable {
 
         override func layoutSubviews() {
             super.layoutSubviews()
-            let zoom = max(1, previewZoom)
-            // Transform, pas un frame plus grand : ARSCNView (Metal) ignore souvent
-            // l’agrandissement de bounds et garde le FOV grand-angle natif.
-            arView.transform = .identity
-            arView.frame = bounds
-            arView.transform = CGAffineTransform(scaleX: zoom, y: zoom)
             onViewportSizeChange?(bounds.size)
         }
     }
@@ -89,7 +94,7 @@ struct FaceMeshScanView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> PreviewContainer {
         let container = PreviewContainer()
-        container.previewZoom = max(1, cameraZoom)
+        container.setPreviewZoom(cameraZoom)
         let view = container.arView
         view.delegate = context.coordinator
         view.session.delegate = context.coordinator
@@ -129,9 +134,6 @@ struct FaceMeshScanView: UIViewRepresentable {
         context.coordinator.isSessionRunning = isSessionRunning
         if isSessionRunning {
             context.coordinator.startSession(on: view)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak coordinator = context.coordinator] in
-                coordinator?.configurePortraitCameraEarly()
-            }
         } else {
             context.coordinator.isSessionPaused = true
         }
@@ -144,7 +146,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         context.coordinator.allowsScreenFlash = allowsScreenFlash
         context.coordinator.skipsHeadTiltPhase = skipsHeadTiltPhase
         let zoom = max(1, cameraZoom)
-        uiView.previewZoom = zoom
+        uiView.setPreviewZoom(zoom)
         context.coordinator.cameraZoom = zoom
         context.coordinator.portraitFieldOfView = portraitFieldOfView
         context.coordinator.portraitLockProfile = portraitLockProfile
@@ -176,6 +178,10 @@ struct FaceMeshScanView: UIViewRepresentable {
     }
 
     final class Coordinator: NSObject, ARSCNViewDelegate, ARSessionDelegate {
+        #if DEBUG
+        private var loggedFirstCameraFrame = false
+        private var loggedTrackedFace = false
+        #endif
         @Binding var progress: Double
         @Binding var ringProgress: Double
         @Binding var activeTickSectors: Set<Int>
@@ -275,8 +281,6 @@ struct FaceMeshScanView: UIViewRepresentable {
         private let uiUpdateMinInterval: CFTimeInterval = 1.0 / 20.0
         private let lightUIUpdateMinInterval: CFTimeInterval = 1.0 / 15.0
         private let processMinInterval: CFTimeInterval = 1.0 / 24.0
-        private var didConfigurePortraitCamera = false
-        private var frontZoomLockAttempts = 0
         private var faceRemovalWorkItem: DispatchWorkItem?
         private let viewportLock = NSLock()
         private var viewportSize: CGSize = .zero
@@ -384,15 +388,21 @@ struct FaceMeshScanView: UIViewRepresentable {
 
         func startSession(on view: ARSCNView) {
             ProcessAudioSession.configureForMixingWithOthers()
-            didConfigurePortraitCamera = false
-            frontZoomLockAttempts = 0
-            ProcessScanCamera.lockFrontCamerasBeforeARSession(profile: portraitLockProfile)
+            // ARKit owns the TrueDepth capture device. Never gate session.run on
+            // AVCaptureDevice.lockForConfiguration, or change its sensor zoom while
+            // ARKit is running. Use its native camera projection and viewport.
+            isSessionPaused = false
             let config = ARFaceTrackingConfiguration()
             config.isLightEstimationEnabled = true
             config.maximumNumberOfTrackedFaces = 1
             view.session.run(config, options: [.resetTracking, .removeExistingAnchors])
-            isSessionPaused = false
-            ProcessScanCamera.lockActiveFrontCamerasIfPossible(profile: portraitLockProfile)
+            #if DEBUG
+            print("[FaceScanRuntime] session started")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+                guard let self, !self.isTornDown else { return }
+                print("[FaceScanRuntime] main thread responsive")
+            }
+            #endif
         }
 
         func pauseSession() {
@@ -416,11 +426,16 @@ struct FaceMeshScanView: UIViewRepresentable {
 
         func session(_ session: ARSession, didUpdate frame: ARFrame) {
             guard !completed, !isTornDown else { return }
-            configurePortraitCameraIfNeeded()
-            if frontZoomLockAttempts < 32 {
-                frontZoomLockAttempts += 1
-                ProcessScanCamera.lockActiveFrontCamerasIfPossible(profile: portraitLockProfile)
+            #if DEBUG
+            if !loggedFirstCameraFrame {
+                loggedFirstCameraFrame = true
+                print("[FaceScanRuntime] camera frames received")
             }
+            if !loggedTrackedFace, frame.anchors.contains(where: { $0 is ARFaceAnchor }) {
+                loggedTrackedFace = true
+                print("[FaceScanRuntime] face tracking active")
+            }
+            #endif
             let intensity = frame.lightEstimate?.ambientIntensity ?? 1000
             currentAmbientIntensity = intensity
             let low = FaceScanQualityValidator.isLowLight(ambientIntensity: intensity)
@@ -498,7 +513,6 @@ struct FaceMeshScanView: UIViewRepresentable {
                   let geometry = node.geometry as? ARSCNFaceGeometry else { return }
             geometry.update(from: faceAnchor.geometry)
             guard !completed, !isTornDown else { return }
-            configurePortraitCameraIfNeeded()
 
             let now = CACurrentMediaTime()
             if scanStartTime != nil, livePhase == .orbit {
@@ -520,20 +534,6 @@ struct FaceMeshScanView: UIViewRepresentable {
             }
             faceRemovalWorkItem = work
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.55, execute: work)
-        }
-
-        private func configurePortraitCameraIfNeeded() {
-            guard !didConfigurePortraitCamera, let view = arView else { return }
-            ProcessScanCamera.lockActiveFrontCamerasIfPossible(profile: portraitLockProfile)
-            guard let camera = view.pointOfView?.camera else { return }
-            camera.fieldOfView = portraitFieldOfView
-            camera.zNear = 0.01
-            camera.zFar = 2
-            didConfigurePortraitCamera = true
-        }
-
-        func configurePortraitCameraEarly() {
-            configurePortraitCameraIfNeeded()
         }
 
         private func markFaceLost(force: Bool = false) {
@@ -1448,9 +1448,9 @@ struct FaceMeshScanView: UIViewRepresentable {
             guard projectedCount >= 8 else { return nil }
             let faceArea = (maxX - minX) * (maxY - minY)
             guard faceArea > 1 else { return nil }
-            // `projectPoint` is already in ARSCNView bounds (pre-transform).
-            // Do not offset by `frame.origin` — UIView zoom transform inflates `frame`.
-            return faceArea / (viewport.width * viewport.height)
+            // Projection remains in native ARSCNView coordinates. Match the
+            // visible face area after the parent layer's centered crop.
+            return faceArea * cameraZoom * cameraZoom / (viewport.width * viewport.height)
         }
 
         private func extractMesh(from geometry: ARFaceGeometry) -> FaceMesh3DData {

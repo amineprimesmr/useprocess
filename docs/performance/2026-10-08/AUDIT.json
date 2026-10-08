@@ -1,0 +1,176 @@
+{
+  "date": "2026-10-08",
+  "scope": "Process iOS performance",
+  "status": "installed_waiting_for_device_ui_validation",
+  "backup": "/Users/amine/.codex/backups/process-debloat/performance-20261008-101456",
+  "swift_files_in_app": 479,
+  "changed_files": [
+    {
+      "file": "useprocess/MainAppView.swift",
+      "before_sha256": "ed597d97d0944ded71278ef7e905b65038daedcc86c2222d67eb3d6d6fd97b47",
+      "after_sha256": "3d5b283a190128b3aec03f4f2ba8c7e3e006ac397311c61a52b51962eb53a3d1"
+    },
+    {
+      "file": "useprocess/DesignSystem/Components/ProcessMotionTiltImageCard.swift",
+      "before_sha256": "b62a9163334e09c4d247d9fdfc55806073ba95d9fefd5eb1679d27dfeed21acc",
+      "after_sha256": "d42b185005a3d36ada2ad2f4bc3159f0673a046e42681da12b3ef5915b5c416e"
+    },
+    {
+      "file": "useprocess/Health/Components/PlanHomePeriodicTicker.swift",
+      "before_sha256": "f7f63cbbb8a68bcc703c17134daf03cc440703cb982e6bc7e2916de60d6190cb",
+      "after_sha256": "3e98518fb4fddafefa9e1090d67835033f7ec7cb337bf68216bd083ea73aa38f"
+    },
+    {
+      "file": "useprocess/Health/Components/Hydration/ProcessHydrationBottleView.swift",
+      "before_sha256": "f2815bd487f18fd557a27f0e66e4c2804a247836d27acda532c7e6e9d4730e01",
+      "after_sha256": "09532b02a62846fb5607053cbdfae2e179bc7e012fe59ef31feeacf9a9aa8412"
+    },
+    {
+      "file": "useprocess/Health/Components/Plan/PlanProgramCalendarView.swift",
+      "before_sha256": "36d7b5183eb97f679ef2cdd59f632324b4dd5275d113766f3cafacb626c18c7a",
+      "after_sha256": "7a47eecc9537e919dbbfb27a1603821db3b3c87bad4d498434aa85dc651b6891"
+    },
+    {
+      "file": "useprocess/Features/HomeTutorial/PlanHomeTutorialRotatingBorder.swift",
+      "before_sha256": "bec1a2e930d22a5ba05636a8732edb23dfdbef53f379a038f89f7e4f9cc501e8",
+      "after_sha256": "dd234dfcab8523c36b0b9658c738caf068d17a08b385124c0a7162d6a85ed574"
+    },
+    {
+      "file": "useprocess/Features/Profile/ProfileStreakAchievementsSection.swift",
+      "before_sha256": "77e3997b87c8546d5a93b24c8f2d00df8885240d539cf7a19994e37705a9658a",
+      "after_sha256": "48ae57884e074c9ed9943e44e0d4da291adea6dd882d2fbcc79a0c0799d477db"
+    },
+    {
+      "file": "useprocess/Sport/Paywall/PaywallView.swift",
+      "before_sha256": "8a0e70f5b875420d4d9ccd8e22fb79321f25494a2403321cca7138061e8f6c6a",
+      "after_sha256": "e9fbb71fda5a9a96b350ec7a81b410ff7562a987365bbbd968373107783210ff"
+    },
+    {
+      "file": "useprocess/BodyScan/Views/FaceScanRecordingMediaView.swift",
+      "before_sha256": "f32141163ca4c54556e9ebc11dd4361abc47d494a8ada2842b230812a90a196b",
+      "after_sha256": "bc7446c8a35462bc1ea0442c02b9fe9ae16c9f644c6536081a521058bfc613b4"
+    },
+    {
+      "file": "useprocess/BodyScan/Views/FaceScanAnalysisFlowView.swift",
+      "before_sha256": "8e0b9e5a93707cfc0478bad0107f2d3e166ad1a112aba3d7a8157cc094c66ab0",
+      "after_sha256": "6450e8ac0d882ecbf82ca7ecd141efe9b9e668ce915e9cf4f18b0fcee280d80a"
+    },
+    {
+      "file": "useprocess/BodyScan/Views/FaceScanWhoopAnalysisDesign.swift",
+      "before_sha256": "0ba97a11caafae3d5305fb67983a49734f2c4af166b019d6a1c2adea3c3c2ed2",
+      "after_sha256": "46d0f23324abe032aeb9c6e404d19535c5c343a85ae90425b820d8aebd5b36f1"
+    },
+    {
+      "file": "useprocess/BodyScan/Views/FaceScanStudioFramingEditor.swift",
+      "before_sha256": "50db6108e69bbc571f03335fe1aac6ff49121818238caa0307875e7ca1d7afdd",
+      "after_sha256": "8aa01207e8c10f4240d8957b7c63e04a044b94c29e921386e2dc0015888c29f5"
+    },
+    {
+      "file": "useprocess/BodyScan/Services/FaceScanImageStore.swift",
+      "before_sha256": "4545a78ea174ade59a05c216830ccf797fc1c47f5f5f8a1e01716cd49152edd5",
+      "after_sha256": "3c030a4c85e470640f281e687c0675e5fdfdba9fa4e63131ece6d7e757f1fe8b"
+    },
+    {
+      "file": "useprocess/Coach/ViewModels/CoachChatViewModel.swift",
+      "before_sha256": "f1f4e38a0050d7d02298f4bbe8b2e5d66bb508adcdfbd1833f43f515469b1aa2",
+      "after_sha256": "e3fe668b89b12371cc489added26c0cf111c4e3f5cecb544eee61ee51b472296"
+    },
+    {
+      "file": "useprocess/Coach/Components/CoachChatImageUserMessageView.swift",
+      "before_sha256": "6f1917775a85a2ac157e2790148838a2b0137df1876ceb5ac77bf4b73a1e4677",
+      "after_sha256": "0e84c56e7956771d383af83765199d5f35e83d268323b717eb40f6d8fee1591d"
+    },
+    {
+      "file": "useprocess/Coach/Components/CoachThinkingDotsView.swift",
+      "before_sha256": "6c403dd8e463cf373237115a1c046a544e73d21246aad525ed559029de7e1d14",
+      "after_sha256": "a144065bbd9870df3d78989c0d85517c913739341eabe1f79d7953128de1184c"
+    },
+    {
+      "file": "useprocess/Coach/Components/CoachBlobIndicator.swift",
+      "before_sha256": "3d56ff3582241e080c7805e6767c4774f91256a09b6faff3ba9cc76a676039df",
+      "after_sha256": "0833daeb4aba22362adf0079da4a13563fd51d496bf10ef0c2167182acf145bf"
+    },
+    {
+      "file": "useprocess/Coach/Views/CoachChatView.swift",
+      "before_sha256": "753632048b4ad200439e32cd024d0c239e6ef494e61644ddb206f9a9e8d0173c",
+      "after_sha256": "3267987d3962c9f8e00d28901763fc13baa08d42bc974362da3386fb611589d7"
+    },
+    {
+      "file": "useprocess/Coach/Services/CoachEngine.swift",
+      "before_sha256": "9b2ea44a31688e140777ad87933506d9c1d498a72164b3a9cefa842a05e7fc12",
+      "after_sha256": "6db97f5cf838d4af7228477bedae7795b1bd9bb96997511ed44f4753577ff77d"
+    },
+    {
+      "file": "useprocess/Coach/Services/CoachChatAttachmentImageStore.swift",
+      "before_sha256": "4436aacb90270c22bc9596cb30c2245bf255c266b5d7f848cba153bb38f223d1",
+      "after_sha256": "92c66cb3f7d8e2ab7f8370c30396d3d6672af5d178ab6696018ad472136e33cb"
+    },
+    {
+      "file": "useprocess/Health/Services/HealthManager.swift",
+      "before_sha256": "cb26505e8ad31ddfcdf78a332b11edbe8e576276a6a1732fcffed309d3ed74d9",
+      "after_sha256": "99a578efe7a8bc81c0dd647cca77f58dee929d6140dc6948487860964dbc1ed7"
+    },
+    {
+      "file": "useprocess/Health/Services/BaselineCalculator.swift",
+      "before_sha256": "ef8d7d4e62ddc5b160b17a5d171b5982b0411a0ad6954ec2f0b84226e8cada20",
+      "after_sha256": "2e8706925d228c2128bd6269dd02368c084ac531add603868ad8003316ef85fb"
+    }
+  ],
+  "findings": [
+    {
+      "area": "Navigation",
+      "before": "All five tab roots mounted at launch, including never visited tabs.",
+      "change": "Mount on first selection and retain local navigation state. Propagate active tab to media/animation views."
+    },
+    {
+      "area": "Gyroscope",
+      "before": "Bottle and tilt-card sensors started on appearance and only stopped on disappearance; hidden tabs remain mounted.",
+      "change": "Stop/start on tab visibility, scene phase and reduced-motion setting."
+    },
+    {
+      "area": "Scan images",
+      "before": "Synchronous full-resolution file loads in display callbacks; folder resource attributes rewritten on every directory lookup.",
+      "change": "Serial background ImageIO decoding, display-size thumbnails, directory initialization once."
+    },
+    {
+      "area": "Coach attachments",
+      "before": "Files read within message view rendering; JPEG encoding and persistence on main actor.",
+      "change": "Cancellable row-owned asynchronous previews; JPEG encoding/persistence in background."
+    },
+    {
+      "area": "Video",
+      "before": "Media identity resets rebuilt player; every update queued a second main-thread resume. Retry sleeps ignored cancellation.",
+      "change": "Reuse player on crop/playback changes, pause offscreen/background, remove redundant resume and stop cancelled retries."
+    },
+    {
+      "area": "Animations",
+      "before": "Some timelines remained active in retained hidden tabs.",
+      "change": "Gate coach, tutorial, miniature flame and home ticker by visibility/scene."
+    },
+    {
+      "area": "Health baseline",
+      "before": "Each of 14 daily baseline snapshots queried 21 category groups although the calculation only uses six.",
+      "change": "Query only the same six required measurements, retaining baseline calculation and units."
+    }
+  ],
+  "validation": {
+    "swift_parse": "passed (20 affected source files)",
+    "device_build": "passed, Debug arm64 physical device, xcodebuild -jobs 1, nice -n 15",
+    "device_install": "passed on physical iPhone 14 Pro Max",
+    "device_ui_and_performance": "awaiting user testing; no instrumented FPS or memory comparison performed",
+    "simulator_used": false,
+    "device_build_log": "/tmp/process-performance-build-final-20261008.log",
+    "device_install_evidence": "/Users/amine/Developer/useprocess/docs/performance/2026-10-08/device-install.json",
+    "device_launch": "passed; app launched on the physical iPhone 14 Pro Max",
+    "bundle_id": "com.useprocess",
+    "version": "1.13",
+    "build": "40",
+    "device_launch_evidence": "/Users/amine/Developer/useprocess/docs/performance/2026-10-08/device-launch.json"
+  },
+  "limits": [
+    "Static audit is not an exhaustive runtime profile.",
+    "No claim of FPS, memory or launch-time improvement until physical-device measurement.",
+    "App Store release/submission not authorized.",
+    "Sale source archive from 2026-10-07 predates these changes and must be regenerated before delivery."
+  ]
+}

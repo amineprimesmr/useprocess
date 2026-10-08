@@ -1,0 +1,11 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-124065546-434132724/ChipSelection/ChipSelection/ContentView.swift": "fdcb6e7ace72a788246452ef2681da3aa08c46e9804b1ae5ec51dc7200b82310",
+    "content/source-projects/design-source-124065546-434132724/ChipSelection/ChipSelection/ChipSelectionApp.swift": "da3df8d7b767eb0539092fad920827de16323b96dc62c7d64e271c99e7d28ee1",
+    "content/source-projects/design-source-124065546-434132724/ChipSelection/ChipSelection/Helper/ChipsView.swift": "1a32629955af8bdca50aa73c54c8c54b4c5398de0ed67c699c5e22b7ae4f6af2"
+  },
+  "mirrorMatchesInventory": true,
+  "build": "pending",
+  "visual": "unverified",
+  "motion": "unverified"
+}

@@ -15,6 +15,7 @@
 		AF1A2B3C62FD90001006422D /* AppsFlyerLib-Static in Frameworks */ = {isa = PBXBuildFile; productRef = AF1A2B3C52FD90001006422D /* AppsFlyerLib-Static */; };
 		HY1A2B3C12FD90001006422D /* ProcessWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = HY1A2B3C02FD90001006422D /* ProcessWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		PH1A2B3C62FD90001006422D /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = PH1A2B3C52FD90001006422D /* PostHog */; };
+		FN3333331111111111111111 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = FN1111111111111111111111 /* FirebaseFunctions */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -86,6 +87,7 @@
 				67E2B3232FDD8C240016422D /* FirebaseAppCheck in Frameworks */,
 				67E2B3202FDD8C240016422D /* FirebaseAuth in Frameworks */,
 				67E2B3222FDD8C240016422D /* RevenueCat in Frameworks */,
+				FN3333331111111111111111 /* FirebaseFunctions in Frameworks */,
 				PH1A2B3C62FD90001006422D /* PostHog in Frameworks */,
 				AF1A2B3C62FD90001006422D /* AppsFlyerLib-Static in Frameworks */,
 				67E2B31F2FDD8C240016422D /* FirebaseCore in Frameworks */,
@@ -149,6 +151,7 @@
 				F1A2B3C72FD90001006422D /* FirebaseFirestore */,
 				F1A2B3C82FD90001006422D /* FirebaseAppCheck */,
 				RC1A2B3C52FD90001006422D /* RevenueCat */,
+				FN1111111111111111111111 /* FirebaseFunctions */,
 				PH1A2B3C52FD90001006422D /* PostHog */,
 				AF1A2B3C52FD90001006422D /* AppsFlyerLib-Static */,
 			);
@@ -394,185 +397,194 @@
 			name = Release;
 		};
 		67E2AE422FDD89E70016422D /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				CODE_SIGN_ENTITLEMENTS = useprocess/useprocess.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 37;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = F2CJGJ69XU;
-				ENABLE_APP_SANDBOX = NO;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Process;
-				INFOPLIST_KEY_NSCameraUsageDescription = "The front and rear cameras power local face scans, posture analysis, and body scans. Photos may be analyzed by our AI service (Anthropic Claude) if you allow it.";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "The front camera is used for face scans (facial mesh and indicators). Face ID may also be used for secure sign-in if you enable it.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "Your Health data is used to personalize your program.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Your Health data is used to personalize your program.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The microphone lets you record voice messages converted to text for the coach. The text may be sent to Anthropic (Claude) if you allow it.";
-				INFOPLIST_KEY_NSMotionUsageDescription = "Physical activity data helps adapt your program.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Dictation turns your voice into on-device text to chat with the coach. The text may then be sent to Anthropic (Claude) if you allow it.";
-				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				INFOPLIST_KEY_UIRequiresFullScreen = YES;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 1.12;
-				PRODUCT_BUNDLE_IDENTIFIER = com.useprocess;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				REGISTER_APP_GROUPS = YES;
-				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
+	buildSettings = {
+		"ASSETCATALOG_COMPILER_APPICON_NAME" = AppIcon;
+		"ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME" = AccentColor;
+		"ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS" = YES;
+		"CODE_SIGN_ENTITLEMENTS" = "useprocess/useprocess.entitlements";
+		"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
+		"CODE_SIGN_STYLE" = Automatic;
+		"CODE_SIGN_STYLE[sdk=iphoneos*]" = Manual;
+		"CURRENT_PROJECT_VERSION" = 40;
+		"DEAD_CODE_STRIPPING" = YES;
+		"DEVELOPMENT_TEAM" = F2CJGJ69XU;
+		"ENABLE_APP_SANDBOX" = NO;
+		"ENABLE_HARDENED_RUNTIME" = YES;
+		"ENABLE_PREVIEWS" = YES;
+		"ENABLE_USER_SELECTED_FILES" = readonly;
+		"GENERATE_INFOPLIST_FILE" = YES;
+		"INFOPLIST_FILE" = "Info.plist";
+		"INFOPLIST_KEY_CFBundleDisplayName" = Process;
+		"INFOPLIST_KEY_NSCameraUsageDescription" = "The front and rear cameras power local face scans, posture analysis, and body scans. Photos may be analyzed by our AI service (Anthropic Claude) if you allow it.";
+		"INFOPLIST_KEY_NSFaceIDUsageDescription" = "The front camera is used for face scans (facial mesh and indicators). Face ID may also be used for secure sign-in if you enable it.";
+		"INFOPLIST_KEY_NSHealthShareUsageDescription" = "Your Health data is used to personalize your program.";
+		"INFOPLIST_KEY_NSHealthUpdateUsageDescription" = "Your Health data is used to personalize your program.";
+		"INFOPLIST_KEY_NSMicrophoneUsageDescription" = "The microphone lets you record voice messages converted to text for the coach. The text may be sent to Anthropic (Claude) if you allow it.";
+		"INFOPLIST_KEY_NSMotionUsageDescription" = "Physical activity data helps adapt your program.";
+		"INFOPLIST_KEY_NSSpeechRecognitionUsageDescription" = "Dictation turns your voice into on-device text to chat with the coach. The text may then be sent to Anthropic (Claude) if you allow it.";
+		"INFOPLIST_KEY_NSSupportsLiveActivities" = YES;
+		"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+		"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+		"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+		"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+		"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+		"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+		"INFOPLIST_KEY_UIRequiresFullScreen" = YES;
+		"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+		"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+		"INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad" = UIInterfaceOrientationPortrait;
+		"INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone" = UIInterfaceOrientationPortrait;
+		"IPHONEOS_DEPLOYMENT_TARGET" = "18.0";
+		"LD_RUNPATH_SEARCH_PATHS" = "@executable_path/Frameworks";
+		"MARKETING_VERSION" = "1.13";
+		"PRODUCT_BUNDLE_IDENTIFIER" = "com.useprocess";
+		"PRODUCT_NAME" = "$(TARGET_NAME)";
+		"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Process Apple Pay EU Dev 2026-10-02";
+		"REGISTER_APP_GROUPS" = YES;
+		SDKROOT = iphoneos;
+		"STRING_CATALOG_GENERATE_SYMBOLS" = YES;
+		"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
+		"SWIFT_APPROACHABLE_CONCURRENCY" = YES;
+		"SWIFT_DEFAULT_ACTOR_ISOLATION" = MainActor;
+		"SWIFT_EMIT_LOC_STRINGS" = YES;
+		"SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY" = YES;
+		"SWIFT_VERSION" = "5.0";
+		"TARGETED_DEVICE_FAMILY" = "1,2";
+	};
+	isa = XCBuildConfiguration;
+	name = Debug;
+};
 		67E2AE432FDD89E70016422D /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				CODE_SIGN_ENTITLEMENTS = useprocess/useprocess.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 37;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = F2CJGJ69XU;
-				ENABLE_APP_SANDBOX = NO;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Process;
-				INFOPLIST_KEY_NSCameraUsageDescription = "The front and rear cameras power local face scans, posture analysis, and body scans. Photos may be analyzed by our AI service (Anthropic Claude) if you allow it.";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "The front camera is used for face scans (facial mesh and indicators). Face ID may also be used for secure sign-in if you enable it.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "Your Health data is used to personalize your program.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Your Health data is used to personalize your program.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The microphone lets you record voice messages converted to text for the coach. The text may be sent to Anthropic (Claude) if you allow it.";
-				INFOPLIST_KEY_NSMotionUsageDescription = "Physical activity data helps adapt your program.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Dictation turns your voice into on-device text to chat with the coach. The text may then be sent to Anthropic (Claude) if you allow it.";
-				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				INFOPLIST_KEY_UIRequiresFullScreen = YES;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 1.12;
-				PRODUCT_BUNDLE_IDENTIFIER = com.useprocess;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				REGISTER_APP_GROUPS = YES;
-				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
+	buildSettings = {
+		"ASSETCATALOG_COMPILER_APPICON_NAME" = AppIcon;
+		"ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME" = AccentColor;
+		"ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS" = YES;
+		"CODE_SIGN_ENTITLEMENTS" = "useprocess/useprocess.entitlements";
+		"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";
+		"CODE_SIGN_STYLE" = Automatic;
+		"CODE_SIGN_STYLE[sdk=iphoneos*]" = Manual;
+		"CURRENT_PROJECT_VERSION" = 40;
+		"DEAD_CODE_STRIPPING" = YES;
+		"DEVELOPMENT_TEAM" = F2CJGJ69XU;
+		"ENABLE_APP_SANDBOX" = NO;
+		"ENABLE_HARDENED_RUNTIME" = YES;
+		"ENABLE_PREVIEWS" = YES;
+		"ENABLE_USER_SELECTED_FILES" = readonly;
+		"GENERATE_INFOPLIST_FILE" = YES;
+		"INFOPLIST_FILE" = "Info.plist";
+		"INFOPLIST_KEY_CFBundleDisplayName" = Process;
+		"INFOPLIST_KEY_NSCameraUsageDescription" = "The front and rear cameras power local face scans, posture analysis, and body scans. Photos may be analyzed by our AI service (Anthropic Claude) if you allow it.";
+		"INFOPLIST_KEY_NSFaceIDUsageDescription" = "The front camera is used for face scans (facial mesh and indicators). Face ID may also be used for secure sign-in if you enable it.";
+		"INFOPLIST_KEY_NSHealthShareUsageDescription" = "Your Health data is used to personalize your program.";
+		"INFOPLIST_KEY_NSHealthUpdateUsageDescription" = "Your Health data is used to personalize your program.";
+		"INFOPLIST_KEY_NSMicrophoneUsageDescription" = "The microphone lets you record voice messages converted to text for the coach. The text may be sent to Anthropic (Claude) if you allow it.";
+		"INFOPLIST_KEY_NSMotionUsageDescription" = "Physical activity data helps adapt your program.";
+		"INFOPLIST_KEY_NSSpeechRecognitionUsageDescription" = "Dictation turns your voice into on-device text to chat with the coach. The text may then be sent to Anthropic (Claude) if you allow it.";
+		"INFOPLIST_KEY_NSSupportsLiveActivities" = YES;
+		"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+		"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+		"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+		"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+		"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+		"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+		"INFOPLIST_KEY_UIRequiresFullScreen" = YES;
+		"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+		"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+		"INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad" = UIInterfaceOrientationPortrait;
+		"INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone" = UIInterfaceOrientationPortrait;
+		"IPHONEOS_DEPLOYMENT_TARGET" = "18.0";
+		"LD_RUNPATH_SEARCH_PATHS" = "@executable_path/Frameworks";
+		"MARKETING_VERSION" = "1.13";
+		"PRODUCT_BUNDLE_IDENTIFIER" = "com.useprocess";
+		"PRODUCT_NAME" = "$(TARGET_NAME)";
+		"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Process Apple Pay EU AppStore 2026-10-02";
+		"REGISTER_APP_GROUPS" = YES;
+		SDKROOT = iphoneos;
+		"STRING_CATALOG_GENERATE_SYMBOLS" = YES;
+		"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
+		"SWIFT_APPROACHABLE_CONCURRENCY" = YES;
+		"SWIFT_DEFAULT_ACTOR_ISOLATION" = MainActor;
+		"SWIFT_EMIT_LOC_STRINGS" = YES;
+		"SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY" = YES;
+		"SWIFT_VERSION" = "5.0";
+		"TARGETED_DEVICE_FAMILY" = "1,2";
+	};
+	isa = XCBuildConfiguration;
+	name = Release;
+};
 		HY1A2B3CD2FD90001006422D /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = ProcessWidgets/ProcessWidgets.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 37;
-				DEVELOPMENT_TEAM = F2CJGJ69XU;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ProcessWidgets/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Process;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.12;
-				PRODUCT_BUNDLE_IDENTIFIER = com.useprocess.ProcessWidgets;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
+	buildSettings = {
+		"ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS" = YES;
+		"ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME" = AccentColor;
+		"ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME" = WidgetBackground;
+		"CODE_SIGN_ENTITLEMENTS" = "ProcessWidgets/ProcessWidgets.entitlements";
+		"CODE_SIGN_STYLE" = Automatic;
+		"CURRENT_PROJECT_VERSION" = 40;
+		"DEVELOPMENT_TEAM" = F2CJGJ69XU;
+		"GENERATE_INFOPLIST_FILE" = YES;
+		"INFOPLIST_FILE" = "ProcessWidgets/Info.plist";
+		"INFOPLIST_KEY_CFBundleDisplayName" = Process;
+		"INFOPLIST_KEY_NSHumanReadableCopyright" = "";
+		"IPHONEOS_DEPLOYMENT_TARGET" = "18.0";
+		"LD_RUNPATH_SEARCH_PATHS" = (
+			"$(inherited)",
+			"@executable_path/Frameworks",
+			"@executable_path/../../Frameworks",
+		);
+		"MARKETING_VERSION" = "1.13";
+		"PRODUCT_BUNDLE_IDENTIFIER" = "com.useprocess.ProcessWidgets";
+		"PRODUCT_NAME" = "$(TARGET_NAME)";
+		SDKROOT = iphoneos;
+		"SKIP_INSTALL" = YES;
+		"STRING_CATALOG_GENERATE_SYMBOLS" = YES;
+		"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
+		"SWIFT_APPROACHABLE_CONCURRENCY" = YES;
+		"SWIFT_EMIT_LOC_STRINGS" = YES;
+		"SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY" = YES;
+		"SWIFT_VERSION" = "5.0";
+		"TARGETED_DEVICE_FAMILY" = "1,2";
+	};
+	isa = XCBuildConfiguration;
+	name = Debug;
+};
 		HY1A2B3CE2FD90001006422D /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = ProcessWidgets/ProcessWidgets.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 37;
-				DEVELOPMENT_TEAM = F2CJGJ69XU;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ProcessWidgets/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Process;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.12;
-				PRODUCT_BUNDLE_IDENTIFIER = com.useprocess.ProcessWidgets;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
+	buildSettings = {
+		"ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS" = YES;
+		"ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME" = AccentColor;
+		"ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME" = WidgetBackground;
+		"CODE_SIGN_ENTITLEMENTS" = "ProcessWidgets/ProcessWidgets.entitlements";
+		"CODE_SIGN_STYLE" = Automatic;
+		"CODE_SIGN_STYLE[sdk=iphoneos*]" = Manual;
+		"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";
+		"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Process Widgets AppStore 2026-10-02";
+		"CURRENT_PROJECT_VERSION" = 40;
+		"DEVELOPMENT_TEAM" = F2CJGJ69XU;
+		"GENERATE_INFOPLIST_FILE" = YES;
+		"INFOPLIST_FILE" = "ProcessWidgets/Info.plist";
+		"INFOPLIST_KEY_CFBundleDisplayName" = Process;
+		"INFOPLIST_KEY_NSHumanReadableCopyright" = "";
+		"IPHONEOS_DEPLOYMENT_TARGET" = "18.0";
+		"LD_RUNPATH_SEARCH_PATHS" = (
+			"$(inherited)",
+			"@executable_path/Frameworks",
+			"@executable_path/../../Frameworks",
+		);
+		"MARKETING_VERSION" = "1.13";
+		"PRODUCT_BUNDLE_IDENTIFIER" = "com.useprocess.ProcessWidgets";
+		"PRODUCT_NAME" = "$(TARGET_NAME)";
+		SDKROOT = iphoneos;
+		"SKIP_INSTALL" = YES;
+		"STRING_CATALOG_GENERATE_SYMBOLS" = YES;
+		"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
+		"SWIFT_APPROACHABLE_CONCURRENCY" = YES;
+		"SWIFT_EMIT_LOC_STRINGS" = YES;
+		"SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY" = YES;
+		"SWIFT_VERSION" = "5.0";
+		"TARGETED_DEVICE_FAMILY" = "1,2";
+	};
+	isa = XCBuildConfiguration;
+	name = Release;
+};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -676,6 +688,7 @@
 			package = RC1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
 			productName = RevenueCat;
 		};
+		FN1111111111111111111111 /* FirebaseFunctions */ = {isa = XCSwiftPackageProductDependency; package = F1A2B3C42FD90001006422D; productName = FirebaseFunctions; };
 /* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 67E2AE292FDD89E60016422D /* Project object */;

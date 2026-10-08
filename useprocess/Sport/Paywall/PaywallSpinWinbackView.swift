@@ -108,7 +108,7 @@ struct PaywallSpinWinbackView: View {
 
     /// Prix mensuel barré (ex. « 23€/mois ») — ancre visuelle vs lifetime.
     private var monthlyStrikethroughLabel: String {
-        subscriptionService.displayProduct(for: .monthly).paywallPrimaryMonthlyPriceLabel
+        subscriptionService.hasLiveProduct(for: .monthly) ? subscriptionService.displayProduct(for: .monthly).paywallPrimaryMonthlyPriceLabel : "—"
     }
 
     /// Ordre type image : 5, jackpot à vie, 5, 10, 5, 25, 5, 10
@@ -421,12 +421,20 @@ struct PaywallSpinWinbackView: View {
         VStack(spacing: 14) {
             offerCard
 
+
             PaywallBevelContinueButton(
                 title: rewardClaimButtonTitle,
-                isLoading: isPurchasing,
-                isEnabled: !isPurchasing && subscriptionService.hasLiveLifetimeProduct
+                isLoading: isPurchasing || subscriptionService.isLoading,
+                isEnabled: subscriptionService.hasLiveLifetimeProduct && !isPurchasing && !subscriptionService.isLoading
             ) {
                 Task { await claimOffer() }
+            }
+
+            if !subscriptionService.isLoading, !subscriptionService.hasLiveLifetimeProduct {
+                Text(SubscriptionError.productNotFound.localizedDescription)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color.red)
+                    .multilineTextAlignment(.center)
             }
 
             Text(OnboardingCopy.t(
@@ -989,8 +997,12 @@ struct PaywallSpinWinbackView: View {
         let purchaseAttemptStartedAt = Date()
 
         do {
-            if !subscriptionService.canPurchase {
+            if !subscriptionService.hasLiveLifetimeProduct {
                 await subscriptionService.loadSubscriptions()
+            }
+            guard subscriptionService.hasLiveLifetimeProduct else {
+                purchaseError = SubscriptionError.productNotFound.localizedDescription
+                return
             }
             try await subscriptionService.purchaseWinbackLifetime()
             await subscriptionService.checkSubscriptionStatus()
@@ -998,6 +1010,8 @@ struct PaywallSpinWinbackView: View {
                 ProcessAnalytics.trackPurchaseCompleted(plan: plan, offer: offer, source: source)
                 ProcessMarketingNotificationService.shared.handlePurchaseSuccess(plan: plan)
                 onClaimed()
+            } else {
+                throw SubscriptionError.pending
             }
         } catch SubscriptionError.userCancelled {
             ProcessAnalytics.trackPurchaseCancelled(
@@ -1272,7 +1286,7 @@ private struct PaywallSpinOfferCountdown: View {
     let endDate: Date
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 0.01)) { context in
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
             let remaining = max(0, endDate.timeIntervalSince(context.date))
             let totalCentiseconds = Int((remaining * 100).rounded(.down))
             let minutes = min(99, totalCentiseconds / 6000)

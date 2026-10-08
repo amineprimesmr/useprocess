@@ -2,12 +2,8 @@ import { fetchSubscriber, hasActivePremium } from "./revenueCat";
 
 export const PREMIUM_ENTITLEMENT_ID = "premium";
 
-export async function verifyPremiumSubscriber(
-  appUserId: string,
-  secretKey: string
-): Promise<void> {
+/** Server access follows the same Apple/RevenueCat entitlement as the iOS app. */
+export async function verifyPremiumSubscriber(appUserId: string, secretKey: string): Promise<void> {
   const subscriber = await fetchSubscriber(appUserId, secretKey);
-  if (!hasActivePremium(subscriber, PREMIUM_ENTITLEMENT_ID)) {
-    throw new Error("PREMIUM_REQUIRED");
-  }
+  if (!hasActivePremium(subscriber, PREMIUM_ENTITLEMENT_ID)) throw new Error("PREMIUM_REQUIRED");
 }

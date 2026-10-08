@@ -1,0 +1,13 @@
+POSTHOG — CONVERSIONS VÉRIFIÉES LE 4 OCTOBRE 2026
+Projet EU 240558, insight GxD45lag « Scan + paiement — les vrais drops ».
+Période : 4 septembre 2026 00:00 – 4 octobre 2026 23:59 UTC, jour courant incomplet.
+Funnel enregistré ordonné, cohortes PostHog/personnes, pas installations App Store ou abonnés RevenueCat.
+Dashboard/scan (onboarding_step_viewed step dashboardPreview) : 515.
+Création programme (step programCreation) : 392, 76.12 % de l’étape précédente.
+Paywall (step payment) : 383, 97.70 % du programme, 74.37 % du scan.
+Début d’achat (purchase_started, nommé « Apple Pay ouvert » dans le dashboard) : 307, 80.16 % du paywall. Le nom ne prouve pas un paiement par Apple Pay.
+Achat suivi (purchase_completed) : 19, 6.19 % des débuts d’achat.
+Paywall → achat suivi : 19 / 383 = 4.96 % dans cette cohorte.
+Scan → achat suivi : 19 / 515 = 3.69 %.
+Ne pas qualifier ce taux de conversion globale installation→achat : le début du funnel est le scan. Ne pas assimiler purchase_completed à du revenu comptable confirmé ou mélanger ces dénominateurs avec RevenueCat.
+Source : https://eu.posthog.com/project/240558/insights/GxD45lag

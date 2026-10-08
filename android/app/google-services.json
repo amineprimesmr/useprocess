@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "3107027616",
+    "project_id": "useprocess-d4385",
+    "storage_bucket": "useprocess-d4385.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:3107027616:android:b7449b8bac87414159a7c5",
+        "android_client_info": {
+          "package_name": "com.process.android"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDE5CYJ4aJ4wd35i5U9lkvQx5T2md053LA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,12 @@
+{
+  "sourceSha256": {
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-139656395-537763294/PDFHelper/PDFHelper/ContentView.swift": "440f24637a2d155bdbab5ead52642f415e23cadb106691155f46a507dfcfc5a3",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-139656395-537763294/PDFHelper/PDFHelper/PDFHelperApp.swift": "655d6cb540bae2d83c66a64ffc2f407095e9226dfe95145406c84a1bb7ef5030",
+    "/Users/amine/Developer/10kdesign-web-deploy.nosync/content/source-projects/design-source-139656395-537763294/PDFHelper/PDFHelper/Helpers/PDFMaker.swift": "739c2ed51a7fa7bf81a9385607a7ba3322d4af35f0feaa5e54024add10a1d5e8"
+  },
+  "nativeFiles": [
+    "TenKPdfMaker.kt",
+    "TenKPdfSample.kt"
+  ],
+  "contract": "Native Android PdfDocument writer with host Canvas draw callback and measured View/Compose-host adapter. Source A4 595.2x841.8 rounds to integer595x842points; USLetter612x792. Require1..1000pages andpositive dimensions<=14400. Private uniquely named cache exports never overwrite a preexisting file; failed new output is deleted and document/page always finish/close. createFromViews requires main thread and measured views; caller owns thread for native Canvas drawing. Source50mock transactions/8perpage yields7pages; original Account label displaying amount is retained as an explicit sample quirk,not real financial data. Apple system glyph replaced with document mark; customhostcan draw actual branding. App gallery shares with narrow nonexported FileProvider grant or saves through user-selected Storage Access Framework; library leaves destination/provider setup to host. Host tests verify page layout ONLY: Robolectric has no native PdfDocument implementation. Real PDF bytes,renderer,share/SAF and Compose hardware/effect capture require actual Android test. Instrumentation test prepared separately; not executed. Source typography,glyphs and physical/iOS comparison unverified."
+}

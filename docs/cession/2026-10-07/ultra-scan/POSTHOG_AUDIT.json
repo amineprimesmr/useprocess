@@ -1,0 +1,55 @@
+{
+  "status": "verified_ui_after_user_reauthentication",
+  "project": 240558,
+  "region": "EU Cloud",
+  "organization_members": 1,
+  "owner_is_seller": true,
+  "seller_2fa_enabled": false,
+  "pending_invites": 0,
+  "personal_keys": [
+    {
+      "label": "claudecode",
+      "active": true,
+      "access": "All access",
+      "scopes_count": 97
+    },
+    {
+      "label": "cursorkey",
+      "active": true,
+      "access": "All access",
+      "scopes_count": 96
+    }
+  ],
+  "oauth_apps": [
+    "PostHog WebMCP",
+    "ChatGPT",
+    "Cursor",
+    "Cursor"
+  ],
+  "flags": [
+    {
+      "key": "paywall-annual-trial-ab",
+      "id": 257675,
+      "enabled": true,
+      "rollout_percent": 100,
+      "variants": {
+        "control": 50,
+        "test": 50
+      }
+    },
+    {
+      "key": "paywall-pricing-ab",
+      "id": 244664,
+      "enabled": false
+    }
+  ],
+  "exports_list_empty": true,
+  "billing_plan": "free",
+  "billing_cycle": "2026-10-03/2026-11-02",
+  "displayed_mobile_replays_current_cycle": 327,
+  "web_replays_current_cycle": 0,
+  "current_realtime_destination_usage": 0,
+  "current_batch_export_usage": 0,
+  "credentials_revealed": false,
+  "changes_to_provider": false
+}

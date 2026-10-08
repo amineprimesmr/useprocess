@@ -1,0 +1,166 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/terms",
+      "destination": "/cgu?lang=en",
+      "permanent": false
+    },
+    {
+      "source": "/privacy",
+      "destination": "/confidentialite?lang=en",
+      "permanent": false
+    },
+    {
+      "source": "/legal-notice",
+      "destination": "/mentions-legales?lang=en",
+      "permanent": false
+    },
+    {
+      "source": "/health-sources",
+      "destination": "/sources-sante?lang=en",
+      "permanent": false
+    },
+    {
+      "source": "/join/:code",
+      "destination": "/?ref=:code",
+      "permanent": false
+    },
+    {
+      "source": "/c/:slug",
+      "destination": "/app?utm_source=:slug&utm_medium=campaign&utm_campaign=:slug",
+      "permanent": false
+    },
+    {
+      "source": "/i",
+      "destination": "/app",
+      "permanent": true
+    },
+    {
+      "source": "/a",
+      "destination": "/app",
+      "permanent": true
+    },
+    {
+      "source": "/get",
+      "destination": "/app",
+      "permanent": true
+    },
+    {
+      "source": "/telecharger",
+      "destination": "/app",
+      "permanent": true
+    },
+    {
+      "source": "/affiliate",
+      "destination": "/clipping",
+      "permanent": true
+    },
+    {
+      "source": "/affiliate/",
+      "destination": "/clipping",
+      "permanent": true
+    },
+    {
+      "source": "/affiliate.html",
+      "destination": "/clipping",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/app",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/join/(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/clipping",
+      "destination": "/clipping.html"
+    },
+    {
+      "source": "/clipping/",
+      "destination": "/clipping.html"
+    },
+    {
+      "source": "/((?!api|assets|cgu|confidentialite|mentions-legales|support|sources-sante|\\.well-known).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/.well-known/apple-app-site-association",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "source": "/clipping",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/clipping.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/index.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/app.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    }
+  ],
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm ci",
+  "framework": "vite"
+}

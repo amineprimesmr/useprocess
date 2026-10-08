@@ -1,4 +1,5 @@
 import Foundation
+import ImageIO
 import UIKit
 
 nonisolated enum FaceScanImageStore {
@@ -6,7 +7,7 @@ nonisolated enum FaceScanImageStore {
     private static let snapshotSuffix = "_face.jpg"
     private static let videoSuffix = "_face.mp4"
 
-    private static var directoryURL: URL {
+    private static let directoryURL: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         let folder = base.appendingPathComponent("FaceScans", isDirectory: true)
         if !FileManager.default.fileExists(atPath: folder.path) {
@@ -14,7 +15,7 @@ nonisolated enum FaceScanImageStore {
         }
         protectLocalURL(folder, isDirectory: true)
         return folder
-    }
+    }()
 
     static func snapshotFilename(for scanId: String) -> String {
         "\(scanId)\(snapshotSuffix)"
@@ -42,6 +43,15 @@ nonisolated enum FaceScanImageStore {
         guard isReadableFile(at: url),
               let data = try? Data(contentsOf: url) else { return nil }
         return UIImage(data: data)
+    }
+
+    /// Decode display-sized images away from the UI executor. Full-resolution originals
+    /// remain on disk for editing and analysis.
+    static func preview(scanId: String, filename: String?, maxPixelSize: Int = 900) async -> UIImage? {
+        var names = [snapshotFilename(for: scanId)]
+        if let filename { names.insert(filename, at: 0) }
+        let urls = names.map { directoryURL.appendingPathComponent($0) }
+        return await ProcessLocalImageDecoder.shared.image(at: urls, maxPixelSize: maxPixelSize)
     }
 
     static func videoURL(for scanId: String) -> URL {
@@ -183,5 +193,30 @@ nonisolated enum FaceScanImageStore {
             [.protectionKey: protection],
             ofItemAtPath: url.path
         )
+    }
+}
+
+/// Serial decoding bounds memory and CPU when a history list reveals many photos.
+/// No persistent image cache: account/media deletion cannot leave cached private photos.
+actor ProcessLocalImageDecoder {
+    static let shared = ProcessLocalImageDecoder()
+
+    func image(at candidates: [URL], maxPixelSize: Int) -> UIImage? {
+        guard !Task.isCancelled else { return nil }
+        for url in candidates {
+            guard let source = CGImageSourceCreateWithURL(url as CFURL, [
+                kCGImageSourceShouldCache: false
+            ] as CFDictionary) else { continue }
+            let options: [CFString: Any] = [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceThumbnailMaxPixelSize: max(1, maxPixelSize),
+                kCGImageSourceShouldCacheImmediately: true
+            ]
+            if let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) {
+                return Task.isCancelled ? nil : UIImage(cgImage: image)
+            }
+        }
+        return nil
     }
 }

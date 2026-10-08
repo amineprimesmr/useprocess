@@ -1,0 +1,162 @@
+[
+  {
+    "file": "useprocess/useprocess.entitlements",
+    "line": 19,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "useprocess/useprocess.entitlements",
+    "line": 20,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "useprocess/Core/ProcessReferralCapture.swift",
+    "line": 6,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "useprocess/Core/ProcessReferralCapture.swift",
+    "line": 14,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "useprocess/Core/ProcessReferralCapture.swift",
+    "line": 40,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "useprocess/Config/AppConfiguration.swift",
+    "line": 14,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "Shared/copy-es.json",
+    "line": 267,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "Shared/copy-es.json",
+    "line": 1764,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "Shared/copy-es.json",
+    "line": 2521,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "Shared/copy-pt-BR.json",
+    "line": 267,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "Shared/copy-pt-BR.json",
+    "line": 1764,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "Shared/copy-pt-BR.json",
+    "line": 2521,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "Shared/copy-ko.json",
+    "line": 267,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "Shared/copy-ko.json",
+    "line": 1764,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "Shared/copy-ko.json",
+    "line": 2521,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "Shared/copy-de.json",
+    "line": 267,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "Shared/copy-de.json",
+    "line": 1764,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "Shared/copy-de.json",
+    "line": 2521,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "Shared/copy-ja.json",
+    "line": 267,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "Shared/copy-ja.json",
+    "line": 1764,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "Shared/copy-ja.json",
+    "line": 2521,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "website-process/src/features/app-copy.js",
+    "line": 61,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "website-process/src/features/referral-link.js",
+    "line": 128,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "website-process/src/features/acquisition-link.js",
+    "line": 33,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "website-process/src/features/bio-link.js",
+    "line": 10,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "website-process/src/i18n/catalogs.js",
+    "line": 1765,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "website-process/src/i18n/catalogs.js",
+    "line": 5426,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "website-process/src/i18n/catalogs.js",
+    "line": 9087,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "website-process/src/i18n/catalogs.js",
+    "line": 12748,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "website-process/src/i18n/catalogs.js",
+    "line": 16409,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "website-process/src/router/index.js",
+    "line": 19,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  },
+  {
+    "file": "firebase/functions/src/affiliateLoginEmail.ts",
+    "line": 26,
+    "action": "classify compatibility vs stale display before removal; old domain remains seller-owned"
+  }
+]

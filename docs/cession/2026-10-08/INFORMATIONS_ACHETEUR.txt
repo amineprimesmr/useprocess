@@ -1,0 +1,32 @@
+PROCESS DEBLOAT — INFORMATIONS ACQUÉREUR
+Actualisé le 8 octobre 2026. Préparation interne, aucun transfert exécuté.
+Prix annoncé par le vendeur : 3 500 EUR. Traitement TVA/HT/TTC à préciser avant facture.
+Acquéreur : nouvelle personne sur WhatsApp, différente de Lapourax. Identité inconnue.
+
+À DEMANDER MAINTENANT
+1. Nom et prénom ; achat en nom propre ou via une société.
+2. Si société : raison sociale, pays, adresse du siège, numéro d'immatriculation (SIREN/SIRET si France), numéro TVA si applicable, nom/fonction du signataire.
+3. Si particulier : adresse et pays pour le contrat. Email de contact/signature et téléphone.
+4. Apple Developer : adhésion active, email Apple Account du titulaire (Account Holder), Team ID. Il doit pouvoir accepter le transfert et les accords Apple à jour. Ne pas créer une nouvelle fiche de l'app.
+5. Email Google à inviter dans Firebase/Google Cloud ; compte de facturation Google Cloud appartenant à l'acheteur prêt à prendre le relais. L'identifiant de facturation se recueille au moment de la bascule ; aucune carte à envoyer au vendeur.
+6. Email de son compte RevenueCat ; email de son compte Hostinger ; compte/équipe Vercel ; pseudo/organisation GitHub pour recevoir le code. Dire lesquels existent déjà et lesquels restent à créer.
+7. Email destiné aux invitations PostHog ; compte fournisseur IA avec facturation personnelle à l'acquéreur. AppsFlyer : accès/destination à traiter après l'audit de la console, toujours reporté ; ne pas créer inutilement une nouvelle app/projet.
+8. Responsable technique éventuel : nom et email, ou confirmation que l'acheteur gère lui-même. Créneau pour la passation et acceptation des invitations.
+9. Coordonnées publiques à afficher après la cession : exploitant, adresse légale applicable, support. Conserver contact@processdebloat.com comme adresse de marque transférable si convenu.
+10. Confirmer par écrit le périmètre et le prix : application, code, marque dans la limite des droits détenus, domaine processdebloat.com, site, mailbox, services dédiés, comptes/contenus TikTok effectivement inclus et transférables. Modalités de paiement, date d'effet, répartition des recettes/frais et assistance après livraison à fixer.
+11. Information indispensable pour ce NOUVEL acheteur : des écrans/composants sont déjà distribués dans 10K Design et y resteront selon la position du vendeur. Lui remettre l'inventaire précis et les licences connues. Ne pas promettre une exclusivité sur ces éléments. L'accord éventuel d'un précédent prospect ne vaut pas accord du nouvel acheteur.
+
+À NE PAS DEMANDER PAR WHATSAPP
+Mots de passe Apple/Google personnels, codes 2FA, clés privées, carte bancaire, exports utilisateurs. Utiliser invitations, transferts officiels et transmission sécurisée des seuls secrets nécessaires. Ne pas demander une copie de pièce d'identité par défaut.
+
+EXCLUS DE LA VENTE
+useprocess.xyz ; comptes personnels et organisation principale Process ; 10K Design, ScrollShow et autres projets ; clés donnant accès à d'autres projets ; sauvegardes personnelles. Compte Stripe Process Debloat clôturé selon le vendeur, pas de compte Stripe à céder.
+
+MESSAGE À COPIER SUR WHATSAPP
+Pour préparer la cession de Process Debloat à 3 500 €, peux-tu m'envoyer :
+- Ton nom/prénom, ton adresse et ton email ; si tu achètes via une société, ses coordonnées complètes et le nom du signataire.
+- L'email du titulaire de ton compte Apple Developer et son Team ID, avec confirmation que l'adhésion est active.
+- Ton email Google pour Firebase, ton email Hostinger et RevenueCat, ton compte/équipe Vercel et ton pseudo GitHub. Si tu n'as pas encore certains comptes, dis-moi lesquels.
+- L'email à utiliser pour les autres invitations et, si quelqu'un t'accompagne techniquement, son contact.
+- Tes disponibilités pour la passation.
+Je te transmettrai aussi la liste exacte des éléments cédés. Le domaine inclus est processdebloat.com ; useprocess.xyz reste à moi. Certains écrans/composants de l'app sont également dans mon kit 10K Design et y resteront : je te fournis leur liste pour que ce soit clair avant signature. Aucun mot de passe personnel à m'envoyer.

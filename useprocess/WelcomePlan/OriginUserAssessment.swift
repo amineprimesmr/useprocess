@@ -47,8 +47,8 @@ enum OriginPlanArchetype: String, Codable, CaseIterable, Identifiable {
             )
         case .stressRecovery:
             return AppCopy.t(
-                "Sommeil et cortisol avant tout le reste",
-                en: "Sleep and cortisol before everything else"
+                "Sommeil et habitudes de récupération",
+                en: "Sleep and recovery habits"
             )
         }
     }
@@ -830,7 +830,7 @@ enum OriginUserAssessment {
             .init(
                 id: "sleep",
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: 1, through: e[0]),
-                title: AppCopy.tSync("Sommeil & cortisol", en: "Sleep & cortisol"),
+                title: AppCopy.tSync("Sommeil & routine", en: "Sleep & routine"),
                 objectives: [
                     AppCopy.tSync("Priorité absolue : \(Int(dailyTargets.sleepHours)) h de sommeil", en: "Absolute priority: \(Int(dailyTargets.sleepHours)) h of sleep"),
                     AppCopy.tSync("Couvre-feu écrans \(ProcessDailyTargets.screenCurfewMinutes) min", en: "Screen curfew \(ProcessDailyTargets.screenCurfewMinutes) min")
@@ -904,8 +904,8 @@ enum OriginUserAssessment {
             en: "Neck posture + daily mewing"
         )
         case .stress: return AppCopy.tSync(
-            "Baisser cortisol — sommeil et respiration d'abord",
-            en: "Lower cortisol — sleep and breathing first"
+            "Routine de sommeil et respiration confortable",
+            en: "Sleep routine and comfortable breathing"
         )
         case .habits: return AppCopy.tSync(
             "Reset habitudes debloat (sel, hydratation, repas)",
@@ -934,8 +934,8 @@ enum OriginUserAssessment {
             en: "Posture and breathing directly impact facial structure"
         )
         case .stress: return AppCopy.tSync(
-            "Stress chronique — cortisol élevé, cernes et rétention d'eau",
-            en: "Chronic stress — high cortisol, under-eyes, and water retention"
+            "Stress déclaré — adapter sa routine à son ressenti",
+            en: "Reported stress — adapt your routine to how you feel"
         )
         case .habits: return AppCopy.tSync(
             "Habitudes à corriger — composition déjà proche de la cible",

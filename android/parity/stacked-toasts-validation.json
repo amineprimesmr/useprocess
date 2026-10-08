@@ -1,0 +1,25 @@
+{
+  "recordedAt": "2026-10-08T02:29:49.025586+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 118,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "sourceSha256": {
+    "/Users/amine/Developer/10kdesign-device.nosync/content/components/design-stacked-glass-toasts/TenKSToastsDemo.swift": "14985d661070e76e615bac08451200dbf933d58eb7302fbc8287446009cafab2",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/StackedToastModel.kt": "fdbac1bc217c281b4a64c945132cddc217a1b5950a01ea4f6a1480a66cd7005a",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/TenKStackedToasts.kt": "de034c0ffb7237bcee99354f90669b29bec87d2bf760243e6dbf4800efab05f0"
+  },
+  "runtime": "unverified",
+  "visual": "unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "remaining": [
+    "Native SF icons and iOS glass/mesh/scroll-edge compositing are not reproduced",
+    "Exact smooth/blurReplace animation and physical swipe/timeout/accessibility comparisons",
+    "Native blur is effective only on API31+"
+  ],
+  "buildLog": "parity/logs/process-stacked-toasts-final-build.log"
+}

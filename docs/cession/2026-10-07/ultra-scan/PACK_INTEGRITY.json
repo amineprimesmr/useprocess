@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "file_count": 1175,
+  "hash_errors": [],
+  "prohibited_config_files": [],
+  "original_appsflyer_account_key_matches": [],
+  "archive_full_read_passed": true,
+  "archive_members": 1488,
+  "sha256": "83f0f2cb8f729c068277eb98f6193d3d91c11dce6d6ed1cc1184ffd008a04674",
+  "cloud_restore_test": false,
+  "device_tests": false,
+  "delivery_authorized": false
+}

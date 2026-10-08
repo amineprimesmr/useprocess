@@ -84,46 +84,8 @@ export async function resolveAcquisitionCode(rawCode) {
   }
 }
 
-function affiliateVisitorId() {
-  const key = "process.affiliate.visitor";
-  try {
-    const existing = window.sessionStorage.getItem(key);
-    if (existing && existing.length >= 8) return existing;
-    const id =
-      window.crypto?.randomUUID?.()?.replace(/-/g, "") ||
-      `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`;
-    const token = String(id).replace(/[^A-Za-z0-9]/g, "").slice(0, 32);
-    window.sessionStorage.setItem(key, token);
-    return token;
-  } catch {
-    return `${Date.now().toString(36)}anon`;
-  }
-}
-
-export function trackAffiliateLinkEvent(code, event = "view") {
-  const normalized = normalizeAcquisitionCode(code);
-  if (!normalized) return;
-
-  const visitorId = affiliateVisitorId();
-  if (!visitorId) return;
-
-  const payload = JSON.stringify({
-    code: normalized,
-    event: event === "store" ? "store" : "view",
-    visitorId,
-  });
-
-  try {
-    void fetch(`${FUNCTIONS_BASE}/affiliateTrackLink`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: payload,
-      keepalive: true,
-    });
-  } catch {
-    /* tracking must never block the landing page */
-  }
-}
+// Compatibility for existing landing callers; clipper tracking is retired.
+export function trackAffiliateLinkEvent() {}
 
 export function buildCreatorLandingUrl(code, utm = {}) {
   const normalized = normalizeAcquisitionCode(code);
@@ -141,7 +103,7 @@ export function buildCreatorShareText(code, displayName = "") {
   const url = buildCreatorLandingUrl(normalized);
   const label = displayName ? `${displayName} (${normalized})` : normalized;
   return appCopy(
-    `Télécharge Process avec mon lien clipper :\n${url}\n\nCode clipper : ${label}`,
-    `Download Process with my clipper link:\n${url}\n\nClipper code: ${label}`
+    `Télécharge Process avec mon lien de parrainage :\n${url}\n\nCode parrainage : ${label}`,
+    `Download Process with my referral link:\n${url}\n\nReferral code: ${label}`
   );
 }

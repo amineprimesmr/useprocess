@@ -1,0 +1,98 @@
+{
+  "lymph_01.mp4": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "hevc",
+        "codec_type": "video",
+        "width": 720,
+        "height": 406,
+        "pix_fmt": "yuv420p"
+      }
+    ],
+    "format": {
+      "duration": "66.266667"
+    }
+  },
+  "lymph_02.mp4": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "hevc",
+        "codec_type": "video",
+        "width": 720,
+        "height": 406,
+        "pix_fmt": "yuv420p"
+      }
+    ],
+    "format": {
+      "duration": "77.900000"
+    }
+  },
+  "lymph_03.mp4": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "hevc",
+        "codec_type": "video",
+        "width": 720,
+        "height": 406,
+        "pix_fmt": "yuv420p"
+      }
+    ],
+    "format": {
+      "duration": "54.633333"
+    }
+  },
+  "lymph_05.mp4": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "hevc",
+        "codec_type": "video",
+        "width": 720,
+        "height": 406,
+        "pix_fmt": "yuv420p"
+      }
+    ],
+    "format": {
+      "duration": "32.166667"
+    }
+  },
+  "lymph_06.mp4": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "hevc",
+        "codec_type": "video",
+        "width": 720,
+        "height": 406,
+        "pix_fmt": "yuv420p"
+      }
+    ],
+    "format": {
+      "duration": "30.166667"
+    }
+  },
+  "lymph_07.mp4": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "hevc",
+        "codec_type": "video",
+        "width": 720,
+        "height": 406,
+        "pix_fmt": "yuv420p"
+      }
+    ],
+    "format": {
+      "duration": "43.366667"
+    }
+  }
+}

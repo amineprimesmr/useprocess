@@ -1,0 +1,20 @@
+[
+  {
+    "createTime": "2026-06-15T11:50:56.923365Z",
+    "description": "This repository is created and used by Cloud Functions for storing function docker images.",
+    "format": "DOCKER",
+    "labels": {
+      "goog-managed-by": "cloudfunctions"
+    },
+    "mode": "STANDARD_REPOSITORY",
+    "name": "projects/useprocess-d4385/locations/us-central1/repositories/gcf-artifacts",
+    "satisfiesPzi": true,
+    "sizeBytes": "172386139",
+    "updateTime": "2026-10-06T22:45:17.135687Z",
+    "vulnerabilityScanningConfig": {
+      "enablementState": "SCANNING_DISABLED",
+      "enablementStateReason": "API containerscanning.googleapis.com is not enabled.",
+      "lastEnableTime": "2026-06-15T11:50:48.124844165Z"
+    }
+  }
+]

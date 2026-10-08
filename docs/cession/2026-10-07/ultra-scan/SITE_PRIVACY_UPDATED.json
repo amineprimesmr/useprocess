@@ -1,0 +1,21 @@
+{
+  "deployment_id": "dpl_71xEfYsd6uDb7rRRFjqJHrxHTMP3",
+  "checks": [
+    {
+      "path": "/confidentialite",
+      "http_status": 200,
+      "posthog_disclosed": true,
+      "appsflyer_disclosed": true,
+      "updated_date": true,
+      "old_domain_present": false
+    },
+    {
+      "path": "/js/legal-body-en.js",
+      "http_status": 200,
+      "posthog_disclosed": true,
+      "appsflyer_disclosed": true,
+      "updated_date": true,
+      "old_domain_present": false
+    }
+  ]
+}

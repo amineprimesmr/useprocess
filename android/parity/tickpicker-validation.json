@@ -1,0 +1,36 @@
+{
+  "sourceSha256": {
+    "content/source-projects/design-source-146374647-584248521/TickPickerView/TickPickerView/ContentView.swift": "03acf6f7b054415648b5d9adc0100ac0f735de4c471aa7af2dbbfbd443c3e012",
+    "content/source-projects/design-source-146374647-584248521/TickPickerView/TickPickerView/TickPickerViewApp.swift": "c283d766fde6d91e2c18482969974cca684354a1c138f75230f3be20112fb81f",
+    "content/source-projects/design-source-146374647-584248521/TickPickerView/TickPickerView/Helpers/TickPicker.swift": "b16e9856bef1dd577012f02f674c52553ab203d5c1636e5e5eed0dc15f977932"
+  },
+  "mirrorMatchesInventory": true,
+  "contract": "Supply inclusive count (0through count),controlled integer selection,onSelection and TickPickerConfig. Defaults3dp ticks/3dp side padding,30dp full height/55percent idle,60dp interaction region,yellow active and top/bottom/center anchors. Initial50ms setup gate,centered end padding,changed-index animation range,immediate rise and300ms release are adapted. External selection recenters and accessible progress is adjustable. Original demo starts5,count100,2dp ticks and50+selection CM. Native fling/snap behavior may cross multiple ticks unlike the Swift alwaysByOne target; native spring/color/scroll geometry and physical comparison remain unfinished.",
+  "nativeFiles": [
+    "TenKTickPicker.kt",
+    "TenKTickPickerGallery.kt"
+  ],
+  "recordedAt": "2026-10-08T08:15:00.364584+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 143,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 46
+  },
+  "visual": "host render inspected; iOS comparison unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "nativeSha256": {
+    "TenKTickPicker.kt": "ff466e59d14bae7ac38576e1320e3e13e21586f2410b6c791f2434b44343445f",
+    "TenKTickPickerGallery.kt": "30b928b484843ec9a364600d0fab4c91476b287fa5e4731d538b9fd9ce8b4bc1"
+  },
+  "remaining": [
+    "Native glass,typography,exact springs/scroll/GPU motion and physical/iOS paired comparison remain unverified",
+    "Host integrations and component-specific limitations are detailed in the integration contract"
+  ]
+}

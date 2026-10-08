@@ -17,10 +17,6 @@ var shouldShowGlobalContinueButton: Bool {
     return !OnboardingStep.resolved(from: viewModel.currentStep).usesInternalContinueAction
 }
 
-var continueButtonTitle: String {
-    OnboardingCopy.continueCTAUpper
-}
-
 var continueButtonOpacity: Double {
     if OnboardingStep(rawValue: viewModel.currentStep) == .referralCode {
         return 1.0
@@ -31,14 +27,14 @@ var continueButtonOpacity: Double {
     return canContinue ? 1.0 : 0.5
 }
 
-var continueButtonHitTestingEnabled: Bool {
-    if OnboardingStep(rawValue: viewModel.currentStep) == .referralCode {
+/// Referral + estimation : le CTA reste tappable même si la step n’est pas encore « validée ».
+var shouldKeepContinueEnabledWhileInvalid: Bool {
+    switch OnboardingStep(rawValue: viewModel.currentStep) {
+    case .referralCode, .weightEstimation:
         return true
+    default:
+        return false
     }
-    if OnboardingStep(rawValue: viewModel.currentStep) == .weightEstimation {
-        return viewModel.estimationContinueUnlockProgress >= 0.999 || canContinue
-    }
-    return true
 }
 
 var isEstimationContinueUnlocked: Bool {
@@ -140,11 +136,19 @@ var canContinue: Bool {
 }
 
 func handleContinueButtonTap() {
-    HapticManager.shared.impact(.medium)
+    let step = OnboardingStep.resolved(from: viewModel.currentStep)
+
+    if step == .weightEstimation, !canContinue {
+        if !pendingEstimationContinue {
+            pendingEstimationContinue = true
+            HapticManager.shared.impact(.light)
+        }
+        return
+    }
+
+    guard canContinue || step == .referralCode else { return }
 
     viewModel.commitPendingStepAnswers()
-
-    let step = OnboardingStep.resolved(from: viewModel.currentStep)
 
     switch step {
     case .firstNameInput, .weight:
@@ -157,6 +161,16 @@ func handleContinueButtonTap() {
     default:
         nextStep()
     }
+}
+
+func flushPendingEstimationContinueIfNeeded(completed: Bool) {
+    guard completed, pendingEstimationContinue else { return }
+    guard OnboardingStep.resolved(from: viewModel.currentStep) == .weightEstimation else {
+        pendingEstimationContinue = false
+        return
+    }
+    pendingEstimationContinue = false
+    handleContinueButtonTap()
 }
 
 /// À partir du chat / scan : même slide que capture → analyse → résultats.
@@ -275,18 +289,6 @@ var shouldShowBackButton: Bool {
 
 var onboardingScreenBackground: Color {
     OnboardingTheme.screenBackground
-}
-
-var shouldAddTopPadding: Bool {
-    switch OnboardingStep.resolved(from: viewModel.currentStep) {
-    case .payment, .appleSignIn, .complete,
-         .genderSelection, .ageSelection, .height, .weight,
-         .firstNameInput, .faceLeverageIntro, .weightMotivation,
-         .weightEstimation, .programCreation, .biometricAuth,
-         .transformationPreview, .referralCode, .dashboardPreview, .dreamFaceCommit,
-         .postPaymentWelcome, .explainerBodyFat, .explainerWaterRetention, .explainerLymphDrainage:
-        return false
-    }
 }
 
 }

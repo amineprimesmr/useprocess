@@ -212,6 +212,26 @@ final class HealthManager: ObservableObject {
 
     // MARK: - Snapshot builder
 
+    /// BaselineCalculator consumes only these six measurements. Avoid querying nutrition,
+    /// body composition and other unused categories again for each of the 14 past days.
+    func buildBaselineSnapshot(for date: Date) async -> DailyHealthSnapshot {
+        async let steps = queryService.sumQuantity(.stepCount, unit: .count(), on: date)
+        async let calories = queryService.sumQuantity(.activeEnergyBurned, unit: .kilocalorie(), on: date)
+        async let exercise = queryService.sumQuantity(.appleExerciseTime, unit: .minute(), on: date)
+        async let rhr = queryService.averageQuantity(.restingHeartRate, unit: HKUnit.count().unitDivided(by: .minute()), on: date)
+        async let hrv = queryService.averageQuantity(.heartRateVariabilitySDNN, unit: .secondUnit(with: .milli), on: date)
+        async let sleep = queryService.sleepMetrics(for: date)
+
+        var snapshot = DailyHealthSnapshot(date: date)
+        snapshot.effort.steps = Int(await steps)
+        snapshot.effort.activeEnergyBurned = await calories
+        snapshot.effort.exerciseMinutes = await exercise
+        snapshot.vitals.restingHeartRate = await rhr
+        snapshot.vitals.hrv = await hrv
+        snapshot.sleep.sleepDuration = await sleep.duration
+        return snapshot
+    }
+
     func buildSnapshot(
         for date: Date,
         baselineOverride: UserHealthBaselines? = nil

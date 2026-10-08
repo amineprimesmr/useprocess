@@ -1,0 +1,95 @@
+{
+  "deployment": "dpl_8t2vgyRaMc6AaFh4dKeMKk5qkqRD",
+  "checks": [
+    {
+      "route": "/",
+      "status": 200,
+      "final_url": "https://processdebloat.com/",
+      "old_domain_present": null
+    },
+    {
+      "route": "/app",
+      "status": 200,
+      "final_url": "https://processdebloat.com/app",
+      "old_domain_present": null
+    },
+    {
+      "route": "/clipping",
+      "status": 200,
+      "final_url": "https://processdebloat.com/clipping",
+      "old_domain_present": null
+    },
+    {
+      "route": "/cgu",
+      "status": 200,
+      "final_url": "https://processdebloat.com/cgu",
+      "old_domain_present": false
+    },
+    {
+      "route": "/confidentialite",
+      "status": 200,
+      "final_url": "https://processdebloat.com/confidentialite",
+      "old_domain_present": false
+    },
+    {
+      "route": "/support",
+      "status": 200,
+      "final_url": "https://processdebloat.com/support",
+      "old_domain_present": null
+    },
+    {
+      "route": "/mentions-legales",
+      "status": 200,
+      "final_url": "https://processdebloat.com/mentions-legales",
+      "old_domain_present": false
+    },
+    {
+      "route": "/sources-sante",
+      "status": 200,
+      "final_url": "https://processdebloat.com/sources-sante",
+      "old_domain_present": null
+    },
+    {
+      "route": "/terms",
+      "status": 200,
+      "final_url": "https://processdebloat.com/cgu?lang=en",
+      "old_domain_present": null
+    },
+    {
+      "route": "/privacy",
+      "status": 200,
+      "final_url": "https://processdebloat.com/confidentialite?lang=en",
+      "old_domain_present": null
+    },
+    {
+      "route": "/.well-known/apple-app-site-association",
+      "status": 200,
+      "final_url": "https://processdebloat.com/.well-known/apple-app-site-association",
+      "old_domain_present": null
+    },
+    {
+      "route": "/robots.txt",
+      "status": 200,
+      "final_url": "https://processdebloat.com/robots.txt",
+      "old_domain_present": null
+    },
+    {
+      "route": "/sitemap.xml",
+      "status": 200,
+      "final_url": "https://processdebloat.com/sitemap.xml",
+      "old_domain_present": null
+    },
+    {
+      "route": "/js/legal-body-en.js",
+      "status": 200,
+      "final_url": "https://processdebloat.com/js/legal-body-en.js",
+      "old_domain_present": false
+    },
+    {
+      "route": "/js/site-language.js",
+      "status": 200,
+      "final_url": "https://processdebloat.com/js/site-language.js",
+      "old_domain_present": false
+    }
+  ]
+}

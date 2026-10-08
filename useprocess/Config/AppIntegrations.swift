@@ -17,7 +17,6 @@ final class AppIntegrations {
         // Analytics avant abonnements.
         ProcessAnalytics.configure()
         ProcessAppsFlyer.shared.configure()
-        ProcessCrispSupport.configure()
         analyticsReady = ProcessAnalytics.isReady
         PaywallPricingExperiment.shared.resolve()
         SubscriptionService.shared.configure()

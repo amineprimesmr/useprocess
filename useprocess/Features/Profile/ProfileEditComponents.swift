@@ -263,13 +263,13 @@ enum ProcessSettingsOpalTheme {
 
     /// Cartes légèrement relevées — fond un peu moins noir, bordure discrète.
     static let cardFillDark = Color.white.opacity(0.062)
-    static let cardBorderDark = Color.white.opacity(0.096)
-    static let fieldFillDark = Color.white.opacity(0.05)
-    static let fieldStrokeDark = Color.white.opacity(0.09)
-    static let iconTint = Color.white.opacity(0.82)
-    static let valueTint = Color.white.opacity(0.48)
-    static let chevronTint = Color.white.opacity(0.32)
-    static let sectionTitleTint = Color.white.opacity(0.92)
+    static let cardBorderDark = Color.primary.opacity(0.096)
+    static let fieldFillDark = Color.primary.opacity(0.05)
+    static let fieldStrokeDark = Color.primary.opacity(0.09)
+    static let iconTint = Color.primary.opacity(0.82)
+    static let valueTint = Color.primary.opacity(0.48)
+    static let chevronTint = Color.primary.opacity(0.32)
+    static let sectionTitleTint = Color.primary.opacity(0.92)
 
     static var scrollTopInset: CGFloat {
         headerControlSize + (headerVerticalPadding * 2) + 4
@@ -405,8 +405,6 @@ struct ProcessSettingsOpalPageBackground: ViewModifier {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(ProcessSettingsOpalTheme.pageBackground(colorScheme).ignoresSafeArea())
-            .preferredColorScheme(.dark)
-            .toolbarColorScheme(.dark, for: .navigationBar)
     }
 }
 
@@ -584,7 +582,7 @@ struct ProcessSettingsOpalRow: View {
                 VStack(alignment: .leading, spacing: subtitle == nil ? 0 : 2) {
                     Text(title)
                         .font(.system(size: 16, weight: .regular))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
                     if let subtitle, !subtitle.isEmpty {
                         Text(subtitle)
@@ -708,7 +706,7 @@ struct ProcessSettingsLatestScanAvatar: View {
         .clipShape(Circle())
         .overlay {
             Circle()
-                .strokeBorder(Color.white.opacity(0.14), lineWidth: 0.5)
+                .strokeBorder(Color.primary.opacity(0.14), lineWidth: 0.5)
         }
         .accessibilityLabel(AppCopy.t("Dernier scan visage", en: "Latest face scan"))
     }
@@ -735,7 +733,7 @@ struct ProcessSettingsOpalAccountRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.system(size: 16, weight: .regular))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
                     Text(displayValue)
                         .font(.system(size: 15))
@@ -799,7 +797,7 @@ struct ProcessSettingsOpalActionRow: View {
 
                     Text(title)
                         .font(.system(size: 16, weight: .regular))
-                        .foregroundStyle(destructive ? Color.red : .white)
+                        .foregroundStyle(destructive ? Color.red : Color.primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(minHeight: ProcessSettingsOpalTheme.rowMinHeight, alignment: .center)
@@ -884,7 +882,7 @@ struct ProcessSettingsOpalField: View {
             }
         }
         .font(.system(size: 17, weight: .medium))
-        .foregroundStyle(.white)
+        .foregroundStyle(.primary)
         .multilineTextAlignment(textAlignment)
         .padding(.horizontal, 22)
         .padding(.vertical, axis == .vertical ? 20 : 16)

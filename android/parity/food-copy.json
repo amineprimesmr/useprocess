@@ -1,0 +1,10 @@
+{
+  "source": "useprocess/WelcomePlan/Food/ProcessLocalizedDebloatFoodContent.swift",
+  "sha256": "2c76b61a4cbaf35d987d4b9de49fcf1e5c81e93eef80116de009c0abd02becd7",
+  "counts": {
+    "namesFRToEN": 139,
+    "whyFRToEN": 139,
+    "portionHintsFRToEN": 73,
+    "groceryQuantityFRToEN": 9
+  }
+}

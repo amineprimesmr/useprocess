@@ -1,0 +1,64 @@
+{
+  "recordedAt": "2026-10-08T02:24:29.672448+00:00",
+  "build": "passed",
+  "unitTests": {
+    "tests": 115,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 28
+  },
+  "sourceSha256": {
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/process/android/PostPaymentModel.kt": "5589cac4475759d857db86525cb717750a06fee3b54f3d34bd20815c05711112",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/process/android/ProcessPostPaymentThankYou.kt": "7afa5fb11bef02c7ce6e31b43b41cdbbd215131986402cc9626879223e640dae",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/process/android/ReferralCardModel.kt": "fa46bb3bade7e86c0290a1bf9d6d379929f9b8baf17dc018913a84163741f79e",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/process/android/ProcessReferralMetalSurface.kt": "8acba09cede994e5278232287d3dfad9d8a036b362b65a95c463163892c0a4ce",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/process/android/ProcessReferralMetalCard.kt": "e65725b9fbc8f151800b439d18ca4c4fb5f4177aaf798ba05c8ef695490ac1d7",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/process/android/ProcessLegalLinks.kt": "3660d91e73917185f90880ce6adc25c2cbf2f6a8b80f9cae67d0b55d3a442fdf",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/process/android/ProcessSettingsChrome.kt": "cd4a7a6d5870c65e059581b9a3aa604d36b0d104270d475b3275a2bf9857107e",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/process/android/ProcessHelpPrivacy.kt": "f328d77540447c328937175dd727058cb6db9328150b3f225b6555636e6bcf08",
+    "/Users/amine/Developer/useprocess/android/app/src/main/java/com/tenkdesign/android/TenKVerticalSegmentedControl.kt": "b951226a74a2b8d97d333a1134062c402882f3960150c738ca36aa566c42005c",
+    "/Users/amine/Developer/useprocess/android/app/src/main/res/raw/referral_copy.mp3": "18e39d76a996b645f68c45153ed49901b3f1883412c6f1a337bc7534afbb60d2",
+    "/Users/amine/Developer/useprocess/useprocess/Sport/Onboarding/Steps/OnboardingPostPaymentThankYouView.swift": "7d4bf6ab65928800a00298879975203df04853e48405beb671d4f1a3e3d92093",
+    "/Users/amine/Developer/useprocess/useprocess/Sport/Onboarding/Components/OnboardingTheme.swift": "dcdc1ad66579172246ead6267a1f330fc82ea4564df33cf5e76e0bdffaf0badd",
+    "/Users/amine/Developer/useprocess/useprocess/Features/Referral/ProcessReferralMetalCard.swift": "3acfc1470c979169ef9f57d8aeb2722676793deb002eded679d01744f5b4d6ba",
+    "/Users/amine/Developer/useprocess/useprocess/Features/Referral/ProcessReferralModels.swift": "0775095ac28bb246aa50a3d895c53739ef54dd156bf9347f0b735f242a8425b8",
+    "/Users/amine/Developer/useprocess/useprocess/Components/ProcessSoundPlayer.swift": "20372356418f22b80ee28d1ecdeb9a4ae2b4b65318c35b7298f65e40fea33b83",
+    "/Users/amine/Developer/useprocess/useprocess/Resources/Sounds/revolut_pay.mp3": "18e39d76a996b645f68c45153ed49901b3f1883412c6f1a337bc7534afbb60d2",
+    "/Users/amine/Developer/useprocess/useprocess/Features/Profile/ProfileSettingsSections.swift": "227aae02864c84c1f60680af6b19123f3c396538c758efb43eb4f0a6d9078e34",
+    "/Users/amine/Developer/useprocess/useprocess/Features/Profile/ProfileEditComponents.swift": "6ed2c677dce20263b2b22a94706d101364a992d38fbc591df2bd33f19f19d985",
+    "/Users/amine/Developer/useprocess/useprocess/Features/Profile/ProcessSettingsScrollToolBar.swift": "f99a472e60a2012ec76fd78603a463d62ba3aeaf1c660a9cfe7b2863b5fea66c",
+    "/Users/amine/Developer/useprocess/useprocess/Support/ProcessSupportChatView.swift": "b720afacebbc8d690fcb596b98bcc52e797d2a23c2b11e716327cf2b501198e9",
+    "/Users/amine/Developer/useprocess/useprocess/Config/ProcessLegalURLs.swift": "382484b6e2a63a8e7738e8b4d79c6cfc4011226435c852e4f1f952a18c0cbc6b",
+    "/Users/amine/Developer/useprocess/useprocess/Config/AppConfiguration.swift": "a1592404536781864c1dede20cc012a51de5341abd2ef54c15f1979c0605d4c1",
+    "/Users/amine/Developer/10kdesign-device.nosync/content/components/design-vertical-segmented-control/TenKVerticalSCDemo.swift": "d778b6c4c51d75bdb4b917eec7c86e9cd67368d43eae692140401ccd8360064a"
+  },
+  "runtime": "unverified",
+  "visual": "unverified",
+  "motion": "unverified",
+  "physicalDevice": "unverified",
+  "remaining": {
+    "process-thank-you": [
+      "Host entitlement verification, Apple Service ID/OAuth and full account migration integration",
+      "Official Apple mark and exact seal/symbol bounce, native fonts and physical layout"
+    ],
+    "process-referral-metal-card": [
+      "Native graphics perspective, shadows, materials, font/double engraving and physical gesture comparison",
+      "API28 SoftLight approximation; exact audio/haptic timing",
+      "Referral backend and actual code allocation remain host-owned"
+    ],
+    "process-help-privacy": [
+      "Native medical-source screen host integration; fallback currently opens original sources-sante website",
+      "Native symbols/glass/browser presentation and physical interaction checks",
+      "Real service availability host integration; unavailable by default"
+    ],
+    "design-vertical-segmented-control": [
+      "MapKit demo not ported: Android map provider integration belongs to the host",
+      "Native glass, icons and UIKit implicit highlight animation/drag interactions require comparisons"
+    ]
+  },
+  "buildLog": "parity/logs/process-vertical-help-build.log"
+}

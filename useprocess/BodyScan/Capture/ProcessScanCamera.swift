@@ -203,6 +203,22 @@ enum ProcessScanCamera {
         }
     }
 
+    /// File dédiée : `lockForConfiguration` peut attendre le capteur (ARKit qui démarre ou une
+    /// session précédente qui se libère). Sur le main thread, ça figeait tout l'écran de scan.
+    nonisolated static let configurationQueue = DispatchQueue(
+        label: "process.scan-camera.configuration",
+        qos: .userInitiated
+    )
+
+    /// Version non bloquante de `lockActiveFrontCamerasIfPossible`.
+    nonisolated static func lockActiveFrontCamerasAsync(
+        profile: ProcessScanPortraitLockProfile = .standard
+    ) {
+        configurationQueue.async {
+            lockActiveFrontCamerasIfPossible(profile: profile)
+        }
+    }
+
     /// Verrouillage synchrone avant `ARSession.run` — ARKit ne tient pas encore le capteur.
     nonisolated static func lockFrontCamerasBeforeARSession(
         profile: ProcessScanPortraitLockProfile = .standard

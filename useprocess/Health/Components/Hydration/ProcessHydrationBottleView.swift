@@ -8,6 +8,11 @@ struct ProcessHydrationBottleView: View {
     var showsGlassWater: Bool = true
 
     @Environment(\.appTheme) private var theme
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.processTabIsActive) private var isTabActive
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private var shouldRunMotion: Bool { isTabActive && scenePhase == .active && !reduceMotion }
+
     @StateObject private var waterEngine = ProcessFluidWaterMotionEngine()
 
     private static let bottleAsset = "hydration_bottle"
@@ -26,7 +31,10 @@ struct ProcessHydrationBottleView: View {
         }
         .aspectRatio(ProcessHydrationBottleMetrics.aspectRatio, contentMode: .fit)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear { waterEngine.start() }
+        .onAppear { if shouldRunMotion { waterEngine.start() } }
+            .onChange(of: shouldRunMotion) { _, active in
+                if active { waterEngine.start() } else { waterEngine.stop() }
+            }
         .onDisappear { waterEngine.stop() }
         .onChange(of: fillLevel) { oldValue, newValue in
             let delta = newValue - oldValue

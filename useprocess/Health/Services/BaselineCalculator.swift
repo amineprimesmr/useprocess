@@ -41,7 +41,7 @@ enum BaselineCalculator {
 
         for offset in 0..<days {
             guard let date = calendar.date(byAdding: .day, value: -offset, to: today) else { continue }
-            let snapshot = await manager.buildSnapshot(for: date)
+            let snapshot = await manager.buildBaselineSnapshot(for: date)
             if snapshot.effort.steps > 0 || snapshot.sleep.sleepDuration > 0 || snapshot.vitals.hrv > 0 {
                 snapshots.append(snapshot)
             }

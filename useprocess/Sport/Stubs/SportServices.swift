@@ -146,7 +146,7 @@ final class AuthenticationManager: NSObject, ObservableObject {
                     return
                 }
                 self.isAuthenticated = user != nil
-                if user != nil {
+                if let user, !user.isAnonymous {
                     await UnifiedProfileService.shared.loadProfile()
                     guard !AppSession.shared.isAccountWipeInProgress else { return }
                     guard !AppSession.shared.blocksAuthenticatedOnboardingRestore else { return }
@@ -158,7 +158,7 @@ final class AuthenticationManager: NSObject, ObservableObject {
                     if AppSession.shared.hasCompletedOnboarding {
                         self.isInOnboarding = false
                     }
-                } else {
+                } else if user == nil {
                     UnifiedProfileService.shared.clearLocalProfile()
                 }
             }
@@ -453,7 +453,6 @@ final class PermissionsManager: ObservableObject {
             notificationsGranted = granted || status == .authorized || status == .provisional
             if notificationsGranted {
                 ProcessAnalytics.trackNotificationsAuthorized(source: analyticsSource, status: statusName)
-                ProcessCrispSupport.registerForRemoteNotificationsIfAllowed()
             } else {
                 ProcessAnalytics.trackNotificationsDenied(source: analyticsSource, status: statusName)
             }
@@ -472,9 +471,6 @@ final class PermissionsManager: ObservableObject {
             Self.notificationStatusName(status),
             authorized: notificationsGranted
         )
-        if notificationsGranted {
-            ProcessCrispSupport.registerForRemoteNotificationsIfAllowed()
-        }
     }
 
     func canScheduleNotifications() async -> Bool {
